@@ -1,29 +1,33 @@
-# Ignore IntelliJ IDEA project files
+# IntelliJ IDEA
 .idea/
 *.iml
 
-# Byte-compiled / cache files
+# Python / Jupyter cache
 __pycache__/
 *.py[cod]
-*.ipynb_checkpoints
+*.ipynb_checkpoints/
+*.egg-info/
 
-# OS-specific files
+# macOS
 .DS_Store
 
-# Jupyter Notebook checkpoints
+# Jupyter Notebook
 .ipynb_checkpoints/
 
 # Logs
 *.log
 
-# Temporary files
+# Temporary
 *.tmp
 *.swp
 
-# Environment files
+# Environment files and folders
 .env
 .venv/
-*.egg-info/
+env/
 
-# Results or output files (optional, if generated)
-# Results/
+# Common data/output files
+*.csv
+*.xlsx
+
+
