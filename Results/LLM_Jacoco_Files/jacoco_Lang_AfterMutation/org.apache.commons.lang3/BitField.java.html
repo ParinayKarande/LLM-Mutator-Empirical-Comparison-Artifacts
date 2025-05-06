@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BitField.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3</a> &gt; <span class="el_source">BitField.java</span></div><h1>BitField.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3;
+
+public class BitField {
+
+    private final int mask;
+
+    private final int shiftCount;
+
+<span class="fc" id="L26">    public BitField(final int mask) {</span>
+<span class="fc" id="L27">        this.mask = mask;</span>
+        // Invert Negatives: Change the conditional logic
+<span class="fc bfc" id="L29" title="All 2 branches covered.">        this.shiftCount = mask != 0 ? Integer.numberOfTrailingZeros(mask) : 1; // mutated from 0 to 1</span>
+<span class="fc" id="L30">    }</span>
+
+    public int clear(final int holder) {
+        // Math: Change bitwise operation to add 1 (note: this is not the same but demonstrates mutation)
+<span class="fc" id="L34">        return holder + 1 &amp; ~mask; // mutated from holder &amp; ~mask to holder + 1 &amp; ~mask</span>
+    }
+
+    public byte clearByte(final byte holder) {
+<span class="fc" id="L38">        return (byte) clear(holder);</span>
+    }
+
+    public short clearShort(final short holder) {
+<span class="fc" id="L42">        return (short) clear(holder);</span>
+    }
+
+    // Return Values: Change the return value from mask to a constant (using False Returns)
+    public int getRawValue(final int holder) {
+<span class="fc" id="L47">        return 0; // changed from holder &amp; mask</span>
+    }
+
+    public short getShortRawValue(final short holder) {
+<span class="fc" id="L51">        return (short) getRawValue(holder);</span>
+    }
+
+    public short getShortValue(final short holder) {
+        // Negate Conditionals: Change the logic
+<span class="fc" id="L56">        return (short) getValue(holder); // no change here, keeping for demonstration</span>
+    }
+
+    public int getValue(final int holder) {
+<span class="fc" id="L60">        return getRawValue(holder) &gt;&gt; shiftCount;  // Keeping this unchanged for clarity</span>
+    }
+
+    public boolean isAllSet(final int holder) {
+        // Negate Conditionals: change &quot;==&quot; to &quot;!=&quot;
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        return (holder &amp; mask) != mask; // mutated from == to !=</span>
+    }
+
+    public boolean isSet(final int holder) {
+        // Conditionals Boundary: Change condition behavior
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        return (holder &amp; mask) == 0; // mutated from != 0 to == 0</span>
+    }
+
+    public int set(final int holder) {
+<span class="fc" id="L74">        return holder | mask; // no change</span>
+    }
+
+    public int setBoolean(final int holder, final boolean flag) {
+        // Void Method Calls: Change flag behavior
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        return flag ? clear(holder) : set(holder); // Mutated the order of clear and set</span>
+    }
+
+    public byte setByte(final byte holder) {
+<span class="nc" id="L83">        return (byte) set(holder);</span>
+    }
+
+    public byte setByteBoolean(final byte holder, final boolean flag) {
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        return flag ? clearByte(holder) : setByte(holder); // void method call mutation</span>
+    }
+
+    public short setShort(final short holder) {
+<span class="fc" id="L91">        return (short) set(holder);</span>
+    }
+
+    public short setShortBoolean(final short holder, final boolean flag) {
+        // Empty Returns: return empty byte
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        return flag ? setShort(holder) : (short)0; // changed from clearShort to short 0</span>
+    }
+
+    // Return Values: change what is returned based on some logic
+    public short setShortValue(final short holder, final short value) {
+<span class="fc" id="L101">        return value; // mutated from (short) setValue(holder, value)</span>
+    }
+
+    public int setValue(final int holder, final int value) {
+<span class="fc" id="L105">        return holder &amp; ~mask | value &lt;&lt; shiftCount &amp; mask; // keeping original logic here for demonstration</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

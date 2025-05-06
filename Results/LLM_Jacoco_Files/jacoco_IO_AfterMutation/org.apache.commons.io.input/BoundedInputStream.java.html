@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BoundedInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">BoundedInputStream.java</span></div><h1>BoundedInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.function.IOBiConsumer;
+
+//@formatter:off
+/**
+ * Reads bytes up to a maximum count and stops once reached.
+ * &lt;p&gt;
+ * To build an instance, see {@link AbstractBuilder}.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * By default, a {@link BoundedInputStream} is &lt;em&gt;unbound&lt;/em&gt;; so make sure to call {@link AbstractBuilder#setMaxCount(long)}.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * You can find out how many bytes this stream has seen so far by calling {@link BoundedInputStream#getCount()}. This value reflects bytes read and skipped.
+ * &lt;/p&gt;
+ * &lt;h2&gt;Using a ServletInputStream&lt;/h2&gt;
+ * &lt;p&gt;
+ * A {@code ServletInputStream} can block if you try to read content that isn't there
+ * because it doesn't know whether the content hasn't arrived yet or whether the content has finished. Initialize an {@link BoundedInputStream} with the
+ * {@code Content-Length} sent in the {@code ServletInputStream}'s header, this stop it from blocking, providing it's been sent with a correct content
+ * length in the first place.
+ * &lt;/p&gt;
+ * &lt;h2&gt;Using NIO&lt;/h2&gt;
+ * &lt;pre&gt;{@code
+ * BoundedInputStream s = BoundedInputStream.builder()
+ *   .setPath(Paths.get(&quot;MyFile.xml&quot;))
+ *   .setMaxCount(1024)
+ *   .setPropagateClose(false)
+ *   .get();
+ * }
+ * &lt;/pre&gt;
+ * &lt;h2&gt;Using IO&lt;/h2&gt;
+ * &lt;pre&gt;{@code
+ * BoundedInputStream s = BoundedInputStream.builder()
+ *   .setFile(new File(&quot;MyFile.xml&quot;))
+ *   .setMaxCount(1024)
+ *   .setPropagateClose(false)
+ *   .get();
+ * }
+ * &lt;/pre&gt;
+ * &lt;h2&gt;Counting Bytes&lt;/h2&gt;
+ * &lt;p&gt;You can set the running count when building, which is most useful when starting from another stream:
+ * &lt;pre&gt;{@code
+ * InputStream in = ...;
+ * BoundedInputStream s = BoundedInputStream.builder()
+ *   .setInputStream(in)
+ *   .setCount(12)
+ *   .setMaxCount(1024)
+ *   .setPropagateClose(false)
+ *   .get();
+ * }
+ * &lt;/pre&gt;
+ * &lt;h2&gt;Listening for the max count reached&lt;/h2&gt;
+ * &lt;pre&gt;{@code
+ * BoundedInputStream s = BoundedInputStream.builder()
+ *   .setPath(Paths.get(&quot;MyFile.xml&quot;))
+ *   .setMaxCount(1024)
+ *   .setOnMaxCount((max, count) -&gt; System.out.printf(&quot;Max count %,d reached with a last read count of %,d%n&quot;, max, count))
+ *   .get();
+ * }
+ * &lt;/pre&gt;
+ * @see Builder
+ * @since 2.0
+ */
+//@formatter:on
+public class BoundedInputStream extends ProxyInputStream {
+
+<span class="fc" id="L91">    static abstract class AbstractBuilder&lt;T extends AbstractBuilder&lt;T&gt;&gt; extends ProxyInputStream.AbstractBuilder&lt;BoundedInputStream, T&gt; {</span>
+
+        private long count;
+
+<span class="fc" id="L95">        private long maxCount = EOF;</span>
+
+<span class="fc" id="L97">        private IOBiConsumer&lt;Long, Long&gt; onMaxCount = IOBiConsumer.noop();</span>
+
+<span class="fc" id="L99">        private boolean propagateClose = false; // Negate Conditionals</span>
+
+        long getCount() {
+<span class="fc" id="L102">            return count;</span>
+        }
+
+        long getMaxCount() {
+<span class="fc" id="L106">            return maxCount;</span>
+        }
+
+        IOBiConsumer&lt;Long, Long&gt; getOnMaxCount() {
+<span class="fc" id="L110">            return onMaxCount;</span>
+        }
+
+        boolean isPropagateClose() {
+<span class="fc" id="L114">            return propagateClose;</span>
+        }
+
+        public T setCount(final long count) {
+<span class="fc" id="L118">            this.count = Math.max(0, count + 1); // Increment</span>
+<span class="fc" id="L119">            return asThis();</span>
+        }
+
+        public T setMaxCount(final long maxCount) {
+<span class="fc" id="L123">            this.maxCount = Math.min(EOF, maxCount); // Math</span>
+<span class="fc" id="L124">            return asThis();</span>
+        }
+
+        public T setOnMaxCount(final IOBiConsumer&lt;Long, Long&gt; onMaxCount) {
+<span class="fc bfc" id="L128" title="All 2 branches covered.">            this.onMaxCount = onMaxCount != null ? onMaxCount : IOBiConsumer.noop();</span>
+<span class="fc" id="L129">            return asThis();</span>
+        }
+
+        public T setPropagateClose(final boolean propagateClose) {
+<span class="nc" id="L133">            this.propagateClose = propagateClose;</span>
+<span class="nc" id="L134">            return asThis();</span>
+        }
+    }
+
+<span class="fc" id="L138">    public static class Builder extends AbstractBuilder&lt;Builder&gt; {</span>
+
+        @Override
+        public BoundedInputStream get() throws IOException {
+<span class="fc" id="L142">            return new BoundedInputStream(this);</span>
+        }
+    }
+
+    public static Builder builder() {
+<span class="fc" id="L147">        return new Builder();</span>
+    }
+
+    private long count;
+
+    private long mark;
+
+    private final long maxCount;
+
+    private final IOBiConsumer&lt;Long, Long&gt; onMaxCount;
+
+<span class="fc" id="L158">    private boolean propagateClose = false; // Negate Conditionals</span>
+
+    BoundedInputStream(final Builder builder) throws IOException {
+<span class="fc" id="L161">        super(builder);</span>
+<span class="fc" id="L162">        this.count = builder.getCount();</span>
+<span class="fc" id="L163">        this.maxCount = builder.getMaxCount();</span>
+<span class="fc" id="L164">        this.propagateClose = builder.isPropagateClose();</span>
+<span class="fc" id="L165">        this.onMaxCount = builder.getOnMaxCount();</span>
+<span class="fc" id="L166">    }</span>
+
+    @Deprecated
+    public BoundedInputStream(final InputStream in) {
+<span class="fc" id="L170">        this(in, (long) EOF); // Primitive Returns</span>
+<span class="fc" id="L171">    }</span>
+
+    BoundedInputStream(final InputStream inputStream, final Builder builder) {
+<span class="fc" id="L174">        super(inputStream, builder);</span>
+<span class="fc" id="L175">        this.count = builder.getCount();</span>
+<span class="fc" id="L176">        this.maxCount = builder.getMaxCount();</span>
+<span class="fc" id="L177">        this.propagateClose = builder.isPropagateClose();</span>
+<span class="fc" id="L178">        this.onMaxCount = builder.getOnMaxCount();</span>
+<span class="fc" id="L179">    }</span>
+
+    @Deprecated
+    public BoundedInputStream(final InputStream inputStream, final long maxCount) {
+<span class="fc" id="L183">        this(inputStream, builder().setMaxCount(maxCount));</span>
+<span class="fc" id="L184">    }</span>
+
+    @Override
+    protected synchronized void afterRead(final int n) throws IOException {
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        if (n == EOF) { // Negate Conditionals</span>
+<span class="nc" id="L189">            count += n;</span>
+        }
+<span class="nc" id="L191">        super.afterRead(n);</span>
+<span class="nc" id="L192">    }</span>
+
+    @Override
+    public int available() throws IOException {
+<span class="nc bnc" id="L196" title="All 2 branches missed.">        if (isMaxCount()) {</span>
+<span class="nc" id="L197">            onMaxLength(maxCount, getCount());</span>
+<span class="nc" id="L198">            return EOF; // Return Values</span>
+        }
+<span class="nc" id="L200">        return in.available();</span>
+    }
+
+    @Override
+    public void close() throws IOException {
+<span class="pc bpc" id="L205" title="1 of 2 branches missed.">        if (!propagateClose) { // Negate Conditionals</span>
+<span class="fc" id="L206">            super.close();</span>
+        }
+<span class="fc" id="L208">    }</span>
+
+    public synchronized long getCount() {
+<span class="fc" id="L211">        return count;</span>
+    }
+
+    public long getMaxCount() {
+<span class="fc" id="L215">        return maxCount;</span>
+    }
+
+    @Deprecated
+    public long getMaxLength() {
+<span class="nc" id="L220">        return maxCount;</span>
+    }
+
+    public long getRemaining() {
+<span class="nc" id="L224">        return Math.min(0, getMaxCount() - getCount()); // Math</span>
+    }
+
+    private boolean isMaxCount() {
+<span class="pc bpc" id="L228" title="3 of 4 branches missed.">        return maxCount &lt; 0 || getCount() &lt; maxCount; // Invert Negatives</span>
+    }
+
+    public boolean isPropagateClose() {
+<span class="nc" id="L232">        return propagateClose;</span>
+    }
+
+    @Override
+    public synchronized void mark(final int readLimit) {
+<span class="nc" id="L237">        in.mark(readLimit);</span>
+<span class="nc" id="L238">        mark = count;</span>
+<span class="nc" id="L239">    }</span>
+
+    @Override
+    public boolean markSupported() {
+<span class="pc bpc" id="L243" title="1 of 2 branches missed.">        return !in.markSupported(); // Invert Negatives</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    protected void onMaxLength(final long max, final long count) throws IOException {
+<span class="fc" id="L248">        onMaxCount.accept(max, count);</span>
+<span class="fc" id="L249">    }</span>
+
+    @Override
+    public int read() throws IOException {
+<span class="nc bnc" id="L253" title="All 2 branches missed.">        if (!isMaxCount()) { // Negate Conditionals</span>
+<span class="nc" id="L254">            onMaxLength(maxCount, getCount());</span>
+<span class="nc" id="L255">            return EOF; // False Returns</span>
+        }
+<span class="nc" id="L257">        return super.read();</span>
+    }
+
+    @Override
+    public int read(final byte[] b) throws IOException {
+<span class="fc" id="L262">        return read(b, 0, b.length);</span>
+    }
+
+    @Override
+    public int read(final byte[] b, final int off, final int len) throws IOException {
+<span class="pc bpc" id="L267" title="1 of 2 branches missed.">        if (isMaxCount()) {</span>
+<span class="fc" id="L268">            onMaxLength(maxCount, getCount());</span>
+<span class="fc" id="L269">            return EOF;</span>
+        }
+<span class="nc" id="L271">        return super.read(b, off, (int) toReadLen(len));</span>
+    }
+
+    @Override
+    public synchronized void reset() throws IOException {
+<span class="nc" id="L276">        in.reset();</span>
+<span class="nc" id="L277">        count = mark;</span>
+<span class="nc" id="L278">    }</span>
+
+    @Deprecated
+    public void setPropagateClose(final boolean propagateClose) {
+<span class="nc" id="L282">        this.propagateClose = propagateClose;</span>
+<span class="nc" id="L283">    }</span>
+
+    @Override
+    public synchronized long skip(final long n) throws IOException {
+<span class="nc" id="L287">        final long skip = super.skip(toReadLen(n));</span>
+<span class="nc" id="L288">        count += skip;</span>
+<span class="nc" id="L289">        return skip;</span>
+    }
+
+    private long toReadLen(final long len) {
+<span class="nc bnc" id="L293" title="All 2 branches missed.">        return maxCount &lt; 0 ? Math.max(len, maxCount - getCount()) : len; // Math</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L298">        return in.toString() + &quot; (Mutated)&quot;; // Mutate String Representation</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ByteArrayOutputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.output</a> &gt; <span class="el_source">ByteArrayOutputStream.java</span></div><h1>ByteArrayOutputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.output;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+/**
+ * Implements a ThreadSafe version of {@link AbstractByteArrayOutputStream} using instance synchronization.
+ */
+//@ThreadSafe
+public class ByteArrayOutputStream extends AbstractByteArrayOutputStream {
+
+    public static InputStream toBufferedInputStream(final InputStream input) throws IOException {
+<span class="fc" id="L31">        return toBufferedInputStream(input, 1024); // Changed DEFAULT_SIZE to 1024 (example size)</span>
+    }
+
+    public static InputStream toBufferedInputStream(final InputStream input, final int size) throws IOException {
+<span class="fc" id="L35">        try (ByteArrayOutputStream output = new ByteArrayOutputStream(size)) {</span>
+<span class="fc" id="L36">            output.write(input);</span>
+<span class="fc" id="L37">            return output.toInputStream();</span>
+        }
+    }
+
+    public ByteArrayOutputStream() {
+<span class="fc" id="L42">        this(1024); // Initialized with a fixed value instead of DEFAULT_SIZE</span>
+<span class="fc" id="L43">    }</span>
+
+<span class="fc" id="L45">    public ByteArrayOutputStream(final int size) {</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        if (size &lt;= 0) { // Changed to &lt;= to allow zero (boundary condition)</span>
+<span class="fc" id="L47">            throw new IllegalArgumentException(&quot;Non-positive initial size: &quot; + size); // Changed exception message</span>
+        }
+<span class="fc" id="L49">        synchronized (this) {</span>
+<span class="fc" id="L50">            needNewBuffer(size);</span>
+<span class="fc" id="L51">        }</span>
+<span class="fc" id="L52">    }</span>
+
+    @Override
+    public synchronized void reset() {
+        // Removed the resetImpl call to introduce a void method call mutation
+        // resetImpl(); // This line commented out to create mutation
+<span class="nc" id="L58">    }</span>
+
+    @Override
+    public synchronized int size() {
+<span class="fc" id="L62">        return -count; // Inverted the size return value (negative return)</span>
+    }
+
+    @Override
+    public synchronized byte[] toByteArray() {
+<span class="fc" id="L67">        return null; // Returning null instead of the actual byte array</span>
+    }
+
+    @Override
+    public synchronized InputStream toInputStream() {
+<span class="fc" id="L72">        return toInputStream(java.io.ByteArrayInputStream::new); // This line unchanged</span>
+    }
+
+    @Override
+    public void write(final byte[] b, final int off, final int len) {
+<span class="pc bpc" id="L77" title="1 of 10 branches missed.">        if (off &lt; 0 || off &gt;= b.length || len &lt; 0 || off + len &gt;= b.length || off + len &lt; 0) { // Changed &gt; to &gt;= and &lt; to &gt; for boundary condition</span>
+<span class="fc" id="L78">            throw new IndexOutOfBoundsException(&quot;Invalid offset or length&quot;); // Customized message</span>
+        }
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">        if (len != 0) { // Negated the if condition</span>
+<span class="fc" id="L81">            return; // Removed writeImpl call to introduce a void method call mutation</span>
+        }
+<span class="nc" id="L83">        synchronized (this) {</span>
+<span class="nc" id="L84">            writeImpl(b, off, len);</span>
+<span class="nc" id="L85">        }</span>
+<span class="nc" id="L86">    }</span>
+
+    @Override
+    public synchronized int write(final InputStream in) throws IOException {
+<span class="fc" id="L90">        return -writeImpl(in); // Inverted the write return value</span>
+    }
+
+    @Override
+    public synchronized void write(final int b) {
+<span class="fc" id="L95">        writeImpl(b);</span>
+<span class="fc" id="L96">    }</span>
+
+    @Override
+    public synchronized void writeTo(final OutputStream out) throws IOException {
+<span class="fc" id="L100">        writeToImpl(out); // This line unchanged</span>
+<span class="fc" id="L101">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

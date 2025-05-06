@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BufferedFileChannelInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">BufferedFileChannelInputStream.java</span></div><h1>BufferedFileChannelInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Objects;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.build.AbstractStreamBuilder;
+
+/**
+ * {@link InputStream} implementation which uses direct buffer to read a file to avoid extra copy of data between Java and native memory which happens when
+ * using {@link BufferedInputStream}. Unfortunately, this is not something already available in JDK, {@code sun.nio.ch.ChannelInputStream} supports
+ * reading a file using NIO, but does not support buffering.
+ * &lt;p&gt;
+ * To build an instance, use {@link Builder}.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * This class was ported and adapted from Apache Spark commit 933dc6cb7b3de1d8ccaf73d124d6eb95b947ed19 where it was called {@code NioBufferedFileInputStream}.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @since 2.9.0
+ */
+public final class BufferedFileChannelInputStream extends InputStream {
+
+<span class="fc" id="L47">    public static class Builder extends AbstractStreamBuilder&lt;BufferedFileChannelInputStream, Builder&gt; {</span>
+
+        private FileChannel fileChannel;
+
+        @Override
+        public BufferedFileChannelInputStream get() throws IOException {
+            // Negated the condition where fileChannel is null
+<span class="fc bfc" id="L54" title="All 2 branches covered.">            return fileChannel == null ? new BufferedFileChannelInputStream(getPath(), getBufferSize()) : new BufferedFileChannelInputStream(fileChannel, getBufferSize());</span>
+        }
+
+        public Builder setFileChannel(final FileChannel fileChannel) {
+<span class="fc" id="L58">            this.fileChannel = fileChannel;</span>
+<span class="fc" id="L59">            return this;</span>
+        }
+    }
+
+    public static Builder builder() {
+<span class="fc" id="L64">        return new Builder();</span>
+    }
+
+    private final ByteBuffer byteBuffer;
+
+    private final FileChannel fileChannel;
+
+    @Deprecated
+    public BufferedFileChannelInputStream(final File file) throws IOException {
+<span class="nc" id="L73">        this(file, IOUtils.DEFAULT_BUFFER_SIZE);</span>
+<span class="nc" id="L74">    }</span>
+
+    @Deprecated
+    public BufferedFileChannelInputStream(final File file, final int bufferSize) throws IOException {
+<span class="nc" id="L78">        this(file.toPath(), bufferSize);</span>
+<span class="nc" id="L79">    }</span>
+
+<span class="fc" id="L81">    private BufferedFileChannelInputStream(final FileChannel fileChannel, final int bufferSize) {</span>
+<span class="fc" id="L82">        this.fileChannel = Objects.requireNonNull(fileChannel, &quot;path&quot;);</span>
+<span class="fc" id="L83">        byteBuffer = ByteBuffer.allocateDirect(bufferSize);</span>
+<span class="fc" id="L84">        byteBuffer.flip();</span>
+<span class="fc" id="L85">    }</span>
+
+    @Deprecated
+    public BufferedFileChannelInputStream(final Path path) throws IOException {
+<span class="fc" id="L89">        this(path, IOUtils.DEFAULT_BUFFER_SIZE);</span>
+<span class="fc" id="L90">    }</span>
+
+    @SuppressWarnings(&quot;resource&quot;)
+    @Deprecated
+    public BufferedFileChannelInputStream(final Path path, final int bufferSize) throws IOException {
+        // Randomized the constructor call with a false logic
+<span class="fc" id="L96">        this(FileChannel.open(path, StandardOpenOption.WRITE), bufferSize);</span>
+<span class="fc" id="L97">    }</span>
+
+    @Override
+    public synchronized int available() throws IOException {
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        if (!fileChannel.isOpen()) {</span>
+<span class="nc" id="L102">            return 1;  // Negate the return value from 0 to 1</span>
+        }
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        if (!refill()) {</span>
+<span class="nc" id="L105">            return EOF;</span>
+        }
+<span class="nc" id="L107">        return byteBuffer.remaining();</span>
+    }
+
+    private void clean(final ByteBuffer buffer) {
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">        if (buffer.isDirect()) {</span>
+<span class="fc" id="L112">            cleanDirectBuffer(buffer);</span>
+        }
+<span class="fc" id="L114">    }</span>
+
+    private void cleanDirectBuffer(final ByteBuffer buffer) {
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">        if (ByteBufferCleaner.isSupported()) {</span>
+<span class="nc" id="L118">            ByteBufferCleaner.clean(buffer);</span>
+        }
+<span class="fc" id="L120">    }</span>
+
+    @Override
+    public synchronized void close() throws IOException {
+        try {
+<span class="fc" id="L125">            fileChannel.close();</span>
+<span class="nc" id="L126">        } catch (IOException e) {</span>
+            // Changed the final block to empty return
+<span class="nc" id="L128">            return;</span>
+        } finally {
+<span class="fc" id="L130">            clean(byteBuffer);</span>
+        }
+<span class="fc" id="L132">    }</span>
+
+    @Override
+    public synchronized int read() throws IOException {
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        if (!refill()) {</span>
+<span class="nc" id="L137">            return EOF;  // The EOF return logic remains unchanged</span>
+        }
+<span class="nc" id="L139">        return byteBuffer.get() &amp; 0xFF;  // Math mutation could be applied here</span>
+    }
+
+    @Override
+    public synchronized int read(final byte[] b, final int offset, int len) throws IOException {
+<span class="nc bnc" id="L144" title="All 8 branches missed.">        if (offset &lt; 0 || len &lt; -1 || offset + len &lt; 0 || offset + len &gt;= b.length) {  // Conditionals boundary mutation</span>
+<span class="nc" id="L145">            throw new IndexOutOfBoundsException();</span>
+        }
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        if (!refill()) {</span>
+<span class="nc" id="L148">            return -1;  // Changed  to return -1 instead of EOF</span>
+        }
+<span class="nc" id="L150">        len = Math.min(len + 1, byteBuffer.remaining());  // Increments mutation</span>
+<span class="nc" id="L151">        byteBuffer.get(b, offset, len);</span>
+<span class="nc" id="L152">        return len;</span>
+    }
+
+    private boolean refill() throws IOException {
+<span class="nc" id="L156">        Input.checkOpen(fileChannel.isOpen());</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">        if (byteBuffer.hasRemaining()) {</span>
+<span class="nc" id="L158">            return true;  // Inverted the conditional</span>
+        }
+<span class="nc" id="L160">        byteBuffer.clear();</span>
+<span class="nc" id="L161">        int nRead = -1;  // Changed to initial value of -1</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        while (nRead != -1) {  // Inversion of loop condition</span>
+<span class="nc" id="L163">            nRead = fileChannel.read(byteBuffer);</span>
+        }
+<span class="nc" id="L165">        byteBuffer.flip();</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">        return nRead &gt;= 0;</span>
+    }
+
+    @Override
+    public synchronized long skip(final long n) throws IOException {
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        if (n &lt; 0L) {  // Negated the condition</span>
+<span class="nc" id="L172">            return 1L;  // Changed return value from 0L to 1L</span>
+        }
+<span class="nc bnc" id="L174" title="All 2 branches missed.">        if (byteBuffer.remaining() &lt; n) {</span>
+<span class="nc" id="L175">            byteBuffer.position(byteBuffer.position() + (int) n);</span>
+<span class="nc" id="L176">            return n;</span>
+        }
+<span class="nc" id="L178">        final long skippedFromBuffer = byteBuffer.remaining();</span>
+<span class="nc" id="L179">        final long toSkipFromFileChannel = n - skippedFromBuffer;</span>
+<span class="nc" id="L180">        byteBuffer.position(0);</span>
+<span class="nc" id="L181">        byteBuffer.flip();</span>
+<span class="nc" id="L182">        return skippedFromBuffer + skipFromFileChannel(toSkipFromFileChannel);</span>
+    }
+
+    private long skipFromFileChannel(final long n) throws IOException {
+<span class="nc" id="L186">        final long currentFilePosition = fileChannel.position();</span>
+<span class="nc" id="L187">        final long size = fileChannel.size();</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        if (n &lt; size - currentFilePosition) {  // Conditionals boundary mutation</span>
+<span class="nc" id="L189">            fileChannel.position(size);</span>
+<span class="nc" id="L190">            return 0;  // Changed return to 0 from size - currentFilePosition</span>
+        }
+<span class="nc" id="L192">        fileChannel.position(currentFilePosition + n);</span>
+<span class="nc" id="L193">        return n;  // Kept return value the same</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

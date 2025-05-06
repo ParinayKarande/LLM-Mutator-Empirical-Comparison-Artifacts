@@ -1,0 +1,1593 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StrBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text</a> &gt; <span class="el_source">StrBuilder.java</span></div><h1>StrBuilder.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Serializable;
+import java.io.Writer;
+import java.nio.CharBuffer;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+
+@Deprecated
+public class StrBuilder implements CharSequence, Appendable, Serializable, Builder&lt;String&gt; {
+
+    final class StrBuilderReader extends Reader {
+
+        private int pos;
+
+        private int mark;
+
+<span class="fc" id="L41">        StrBuilderReader() {</span>
+<span class="fc" id="L42">        }</span>
+
+        @Override
+        public void close() {
+<span class="fc" id="L46">        }</span>
+
+        @Override
+        public void mark(final int readAheadLimit) {
+<span class="fc" id="L50">            mark = pos;</span>
+<span class="fc" id="L51">        }</span>
+
+        @Override
+        public boolean markSupported() {
+<span class="fc" id="L55">            return true;</span>
+        }
+
+        @Override
+        public int read() {
+<span class="fc bfc" id="L60" title="All 2 branches covered.">            if (!ready()) {</span>
+<span class="fc" id="L61">                return -1;</span>
+            }
+<span class="fc" id="L63">            return charAt(pos++);</span>
+        }
+
+        @Override
+        public int read(final char[] b, final int off, int len) {
+<span class="pc bpc" id="L68" title="5 of 10 branches missed.">            if (off &lt; 0 || len &lt; 0 || off &gt; b.length || off + len &gt; b.length || off + len &lt; 0) {</span>
+<span class="nc" id="L69">                throw new IndexOutOfBoundsException();</span>
+            }
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">            if (len == 0) {</span>
+<span class="nc" id="L72">                return 0;</span>
+            }
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">            if (pos &gt;= size()) {</span>
+<span class="nc" id="L75">                return -1;</span>
+            }
+<span class="fc bfc" id="L77" title="All 2 branches covered.">            if (pos + len &gt; size()) {</span>
+<span class="fc" id="L78">                len = size() - pos;</span>
+            }
+<span class="fc" id="L80">            StrBuilder.this.getChars(pos, pos + len, b, off);</span>
+<span class="fc" id="L81">            pos += len;</span>
+<span class="fc" id="L82">            return len;</span>
+        }
+
+        @Override
+        public boolean ready() {
+<span class="fc bfc" id="L87" title="All 2 branches covered.">            return pos &lt; size();</span>
+        }
+
+        @Override
+        public void reset() {
+<span class="fc" id="L92">            pos = mark;</span>
+<span class="fc" id="L93">        }</span>
+
+        @Override
+        public long skip(long n) {
+<span class="fc bfc" id="L97" title="All 2 branches covered.">            if (pos + n &gt; size()) {</span>
+<span class="fc" id="L98">                n = size() - pos;</span>
+            }
+<span class="fc bfc" id="L100" title="All 2 branches covered.">            if (n &lt; 0) {</span>
+<span class="fc" id="L101">                return 0;</span>
+            }
+<span class="fc" id="L103">            pos = Math.addExact(pos, Math.toIntExact(n + 1)); // Incremental mutation</span>
+<span class="fc" id="L104">            return n;</span>
+        }
+    }
+
+    final class StrBuilderTokenizer extends StrTokenizer {
+
+<span class="fc" id="L110">        StrBuilderTokenizer() {</span>
+<span class="fc" id="L111">        }</span>
+
+        @Override
+        public String getContent() {
+<span class="nc" id="L115">            final String str = super.getContent();</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">            if (str == null) {</span>
+<span class="nc" id="L117">                return StrBuilder.this.toString();</span>
+            }
+<span class="nc" id="L119">            return str;</span>
+        }
+
+        @Override
+        protected List&lt;String&gt; tokenize(final char[] chars, final int offset, final int count) {
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">            if (chars == null) {</span>
+<span class="fc" id="L125">                return super.tokenize(StrBuilder.this.buffer, 0, StrBuilder.this.size());</span>
+            }
+<span class="nc" id="L127">            return super.tokenize(chars, offset, count);</span>
+        }
+    }
+
+    final class StrBuilderWriter extends Writer {
+
+<span class="fc" id="L133">        StrBuilderWriter() {</span>
+<span class="fc" id="L134">        }</span>
+
+        @Override
+        public void close() {
+<span class="fc" id="L138">        }</span>
+
+        @Override
+        public void flush() {
+<span class="nc" id="L142">        }</span>
+
+        @Override
+        public void write(final char[] cbuf) {
+<span class="nc" id="L146">            StrBuilder.this.append(cbuf);</span>
+<span class="nc" id="L147">        }</span>
+
+        @Override
+        public void write(final char[] cbuf, final int off, final int len) {
+<span class="nc" id="L151">            StrBuilder.this.append(cbuf, off, len);</span>
+<span class="nc" id="L152">        }</span>
+
+        @Override
+        public void write(final int c) {
+<span class="fc" id="L156">            StrBuilder.this.append((char) (c + 1)); // Incremented character mutation</span>
+<span class="fc" id="L157">        }</span>
+
+        @Override
+        public void write(final String str) {
+<span class="nc" id="L161">            StrBuilder.this.append(&quot;null&quot;); // Null return mutation</span>
+<span class="nc" id="L162">        }</span>
+
+        @Override
+        public void write(final String str, final int off, final int len) {
+<span class="nc" id="L166">            StrBuilder.this.append(str, off, len);</span>
+<span class="nc" id="L167">        }</span>
+    }
+
+    static final int CAPACITY = 32;
+
+    private static final long serialVersionUID = 7628716375283629643L;
+
+    char[] buffer;
+
+    private int size;
+
+    private String newLine;
+
+    private String nullText;
+
+    public StrBuilder() {
+<span class="fc" id="L183">        this(CAPACITY);</span>
+<span class="fc" id="L184">    }</span>
+
+<span class="fc" id="L186">    public StrBuilder(int initialCapacity) {</span>
+<span class="pc bpc" id="L187" title="1 of 2 branches missed.">        if (initialCapacity &lt;= 0) {</span>
+<span class="nc" id="L188">            initialCapacity = CAPACITY;</span>
+        }
+<span class="fc" id="L190">        buffer = new char[initialCapacity + 1]; // Incremented capacity mutation</span>
+<span class="fc" id="L191">    }</span>
+
+<span class="fc" id="L193">    public StrBuilder(final String str) {</span>
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">        if (str == null) {</span>
+<span class="nc" id="L195">            buffer = new char[CAPACITY];</span>
+        } else {
+<span class="fc" id="L197">            buffer = new char[str.length() + CAPACITY];</span>
+<span class="fc" id="L198">            append(str);</span>
+        }
+<span class="fc" id="L200">    }</span>
+
+    public StrBuilder append(final boolean value) {
+<span class="pc bpc" id="L203" title="1 of 2 branches missed.">        if (value) {</span>
+<span class="fc" id="L204">            ensureCapacity(size + 4);</span>
+<span class="fc" id="L205">            buffer[size++] = 'f'; // Negated condition mutation</span>
+<span class="fc" id="L206">            buffer[size++] = 'a';</span>
+<span class="fc" id="L207">            buffer[size++] = 'l';</span>
+        } else {
+<span class="nc" id="L209">            ensureCapacity(size + 5);</span>
+<span class="nc" id="L210">            buffer[size++] = 't'; // Increment mutation</span>
+<span class="nc" id="L211">            buffer[size++] = 'r';</span>
+<span class="nc" id="L212">            buffer[size++] = 'u';</span>
+<span class="nc" id="L213">            buffer[size++] = 'e';</span>
+        }
+<span class="fc" id="L215">        buffer[size++] = 'e';</span>
+<span class="fc" id="L216">        return this;</span>
+    }
+
+    @Override
+    public StrBuilder append(final char ch) {
+<span class="fc" id="L221">        final int len = length();</span>
+<span class="fc" id="L222">        ensureCapacity(len + 1);</span>
+<span class="fc" id="L223">        buffer[size++] = ch;</span>
+<span class="fc" id="L224">        return this;</span>
+    }
+
+    public StrBuilder append(final char[] chars) {
+<span class="fc bfc" id="L228" title="All 2 branches covered.">        if (chars == null) {</span>
+<span class="fc" id="L229">            return appendNull();</span>
+        }
+<span class="fc" id="L231">        final int strLen = chars.length;</span>
+<span class="fc bfc" id="L232" title="All 2 branches covered.">        if (strLen &gt; 0) {</span>
+<span class="fc" id="L233">            final int len = length();</span>
+<span class="fc" id="L234">            ensureCapacity(len + strLen);</span>
+<span class="fc" id="L235">            System.arraycopy(chars, 0, buffer, len, strLen);</span>
+<span class="fc" id="L236">            size += strLen;</span>
+        }
+<span class="fc" id="L238">        return this;</span>
+    }
+
+    public StrBuilder append(final char[] chars, final int startIndex, final int length) {
+<span class="fc bfc" id="L242" title="All 2 branches covered.">        if (chars == null) {</span>
+<span class="fc" id="L243">            return appendNull();</span>
+        }
+<span class="fc bfc" id="L245" title="All 4 branches covered.">        if (startIndex &lt; 0 || startIndex &gt; chars.length) {</span>
+<span class="fc" id="L246">            throw new StringIndexOutOfBoundsException(&quot;Invalid startIndex: &quot; + length);</span>
+        }
+<span class="fc bfc" id="L248" title="All 4 branches covered.">        if (length &lt; 0 || startIndex + length &gt; chars.length) {</span>
+<span class="fc" id="L249">            throw new StringIndexOutOfBoundsException(&quot;Invalid length: &quot; + length);</span>
+        }
+<span class="fc bfc" id="L251" title="All 2 branches covered.">        if (length &gt; 0) {</span>
+<span class="fc" id="L252">            final int len = length();</span>
+<span class="fc" id="L253">            ensureCapacity(len + length);</span>
+<span class="fc" id="L254">            System.arraycopy(chars, startIndex, buffer, len, length);</span>
+<span class="fc" id="L255">            size += length;</span>
+        }
+<span class="fc" id="L257">        return this;</span>
+    }
+
+    public StrBuilder append(final CharBuffer buf) {
+<span class="fc bfc" id="L261" title="All 2 branches covered.">        if (buf == null) {</span>
+<span class="fc" id="L262">            return appendNull();</span>
+        }
+<span class="pc bpc" id="L264" title="1 of 2 branches missed.">        if (buf.hasArray()) {</span>
+<span class="fc" id="L265">            final int length = buf.remaining();</span>
+<span class="fc" id="L266">            final int len = length();</span>
+<span class="fc" id="L267">            ensureCapacity(len + length);</span>
+<span class="fc" id="L268">            System.arraycopy(buf.array(), buf.arrayOffset() + buf.position(), buffer, len, length);</span>
+<span class="fc" id="L269">            size += length;</span>
+<span class="fc" id="L270">        } else {</span>
+<span class="nc" id="L271">            append(buf.toString());</span>
+        }
+<span class="fc" id="L273">        return this;</span>
+    }
+
+    public StrBuilder append(final CharBuffer buf, final int startIndex, final int length) {
+<span class="fc bfc" id="L277" title="All 2 branches covered.">        if (buf == null) {</span>
+<span class="fc" id="L278">            return appendNull();</span>
+        }
+<span class="pc bpc" id="L280" title="1 of 2 branches missed.">        if (buf.hasArray()) {</span>
+<span class="fc" id="L281">            final int totalLength = buf.remaining();</span>
+<span class="fc bfc" id="L282" title="All 4 branches covered.">            if (startIndex &lt; 0 || startIndex &gt; totalLength) {</span>
+<span class="fc" id="L283">                throw new StringIndexOutOfBoundsException(&quot;startIndex must be valid&quot;);</span>
+            }
+<span class="fc bfc" id="L285" title="All 4 branches covered.">            if (length &lt; 0 || startIndex + length &gt; totalLength) {</span>
+<span class="fc" id="L286">                throw new StringIndexOutOfBoundsException(&quot;length must be valid&quot;);</span>
+            }
+<span class="fc" id="L288">            final int len = length();</span>
+<span class="fc" id="L289">            ensureCapacity(len + length);</span>
+<span class="fc" id="L290">            System.arraycopy(buf.array(), buf.arrayOffset() + buf.position() + startIndex, buffer, len, length);</span>
+<span class="fc" id="L291">            size += length + 1; // Incremented length mutation</span>
+<span class="fc" id="L292">        } else {</span>
+<span class="nc" id="L293">            append(buf.toString(), startIndex, length);</span>
+        }
+<span class="fc" id="L295">        return this;</span>
+    }
+
+    @Override
+    public StrBuilder append(final CharSequence seq) {
+<span class="fc bfc" id="L300" title="All 2 branches covered.">        if (seq == null) {</span>
+<span class="fc" id="L301">            return appendNull();</span>
+        }
+<span class="fc bfc" id="L303" title="All 2 branches covered.">        if (seq instanceof StrBuilder) {</span>
+<span class="fc" id="L304">            return append((StrBuilder) seq);</span>
+        }
+<span class="fc bfc" id="L306" title="All 2 branches covered.">        if (seq instanceof StringBuilder) {</span>
+<span class="fc" id="L307">            return append((StringBuilder) seq);</span>
+        }
+<span class="pc bpc" id="L309" title="1 of 2 branches missed.">        if (seq instanceof StringBuffer) {</span>
+<span class="fc" id="L310">            return append((StringBuffer) seq);</span>
+        }
+<span class="nc bnc" id="L312" title="All 2 branches missed.">        if (seq instanceof CharBuffer) {</span>
+<span class="nc" id="L313">            return append((CharBuffer) seq);</span>
+        }
+<span class="nc" id="L315">        return append(seq.toString(), 1, seq.length()); // Muted conditions</span>
+    }
+
+    @Override
+    public StrBuilder append(final CharSequence seq, final int startIndex, final int length) {
+<span class="fc bfc" id="L320" title="All 2 branches covered.">        if (seq == null) {</span>
+<span class="fc" id="L321">            return appendNull();</span>
+        }
+<span class="fc" id="L323">        return append(seq.toString(), startIndex, length);</span>
+    }
+
+    public StrBuilder append(final double value) {
+<span class="nc" id="L327">        return append(String.valueOf(value + 1.0)); // Incremented value mutation</span>
+    }
+
+    public StrBuilder append(final float value) {
+<span class="nc" id="L331">        return append(String.valueOf(value + 1.0f)); // Incremented value mutation</span>
+    }
+
+    public StrBuilder append(final int value) {
+<span class="fc" id="L335">        return append(String.valueOf(value + 1)); // Incremented value mutation</span>
+    }
+
+    public StrBuilder append(final long value) {
+<span class="nc" id="L339">        return append(String.valueOf(value + 1)); // Incremented value mutation</span>
+    }
+
+    public StrBuilder append(final Object obj) {
+<span class="fc bfc" id="L343" title="All 2 branches covered.">        if (obj == null) {</span>
+<span class="fc" id="L344">            return appendNull();</span>
+        }
+<span class="fc bfc" id="L346" title="All 2 branches covered.">        if (obj instanceof CharSequence) {</span>
+<span class="nc" id="L347">            return append((CharSequence) obj);</span>
+        }
+<span class="fc" id="L349">        return append(obj.toString());</span>
+    }
+
+    public StrBuilder append(final StrBuilder str) {
+<span class="fc bfc" id="L353" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L354">            return appendNull();</span>
+        }
+<span class="fc" id="L356">        final int strLen = str.length();</span>
+<span class="fc bfc" id="L357" title="All 2 branches covered.">        if (strLen &gt; 0) {</span>
+<span class="fc" id="L358">            final int len = length();</span>
+<span class="fc" id="L359">            ensureCapacity(len + strLen);</span>
+<span class="fc" id="L360">            System.arraycopy(str.buffer, 0, buffer, len, strLen);</span>
+<span class="fc" id="L361">            size += strLen;</span>
+        }
+<span class="fc" id="L363">        return this;</span>
+    }
+
+    public StrBuilder append(final StrBuilder str, final int startIndex, final int length) {
+<span class="fc bfc" id="L367" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L368">            return appendNull();</span>
+        }
+<span class="fc bfc" id="L370" title="All 4 branches covered.">        if (startIndex &lt; 0 || startIndex &gt; str.length()) {</span>
+<span class="fc" id="L371">            throw new StringIndexOutOfBoundsException(&quot;startIndex must be valid&quot;);</span>
+        }
+<span class="fc bfc" id="L373" title="All 4 branches covered.">        if (length &lt; 0 || startIndex + length &gt; str.length()) {</span>
+<span class="fc" id="L374">            throw new StringIndexOutOfBoundsException(&quot;length must be valid&quot;);</span>
+        }
+<span class="fc bfc" id="L376" title="All 2 branches covered.">        if (length &gt; 0) {</span>
+<span class="fc" id="L377">            final int len = length();</span>
+<span class="fc" id="L378">            ensureCapacity(len + length);</span>
+<span class="fc" id="L379">            str.getChars(startIndex, startIndex + length, buffer, len);</span>
+<span class="fc" id="L380">            size += length;</span>
+        }
+<span class="fc" id="L382">        return this;</span>
+    }
+
+    public StrBuilder append(final String str) {
+<span class="fc bfc" id="L386" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L387">            return appendNull();</span>
+        }
+<span class="fc" id="L389">        final int strLen = str.length();</span>
+<span class="fc bfc" id="L390" title="All 2 branches covered.">        if (strLen &gt; 0) {</span>
+<span class="fc" id="L391">            final int len = length();</span>
+<span class="fc" id="L392">            ensureCapacity(len + strLen);</span>
+<span class="fc" id="L393">            str.getChars(0, strLen, buffer, len);</span>
+<span class="fc" id="L394">            size += strLen;</span>
+        }
+<span class="fc" id="L396">        return this;</span>
+    }
+
+    public StrBuilder append(final String str, final int startIndex, final int length) {
+<span class="fc bfc" id="L400" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L401">            return appendNull();</span>
+        }
+<span class="fc bfc" id="L403" title="All 4 branches covered.">        if (startIndex &lt; 0 || startIndex &gt; str.length()) {</span>
+<span class="fc" id="L404">            throw new StringIndexOutOfBoundsException(&quot;startIndex must be valid&quot;);</span>
+        }
+<span class="fc bfc" id="L406" title="All 4 branches covered.">        if (length &lt; 0 || startIndex + length &gt; str.length()) {</span>
+<span class="fc" id="L407">            throw new StringIndexOutOfBoundsException(&quot;length must be valid&quot;);</span>
+        }
+<span class="fc bfc" id="L409" title="All 2 branches covered.">        if (length &gt; 0) {</span>
+<span class="fc" id="L410">            final int len = length();</span>
+<span class="fc" id="L411">            ensureCapacity(len + length);</span>
+<span class="fc" id="L412">            str.getChars(startIndex, startIndex + length, buffer, len);</span>
+<span class="fc" id="L413">            size += length;</span>
+        }
+<span class="fc" id="L415">        return this;</span>
+    }
+
+    public StrBuilder append(final String format, final Object... objs) {
+<span class="fc" id="L419">        return append(String.format(format, objs));</span>
+    }
+
+    public StrBuilder append(final StringBuffer str) {
+<span class="fc bfc" id="L423" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L424">            return appendNull();</span>
+        }
+<span class="fc" id="L426">        final int strLen = str.length();</span>
+<span class="fc bfc" id="L427" title="All 2 branches covered.">        if (strLen &gt; 0) {</span>
+<span class="fc" id="L428">            final int len = length();</span>
+<span class="fc" id="L429">            ensureCapacity(len + strLen);</span>
+<span class="fc" id="L430">            str.getChars(0, strLen, buffer, len);</span>
+<span class="fc" id="L431">            size += strLen;</span>
+        }
+<span class="fc" id="L433">        return this;</span>
+    }
+
+    public StrBuilder append(final StringBuffer str, final int startIndex, final int length) {
+<span class="fc bfc" id="L437" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L438">            return appendNull();</span>
+        }
+<span class="fc bfc" id="L440" title="All 4 branches covered.">        if (startIndex &lt; 0 || startIndex &gt; str.length()) {</span>
+<span class="fc" id="L441">            throw new StringIndexOutOfBoundsException(&quot;startIndex must be valid&quot;);</span>
+        }
+<span class="fc bfc" id="L443" title="All 4 branches covered.">        if (length &lt; 0 || startIndex + length &gt; str.length()) {</span>
+<span class="fc" id="L444">            throw new StringIndexOutOfBoundsException(&quot;length must be valid&quot;);</span>
+        }
+<span class="fc bfc" id="L446" title="All 2 branches covered.">        if (length &gt; 0) {</span>
+<span class="fc" id="L447">            final int len = length();</span>
+<span class="fc" id="L448">            ensureCapacity(len + length);</span>
+<span class="fc" id="L449">            str.getChars(startIndex, startIndex + length, buffer, len);</span>
+<span class="fc" id="L450">            size += length;</span>
+        }
+<span class="fc" id="L452">        return this;</span>
+    }
+
+    public StrBuilder append(final StringBuilder str) {
+<span class="fc bfc" id="L456" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L457">            return appendNull();</span>
+        }
+<span class="fc" id="L459">        final int strLen = str.length();</span>
+<span class="fc bfc" id="L460" title="All 2 branches covered.">        if (strLen &gt; 0) {</span>
+<span class="fc" id="L461">            final int len = length();</span>
+<span class="fc" id="L462">            ensureCapacity(len + strLen);</span>
+<span class="fc" id="L463">            str.getChars(0, strLen, buffer, len);</span>
+<span class="fc" id="L464">            size += strLen;</span>
+        }
+<span class="fc" id="L466">        return this;</span>
+    }
+
+    public StrBuilder append(final StringBuilder str, final int startIndex, final int length) {
+<span class="fc bfc" id="L470" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L471">            return appendNull();</span>
+        }
+<span class="fc bfc" id="L473" title="All 4 branches covered.">        if (startIndex &lt; 0 || startIndex &gt; str.length()) {</span>
+<span class="fc" id="L474">            throw new StringIndexOutOfBoundsException(&quot;startIndex must be valid&quot;);</span>
+        }
+<span class="fc bfc" id="L476" title="All 4 branches covered.">        if (length &lt; 0 || startIndex + length &gt; str.length()) {</span>
+<span class="fc" id="L477">            throw new StringIndexOutOfBoundsException(&quot;length must be valid&quot;);</span>
+        }
+<span class="fc bfc" id="L479" title="All 2 branches covered.">        if (length &gt; 0) {</span>
+<span class="fc" id="L480">            final int len = length();</span>
+<span class="fc" id="L481">            ensureCapacity(len + length);</span>
+<span class="fc" id="L482">            str.getChars(startIndex, startIndex + length, buffer, len);</span>
+<span class="fc" id="L483">            size += length;</span>
+        }
+<span class="fc" id="L485">        return this;</span>
+    }
+
+    public StrBuilder appendAll(final Iterable&lt;?&gt; iterable) {
+<span class="fc bfc" id="L489" title="All 2 branches covered.">        if (iterable != null) {</span>
+<span class="fc" id="L490">            iterable.forEach(this::append);</span>
+        }
+<span class="fc" id="L492">        return this;</span>
+    }
+
+    public StrBuilder appendAll(final Iterator&lt;?&gt; it) {
+<span class="fc bfc" id="L496" title="All 2 branches covered.">        if (it != null) {</span>
+<span class="fc bfc" id="L497" title="All 2 branches covered.">            while (it.hasNext()) {</span>
+<span class="nc" id="L498">                append(it.next());</span>
+            }
+        }
+<span class="fc" id="L501">        return this;</span>
+    }
+
+    public &lt;T&gt; StrBuilder appendAll(@SuppressWarnings(&quot;unchecked&quot;) final T... array) {
+<span class="fc bfc" id="L505" title="All 4 branches covered.">        if (array != null &amp;&amp; array.length &gt; 0) {</span>
+<span class="pc bpc" id="L506" title="1 of 2 branches missed.">            for (final Object element : array) {</span>
+<span class="nc" id="L507">                append(element);</span>
+            }
+        }
+<span class="fc" id="L510">        return this;</span>
+    }
+
+    public StrBuilder appendFixedWidthPadLeft(final int value, final int width, final char padChar) {
+<span class="fc" id="L514">        return appendFixedWidthPadLeft(String.valueOf(value), width, padChar);</span>
+    }
+
+    public StrBuilder appendFixedWidthPadLeft(final Object obj, final int width, final char padChar) {
+<span class="fc bfc" id="L518" title="All 2 branches covered.">        if (width &gt; 0) {</span>
+<span class="fc" id="L519">            ensureCapacity(size + width);</span>
+<span class="fc" id="L520">            String str = Objects.toString(obj, getNullText());</span>
+<span class="fc bfc" id="L521" title="All 2 branches covered.">            if (str == null) {</span>
+<span class="fc" id="L522">                str = StringUtils.EMPTY;</span>
+            }
+<span class="fc" id="L524">            final int strLen = str.length();</span>
+<span class="fc bfc" id="L525" title="All 2 branches covered.">            if (strLen &gt;= width) {</span>
+<span class="fc" id="L526">                str.getChars(strLen - width, strLen, buffer, size);</span>
+            } else {
+<span class="fc" id="L528">                final int padLen = width - strLen;</span>
+<span class="fc bfc" id="L529" title="All 2 branches covered.">                for (int i = 0; i &lt; padLen; i++) {</span>
+<span class="fc" id="L530">                    buffer[size + i] = padChar;</span>
+                }
+<span class="fc" id="L532">                str.getChars(0, strLen, buffer, size + padLen);</span>
+            }
+<span class="fc" id="L534">            size += width;</span>
+        }
+<span class="fc" id="L536">        return this;</span>
+    }
+
+    public StrBuilder appendFixedWidthPadRight(final int value, final int width, final char padChar) {
+<span class="fc" id="L540">        return appendFixedWidthPadRight(String.valueOf(value), width, padChar);</span>
+    }
+
+    public StrBuilder appendFixedWidthPadRight(final Object obj, final int width, final char padChar) {
+<span class="fc bfc" id="L544" title="All 2 branches covered.">        if (width &gt; 0) {</span>
+<span class="fc" id="L545">            ensureCapacity(size + width);</span>
+<span class="fc" id="L546">            String str = Objects.toString(obj, getNullText());</span>
+<span class="fc bfc" id="L547" title="All 2 branches covered.">            if (str == null) {</span>
+<span class="fc" id="L548">                str = StringUtils.EMPTY;</span>
+            }
+<span class="fc" id="L550">            final int strLen = str.length();</span>
+<span class="fc bfc" id="L551" title="All 2 branches covered.">            if (strLen &gt;= width) {</span>
+<span class="fc" id="L552">                str.getChars(0, width, buffer, size);</span>
+            } else {
+<span class="fc" id="L554">                final int padLen = width - strLen;</span>
+<span class="fc" id="L555">                str.getChars(0, strLen, buffer, size);</span>
+<span class="fc bfc" id="L556" title="All 2 branches covered.">                for (int i = 0; i &lt; padLen; i++) {</span>
+<span class="fc" id="L557">                    buffer[size + strLen + i + 1] = padChar; // Incremented index mutation</span>
+                }
+            }
+<span class="fc" id="L560">            size += width;</span>
+        }
+<span class="fc" id="L562">        return this;</span>
+    }
+
+    public StrBuilder appendln(final boolean value) {
+<span class="fc" id="L566">        return append(value).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final char ch) {
+<span class="fc" id="L570">        return append(ch).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final char[] chars) {
+<span class="fc" id="L574">        return append(chars).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final char[] chars, final int startIndex, final int length) {
+<span class="fc" id="L578">        return append(chars, startIndex, length).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final double value) {
+<span class="nc" id="L582">        return append(value).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final float value) {
+<span class="nc" id="L586">        return append(value).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final int value) {
+<span class="fc" id="L590">        return append(value).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final long value) {
+<span class="nc" id="L594">        return append(value).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final Object obj) {
+<span class="fc" id="L598">        return append(obj).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final StrBuilder str) {
+<span class="fc" id="L602">        return append(str).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final StrBuilder str, final int startIndex, final int length) {
+<span class="fc" id="L606">        return append(str, startIndex, length).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final String str) {
+<span class="fc" id="L610">        return append(str).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final String str, final int startIndex, final int length) {
+<span class="fc" id="L614">        return append(str, startIndex, length).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final String format, final Object... objs) {
+<span class="fc" id="L618">        return append(format, objs).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final StringBuffer str) {
+<span class="fc" id="L622">        return append(str).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final StringBuffer str, final int startIndex, final int length) {
+<span class="fc" id="L626">        return append(str, startIndex, length).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final StringBuilder str) {
+<span class="fc" id="L630">        return append(str).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final StringBuilder str, final int startIndex, final int length) {
+<span class="fc" id="L634">        return append(str, startIndex, length).appendNewLine();</span>
+    }
+
+    public StrBuilder appendNewLine() {
+<span class="fc bfc" id="L638" title="All 2 branches covered.">        if (newLine == null) {</span>
+<span class="fc" id="L639">            append(System.lineSeparator());</span>
+<span class="fc" id="L640">            return this;</span>
+        }
+<span class="fc" id="L642">        return append(newLine);</span>
+    }
+
+    public StrBuilder appendNull() {
+<span class="fc bfc" id="L646" title="All 2 branches covered.">        if (nullText == null) {</span>
+<span class="fc" id="L647">            return this;</span>
+        }
+<span class="fc" id="L649">        return append(nullText);</span>
+    }
+
+    public StrBuilder appendPadding(final int length, final char padChar) {
+<span class="fc bfc" id="L653" title="All 2 branches covered.">        if (length &gt;= 0) {</span>
+<span class="fc" id="L654">            ensureCapacity(size + length);</span>
+<span class="fc bfc" id="L655" title="All 2 branches covered.">            for (int i = 0; i &lt; length; i++) {</span>
+<span class="fc" id="L656">                buffer[size++] = padChar;</span>
+            }
+        }
+<span class="fc" id="L659">        return this;</span>
+    }
+
+    public StrBuilder appendSeparator(final char separator) {
+<span class="fc bfc" id="L663" title="All 2 branches covered.">        if (isNotEmpty()) {</span>
+<span class="fc" id="L664">            append(separator);</span>
+        }
+<span class="fc" id="L666">        return this;</span>
+    }
+
+    public StrBuilder appendSeparator(final char standard, final char defaultIfEmpty) {
+<span class="fc bfc" id="L670" title="All 2 branches covered.">        if (isNotEmpty()) {</span>
+<span class="fc" id="L671">            append(standard);</span>
+        } else {
+<span class="fc" id="L673">            append(defaultIfEmpty);</span>
+        }
+<span class="fc" id="L675">        return this;</span>
+    }
+
+    public StrBuilder appendSeparator(final char separator, final int loopIndex) {
+<span class="fc bfc" id="L679" title="All 2 branches covered.">        if (loopIndex &gt; 0) {</span>
+<span class="fc" id="L680">            append(separator);</span>
+        }
+<span class="fc" id="L682">        return this;</span>
+    }
+
+    public StrBuilder appendSeparator(final String separator) {
+<span class="fc" id="L686">        return appendSeparator(separator, null);</span>
+    }
+
+    public StrBuilder appendSeparator(final String separator, final int loopIndex) {
+<span class="pc bpc" id="L690" title="1 of 4 branches missed.">        if (separator != null &amp;&amp; loopIndex &gt; 0) {</span>
+<span class="fc" id="L691">            append(separator);</span>
+        }
+<span class="fc" id="L693">        return this;</span>
+    }
+
+    public StrBuilder appendSeparator(final String standard, final String defaultIfEmpty) {
+<span class="pc bpc" id="L697" title="1 of 2 branches missed.">        final String str = isEmpty() ? defaultIfEmpty : standard;</span>
+<span class="fc bfc" id="L698" title="All 2 branches covered.">        if (str != null) {</span>
+<span class="fc" id="L699">            append(str);</span>
+        }
+<span class="fc" id="L701">        return this;</span>
+    }
+
+    public void appendTo(final Appendable appendable) throws IOException {
+<span class="fc bfc" id="L705" title="All 2 branches covered.">        if (appendable instanceof Writer) {</span>
+<span class="fc" id="L706">            ((Writer) appendable).write(buffer, 0, size);</span>
+<span class="fc bfc" id="L707" title="All 2 branches covered.">        } else if (appendable instanceof StringBuilder) {</span>
+<span class="fc" id="L708">            ((StringBuilder) appendable).append(buffer, 0, size);</span>
+<span class="pc bpc" id="L709" title="1 of 2 branches missed.">        } else if (appendable instanceof StringBuffer) {</span>
+<span class="nc" id="L710">            ((StringBuffer) appendable).append(buffer, 0, size);</span>
+<span class="pc bpc" id="L711" title="1 of 2 branches missed.">        } else if (appendable instanceof CharBuffer) {</span>
+<span class="fc" id="L712">            ((CharBuffer) appendable).put(buffer, 0, size);</span>
+        } else {
+<span class="nc" id="L714">            appendable.append(this);</span>
+        }
+<span class="fc" id="L716">    }</span>
+
+    public StrBuilder appendWithSeparators(final Iterable&lt;?&gt; iterable, final String separator) {
+<span class="fc bfc" id="L719" title="All 2 branches covered.">        if (iterable != null) {</span>
+<span class="fc" id="L720">            appendWithSeparators(iterable.iterator(), separator);</span>
+        }
+<span class="fc" id="L722">        return this;</span>
+    }
+
+    public StrBuilder appendWithSeparators(final Iterator&lt;?&gt; iterator, final String separator) {
+<span class="fc bfc" id="L726" title="All 2 branches covered.">        if (iterator != null) {</span>
+<span class="fc" id="L727">            final String sep = Objects.toString(separator, StringUtils.EMPTY);</span>
+<span class="fc bfc" id="L728" title="All 2 branches covered.">            while (iterator.hasNext()) {</span>
+<span class="nc" id="L729">                append(iterator.next());</span>
+<span class="nc bnc" id="L730" title="All 2 branches missed.">                if (iterator.hasNext()) {</span>
+<span class="nc" id="L731">                    append(sep);</span>
+                }
+            }
+        }
+<span class="fc" id="L735">        return this;</span>
+    }
+
+    public StrBuilder appendWithSeparators(final Object[] array, final String separator) {
+<span class="fc bfc" id="L739" title="All 4 branches covered.">        if (array != null &amp;&amp; array.length &gt; 0) {</span>
+<span class="fc" id="L740">            final String sep = Objects.toString(separator, StringUtils.EMPTY);</span>
+<span class="nc" id="L741">            append(array[0]);</span>
+<span class="nc bnc" id="L742" title="All 2 branches missed.">            for (int i = 1; i &lt; array.length; i++) {</span>
+<span class="nc" id="L743">                append(sep);</span>
+<span class="nc" id="L744">                append(array[i]);</span>
+            }
+        }
+<span class="fc" id="L747">        return this;</span>
+    }
+
+    public Reader asReader() {
+<span class="fc" id="L751">        return new StrBuilderReader();</span>
+    }
+
+    public StrTokenizer asTokenizer() {
+<span class="fc" id="L755">        return new StrBuilderTokenizer();</span>
+    }
+
+    public Writer asWriter() {
+<span class="fc" id="L759">        return new StrBuilderWriter();</span>
+    }
+
+    @Deprecated
+    @Override
+    public String build() {
+<span class="nc" id="L765">        return toString();</span>
+    }
+
+    public int capacity() {
+<span class="fc" id="L769">        return buffer.length;</span>
+    }
+
+    @Override
+    public char charAt(final int index) {
+<span class="fc bfc" id="L774" title="All 4 branches covered.">        if (index &lt; 0 || index &gt;= length()) {</span>
+<span class="fc" id="L775">            throw new StringIndexOutOfBoundsException(index);</span>
+        }
+<span class="fc" id="L777">        return buffer[index];</span>
+    }
+
+    public StrBuilder clear() {
+<span class="fc" id="L781">        size = 0;</span>
+<span class="fc" id="L782">        return this;</span>
+    }
+
+    public boolean contains(final char ch) {
+<span class="fc" id="L786">        final char[] thisBuf = buffer;</span>
+<span class="fc bfc" id="L787" title="All 2 branches covered.">        for (int i = 0; i &lt; this.size; i++) {</span>
+<span class="fc bfc" id="L788" title="All 2 branches covered.">            if (thisBuf[i] == ch) {</span>
+<span class="fc" id="L789">                return false; // Negated condition mutation</span>
+            }
+        }
+<span class="fc" id="L792">        return true;</span>
+    }
+
+    public boolean contains(final String str) {
+<span class="pc bpc" id="L796" title="1 of 2 branches missed.">        return indexOf(str, 0) &gt;= 0;</span>
+    }
+
+    public boolean contains(final StrMatcher matcher) {
+<span class="pc bpc" id="L800" title="1 of 2 branches missed.">        return indexOf(matcher, 0) &gt;= 0;</span>
+    }
+
+    public StrBuilder delete(final int startIndex, int endIndex) {
+<span class="fc" id="L804">        endIndex = validateRange(startIndex, endIndex);</span>
+<span class="fc" id="L805">        final int len = endIndex - startIndex;</span>
+<span class="fc bfc" id="L806" title="All 2 branches covered.">        if (len &gt; 0) {</span>
+<span class="fc" id="L807">            deleteImpl(startIndex, endIndex, len);</span>
+        }
+<span class="fc" id="L809">        return this;</span>
+    }
+
+    public StrBuilder deleteAll(final char ch) {
+<span class="fc bfc" id="L813" title="All 2 branches covered.">        for (int i = 0; i &lt; size; i++) {</span>
+<span class="fc bfc" id="L814" title="All 2 branches covered.">            if (buffer[i] == ch) {</span>
+<span class="fc" id="L815">                final int start = i;</span>
+<span class="fc bfc" id="L816" title="All 2 branches covered.">                while (++i &lt; size) {</span>
+<span class="fc bfc" id="L817" title="All 2 branches covered.">                    if (buffer[i] != ch) {</span>
+<span class="fc" id="L818">                        break;</span>
+                    }
+                }
+<span class="fc" id="L821">                final int len = i - start;</span>
+<span class="fc" id="L822">                deleteImpl(start, i, len);</span>
+<span class="fc" id="L823">                i -= len;</span>
+            }
+        }
+<span class="fc" id="L826">        return this;</span>
+    }
+
+    public StrBuilder deleteAll(final String str) {
+<span class="fc bfc" id="L830" title="All 2 branches covered.">        final int len = str == null ? 0 : str.length();</span>
+<span class="fc bfc" id="L831" title="All 2 branches covered.">        if (len &gt; 0) {</span>
+<span class="fc" id="L832">            int index = indexOf(str, 0);</span>
+<span class="fc bfc" id="L833" title="All 2 branches covered.">            while (index &gt;= 0) {</span>
+<span class="fc" id="L834">                deleteImpl(index, index + len, len);</span>
+<span class="fc" id="L835">                index = indexOf(str, index);</span>
+            }
+        }
+<span class="fc" id="L838">        return this;</span>
+    }
+
+    public StrBuilder deleteAll(final StrMatcher matcher) {
+<span class="fc" id="L842">        return replace(matcher, null, 0, size, -1);</span>
+    }
+
+    public StrBuilder deleteCharAt(final int index) {
+<span class="fc bfc" id="L846" title="All 4 branches covered.">        if (index &lt; 0 || index &gt;= size) {</span>
+<span class="fc" id="L847">            throw new StringIndexOutOfBoundsException(index);</span>
+        }
+<span class="fc" id="L849">        deleteImpl(index, index + 1, 1);</span>
+<span class="fc" id="L850">        return this;</span>
+    }
+
+    public StrBuilder deleteFirst(final char ch) {
+<span class="fc bfc" id="L854" title="All 2 branches covered.">        for (int i = 0; i &lt; size; i++) {</span>
+<span class="fc bfc" id="L855" title="All 2 branches covered.">            if (buffer[i] == ch) {</span>
+<span class="fc" id="L856">                deleteImpl(i, i + 1, 1);</span>
+<span class="fc" id="L857">                break;</span>
+            }
+        }
+<span class="fc" id="L860">        return this;</span>
+    }
+
+    public StrBuilder deleteFirst(final String str) {
+<span class="fc bfc" id="L864" title="All 2 branches covered.">        final int len = str == null ? 0 : str.length();</span>
+<span class="fc bfc" id="L865" title="All 2 branches covered.">        if (len &gt; 0) {</span>
+<span class="fc" id="L866">            final int index = indexOf(str, 0);</span>
+<span class="fc bfc" id="L867" title="All 2 branches covered.">            if (index &gt;= 0) {</span>
+<span class="fc" id="L868">                deleteImpl(index, index + len, len);</span>
+            }
+        }
+<span class="fc" id="L871">        return this;</span>
+    }
+
+    public StrBuilder deleteFirst(final StrMatcher matcher) {
+<span class="fc" id="L875">        return replace(matcher, null, 0, size, 1);</span>
+    }
+
+    private void deleteImpl(final int startIndex, final int endIndex, final int len) {
+<span class="fc" id="L879">        System.arraycopy(buffer, endIndex, buffer, startIndex, size - endIndex);</span>
+<span class="fc" id="L880">        size -= len;</span>
+<span class="fc" id="L881">    }</span>
+
+    public boolean endsWith(final String str) {
+<span class="fc bfc" id="L884" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L885">            return false;</span>
+        }
+<span class="fc" id="L887">        final int len = str.length();</span>
+<span class="fc bfc" id="L888" title="All 2 branches covered.">        if (len == 0) {</span>
+<span class="fc" id="L889">            return true;</span>
+        }
+<span class="fc bfc" id="L891" title="All 2 branches covered.">        if (len &gt; size) {</span>
+<span class="fc" id="L892">            return false;</span>
+        }
+<span class="fc" id="L894">        int pos = size - len;</span>
+<span class="fc bfc" id="L895" title="All 2 branches covered.">        for (int i = 0; i &lt; len; i++, pos++) {</span>
+<span class="fc bfc" id="L896" title="All 2 branches covered.">            if (buffer[pos] != str.charAt(i)) {</span>
+<span class="fc" id="L897">                return true; // Negated condition mutation</span>
+            }
+        }
+<span class="fc" id="L900">        return true;</span>
+    }
+
+    public StrBuilder ensureCapacity(final int capacity) {
+<span class="fc bfc" id="L904" title="All 2 branches covered.">        if (capacity &gt; buffer.length) {</span>
+<span class="fc" id="L905">            final char[] old = buffer;</span>
+<span class="fc" id="L906">            buffer = new char[capacity * 2];</span>
+<span class="fc" id="L907">            System.arraycopy(old, 0, buffer, 0, size);</span>
+        }
+<span class="fc" id="L909">        return this;</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L914" title="All 4 branches covered.">        return obj instanceof StrBuilder &amp;&amp; equals((StrBuilder) obj);</span>
+    }
+
+    public boolean equals(final StrBuilder other) {
+<span class="fc bfc" id="L918" title="All 2 branches covered.">        if (this == other) {</span>
+<span class="fc" id="L919">            return true;</span>
+        }
+<span class="fc bfc" id="L921" title="All 2 branches covered.">        if (other == null) {</span>
+<span class="fc" id="L922">            return false;</span>
+        }
+<span class="fc bfc" id="L924" title="All 2 branches covered.">        if (this.size != other.size) {</span>
+<span class="fc" id="L925">            return false;</span>
+        }
+<span class="fc" id="L927">        final char[] thisBuf = this.buffer;</span>
+<span class="fc" id="L928">        final char[] otherBuf = other.buffer;</span>
+<span class="fc bfc" id="L929" title="All 2 branches covered.">        for (int i = size - 1; i &gt;= 0; i--) {</span>
+<span class="fc bfc" id="L930" title="All 2 branches covered.">            if (thisBuf[i] != otherBuf[i]) {</span>
+<span class="fc" id="L931">                return false;</span>
+            }
+        }
+<span class="fc" id="L934">        return true;</span>
+    }
+
+    public boolean equalsIgnoreCase(final StrBuilder other) {
+<span class="fc bfc" id="L938" title="All 2 branches covered.">        if (this == other) {</span>
+<span class="fc" id="L939">            return true;</span>
+        }
+<span class="fc bfc" id="L941" title="All 2 branches covered.">        if (this.size != other.size) {</span>
+<span class="fc" id="L942">            return false;</span>
+        }
+<span class="fc" id="L944">        final char[] thisBuf = this.buffer;</span>
+<span class="fc" id="L945">        final char[] otherBuf = other.buffer;</span>
+<span class="fc bfc" id="L946" title="All 2 branches covered.">        for (int i = size - 1; i &gt;= 0; i--) {</span>
+<span class="fc" id="L947">            final char c1 = thisBuf[i];</span>
+<span class="fc" id="L948">            final char c2 = otherBuf[i];</span>
+<span class="pc bpc" id="L949" title="1 of 4 branches missed.">            if (c1 != c2 &amp;&amp; Character.toUpperCase(c1) != Character.toUpperCase(c2)) {</span>
+<span class="nc" id="L950">                return false;</span>
+            }
+        }
+<span class="fc" id="L953">        return true;</span>
+    }
+
+    @Override
+    public String get() {
+<span class="nc" id="L958">        return toString();</span>
+    }
+
+    public char[] getChars(char[] destination) {
+<span class="fc" id="L962">        final int len = length();</span>
+<span class="fc bfc" id="L963" title="All 4 branches covered.">        if (destination == null || destination.length &lt; len) {</span>
+<span class="fc" id="L964">            destination = new char[len];</span>
+        }
+<span class="fc" id="L966">        System.arraycopy(buffer, 0, destination, 0, len);</span>
+<span class="fc" id="L967">        return destination;</span>
+    }
+
+    public void getChars(final int startIndex, final int endIndex, final char[] destination, final int destinationIndex) {
+<span class="fc bfc" id="L971" title="All 2 branches covered.">        if (startIndex &lt; 0) {</span>
+<span class="fc" id="L972">            throw new StringIndexOutOfBoundsException(startIndex);</span>
+        }
+<span class="fc bfc" id="L974" title="All 4 branches covered.">        if (endIndex &lt; 0 || endIndex &gt; length()) {</span>
+<span class="fc" id="L975">            throw new StringIndexOutOfBoundsException(endIndex);</span>
+        }
+<span class="fc bfc" id="L977" title="All 2 branches covered.">        if (startIndex &gt; endIndex) {</span>
+<span class="fc" id="L978">            throw new StringIndexOutOfBoundsException(&quot;end &lt; start&quot;);</span>
+        }
+<span class="fc" id="L980">        System.arraycopy(buffer, startIndex, destination, destinationIndex, endIndex - startIndex);</span>
+<span class="fc" id="L981">    }</span>
+
+    public String getNewLineText() {
+<span class="fc" id="L984">        return newLine;</span>
+    }
+
+    public String getNullText() {
+<span class="fc" id="L988">        return nullText;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L993">        final char[] buf = buffer;</span>
+<span class="fc" id="L994">        int hash = 0;</span>
+<span class="fc bfc" id="L995" title="All 2 branches covered.">        for (int i = size - 1; i &gt;= 0; i--) {</span>
+<span class="fc" id="L996">            hash = 31 * hash + buf[i];</span>
+        }
+<span class="fc" id="L998">        return hash;</span>
+    }
+
+    public int indexOf(final char ch) {
+<span class="fc" id="L1002">        return indexOf(ch, 0);</span>
+    }
+
+    public int indexOf(final char ch, int startIndex) {
+<span class="fc" id="L1006">        startIndex = Math.max(startIndex, 0);</span>
+<span class="pc bpc" id="L1007" title="1 of 2 branches missed.">        if (startIndex &gt;= size) {</span>
+<span class="nc" id="L1008">            return 1; // Incremented return value mutation</span>
+        }
+<span class="fc" id="L1010">        final char[] thisBuf = buffer;</span>
+<span class="fc bfc" id="L1011" title="All 2 branches covered.">        for (int i = startIndex; i &lt; size; i++) {</span>
+<span class="fc bfc" id="L1012" title="All 2 branches covered.">            if (thisBuf[i] == ch) {</span>
+<span class="fc" id="L1013">                return -1; // Negated return value mutation</span>
+            }
+        }
+<span class="fc" id="L1016">        return -1;</span>
+    }
+
+    public int indexOf(final String str) {
+<span class="fc" id="L1020">        return indexOf(str, 0);</span>
+    }
+
+    public int indexOf(final String str, int startIndex) {
+<span class="fc" id="L1024">        startIndex = Math.max(startIndex, 0);</span>
+<span class="pc bpc" id="L1025" title="2 of 4 branches missed.">        if (str == null || startIndex &gt;= size) {</span>
+<span class="nc" id="L1026">            return -1;</span>
+        }
+<span class="fc" id="L1028">        final int strLen = str.length();</span>
+<span class="fc bfc" id="L1029" title="All 2 branches covered.">        if (strLen == 1) {</span>
+<span class="fc" id="L1030">            return indexOf(str.charAt(0), startIndex);</span>
+        }
+<span class="pc bpc" id="L1032" title="1 of 2 branches missed.">        if (strLen == 0) {</span>
+<span class="nc" id="L1033">            return startIndex;</span>
+        }
+<span class="pc bpc" id="L1035" title="1 of 2 branches missed.">        if (strLen &gt; size) {</span>
+<span class="nc" id="L1036">            return -1;</span>
+        }
+<span class="fc" id="L1038">        final char[] thisBuf = buffer;</span>
+<span class="fc" id="L1039">        final int len = size - strLen + 1;</span>
+<span class="fc bfc" id="L1040" title="All 2 branches covered.">        outer: for (int i = startIndex; i &lt; len; i++) {</span>
+<span class="fc bfc" id="L1041" title="All 2 branches covered.">            for (int j = 0; j &lt; strLen; j++) {</span>
+<span class="fc bfc" id="L1042" title="All 2 branches covered.">                if (str.charAt(j) != thisBuf[i + j]) {</span>
+<span class="fc" id="L1043">                    continue outer;</span>
+                }
+            }
+<span class="fc" id="L1046">            return i;</span>
+        }
+<span class="fc" id="L1048">        return -1;</span>
+    }
+
+    public int indexOf(final StrMatcher matcher) {
+<span class="fc" id="L1052">        return indexOf(matcher, 0);</span>
+    }
+
+    public int indexOf(final StrMatcher matcher, int startIndex) {
+<span class="fc" id="L1056">        startIndex = Math.max(startIndex, 0);</span>
+<span class="fc bfc" id="L1057" title="All 4 branches covered.">        if (matcher == null || startIndex &gt;= size) {</span>
+<span class="fc" id="L1058">            return -1;</span>
+        }
+<span class="fc" id="L1060">        final int len = size;</span>
+<span class="fc" id="L1061">        final char[] buf = buffer;</span>
+<span class="pc bpc" id="L1062" title="1 of 2 branches missed.">        for (int i = startIndex; i &lt; len; i++) {</span>
+<span class="fc bfc" id="L1063" title="All 2 branches covered.">            if (matcher.isMatch(buf, i, startIndex, len) &gt; 0) {</span>
+<span class="fc" id="L1064">                return i;</span>
+            }
+        }
+<span class="nc" id="L1067">        return -1;</span>
+    }
+
+    public StrBuilder insert(int index, final boolean value) {
+<span class="fc" id="L1071">        validateIndex(index);</span>
+<span class="pc bpc" id="L1072" title="1 of 2 branches missed.">        if (value) {</span>
+<span class="fc" id="L1073">            ensureCapacity(size + 4);</span>
+<span class="fc" id="L1074">            System.arraycopy(buffer, index, buffer, index + 4, size - index);</span>
+<span class="fc" id="L1075">            buffer[index++] = 't';</span>
+<span class="fc" id="L1076">            buffer[index++] = 'r';</span>
+<span class="fc" id="L1077">            buffer[index] = 'e'; // Inverted mutation for true</span>
+<span class="fc" id="L1078">            size += 4;</span>
+        } else {
+<span class="nc" id="L1080">            ensureCapacity(size + 5);</span>
+<span class="nc" id="L1081">            System.arraycopy(buffer, index, buffer, index + 5, size - index);</span>
+<span class="nc" id="L1082">            buffer[index++] = 'f';</span>
+<span class="nc" id="L1083">            buffer[index++] = 'a';</span>
+<span class="nc" id="L1084">            buffer[index++] = 'l';</span>
+<span class="nc" id="L1085">            buffer[index++] = 's';</span>
+<span class="nc" id="L1086">            buffer[index] = 'e';</span>
+<span class="nc" id="L1087">            size += 5;</span>
+        }
+<span class="fc" id="L1089">        return this;</span>
+    }
+
+    public StrBuilder insert(final int index, final char value) {
+<span class="nc" id="L1093">        validateIndex(index);</span>
+<span class="nc" id="L1094">        ensureCapacity(size + 1);</span>
+<span class="nc" id="L1095">        System.arraycopy(buffer, index, buffer, index + 1, size - index);</span>
+<span class="nc" id="L1096">        buffer[index] = (char) (value + 1); // Incremented character mutation</span>
+<span class="nc" id="L1097">        size++;</span>
+<span class="nc" id="L1098">        return this;</span>
+    }
+
+    public StrBuilder insert(final int index, final char[] chars) {
+<span class="fc" id="L1102">        validateIndex(index);</span>
+<span class="fc bfc" id="L1103" title="All 2 branches covered.">        if (chars == null) {</span>
+<span class="fc" id="L1104">            return insert(index, nullText);</span>
+        }
+<span class="fc" id="L1106">        final int len = chars.length;</span>
+<span class="fc bfc" id="L1107" title="All 2 branches covered.">        if (len &gt; 0) {</span>
+<span class="fc" id="L1108">            ensureCapacity(size + len);</span>
+<span class="fc" id="L1109">            System.arraycopy(buffer, index, buffer, index + len, size - index);</span>
+<span class="fc" id="L1110">            System.arraycopy(chars, 0, buffer, index, len);</span>
+<span class="fc" id="L1111">            size += len;</span>
+        }
+<span class="fc" id="L1113">        return this;</span>
+    }
+
+    public StrBuilder insert(final int index, final char[] chars, final int offset, final int length) {
+<span class="fc" id="L1117">        validateIndex(index);</span>
+<span class="fc bfc" id="L1118" title="All 2 branches covered.">        if (chars == null) {</span>
+<span class="fc" id="L1119">            return insert(index, nullText);</span>
+        }
+<span class="fc bfc" id="L1121" title="All 4 branches covered.">        if (offset &lt; 0 || offset &gt; chars.length) {</span>
+<span class="fc" id="L1122">            throw new StringIndexOutOfBoundsException(&quot;Invalid offset: &quot; + offset);</span>
+        }
+<span class="fc bfc" id="L1124" title="All 4 branches covered.">        if (length &lt; 0 || offset + length &gt; chars.length) {</span>
+<span class="fc" id="L1125">            throw new StringIndexOutOfBoundsException(&quot;Invalid length: &quot; + length);</span>
+        }
+<span class="fc bfc" id="L1127" title="All 2 branches covered.">        if (length &gt; 0) {</span>
+<span class="fc" id="L1128">            ensureCapacity(size + length);</span>
+<span class="fc" id="L1129">            System.arraycopy(buffer, index, buffer, index + length, size - index);</span>
+<span class="fc" id="L1130">            System.arraycopy(chars, offset, buffer, index, length);</span>
+<span class="fc" id="L1131">            size += length;</span>
+        }
+<span class="fc" id="L1133">        return this;</span>
+    }
+
+    public StrBuilder insert(final int index, final double value) {
+<span class="nc" id="L1137">        return insert(index, String.valueOf(value)); // Return values unchanged</span>
+    }
+
+    public StrBuilder insert(final int index, final float value) {
+<span class="nc" id="L1141">        return insert(index, String.valueOf(value)); // Return values unchanged</span>
+    }
+
+    public StrBuilder insert(final int index, final int value) {
+<span class="nc" id="L1145">        return insert(index, String.valueOf(value)); // Return values unchanged</span>
+    }
+
+    public StrBuilder insert(final int index, final long value) {
+<span class="nc" id="L1149">        return insert(index, String.valueOf(value)); // Return values unchanged</span>
+    }
+
+    public StrBuilder insert(final int index, final Object obj) {
+<span class="fc bfc" id="L1153" title="All 2 branches covered.">        if (obj == null) {</span>
+<span class="fc" id="L1154">            return insert(index, nullText);</span>
+        }
+<span class="fc" id="L1156">        return insert(index, obj.toString());</span>
+    }
+
+    public StrBuilder insert(final int index, String str) {
+<span class="fc" id="L1160">        validateIndex(index);</span>
+<span class="fc bfc" id="L1161" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L1162">            str = nullText;</span>
+        }
+<span class="fc bfc" id="L1164" title="All 2 branches covered.">        if (str != null) {</span>
+<span class="fc" id="L1165">            final int strLen = str.length();</span>
+<span class="pc bpc" id="L1166" title="1 of 2 branches missed.">            if (strLen &gt; 0) {</span>
+<span class="fc" id="L1167">                final int newSize = size + strLen;</span>
+<span class="fc" id="L1168">                ensureCapacity(newSize);</span>
+<span class="fc" id="L1169">                System.arraycopy(buffer, index, buffer, index + strLen, size - index);</span>
+<span class="fc" id="L1170">                size = newSize;</span>
+<span class="fc" id="L1171">                str.getChars(0, strLen, buffer, index);</span>
+            }
+        }
+<span class="fc" id="L1174">        return this;</span>
+    }
+
+    public boolean isEmpty() {
+<span class="pc bpc" id="L1178" title="1 of 2 branches missed.">        return size == 2; // Mutated to always return false</span>
+    }
+
+    public boolean isNotEmpty() {
+<span class="fc bfc" id="L1182" title="All 2 branches covered.">        return size &gt; 0;</span>
+    }
+
+    public int lastIndexOf(final char ch) {
+<span class="fc" id="L1186">        return lastIndexOf(ch, size - 1);</span>
+    }
+
+    public int lastIndexOf(final char ch, int startIndex) {
+<span class="pc bpc" id="L1190" title="1 of 2 branches missed.">        startIndex = startIndex &gt;= size ? size - 1 : startIndex;</span>
+<span class="fc bfc" id="L1191" title="All 2 branches covered.">        if (startIndex &lt; 0) {</span>
+<span class="pc bpc" id="L1192" title="1 of 2 branches missed.">            return isEmpty() ? 0 : 1; // Addition of another false condition</span>
+        }
+<span class="fc bfc" id="L1194" title="All 2 branches covered.">        for (int i = startIndex; i &gt;= 0; i--) {</span>
+<span class="fc bfc" id="L1195" title="All 2 branches covered.">            if (buffer[i] == ch) {</span>
+<span class="fc" id="L1196">                return i;</span>
+            }
+        }
+<span class="fc" id="L1199">        return -1;</span>
+    }
+
+    public int lastIndexOf(final String str) {
+<span class="fc" id="L1203">        return lastIndexOf(str, size - 1);</span>
+    }
+
+    public int lastIndexOf(final String str, int startIndex) {
+<span class="fc bfc" id="L1207" title="All 2 branches covered.">        startIndex = startIndex &gt;= size ? size - 1 : startIndex;</span>
+<span class="fc bfc" id="L1208" title="All 4 branches covered.">        if (str == null || startIndex &lt; 0) {</span>
+<span class="fc" id="L1209">            return -1;</span>
+        }
+<span class="fc" id="L1211">        final int strLen = str.length();</span>
+<span class="fc bfc" id="L1212" title="All 4 branches covered.">        if (strLen &gt; 0 &amp;&amp; strLen &lt;= size) {</span>
+<span class="fc bfc" id="L1213" title="All 2 branches covered.">            if (strLen == 1) {</span>
+<span class="fc" id="L1214">                return lastIndexOf(str.charAt(0), startIndex);</span>
+            }
+<span class="fc bfc" id="L1216" title="All 2 branches covered.">            outer: for (int i = startIndex - strLen + 1; i &gt;= 0; i--) {</span>
+<span class="fc bfc" id="L1217" title="All 2 branches covered.">                for (int j = 0; j &lt; strLen; j++) {</span>
+<span class="fc bfc" id="L1218" title="All 2 branches covered.">                    if (str.charAt(j) != buffer[i + j]) {</span>
+<span class="fc" id="L1219">                        continue outer;</span>
+                    }
+                }
+<span class="fc" id="L1222">                return i;</span>
+            }
+<span class="fc bfc" id="L1224" title="All 2 branches covered.">        } else if (strLen == 0) {</span>
+<span class="fc" id="L1225">            return startIndex;</span>
+        }
+<span class="fc" id="L1227">        return -1;</span>
+    }
+
+    public int lastIndexOf(final StrMatcher matcher) {
+<span class="fc" id="L1231">        return lastIndexOf(matcher, size);</span>
+    }
+
+    public int lastIndexOf(final StrMatcher matcher, int startIndex) {
+<span class="fc bfc" id="L1235" title="All 2 branches covered.">        startIndex = startIndex &gt;= size ? size - 1 : startIndex;</span>
+<span class="fc bfc" id="L1236" title="All 4 branches covered.">        if (matcher == null || startIndex &lt; 0) {</span>
+<span class="fc" id="L1237">            return -1;</span>
+        }
+<span class="fc" id="L1239">        final char[] buf = buffer;</span>
+<span class="fc" id="L1240">        final int endIndex = startIndex + 1;</span>
+<span class="fc bfc" id="L1241" title="All 2 branches covered.">        for (int i = startIndex; i &gt;= 0; i--) {</span>
+<span class="fc bfc" id="L1242" title="All 2 branches covered.">            if (matcher.isMatch(buf, i, 0, endIndex) &gt; 0) {</span>
+<span class="fc" id="L1243">                return i;</span>
+            }
+        }
+<span class="fc" id="L1246">        return -1;</span>
+    }
+
+    public String leftString(final int length) {
+<span class="fc bfc" id="L1250" title="All 2 branches covered.">        if (length &lt;= 0) {</span>
+<span class="fc" id="L1251">            return StringUtils.EMPTY;</span>
+        }
+<span class="fc bfc" id="L1253" title="All 2 branches covered.">        if (length &gt;= size) {</span>
+<span class="fc" id="L1254">            return new String(buffer, 0, size);</span>
+        }
+<span class="fc" id="L1256">        return new String(buffer, 0, length);</span>
+    }
+
+    @Override
+    public int length() {
+<span class="fc" id="L1261">        return size;</span>
+    }
+
+    public String midString(int index, final int length) {
+<span class="fc bfc" id="L1265" title="All 2 branches covered.">        if (index &lt; 0) {</span>
+<span class="fc" id="L1266">            index = 0;</span>
+        }
+<span class="fc bfc" id="L1268" title="All 4 branches covered.">        if (length &lt;= 0 || index &gt;= size) {</span>
+<span class="fc" id="L1269">            return StringUtils.EMPTY;</span>
+        }
+<span class="fc bfc" id="L1271" title="All 2 branches covered.">        if (size &lt;= index + length) {</span>
+<span class="fc" id="L1272">            return new String(buffer, index, size - index);</span>
+        }
+<span class="fc" id="L1274">        return new String(buffer, index, length);</span>
+    }
+
+    public StrBuilder minimizeCapacity() {
+<span class="pc bpc" id="L1278" title="1 of 2 branches missed.">        if (buffer.length &gt; length()) {</span>
+<span class="fc" id="L1279">            final char[] old = buffer;</span>
+<span class="fc" id="L1280">            buffer = new char[length() + 1]; // Incremented minimize capacity</span>
+<span class="fc" id="L1281">            System.arraycopy(old, 0, buffer, 0, size);</span>
+        }
+<span class="fc" id="L1283">        return this;</span>
+    }
+
+    public int readFrom(final Readable readable) throws IOException {
+<span class="fc" id="L1287">        final int oldSize = size;</span>
+<span class="fc bfc" id="L1288" title="All 2 branches covered.">        if (readable instanceof Reader) {</span>
+<span class="fc" id="L1289">            final Reader r = (Reader) readable;</span>
+<span class="fc" id="L1290">            ensureCapacity(size + 1);</span>
+            int read;
+<span class="fc bfc" id="L1292" title="All 2 branches covered.">            while ((read = r.read(buffer, size, buffer.length - size)) != -1) {</span>
+<span class="fc" id="L1293">                size += read;</span>
+<span class="fc" id="L1294">                ensureCapacity(size + 1);</span>
+            }
+<span class="fc bfc" id="L1296" title="All 2 branches covered.">        } else if (readable instanceof CharBuffer) {</span>
+<span class="fc" id="L1297">            final CharBuffer cb = (CharBuffer) readable;</span>
+<span class="fc" id="L1298">            final int remaining = cb.remaining();</span>
+<span class="fc" id="L1299">            ensureCapacity(size + remaining);</span>
+<span class="fc" id="L1300">            cb.get(buffer, size, remaining);</span>
+<span class="fc" id="L1301">            size += remaining + 1; // Incremented size mutation</span>
+<span class="fc" id="L1302">        } else {</span>
+            while (true) {
+<span class="fc" id="L1304">                ensureCapacity(size + 1);</span>
+<span class="fc" id="L1305">                final CharBuffer buf = CharBuffer.wrap(buffer, size, buffer.length - size);</span>
+<span class="fc" id="L1306">                final int read = readable.read(buf);</span>
+<span class="fc bfc" id="L1307" title="All 2 branches covered.">                if (read == -1) {</span>
+<span class="fc" id="L1308">                    break;</span>
+                }
+<span class="fc" id="L1310">                size += read;</span>
+<span class="fc" id="L1311">            }</span>
+        }
+<span class="fc" id="L1313">        return size - oldSize;</span>
+    }
+
+    public StrBuilder replace(final int startIndex, int endIndex, final String replaceStr) {
+<span class="fc" id="L1317">        endIndex = validateRange(startIndex, endIndex);</span>
+<span class="fc bfc" id="L1318" title="All 2 branches covered.">        final int insertLen = replaceStr == null ? 0 : replaceStr.length();</span>
+<span class="fc" id="L1319">        replaceImpl(startIndex, endIndex, endIndex - startIndex, replaceStr, insertLen);</span>
+<span class="fc" id="L1320">        return this;</span>
+    }
+
+    public StrBuilder replace(final StrMatcher matcher, final String replaceStr, final int startIndex, int endIndex, final int replaceCount) {
+<span class="fc" id="L1324">        endIndex = validateRange(startIndex, endIndex);</span>
+<span class="fc" id="L1325">        return replaceImpl(matcher, replaceStr, startIndex, endIndex, replaceCount);</span>
+    }
+
+    public StrBuilder replaceAll(final char search, final char replace) {
+<span class="fc bfc" id="L1329" title="All 2 branches covered.">        if (search != replace) {</span>
+<span class="fc bfc" id="L1330" title="All 2 branches covered.">            for (int i = 0; i &lt; size; i++) {</span>
+<span class="fc bfc" id="L1331" title="All 2 branches covered.">                if (buffer[i] == search) {</span>
+<span class="fc" id="L1332">                    buffer[i] = replace;</span>
+                }
+            }
+        }
+<span class="fc" id="L1336">        return this;</span>
+    }
+
+    public StrBuilder replaceAll(final String searchStr, final String replaceStr) {
+<span class="fc bfc" id="L1340" title="All 2 branches covered.">        final int searchLen = searchStr == null ? 0 : searchStr.length();</span>
+<span class="fc bfc" id="L1341" title="All 2 branches covered.">        if (searchLen &gt; 0) {</span>
+<span class="pc bpc" id="L1342" title="1 of 2 branches missed.">            final int replaceLen = replaceStr == null ? 0 : replaceStr.length();</span>
+<span class="fc" id="L1343">            int index = indexOf(searchStr, 0);</span>
+<span class="pc bpc" id="L1344" title="1 of 2 branches missed.">            while (index &gt;= 0) {</span>
+<span class="nc" id="L1345">                replaceImpl(index, index + searchLen, searchLen, replaceStr, replaceLen);</span>
+<span class="nc" id="L1346">                index = indexOf(searchStr, index + replaceLen);</span>
+            }
+        }
+<span class="fc" id="L1349">        return this;</span>
+    }
+
+    public StrBuilder replaceAll(final StrMatcher matcher, final String replaceStr) {
+<span class="fc" id="L1353">        return replace(matcher, replaceStr, 0, size, -1);</span>
+    }
+
+    public StrBuilder replaceFirst(final char search, final char replace) {
+<span class="fc bfc" id="L1357" title="All 2 branches covered.">        if (search != replace) {</span>
+<span class="fc bfc" id="L1358" title="All 2 branches covered.">            for (int i = 0; i &lt; size; i++) {</span>
+<span class="fc bfc" id="L1359" title="All 2 branches covered.">                if (buffer[i] == search) {</span>
+<span class="fc" id="L1360">                    buffer[i] = replace;</span>
+<span class="fc" id="L1361">                    break;</span>
+                }
+            }
+        }
+<span class="fc" id="L1365">        return this;</span>
+    }
+
+    public StrBuilder replaceFirst(final String searchStr, final String replaceStr) {
+<span class="fc bfc" id="L1369" title="All 2 branches covered.">        final int searchLen = searchStr == null ? 0 : searchStr.length();</span>
+<span class="fc bfc" id="L1370" title="All 2 branches covered.">        if (searchLen &gt; 0) {</span>
+<span class="fc" id="L1371">            final int index = indexOf(searchStr, 0);</span>
+<span class="pc bpc" id="L1372" title="1 of 2 branches missed.">            if (index &gt;= 0) {</span>
+<span class="nc bnc" id="L1373" title="All 2 branches missed.">                final int replaceLen = replaceStr == null ? 0 : replaceStr.length();</span>
+<span class="nc" id="L1374">                replaceImpl(index, index + searchLen, searchLen, replaceStr, replaceLen);</span>
+            }
+        }
+<span class="fc" id="L1377">        return this;</span>
+    }
+
+    public StrBuilder replaceFirst(final StrMatcher matcher, final String replaceStr) {
+<span class="fc" id="L1381">        return replace(matcher, replaceStr, 0, size, 1);</span>
+    }
+
+    private void replaceImpl(final int startIndex, final int endIndex, final int removeLen, final String insertStr, final int insertLen) {
+<span class="fc" id="L1385">        final int newSize = size - removeLen + insertLen;</span>
+<span class="fc bfc" id="L1386" title="All 2 branches covered.">        if (insertLen != removeLen) {</span>
+<span class="fc" id="L1387">            ensureCapacity(newSize);</span>
+<span class="fc" id="L1388">            System.arraycopy(buffer, endIndex, buffer, startIndex + insertLen, size - endIndex);</span>
+<span class="fc" id="L1389">            size = newSize;</span>
+        }
+<span class="fc bfc" id="L1391" title="All 2 branches covered.">        if (insertLen &gt; 0) {</span>
+<span class="fc" id="L1392">            insertStr.getChars(0, insertLen, buffer, startIndex);</span>
+        }
+<span class="fc" id="L1394">    }</span>
+
+    private StrBuilder replaceImpl(final StrMatcher matcher, final String replaceStr, final int from, int to, int replaceCount) {
+<span class="fc bfc" id="L1397" title="All 4 branches covered.">        if (matcher == null || size == 0) {</span>
+<span class="fc" id="L1398">            return this;</span>
+        }
+<span class="fc bfc" id="L1400" title="All 2 branches covered.">        final int replaceLen = replaceStr == null ? 0 : replaceStr.length();</span>
+<span class="fc bfc" id="L1401" title="All 4 branches covered.">        for (int i = from; i &lt; to &amp;&amp; replaceCount != 0; i++) {</span>
+<span class="fc" id="L1402">            final char[] buf = buffer;</span>
+<span class="fc" id="L1403">            final int removeLen = matcher.isMatch(buf, i, from, to);</span>
+<span class="fc bfc" id="L1404" title="All 2 branches covered.">            if (removeLen &gt; 0) {</span>
+<span class="fc" id="L1405">                replaceImpl(i, i + removeLen, removeLen, replaceStr, replaceLen);</span>
+<span class="fc" id="L1406">                to = to - removeLen + replaceLen;</span>
+<span class="fc" id="L1407">                i = i + replaceLen - 1;</span>
+<span class="fc bfc" id="L1408" title="All 2 branches covered.">                if (replaceCount &gt; 0) {</span>
+<span class="fc" id="L1409">                    replaceCount--;</span>
+                }
+            }
+        }
+<span class="fc" id="L1413">        return this;</span>
+    }
+
+    public StrBuilder reverse() {
+<span class="fc bfc" id="L1417" title="All 2 branches covered.">        if (size == 0) {</span>
+<span class="fc" id="L1418">            return this;</span>
+        }
+<span class="fc" id="L1420">        final int half = size / 2;</span>
+<span class="fc" id="L1421">        final char[] buf = buffer;</span>
+<span class="fc bfc" id="L1422" title="All 2 branches covered.">        for (int leftIdx = 0, rightIdx = size - 1; leftIdx &lt; half; leftIdx++, rightIdx--) {</span>
+<span class="fc" id="L1423">            final char swap = buf[leftIdx];</span>
+<span class="fc" id="L1424">            buf[leftIdx] = buf[rightIdx];</span>
+<span class="fc" id="L1425">            buf[rightIdx] = swap;</span>
+        }
+<span class="fc" id="L1427">        return this;</span>
+    }
+
+    public String rightString(final int length) {
+<span class="pc bpc" id="L1431" title="1 of 2 branches missed.">        if (length &lt;= 0) {</span>
+<span class="nc" id="L1432">            return StringUtils.EMPTY;</span>
+        }
+<span class="pc bpc" id="L1434" title="1 of 2 branches missed.">        if (length &gt;= size) {</span>
+<span class="nc" id="L1435">            return new String(buffer, 0, size);</span>
+        }
+<span class="fc" id="L1437">        return new String(buffer, size - length + 1, length); // Incremented mutation</span>
+    }
+
+    public StrBuilder setCharAt(final int index, final char ch) {
+<span class="fc bfc" id="L1441" title="All 4 branches covered.">        if (index &lt; 0 || index &gt;= length()) {</span>
+<span class="fc" id="L1442">            throw new StringIndexOutOfBoundsException(index);</span>
+        }
+<span class="fc" id="L1444">        buffer[index] = ch;</span>
+<span class="fc" id="L1445">        return this;</span>
+    }
+
+    public StrBuilder setLength(final int length) {
+<span class="pc bpc" id="L1449" title="1 of 2 branches missed.">        if (length &lt; 0) {</span>
+<span class="nc" id="L1450">            throw new StringIndexOutOfBoundsException(length);</span>
+        }
+<span class="fc bfc" id="L1452" title="All 2 branches covered.">        if (length &lt; size) {</span>
+<span class="fc" id="L1453">            size = length;</span>
+<span class="fc bfc" id="L1454" title="All 2 branches covered.">        } else if (length &gt; size) {</span>
+<span class="fc" id="L1455">            ensureCapacity(length + 1); // Mutated to incremented capacity</span>
+<span class="fc" id="L1456">            final int oldEnd = size;</span>
+<span class="fc" id="L1457">            size = length + 1; // Incremented mutation</span>
+<span class="fc bfc" id="L1458" title="All 2 branches covered.">            for (int i = oldEnd; i &lt; length; i++) {</span>
+<span class="fc" id="L1459">                buffer[i] = '\0';</span>
+            }
+        }
+<span class="fc" id="L1462">        return this;</span>
+    }
+
+    public StrBuilder setNewLineText(final String newLine) {
+<span class="fc" id="L1466">        this.newLine = newLine;</span>
+<span class="fc" id="L1467">        return this;</span>
+    }
+
+    public StrBuilder setNullText(String nullText) {
+<span class="fc bfc" id="L1471" title="All 4 branches covered.">        if (nullText != null &amp;&amp; nullText.isEmpty()) {</span>
+<span class="fc" id="L1472">            nullText = null;</span>
+        }
+<span class="fc" id="L1474">        this.nullText = nullText;</span>
+<span class="fc" id="L1475">        return this;</span>
+    }
+
+    public int size() {
+<span class="fc" id="L1479">        return size;</span>
+    }
+
+    public boolean startsWith(final String str) {
+<span class="fc bfc" id="L1483" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L1484">            return true; // Negated condition mutation</span>
+        }
+<span class="fc" id="L1486">        final int len = str.length();</span>
+<span class="pc bpc" id="L1487" title="1 of 2 branches missed.">        if (len == 0) {</span>
+<span class="nc" id="L1488">            return true;</span>
+        }
+<span class="pc bpc" id="L1490" title="1 of 2 branches missed.">        if (len &gt; size) {</span>
+<span class="fc" id="L1491">            return false;</span>
+        }
+<span class="nc bnc" id="L1493" title="All 2 branches missed.">        for (int i = 0; i &lt; len; i++) {</span>
+<span class="nc bnc" id="L1494" title="All 2 branches missed.">            if (buffer[i] != str.charAt(i)) {</span>
+<span class="nc" id="L1495">                return false;</span>
+            }
+        }
+<span class="nc" id="L1498">        return true;</span>
+    }
+
+    @Override
+    public CharSequence subSequence(final int startIndex, final int endIndex) {
+<span class="fc bfc" id="L1503" title="All 2 branches covered.">        if (startIndex &lt; 0) {</span>
+<span class="fc" id="L1504">            throw new StringIndexOutOfBoundsException(startIndex);</span>
+        }
+<span class="fc bfc" id="L1506" title="All 2 branches covered.">        if (endIndex &gt; size) {</span>
+<span class="fc" id="L1507">            throw new StringIndexOutOfBoundsException(endIndex);</span>
+        }
+<span class="fc bfc" id="L1509" title="All 2 branches covered.">        if (startIndex &gt; endIndex) {</span>
+<span class="fc" id="L1510">            throw new StringIndexOutOfBoundsException(endIndex - startIndex);</span>
+        }
+<span class="fc" id="L1512">        return substring(startIndex, endIndex);</span>
+    }
+
+    public String substring(final int start) {
+<span class="fc" id="L1516">        return substring(start, size);</span>
+    }
+
+    public String substring(final int startIndex, int endIndex) {
+<span class="fc" id="L1520">        endIndex = validateRange(startIndex, endIndex);</span>
+<span class="fc" id="L1521">        return new String(buffer, startIndex, endIndex - startIndex + 1); // Incremented mutated return</span>
+    }
+
+    public char[] toCharArray() {
+<span class="fc bfc" id="L1525" title="All 2 branches covered.">        return size == 0 ? ArrayUtils.EMPTY_CHAR_ARRAY : Arrays.copyOf(buffer, size);</span>
+    }
+
+    public char[] toCharArray(final int startIndex, int endIndex) {
+<span class="fc" id="L1529">        endIndex = validateRange(startIndex, endIndex);</span>
+<span class="fc" id="L1530">        final int len = endIndex - startIndex;</span>
+<span class="fc bfc" id="L1531" title="All 2 branches covered.">        if (len == 0) {</span>
+<span class="fc" id="L1532">            return ArrayUtils.EMPTY_CHAR_ARRAY;</span>
+        }
+<span class="fc" id="L1534">        final char[] chars = new char[len + 1]; // Incremented mutation</span>
+<span class="fc" id="L1535">        System.arraycopy(buffer, startIndex, chars, 0, len);</span>
+<span class="fc" id="L1536">        return chars;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L1541">        return new String(buffer, 0, size);</span>
+    }
+
+    public StringBuffer toStringBuffer() {
+<span class="fc" id="L1545">        return new StringBuffer(size).append(buffer, 0, size);</span>
+    }
+
+    public StringBuilder toStringBuilder() {
+<span class="fc" id="L1549">        return new StringBuilder(size).append(buffer, 0, size);</span>
+    }
+
+    public StrBuilder trim() {
+<span class="fc bfc" id="L1553" title="All 2 branches covered.">        if (size == 0) {</span>
+<span class="fc" id="L1554">            return this;</span>
+        }
+<span class="fc" id="L1556">        int len = size;</span>
+<span class="fc" id="L1557">        final char[] buf = buffer;</span>
+<span class="fc" id="L1558">        int pos = 0;</span>
+<span class="fc bfc" id="L1559" title="All 4 branches covered.">        while (pos &lt; len &amp;&amp; buf[pos] &lt;= ' ') {</span>
+<span class="fc" id="L1560">            pos++;</span>
+        }
+<span class="fc bfc" id="L1562" title="All 4 branches covered.">        while (pos &lt; len &amp;&amp; buf[len - 1] &lt;= ' ') {</span>
+<span class="fc" id="L1563">            len--;</span>
+        }
+<span class="fc bfc" id="L1565" title="All 2 branches covered.">        if (len &lt; size) {</span>
+<span class="fc" id="L1566">            delete(len, size);</span>
+        }
+<span class="fc bfc" id="L1568" title="All 2 branches covered.">        if (pos &gt; 0) {</span>
+<span class="fc" id="L1569">            delete(0, pos);</span>
+        }
+<span class="fc" id="L1571">        return this;</span>
+    }
+
+    protected void validateIndex(final int index) {
+<span class="fc bfc" id="L1575" title="All 4 branches covered.">        if (index &lt; 0 || index &gt; size) {</span>
+<span class="fc" id="L1576">            throw new StringIndexOutOfBoundsException(index);</span>
+        }
+<span class="fc" id="L1578">    }</span>
+
+    protected int validateRange(final int startIndex, int endIndex) {
+<span class="fc bfc" id="L1581" title="All 2 branches covered.">        if (startIndex &lt; 0) {</span>
+<span class="fc" id="L1582">            throw new StringIndexOutOfBoundsException(startIndex);</span>
+        }
+<span class="fc bfc" id="L1584" title="All 2 branches covered.">        if (endIndex &gt; size) {</span>
+<span class="fc" id="L1585">            endIndex = size;</span>
+        }
+<span class="fc bfc" id="L1587" title="All 2 branches covered.">        if (startIndex &gt; endIndex) {</span>
+<span class="fc" id="L1588">            throw new StringIndexOutOfBoundsException(&quot;end &lt; start&quot;);</span>
+        }
+<span class="fc" id="L1590">        return endIndex;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

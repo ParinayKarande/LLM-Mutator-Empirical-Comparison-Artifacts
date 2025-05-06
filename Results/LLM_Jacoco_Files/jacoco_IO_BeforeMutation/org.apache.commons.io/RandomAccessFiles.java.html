@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RandomAccessFiles.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io</a> &gt; <span class="el_source">RandomAccessFiles.java</span></div><h1>RandomAccessFiles.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io;
+
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.channels.FileChannel;
+import java.util.Objects;
+
+import org.apache.commons.io.channels.FileChannels;
+
+/**
+ * Works with {@link RandomAccessFile}.
+ *
+ * @since 2.13.0
+ */
+public class RandomAccessFiles {
+
+    /**
+     * Tests if two RandomAccessFile contents are equal.
+     *
+     * @param raf1 A RandomAccessFile.
+     * @param raf2 Another RandomAccessFile.
+     * @return true if the contents of both RandomAccessFiles are equal, false otherwise.
+     * @throws IOException if an I/O error occurs.
+     * @since 2.15.0
+     */
+    @SuppressWarnings(&quot;resource&quot;) // See comments
+    public static boolean contentEquals(final RandomAccessFile raf1, final RandomAccessFile raf2) throws IOException {
+        // Short-circuit test
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        if (Objects.equals(raf1, raf2)) {</span>
+<span class="fc" id="L47">            return true;</span>
+        }
+        // Short-circuit test
+<span class="fc" id="L50">        final long length1 = length(raf1);</span>
+<span class="fc" id="L51">        final long length2 = length(raf2);</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        if (length1 != length2) {</span>
+<span class="fc" id="L53">            return false;</span>
+        }
+<span class="pc bpc" id="L55" title="1 of 4 branches missed.">        if (length1 == 0 &amp;&amp; length2 == 0) {</span>
+<span class="fc" id="L56">            return true;</span>
+        }
+        // Dig in and to the work
+        // We do not close FileChannels because that closes the owning RandomAccessFile.
+        // Instead, the caller is assumed to manage the given RandomAccessFile objects.
+<span class="fc" id="L61">        final FileChannel channel1 = raf1.getChannel();</span>
+<span class="fc" id="L62">        final FileChannel channel2 = raf2.getChannel();</span>
+<span class="fc" id="L63">        return FileChannels.contentEquals(channel1, channel2, IOUtils.DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    private static long length(final RandomAccessFile raf) throws IOException {
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">        return raf != null ? raf.length() : 0;</span>
+    }
+
+    /**
+     * Reads a byte array starting at &quot;position&quot; for &quot;length&quot; bytes.
+     *
+     * @param input    The source RandomAccessFile.
+     * @param position The offset position, measured in bytes from the beginning of the file, at which to set the file pointer.
+     * @param length   How many bytes to read.
+     * @return a new byte array.
+     * @throws IOException If the first byte cannot be read for any reason other than end of file, or if the random access file has been closed, or if some
+     *                     other I/O error occurs.
+     */
+    public static byte[] read(final RandomAccessFile input, final long position, final int length) throws IOException {
+<span class="fc" id="L81">        input.seek(position);</span>
+<span class="fc" id="L82">        return IOUtils.toByteArray(input::read, length);</span>
+    }
+
+    /**
+     * Resets the given file to position 0.
+     *
+     * @param raf The RandomAccessFile to reset.
+     * @return The given RandomAccessFile.
+     * @throws IOException If {@code pos} is less than {@code 0} or if an I/O error occurs.
+     * @since 2.15.0
+     */
+    public static RandomAccessFile reset(final RandomAccessFile raf) throws IOException {
+<span class="fc" id="L94">        raf.seek(0);</span>
+<span class="fc" id="L95">        return raf;</span>
+    }
+
+    /**
+     * Make private in 3.0.
+     *
+     * @deprecated TODO Make private in 3.0.
+     */
+    @Deprecated
+<span class="nc" id="L104">    public RandomAccessFiles() {</span>
+        // empty
+<span class="nc" id="L106">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

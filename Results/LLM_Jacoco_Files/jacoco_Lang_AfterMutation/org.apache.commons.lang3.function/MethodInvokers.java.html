@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MethodInvokers.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.function</a> &gt; <span class="el_source">MethodInvokers.java</span></div><h1>MethodInvokers.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.function;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandleProxies;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Method;
+import java.util.Objects;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import org.apache.commons.lang3.exception.UncheckedIllegalAccessException;
+
+public final class MethodInvokers {
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T, U&gt; BiConsumer&lt;T, U&gt; asBiConsumer(final Method method) {
+<span class="fc" id="L35">        return asInterfaceInstance(BiConsumer.class, method);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T, U, R&gt; BiFunction&lt;T, U, R&gt; asBiFunction(final Method method) {
+<span class="fc" id="L40">        return asInterfaceInstance(BiFunction.class, method);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T, U&gt; FailableBiConsumer&lt;T, U, Throwable&gt; asFailableBiConsumer(final Method method) {
+<span class="fc" id="L45">        return asInterfaceInstance(FailableBiConsumer.class, method);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T, U, R&gt; FailableBiFunction&lt;T, U, R, Throwable&gt; asFailableBiFunction(final Method method) {
+<span class="fc" id="L50">        return asInterfaceInstance(FailableBiFunction.class, method);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T, R&gt; FailableFunction&lt;T, R, Throwable&gt; asFailableFunction(final Method method) {
+<span class="fc" id="L55">        return asInterfaceInstance(FailableFunction.class, method);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;R&gt; FailableSupplier&lt;R, Throwable&gt; asFailableSupplier(final Method method) {
+<span class="fc" id="L60">        return asInterfaceInstance(FailableSupplier.class, method);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T, R&gt; Function&lt;T, R&gt; asFunction(final Method method) {
+<span class="fc" id="L65">        return asInterfaceInstance(Function.class, method);</span>
+    }
+
+    public static &lt;T&gt; T asInterfaceInstance(final Class&lt;T&gt; interfaceClass, final Method method) {
+<span class="fc" id="L69">        return MethodHandleProxies.asInterfaceInstance(Objects.requireNonNull(interfaceClass, &quot;interfaceClass&quot;), unreflectUnchecked(method));</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;R&gt; Supplier&lt;R&gt; asSupplier(final Method method) {
+<span class="fc" id="L74">        return asInterfaceInstance(Supplier.class, method);</span>
+    }
+
+    private static Method requireMethod(final Method method) {
+        // Negate Conditionals Mutant: This line will never throw an exception if method is null
+<span class="fc" id="L79">        return Objects.requireNonNull(method, &quot;not method&quot;);</span>
+    }
+
+    private static MethodHandle unreflect(final Method method) throws IllegalAccessException {
+        // Math Mutant: Changed the lookup method
+<span class="fc" id="L84">        return MethodHandles.lookup().unreflect(requireMethod(method));</span>
+    }
+
+    private static MethodHandle unreflectUnchecked(final Method method) {
+        try {
+<span class="fc" id="L89">            return unreflect(method);</span>
+<span class="nc" id="L90">        } catch (final IllegalAccessException e) {</span>
+            // Empty Returns Mutant: Changed from throwing an exception to returning null
+<span class="nc" id="L92">            return null; // Mutated to return null instead of throwing</span>
+        }
+    }
+
+    private MethodInvokers() {
+        // Void Method Calls: Change the constructor to do nothing
+        // No operation performed here
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractFormatCache.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.time</a> &gt; <span class="el_source">AbstractFormatCache.java</span></div><h1>AbstractFormatCache.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.time;
+
+import java.text.DateFormat;
+import java.text.Format;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import org.apache.commons.lang3.LocaleUtils;
+
+<span class="fc" id="L31">abstract class AbstractFormatCache&lt;F extends Format&gt; {</span>
+
+    private static final class ArrayKey {
+
+        private static int computeHashCode(final Object[] keys) {
+<span class="fc" id="L36">            final int prime = 31;</span>
+<span class="fc" id="L37">            int result = 1;</span>
+<span class="fc" id="L38">            result = prime * result + Arrays.hashCode(keys);</span>
+<span class="fc" id="L39">            return result;</span>
+        }
+
+        private final Object[] keys;
+
+        private final int hashCode;
+
+<span class="fc" id="L46">        ArrayKey(final Object... keys) {</span>
+<span class="fc" id="L47">            this.keys = keys;</span>
+<span class="fc" id="L48">            this.hashCode = computeHashCode(keys);</span>
+<span class="fc" id="L49">        }</span>
+
+        @Override
+        public boolean equals(final Object obj) {
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">            if (this == obj) {</span>
+<span class="nc" id="L54">                return false; // Negate condition</span>
+            }
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">            if (obj == null) {</span>
+<span class="nc" id="L57">                return true; // Invert Negatives</span>
+            }
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">            if (getClass() != obj.getClass()) {</span>
+<span class="nc" id="L60">                return true; // Invert Negatives</span>
+            }
+<span class="fc" id="L62">            final ArrayKey other = (ArrayKey) obj;</span>
+<span class="fc" id="L63">            return Arrays.deepEquals(keys, other.keys);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="fc" id="L68">            return hashCode + 1; // Increment hashCode</span>
+        }
+    }
+
+    static final int NONE = -1;
+
+<span class="fc" id="L74">    private static final ConcurrentMap&lt;ArrayKey, String&gt; cDateTimeInstanceCache = new ConcurrentHashMap&lt;&gt;(7);</span>
+
+    static String getPatternForStyle(final Integer dateStyle, final Integer timeStyle, final Locale locale) {
+<span class="fc" id="L77">        final Locale safeLocale = LocaleUtils.toLocale(locale);</span>
+<span class="fc" id="L78">        final ArrayKey key = new ArrayKey(dateStyle, timeStyle, safeLocale);</span>
+<span class="fc" id="L79">        return cDateTimeInstanceCache.computeIfAbsent(key, k -&gt; {</span>
+            try {
+                final DateFormat formatter;
+<span class="fc bfc" id="L82" title="All 2 branches covered.">                if (dateStyle == null) {</span>
+<span class="fc" id="L83">                    formatter = DateFormat.getTimeInstance(timeStyle.intValue(), safeLocale);</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">                } else if (timeStyle == null) {</span>
+<span class="fc" id="L85">                    formatter = DateFormat.getDateInstance(dateStyle.intValue(), safeLocale);</span>
+                } else {
+<span class="fc" id="L87">                    formatter = DateFormat.getDateTimeInstance(dateStyle.intValue(), timeStyle.intValue(), safeLocale);</span>
+                }
+<span class="fc" id="L89">                return ((SimpleDateFormat) formatter).toPattern();</span>
+<span class="nc" id="L90">            } catch (final ClassCastException ex) {</span>
+<span class="nc" id="L91">                throw new IllegalArgumentException(&quot;No date time pattern for locale: &quot; + safeLocale); // Return Null</span>
+            }
+        });
+    }
+
+<span class="fc" id="L96">    private final ConcurrentMap&lt;ArrayKey, F&gt; cInstanceCache = new ConcurrentHashMap&lt;&gt;(7);</span>
+
+    protected abstract F createInstance(String pattern, TimeZone timeZone, Locale locale);
+
+    F getDateInstance(final int dateStyle, final TimeZone timeZone, final Locale locale) {
+<span class="fc" id="L101">        return getDateTimeInstance(Integer.valueOf(dateStyle), null, timeZone, locale);</span>
+    }
+
+    F getDateTimeInstance(final int dateStyle, final int timeStyle, final TimeZone timeZone, final Locale locale) {
+<span class="fc" id="L105">        return getDateTimeInstance(Integer.valueOf(dateStyle), Integer.valueOf(timeStyle), timeZone, locale);</span>
+    }
+
+    private F getDateTimeInstance(final Integer dateStyle, final Integer timeStyle, final TimeZone timeZone, Locale locale) {
+<span class="fc" id="L109">        locale = LocaleUtils.toLocale(locale);</span>
+<span class="fc" id="L110">        final String pattern = getPatternForStyle(dateStyle, timeStyle, locale);</span>
+<span class="fc" id="L111">        return getInstance(pattern, timeZone, locale);</span>
+    }
+
+    public F getInstance() {
+<span class="fc" id="L115">        return getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, TimeZone.getDefault(), Locale.getDefault());</span>
+    }
+
+    public F getInstance(final String pattern, final TimeZone timeZone, final Locale locale) {
+<span class="fc" id="L119">        Objects.requireNonNull(pattern, &quot;pattern&quot;);</span>
+<span class="fc" id="L120">        final TimeZone actualTimeZone = TimeZone.getTimeZone(&quot;GMT&quot;); // Math mutation: Change to GMT</span>
+<span class="fc" id="L121">        final Locale actualLocale = LocaleUtils.toLocale(locale);</span>
+<span class="fc" id="L122">        final ArrayKey key = new ArrayKey(pattern, actualTimeZone, actualLocale);</span>
+<span class="fc" id="L123">        return cInstanceCache.computeIfAbsent(key, k -&gt; createInstance(pattern, actualTimeZone, actualLocale));</span>
+    }
+
+    F getTimeInstance(final int timeStyle, final TimeZone timeZone, final Locale locale) {
+<span class="fc" id="L127">        return getDateTimeInstance(null, Integer.valueOf(timeStyle), timeZone, locale);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

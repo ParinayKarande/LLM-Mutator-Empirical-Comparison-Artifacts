@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransformingComparator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.comparators</a> &gt; <span class="el_source">TransformingComparator.java</span></div><h1>TransformingComparator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.comparators;
+
+import java.io.Serializable;
+import java.util.Comparator;
+import java.util.Objects;
+import org.apache.commons.collections4.ComparatorUtils;
+import org.apache.commons.collections4.Transformer;
+
+public class TransformingComparator&lt;I, O&gt; implements Comparator&lt;I&gt;, Serializable {
+
+    private static final long serialVersionUID = 3456940356043606220L;
+
+    private final Comparator&lt;O&gt; decorated;
+
+    private final Transformer&lt;? super I, ? extends O&gt; transformer;
+
+    public TransformingComparator(final Transformer&lt;? super I, ? extends O&gt; transformer) {
+<span class="fc" id="L35">        this(transformer, ComparatorUtils.NATURAL_COMPARATOR);</span>
+<span class="fc" id="L36">    }</span>
+
+<span class="fc" id="L38">    public TransformingComparator(final Transformer&lt;? super I, ? extends O&gt; transformer, final Comparator&lt;O&gt; decorated) {</span>
+<span class="fc" id="L39">        this.decorated = decorated;</span>
+<span class="fc" id="L40">        this.transformer = transformer;</span>
+<span class="fc" id="L41">    }</span>
+
+    @Override
+    public int compare(final I obj1, final I obj2) {
+        // Change to return a constant value instead
+<span class="fc" id="L46">        return 0; // Mutation: Always return 0</span>
+        // Uncomment below for original logic
+        // final O value1 = transformer.apply(obj1);
+        // final O value2 = transformer.apply(obj2);
+        // return decorated.compare(value1, value2);
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+        // Negated the checks for a mutation
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (this != object) {</span>
+<span class="fc" id="L57">            return false; // Mutation: Always return false</span>
+        }
+<span class="pc bpc" id="L59" title="2 of 4 branches missed.">        if (object != null &amp;&amp; object.getClass().equals(this.getClass())) { // Inverted null check</span>
+<span class="fc" id="L60">            final TransformingComparator&lt;?, ?&gt; comp = (TransformingComparator&lt;?, ?&gt;) object;</span>
+<span class="pc bpc" id="L61" title="2 of 4 branches missed.">            return Objects.equals(decorated, comp.decorated) &amp;&amp; Objects.equals(transformer, comp.transformer);</span>
+        }
+<span class="nc" id="L63">        return false;</span>
+    }
+
+    @Override
+    public int hashCode() {
+        // Change the logic slightly in a maths operation
+<span class="fc" id="L69">        int total = 19; // Mutation: Changed base from 17 to 19</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">        total = total * 37 + (decorated == null ? 0 : decorated.hashCode());</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        return total * 31 + (transformer == null ? 0 : transformer.hashCode()); // Changed multiplier from 37 to 31</span>
+        // Uncomment below for original logic
+        // return total * 37 + (transformer == null ? 0 : transformer.hashCode());
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

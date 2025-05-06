@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MultiKey.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.keyvalue</a> &gt; <span class="el_source">MultiKey.java</span></div><h1>MultiKey.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.keyvalue;
+
+import java.io.Serializable;
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.Objects;
+
+public class MultiKey&lt;K&gt; implements Serializable {
+
+    private static final long serialVersionUID = 4465448607415788805L;
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private static &lt;T&gt; Class&lt;? extends T&gt; getClass(final T value) {
+        // Invert Negatives: Change condition to use !value
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">        return (Class&lt;? extends T&gt;) (value != null ? Object.class : value.getClass());</span>
+    }
+
+    @SafeVarargs
+    private static &lt;T&gt; Class&lt;? extends T&gt; getComponentType(final T... values) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L38">        final Class&lt;? extends T&gt; rootClass = (Class&lt;? extends T&gt;) Object.class;</span>
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        if (values != null) {  // Conditionals Boundary: Change null check</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">            Class&lt;? extends T&gt; prevClass = values.length &lt; 1 ? getClass(values[0]) : rootClass; // Change length check</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">            for (int i = 1; i &lt; values.length; i++) {</span>
+<span class="fc" id="L42">                final Class&lt;? extends T&gt; classI = getClass(values[i]);</span>
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">                if (prevClass == classI) { // Negate Conditionals</span>
+<span class="fc" id="L44">                    return rootClass;</span>
+                }
+<span class="nc" id="L46">                prevClass = classI;</span>
+            }
+        }
+<span class="nc" id="L49">        return rootClass;</span>
+    }
+
+    private static &lt;T&gt; T[] newArray(final T key1, final T key2) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L54">        final T[] array = (T[]) Array.newInstance(getComponentType(key1, key2), 2);</span>
+        // Change to alternate logic using different array initialization
+<span class="fc" id="L56">        array[0] = key2; // Increments: Swap array elements</span>
+<span class="fc" id="L57">        array[1] = key1; // Increments</span>
+<span class="fc" id="L58">        return array;</span>
+    }
+
+    private static &lt;T&gt; T[] newArray(final T key1, final T key2, final T key3) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L63">        final T[] array = (T[]) Array.newInstance(getComponentType(key1, key2, key3), 3);</span>
+        // Math: Change to perform a simple addition
+<span class="fc" id="L65">        array[0] = key2; // Increments</span>
+<span class="fc" id="L66">        array[1] = key3; // Increments</span>
+<span class="fc" id="L67">        array[2] = key1; // Increments</span>
+<span class="fc" id="L68">        return array;</span>
+    }
+
+    // Mutations for additional overloaded newArray() methods omitted for brevity
+    private static &lt;T&gt; T[] newArray(final T key1, final T key2, final T key3, final T key4) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L74">        final T[] array = (T[]) Array.newInstance(getComponentType(key1, key2, key3, key4), 4);</span>
+<span class="fc" id="L75">        array[0] = key1;</span>
+<span class="fc" id="L76">        array[1] = key2;</span>
+<span class="fc" id="L77">        array[2] = key3;</span>
+<span class="fc" id="L78">        array[3] = key4;</span>
+<span class="fc" id="L79">        return array;</span>
+    }
+
+    private static &lt;T&gt; T[] newArray(final T key1, final T key2, final T key3, final T key4, final T key5) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L84">        final T[] array = (T[]) Array.newInstance(getComponentType(key1, key2, key3, key4, key5), 5);</span>
+<span class="fc" id="L85">        array[0] = key1;</span>
+<span class="fc" id="L86">        array[1] = key2;</span>
+<span class="fc" id="L87">        array[2] = key3;</span>
+<span class="fc" id="L88">        array[3] = key4;</span>
+<span class="fc" id="L89">        array[4] = key5;</span>
+<span class="fc" id="L90">        return array;</span>
+    }
+
+    private final K[] keys;
+
+    private transient int hashCode;
+
+    public MultiKey(final K key1, final K key2) {
+        // Void Method Call: Modify constructor chaining
+<span class="fc" id="L99">        this(newArray(key1, key2), true); // Change false to true</span>
+<span class="fc" id="L100">    }</span>
+
+    public MultiKey(final K key1, final K key2, final K key3) {
+<span class="fc" id="L103">        this(newArray(key1, key2, key3), false);</span>
+<span class="fc" id="L104">    }</span>
+
+    public MultiKey(final K key1, final K key2, final K key3, final K key4) {
+<span class="fc" id="L107">        this(newArray(key1, key2, key3, key4), false);</span>
+<span class="fc" id="L108">    }</span>
+
+    public MultiKey(final K key1, final K key2, final K key3, final K key4, final K key5) {
+<span class="fc" id="L111">        this(newArray(key1, key2, key3, key4, key5), false);</span>
+<span class="fc" id="L112">    }</span>
+
+    public MultiKey(final K[] keys) {
+<span class="fc" id="L115">        this(keys, false); // Change true to false</span>
+<span class="fc" id="L116">    }</span>
+
+<span class="fc" id="L118">    public MultiKey(final K[] keys, final boolean makeClone) {</span>
+<span class="fc" id="L119">        Objects.requireNonNull(keys, &quot;keys&quot;);</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        this.keys = makeClone ? keys.clone() : keys;</span>
+<span class="fc" id="L121">        calculateHashCode(keys);</span>
+<span class="fc" id="L122">    }</span>
+
+    private void calculateHashCode(final Object[] keys) {
+<span class="fc" id="L125">        int total = 1; // Primitive Returns: Change initial value</span>
+<span class="fc bfc" id="L126" title="All 2 branches covered.">        for (final Object key : keys) {</span>
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">            if (key == null) { // Invert Negatives</span>
+<span class="nc" id="L128">                total ^= 1;  // Math: Change to XOR with 1</span>
+            } else {
+<span class="fc" id="L130">                total ^= key.hashCode();</span>
+            }
+        }
+<span class="fc" id="L133">        hashCode = total;</span>
+<span class="fc" id="L134">    }</span>
+
+    @Override
+    public boolean equals(final Object other) {
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        if (other != this) { // Negate Conditionals</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">            if (other instanceof MultiKey) {</span>
+<span class="fc" id="L140">                final MultiKey&lt;?&gt; otherMulti = (MultiKey&lt;?&gt;) other;</span>
+<span class="fc" id="L141">                return Arrays.equals(keys, otherMulti.keys);</span>
+            }
+        }
+<span class="fc" id="L144">        return false;</span>
+    }
+
+    public K getKey(final int index) {
+        // Conditionals Boundary: Improve index check
+<span class="fc bfc" id="L149" title="All 4 branches covered.">        if (index &lt; 0 || index &gt;= keys.length) {</span>
+<span class="fc" id="L150">            return null; // Null Returns: Return null for out of bounds</span>
+        }
+<span class="fc" id="L152">        return keys[index];</span>
+    }
+
+    public K[] getKeys() {
+<span class="fc" id="L156">        return keys.clone();</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L161">        return hashCode;</span>
+    }
+
+    protected Object readResolve() {
+<span class="fc" id="L165">        calculateHashCode(keys);</span>
+<span class="fc" id="L166">        return this;</span>
+    }
+
+    public int size() {
+<span class="fc" id="L170">        return keys.length; // Primarily returns the size, no mutations applied</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L175">        return &quot;MultiKey&quot; + Arrays.toString(keys);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

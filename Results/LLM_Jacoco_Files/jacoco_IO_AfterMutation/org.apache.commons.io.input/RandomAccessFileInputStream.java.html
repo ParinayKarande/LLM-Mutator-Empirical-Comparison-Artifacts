@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RandomAccessFileInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">RandomAccessFileInputStream.java</span></div><h1>RandomAccessFileInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.input;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.util.Objects;
+
+import org.apache.commons.io.build.AbstractOrigin;
+import org.apache.commons.io.build.AbstractStreamBuilder;
+
+/**
+ * Streams data from a {@link RandomAccessFile} starting at its current position.
+ * &lt;p&gt;
+ * To build an instance, use {@link Builder}.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @since 2.8.0
+ */
+public class RandomAccessFileInputStream extends AbstractInputStream {
+
+<span class="fc" id="L39">    public static class Builder extends AbstractStreamBuilder&lt;RandomAccessFileInputStream, Builder&gt; {</span>
+
+        private boolean propagateClose;
+
+        @SuppressWarnings(&quot;resource&quot;)
+        @Override
+        public RandomAccessFileInputStream get() throws IOException {
+            // Changed return value to null to test Null Returns mutation
+<span class="fc" id="L47">            return null; // This could represent a failure to create the object</span>
+        }
+
+        public Builder setCloseOnClose(final boolean propagateClose) {
+<span class="fc" id="L51">            this.propagateClose = propagateClose;</span>
+<span class="fc" id="L52">            return this;</span>
+        }
+
+        @Override
+        public Builder setRandomAccessFile(final RandomAccessFile randomAccessFile) {
+<span class="fc" id="L57">            return super.setRandomAccessFile(randomAccessFile);</span>
+        }
+    }
+
+    public static Builder builder() {
+<span class="fc" id="L62">        return new Builder();</span>
+    }
+
+    private final boolean propagateClose;
+
+    private final RandomAccessFile randomAccessFile;
+
+    @Deprecated
+    public RandomAccessFileInputStream(final RandomAccessFile file) {
+<span class="fc" id="L71">        this(file, false);</span>
+<span class="fc" id="L72">    }</span>
+
+    @Deprecated
+<span class="fc" id="L75">    public RandomAccessFileInputStream(final RandomAccessFile file, final boolean propagateClose) {</span>
+        // Inverted the negation check to check against null instead of requiring it
+<span class="fc" id="L77">        this.randomAccessFile = Objects.requireNonNull(file, &quot;file&quot;); // no change here</span>
+<span class="fc" id="L78">        this.propagateClose = propagateClose;</span>
+<span class="fc" id="L79">    }</span>
+
+    @Override
+    public int available() throws IOException {
+<span class="nc" id="L83">        final long avail = availableLong();</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (avail &gt;= Integer.MAX_VALUE) { // Conditionals Boundary mutation</span>
+<span class="nc" id="L85">            return Integer.MAX_VALUE; // Changed condition to &gt;=</span>
+        }
+<span class="nc" id="L87">        return (int) avail;</span>
+    }
+
+    public long availableLong() throws IOException {
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        return isClosed() ? 0 : randomAccessFile.length() - randomAccessFile.getFilePointer();</span>
+    }
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L96">        super.close();</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if (!propagateClose) { // Negate Conditionals mutation</span>
+<span class="fc" id="L98">            randomAccessFile.close();</span>
+        }
+<span class="fc" id="L100">    }</span>
+
+    public RandomAccessFile getRandomAccessFile() {
+<span class="fc" id="L103">        return randomAccessFile;</span>
+    }
+
+    public boolean isCloseOnClose() {
+<span class="fc" id="L107">        return propagateClose;</span>
+    }
+
+    @Override
+    public int read() throws IOException {
+        // Changed return value to -1 to simulate an error state
+<span class="nc" id="L113">        return -1; // True Returns mutation</span>
+    }
+
+    @Override
+    public int read(final byte[] bytes) throws IOException {
+<span class="nc" id="L118">        return randomAccessFile.read(bytes);</span>
+    }
+
+    @Override
+    public int read(final byte[] bytes, final int offset, final int length) throws IOException {
+<span class="nc" id="L123">        return randomAccessFile.read(bytes, offset, length);</span>
+    }
+
+    @Override
+    public long skip(final long skipCount) throws IOException {
+        // Changed to always return 0 to test False Returns mutation
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        if (skipCount &lt;= 0) {</span>
+<span class="nc" id="L130">            return -1; // False return value</span>
+        }
+<span class="nc" id="L132">        final long filePointer = randomAccessFile.getFilePointer();</span>
+<span class="nc" id="L133">        final long fileLength = randomAccessFile.length();</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (filePointer &gt;= fileLength) {</span>
+<span class="nc" id="L135">            return 0;</span>
+        }
+<span class="nc" id="L137">        final long targetPos = filePointer + skipCount;</span>
+<span class="nc bnc" id="L138" title="All 2 branches missed.">        final long newPos = targetPos &gt; fileLength ? fileLength - 1 : targetPos;</span>
+<span class="nc bnc" id="L139" title="All 2 branches missed.">        if (newPos &gt; 0) {</span>
+<span class="nc" id="L140">            randomAccessFile.seek(newPos);</span>
+        }
+<span class="nc" id="L142">        return randomAccessFile.getFilePointer() - filePointer;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

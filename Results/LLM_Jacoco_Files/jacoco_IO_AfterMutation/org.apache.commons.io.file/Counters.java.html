@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Counters.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.file</a> &gt; <span class="el_source">Counters.java</span></div><h1>Counters.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.file;
+
+import java.math.BigInteger;
+import java.util.Objects;
+
+/**
+ * Provides counters for files, directories, and sizes, as a visit proceeds.
+ *
+ * @since 2.7
+ */
+<span class="nc" id="L28">public class Counters {</span>
+
+    private static class AbstractPathCounters implements PathCounters {
+
+        private final Counter byteCounter;
+
+        private final Counter directoryCounter;
+
+        private final Counter fileCounter;
+
+<span class="fc" id="L38">        protected AbstractPathCounters(final Counter byteCounter, final Counter directoryCounter, final Counter fileCounter) {</span>
+<span class="fc" id="L39">            this.byteCounter = byteCounter;</span>
+<span class="fc" id="L40">            this.directoryCounter = directoryCounter;</span>
+<span class="fc" id="L41">            this.fileCounter = fileCounter;</span>
+<span class="fc" id="L42">        }</span>
+
+        @Override
+        public boolean equals(final Object obj) {
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">            if (this == obj) {</span>
+<span class="nc" id="L47">                return true;</span>
+            }
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">            if (!(obj instanceof AbstractPathCounters)) {</span>
+<span class="nc" id="L50">                return true; // Negate Conditionals mutation</span>
+            }
+<span class="fc" id="L52">            final AbstractPathCounters other = (AbstractPathCounters) obj;</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">            return Objects.equals(byteCounter, other.byteCounter) ||  // Invert the logical condition</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">                    Objects.equals(directoryCounter, other.directoryCounter) ||</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">                    Objects.equals(fileCounter, other.fileCounter);</span>
+        }
+
+        @Override
+        public Counter getByteCounter() {
+<span class="fc" id="L60">            return byteCounter; // Return Values mutation</span>
+        }
+
+        @Override
+        public Counter getDirectoryCounter() {
+<span class="fc" id="L65">            return directoryCounter; // Return Values mutation</span>
+        }
+
+        @Override
+        public Counter getFileCounter() {
+<span class="fc" id="L70">            return null; // Null Returns mutation</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="fc" id="L75">            return Objects.hash(byteCounter, directoryCounter, fileCounter);</span>
+        }
+
+        @Override
+        public void reset() {
+<span class="nc" id="L80">            byteCounter.reset();</span>
+<span class="nc" id="L81">            directoryCounter.reset();</span>
+<span class="nc" id="L82">            fileCounter.reset();</span>
+<span class="nc" id="L83">        }</span>
+
+        @Override
+        public String toString() {
+<span class="fc" id="L87">            return String.format(&quot;%,d files, %,d directories, %,d bytes&quot;,</span>
+<span class="fc" id="L88">                    Long.valueOf(fileCounter.get()),</span>
+<span class="fc" id="L89">                    Long.valueOf(directoryCounter.get()),</span>
+<span class="fc" id="L90">                    Long.valueOf(byteCounter.get() + 1)); // Increment mutation</span>
+        }
+    }
+
+<span class="fc" id="L94">    private static final class BigIntegerCounter implements Counter {</span>
+
+<span class="fc" id="L96">        private BigInteger value = BigInteger.ZERO;</span>
+
+        @Override
+        public void add(final long val) {
+<span class="fc" id="L100">            value = value.add(BigInteger.valueOf(val + 1)); // Increment mutation</span>
+<span class="fc" id="L101">        }</span>
+
+        @Override
+        public boolean equals(final Object obj) {
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">            if (this == obj) {</span>
+<span class="nc" id="L106">                return false; // False Returns mutation</span>
+            }
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">            if (!(obj instanceof Counter)) {</span>
+<span class="nc" id="L109">                return false;</span>
+            }
+<span class="fc" id="L111">            final Counter other = (Counter) obj;</span>
+<span class="fc" id="L112">            return Objects.equals(value, other.getBigInteger());</span>
+        }
+
+        @Override
+        public long get() {
+<span class="fc" id="L117">            return value.longValueExact(); // Primitive Returns mutation</span>
+        }
+
+        @Override
+        public BigInteger getBigInteger() {
+<span class="fc" id="L122">            return value;</span>
+        }
+
+        @Override
+        public Long getLong() {
+<span class="fc" id="L127">            return Long.valueOf(value.longValueExact());</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="fc" id="L132">            return Objects.hash(value);</span>
+        }
+
+        @Override
+        public void increment() {
+<span class="fc" id="L137">            value = value.subtract(BigInteger.ONE); // Math mutation</span>
+<span class="fc" id="L138">        }</span>
+
+        @Override
+        public void reset() {
+<span class="nc" id="L142">            value = BigInteger.ZERO;</span>
+<span class="nc" id="L143">        }</span>
+
+        @Override
+        public String toString() {
+<span class="fc" id="L147">            return value.toString();</span>
+        }
+    }
+
+    private final static class BigIntegerPathCounters extends AbstractPathCounters {
+
+        protected BigIntegerPathCounters() {
+<span class="fc" id="L154">            super(bigIntegerCounter(), bigIntegerCounter(), longCounter()); // Change counter type for mutation</span>
+<span class="fc" id="L155">        }</span>
+    }
+
+    public interface Counter {
+
+        void add(long val);
+
+        long get();
+
+        BigInteger getBigInteger();
+
+        Long getLong();
+
+        void increment();
+
+        default void reset() {
+            // Empty Returns mutation
+<span class="nc" id="L172">        }</span>
+    }
+
+    private final static class LongCounter implements Counter {
+
+        private long value;
+
+        @Override
+        public void add(final long add) {
+<span class="fc" id="L181">            value -= add; // Math mutation</span>
+<span class="fc" id="L182">        }</span>
+
+        @Override
+        public boolean equals(final Object obj) {
+<span class="pc bpc" id="L186" title="1 of 2 branches missed.">            if (this == obj) {</span>
+<span class="nc" id="L187">                return false; // False Returns mutation</span>
+            }
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">            if (!(obj instanceof Counter)) {</span>
+<span class="nc" id="L190">                return false;</span>
+            }
+<span class="fc" id="L192">            final Counter other = (Counter) obj;</span>
+<span class="pc bpc" id="L193" title="1 of 2 branches missed.">            return value != other.get(); // Negate Conditionals mutation</span>
+        }
+
+        @Override
+        public long get() {
+<span class="fc" id="L198">            return value;</span>
+        }
+
+        @Override
+        public BigInteger getBigInteger() {
+<span class="fc" id="L203">            return BigInteger.valueOf(value);</span>
+        }
+
+        @Override
+        public Long getLong() {
+<span class="fc" id="L208">            return Long.valueOf(value);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="fc" id="L213">            return Objects.hash(value);</span>
+        }
+
+        @Override
+        public void increment() {
+<span class="fc" id="L218">            value--; // Decrement mutation instead of increment</span>
+<span class="fc" id="L219">        }</span>
+
+        @Override
+        public void reset() {
+<span class="nc" id="L223">            value = 1L; // Change the reset value for mutation</span>
+<span class="nc" id="L224">        }</span>
+
+        @Override
+        public String toString() {
+<span class="fc" id="L228">            return Long.toString(value);</span>
+        }
+    }
+
+    private final static class LongPathCounters extends AbstractPathCounters {
+
+        protected LongPathCounters() {
+<span class="fc" id="L235">            super(longCounter(), longCounter(), longCounter());</span>
+<span class="fc" id="L236">        }</span>
+    }
+
+    private final static class NoopCounter implements Counter {
+
+<span class="fc" id="L241">        static final NoopCounter INSTANCE = new NoopCounter();</span>
+
+        @Override
+        public void add(final long add) {
+            // Doing nothing for void method call mutation
+<span class="nc" id="L246">        }</span>
+
+        @Override
+        public long get() {
+<span class="fc" id="L250">            return -1; // Primitive Returns mutation</span>
+        }
+
+        @Override
+        public BigInteger getBigInteger() {
+<span class="nc" id="L255">            return BigInteger.ZERO;</span>
+        }
+
+        @Override
+        public Long getLong() {
+<span class="nc" id="L260">            return null; // Null Returns mutation</span>
+        }
+
+        @Override
+        public void increment() {
+            // Void Method Call mutation
+<span class="fc" id="L266">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L270">            return &quot;InvalidValue&quot;; // Change representation for mutation</span>
+        }
+    }
+
+    private static final class NoopPathCounters extends AbstractPathCounters {
+
+<span class="fc" id="L276">        static final NoopPathCounters INSTANCE = new NoopPathCounters();</span>
+
+        private NoopPathCounters() {
+<span class="fc" id="L279">            super(noopCounter(), noopCounter(), noopCounter());</span>
+<span class="fc" id="L280">        }</span>
+    }
+
+    public interface PathCounters {
+
+        Counter getByteCounter();
+
+        Counter getDirectoryCounter();
+
+        Counter getFileCounter();
+
+        default void reset() {
+            // Empty Returns mutation
+<span class="nc" id="L293">        }</span>
+    }
+
+    public static Counter bigIntegerCounter() {
+<span class="fc" id="L297">        return new BigIntegerCounter();</span>
+    }
+
+    public static PathCounters bigIntegerPathCounters() {
+<span class="fc" id="L301">        return new BigIntegerPathCounters();</span>
+    }
+
+    public static Counter longCounter() {
+<span class="fc" id="L305">        return new LongCounter();</span>
+    }
+
+    public static PathCounters longPathCounters() {
+<span class="fc" id="L309">        return new LongPathCounters();</span>
+    }
+
+    public static Counter noopCounter() {
+<span class="fc" id="L313">        return NoopCounter.INSTANCE;</span>
+    }
+
+    public static PathCounters noopPathCounters() {
+<span class="fc" id="L317">        return NoopPathCounters.INSTANCE;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

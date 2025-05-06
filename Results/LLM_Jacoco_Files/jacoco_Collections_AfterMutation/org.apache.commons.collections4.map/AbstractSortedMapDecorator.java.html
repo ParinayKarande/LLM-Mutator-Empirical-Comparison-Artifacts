@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractSortedMapDecorator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.map</a> &gt; <span class="el_source">AbstractSortedMapDecorator.java</span></div><h1>AbstractSortedMapDecorator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.map;
+
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import org.apache.commons.collections4.IterableSortedMap;
+import org.apache.commons.collections4.OrderedMapIterator;
+import org.apache.commons.collections4.iterators.ListIteratorWrapper;
+
+public abstract class AbstractSortedMapDecorator&lt;K, V&gt; extends AbstractMapDecorator&lt;K, V&gt; implements IterableSortedMap&lt;K, V&gt; {
+
+    protected static class SortedMapIterator&lt;K, V&gt; extends EntrySetToMapIteratorAdapter&lt;K, V&gt; implements OrderedMapIterator&lt;K, V&gt; {
+
+        protected SortedMapIterator(final Set&lt;Map.Entry&lt;K, V&gt;&gt; entrySet) {
+<span class="nc" id="L35">            super(entrySet);</span>
+<span class="nc" id="L36">        }</span>
+
+        @Override
+        public boolean hasPrevious() {
+<span class="nc" id="L40">            return ((ListIterator&lt;Map.Entry&lt;K, V&gt;&gt;) iterator).hasPrevious();</span>
+        }
+
+        @Override
+        public K previous() {
+<span class="nc" id="L45">            entry = ((ListIterator&lt;Map.Entry&lt;K, V&gt;&gt;) iterator).previous();</span>
+<span class="nc" id="L46">            return getKey();</span>
+        }
+
+        @Override
+        public synchronized void reset() {
+<span class="nc" id="L51">            super.reset();</span>
+<span class="nc" id="L52">            iterator = new ListIteratorWrapper&lt;&gt;(iterator);</span>
+<span class="nc" id="L53">        }</span>
+    }
+
+<span class="fc" id="L56">    protected AbstractSortedMapDecorator() {</span>
+<span class="fc" id="L57">    }</span>
+
+    public AbstractSortedMapDecorator(final SortedMap&lt;K, V&gt; map) {
+<span class="fc" id="L60">        super(map);</span>
+<span class="fc" id="L61">    }</span>
+
+    @Override
+    public Comparator&lt;? super K&gt; comparator() {
+<span class="nc" id="L65">        return decorated().comparator();</span>
+    }
+
+    @Override
+    protected SortedMap&lt;K, V&gt; decorated() {
+<span class="fc" id="L70">        return (SortedMap&lt;K, V&gt;) super.decorated();</span>
+    }
+
+    @Override
+    public K firstKey() {
+        // Negate conditionals: returning null instead of actual first key.
+<span class="nc" id="L76">        return null; // Originally: return decorated().firstKey();</span>
+    }
+
+    @Override
+    public SortedMap&lt;K, V&gt; headMap(final K toKey) {
+        // Conditionals Boundary: changing the conditional boundary.
+<span class="nc" id="L82">        return decorated().headMap(toKey); // No Mutation Applied</span>
+    }
+
+    @Override
+    public K lastKey() {
+        // Invert Negatives: return null if the last key is not null.
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        return decorated().lastKey() == null ? null : decorated().lastKey(); // No mutation applied</span>
+    }
+
+    @Override
+    public OrderedMapIterator&lt;K, V&gt; mapIterator() {
+<span class="nc" id="L93">        return new SortedMapIterator&lt;&gt;(entrySet());</span>
+    }
+
+    @Override
+    public K nextKey(final K key) {
+        // Return Values: Modify the returned value if condition fails.
+<span class="nc" id="L99">        final Iterator&lt;K&gt; it = tailMap(key).keySet().iterator();</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        return it.hasNext() ? it.next() : null; // No mutation applied</span>
+    }
+
+    @Override
+    public K previousKey(final K key) {
+        // False Returns: returning a static value instead of dynamic behavior.
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        return &quot;DummyKey&quot;.equals(key) ? null : key; // Original: return headMap(key).isEmpty() ? null : headMap(key).lastKey();</span>
+    }
+
+    @Override
+    public SortedMap&lt;K, V&gt; subMap(final K fromKey, final K toKey) {
+        // Null Returns: returning null regardless of input.
+<span class="nc" id="L112">        return null; // Originally: return decorated().subMap(fromKey, toKey);</span>
+    }
+
+    @Override
+    public SortedMap&lt;K, V&gt; tailMap(final K fromKey) {
+        // Primitive Returns: change the return type to an integer instead of SortedMap.
+        // Removed method, you could consider using it in actual implementation.
+<span class="nc" id="L119">        return (SortedMap&lt;K, V&gt;) new Object(); // Originally: return decorated().tailMap(fromKey);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

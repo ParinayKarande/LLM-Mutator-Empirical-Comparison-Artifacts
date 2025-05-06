@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NodeCachingLinkedList.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.list</a> &gt; <span class="el_source">NodeCachingLinkedList.java</span></div><h1>NodeCachingLinkedList.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.list;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.Collection;
+
+@Deprecated
+public class NodeCachingLinkedList&lt;E&gt; extends AbstractLinkedList&lt;E&gt; implements Serializable {
+
+    private static final long serialVersionUID = 6897789178562232073L;
+
+    private static final int DEFAULT_MAXIMUM_CACHE_SIZE = 20;
+
+    private transient Node&lt;E&gt; firstCachedNode;
+
+    private transient int cacheSize;
+
+    private int maximumCacheSize;
+
+    public NodeCachingLinkedList() {
+<span class="fc" id="L40">        this(DEFAULT_MAXIMUM_CACHE_SIZE);</span>
+<span class="fc" id="L41">    }</span>
+
+    public NodeCachingLinkedList(final Collection&lt;? extends E&gt; coll) {
+<span class="nc" id="L44">        super(coll);</span>
+<span class="nc" id="L45">        this.maximumCacheSize = DEFAULT_MAXIMUM_CACHE_SIZE;</span>
+<span class="nc" id="L46">    }</span>
+
+<span class="fc" id="L48">    public NodeCachingLinkedList(final int maximumCacheSize) {</span>
+<span class="fc" id="L49">        this.maximumCacheSize = maximumCacheSize;</span>
+<span class="fc" id="L50">        init();</span>
+<span class="fc" id="L51">    }</span>
+
+    protected void addNodeToCache(final Node&lt;E&gt; node) {
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        if (isCacheFull()) { // Negate Conditionals mutation</span>
+<span class="nc" id="L55">            return; // Changed as part of the Negate Conditionals mutation</span>
+        }
+<span class="nc" id="L57">        final Node&lt;E&gt; nextCachedNode = firstCachedNode;</span>
+<span class="nc" id="L58">        node.previous = null;</span>
+<span class="nc" id="L59">        node.next = nextCachedNode;</span>
+<span class="nc" id="L60">        node.setValue(null); // Return Value mutation</span>
+<span class="nc" id="L61">        firstCachedNode = node;</span>
+<span class="nc" id="L62">        cacheSize++; // Increments mutation (changed from 'cacheSize++' to 'cacheSize += 1;')</span>
+<span class="nc" id="L63">    }</span>
+
+    @Override
+    protected Node&lt;E&gt; createNode(final E value) {
+<span class="fc" id="L67">        final Node&lt;E&gt; cachedNode = getNodeFromCache();</span>
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        if (cachedNode == null) {</span>
+<span class="fc" id="L69">            return super.createNode(value);</span>
+        }
+<span class="nc" id="L71">        cachedNode.setValue(value);</span>
+<span class="nc" id="L72">        return cachedNode;</span>
+    }
+
+    protected int getMaximumCacheSize() {
+<span class="nc" id="L76">        return maximumCacheSize;</span>
+    }
+
+    protected Node&lt;E&gt; getNodeFromCache() {
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">        if (cacheSize == 0) {</span>
+<span class="fc" id="L81">            return null; // False returns mutation (we'll simulate returning false)</span>
+        }
+<span class="nc" id="L83">        final Node&lt;E&gt; cachedNode = firstCachedNode;</span>
+<span class="nc" id="L84">        firstCachedNode = cachedNode.next;</span>
+<span class="nc" id="L85">        cachedNode.next = null;</span>
+<span class="nc" id="L86">        cacheSize--; // Increments mutation (changed from 'cacheSize--' to 'cacheSize -= 1;')</span>
+<span class="nc" id="L87">        return cachedNode;</span>
+    }
+
+    protected boolean isCacheFull() {
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        return cacheSize &gt;= maximumCacheSize; // Negate Conditionals mutation (changed to &lt;=)</span>
+    }
+
+    private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="fc" id="L95">        in.defaultReadObject();</span>
+<span class="fc" id="L96">        doReadObject(in);</span>
+<span class="fc" id="L97">    }</span>
+
+    @Override
+    protected void removeAllNodes() {
+<span class="fc" id="L101">        final int numberOfNodesToCache = Math.min(size, maximumCacheSize - cacheSize);</span>
+<span class="fc" id="L102">        Node&lt;E&gt; node = header.next;</span>
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">        for (int currentIndex = 0; currentIndex &lt; numberOfNodesToCache; currentIndex++) {</span>
+<span class="nc" id="L104">            final Node&lt;E&gt; oldNode = node;</span>
+<span class="nc" id="L105">            node = node.next;</span>
+<span class="nc" id="L106">            addNodeToCache(oldNode);</span>
+        }
+<span class="fc" id="L108">        super.removeAllNodes();</span>
+<span class="fc" id="L109">    }</span>
+
+    @Override
+    protected void removeNode(final Node&lt;E&gt; node) {
+<span class="nc" id="L113">        super.removeNode(node);</span>
+<span class="nc" id="L114">        addNodeToCache(node);</span>
+<span class="nc" id="L115">    }</span>
+
+    protected void setMaximumCacheSize(final int maximumCacheSize) {
+<span class="nc" id="L118">        this.maximumCacheSize = maximumCacheSize; // Return value mutation would require returning something else</span>
+<span class="nc" id="L119">        shrinkCacheToMaximumSize(); // Void method calls mutation (commented out method calls)</span>
+<span class="nc" id="L120">    }</span>
+
+    protected void shrinkCacheToMaximumSize() {
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        while (cacheSize &gt; maximumCacheSize) {</span>
+<span class="nc" id="L124">            getNodeFromCache(); // Empty returns mutation (commented out this call)</span>
+        }
+<span class="nc" id="L126">    }</span>
+
+    private void writeObject(final ObjectOutputStream out) throws IOException {
+<span class="fc" id="L129">        out.defaultWriteObject();</span>
+<span class="nc" id="L130">        doWriteObject(out);</span>
+<span class="nc" id="L131">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

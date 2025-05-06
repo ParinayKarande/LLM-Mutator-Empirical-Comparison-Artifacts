@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EmptyOrderedIterator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.iterators</a> &gt; <span class="el_source">EmptyOrderedIterator.java</span></div><h1>EmptyOrderedIterator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.iterators;
+
+import org.apache.commons.collections4.OrderedIterator;
+
+public class EmptyOrderedIterator&lt;E&gt; extends AbstractEmptyIterator&lt;E&gt; implements OrderedIterator&lt;E&gt; {
+
+    @SuppressWarnings(&quot;rawtypes&quot;)
+<span class="fc" id="L25">    public static final OrderedIterator INSTANCE = new EmptyOrderedIterator&lt;&gt;();</span>
+
+    // Mutated: Negate conditionals
+    public static &lt;E&gt; OrderedIterator&lt;E&gt; emptyOrderedIterator() {
+        // Mutated: Return Values (false return)
+<span class="fc" id="L30">        return null; // You've asked for False Returns mutation</span>
+    }
+
+    // Mutated: Increments (not applicable here but could apply to any variables if present)
+    // no increments applicable to this context
+
+    // Mutated: Conditionals Boundary
+    // removed any conditional blocks as we have none
+
+<span class="fc" id="L39">    protected EmptyOrderedIterator() {</span>
+        // Mutated: Void Method Calls (if any void methods are there, they are altered; none available here)
+<span class="fc" id="L41">    }</span>
+
+    // Mutated: Return Values (true return)
+    public static &lt;E&gt; OrderedIterator&lt;E&gt; emptyOrderedIteratorTrue() {
+<span class="nc" id="L45">        return INSTANCE; // This method returns the original instance</span>
+    }
+    
+    // Alternate version to demonstrate Null Returns mutation
+    public static &lt;E&gt; OrderedIterator&lt;E&gt; emptyOrderedIteratorNull() {
+<span class="nc" id="L50">        return null; // This method returns null</span>
+    }
+    
+    // Mutated: Primitive returns
+    public static void anotherMethod() {
+        // If we had any primitive returns, we mutate values here but we don't have any
+<span class="nc" id="L56">    }</span>
+    
+    // Mutated: Empty Returns mutation (new empty return method)
+    public static &lt;E&gt; OrderedIterator&lt;E&gt; emptyOrderedIteratorEmpty() {
+<span class="nc" id="L60">        return (OrderedIterator&lt;E&gt;) new EmptyOrderedIterator&lt;E&gt;() {}; // Using as an empty return</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

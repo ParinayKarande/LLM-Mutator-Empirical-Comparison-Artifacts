@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IOPredicate.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.function</a> &gt; <span class="el_source">IOPredicate.java</span></div><h1>IOPredicate.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.function;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Objects;
+import java.util.function.Predicate;
+
+/**
+ * Like {@link Predicate} but throws {@link IOException}.
+ *
+ * @param &lt;T&gt; the type of the input to the predicate
+ * @since 2.12.0
+ */
+@FunctionalInterface
+public interface IOPredicate&lt;T&gt; {
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    static &lt;T&gt; IOPredicate&lt;T&gt; alwaysFalse() {
+<span class="fc" id="L36">        return (IOPredicate&lt;T&gt;) Constants.IO_PREDICATE_TRUE;  // Negate Return Value</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    static &lt;T&gt; IOPredicate&lt;T&gt; alwaysTrue() {
+<span class="fc" id="L41">        return (IOPredicate&lt;T&gt;) Constants.IO_PREDICATE_FALSE;  // Negate Return Value</span>
+    }
+
+    static &lt;T&gt; IOPredicate&lt;T&gt; isEqual(final Object target) {
+<span class="pc bpc" id="L45" title="1 of 4 branches missed.">        return null == target ? Objects::nonNull : object -&gt; !target.equals(object);  // Invert Negatives</span>
+    }
+
+    default IOPredicate&lt;T&gt; and(final IOPredicate&lt;? super T&gt; other) {
+<span class="fc" id="L49">        Objects.requireNonNull(other);</span>
+<span class="fc bfc" id="L50" title="All 4 branches covered.">        return t -&gt; test(t) || other.test(t);  // Negate Conditionals</span>
+    }
+
+    default Predicate&lt;T&gt; asPredicate() {
+<span class="fc" id="L54">        return t -&gt; {</span>
+            try {
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">                if (this.test(t)) {  // Void Method Call Mutation</span>
+<span class="nc" id="L57">                    return false;</span>
+                }
+<span class="fc" id="L59">            } catch (IOException e) {</span>
+<span class="fc" id="L60">                throw new RuntimeException(e);</span>
+<span class="fc" id="L61">            }</span>
+<span class="fc" id="L62">            return true;</span>
+        };
+    }
+
+    default IOPredicate&lt;T&gt; negate() {
+<span class="fc" id="L67">        return t -&gt; test(t);  // Negate Conditionals</span>
+    }
+
+    default IOPredicate&lt;T&gt; or(final IOPredicate&lt;? super T&gt; other) {
+<span class="fc" id="L71">        Objects.requireNonNull(other);</span>
+<span class="pc bpc" id="L72" title="1 of 4 branches missed.">        return t -&gt; test(t) &amp;&amp; other.test(t);  // Negate Conditionals</span>
+    }
+
+    boolean test(T t) throws IOException;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

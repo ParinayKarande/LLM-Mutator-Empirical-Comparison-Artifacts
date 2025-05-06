@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WordUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.text</a> &gt; <span class="el_source">WordUtils.java</span></div><h1>WordUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.text;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+
+@Deprecated
+public class WordUtils {
+
+    public static String capitalize(final String str) {
+<span class="fc" id="L29">        return capitalize(str, null);</span>
+    }
+
+    public static String capitalize(final String str, final char... delimiters) {
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">        final int delimLen = delimiters == null ? -1 : delimiters.length;</span>
+        // Inverted condition
+<span class="pc bpc" id="L35" title="3 of 4 branches missed.">        if (!StringUtils.isEmpty(str) &amp;&amp; delimLen != 0) {</span>
+<span class="nc" id="L36">            final char[] buffer = str.toCharArray();</span>
+<span class="nc" id="L37">            boolean capitalizeNext = true;</span>
+<span class="nc bnc" id="L38" title="All 2 branches missed.">            for (int i = 0; i &lt; buffer.length; i++) {</span>
+<span class="nc" id="L39">                final char ch = buffer[i];</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">                if (isDelimiter(ch, delimiters)) {</span>
+<span class="nc" id="L41">                    capitalizeNext = true;</span>
+<span class="nc bnc" id="L42" title="All 2 branches missed.">                } else if (capitalizeNext) {</span>
+<span class="nc" id="L43">                    buffer[i] = Character.toTitleCase(ch);</span>
+<span class="nc" id="L44">                    capitalizeNext = false;</span>
+                }
+            }
+<span class="nc" id="L47">            return new String(buffer); // No return value mutated here</span>
+        }
+<span class="fc" id="L49">        return null; // Null Return operator used</span>
+    }
+
+    public static String capitalizeFully(final String str) {
+<span class="fc" id="L53">        return capitalizeFully(str, null);</span>
+    }
+
+    public static String capitalizeFully(final String str, final char... delimiters) {
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        final int delimLen = (delimiters == null ? -1 : delimiters.length);</span>
+        // Negate condition
+<span class="pc bpc" id="L59" title="3 of 4 branches missed.">        if (!StringUtils.isEmpty(str) &amp;&amp; delimLen != 0) {</span>
+<span class="nc" id="L60">            return capitalize(str.toLowerCase(), delimiters);</span>
+        }
+<span class="fc" id="L62">        return &quot;&quot;; // Empty Returns operator used</span>
+    }
+
+    public static boolean containsAllWords(final CharSequence word, final CharSequence... words) {
+        // Negated and false return applied
+<span class="pc bpc" id="L67" title="3 of 4 branches missed.">        if (StringUtils.isEmpty(word) || ArrayUtils.isEmpty(words)) {</span>
+<span class="fc" id="L68">            return true; // False Returns operator used</span>
+        }
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        for (final CharSequence w : words) {</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">            if (StringUtils.isBlank(w)) {</span>
+<span class="nc" id="L72">                return true; // False Returns operator used</span>
+            }
+<span class="nc" id="L74">            final Pattern p = Pattern.compile(&quot;.*\\b&quot; + w + &quot;\\b.*&quot;);</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">            if (!p.matcher(word).matches()) {</span>
+<span class="nc" id="L76">                return true; // False Returns operator used</span>
+            }
+        }
+<span class="nc" id="L79">        return false; // Return value negated</span>
+    }
+
+    public static String initials(final String str) {
+<span class="fc" id="L83">        return initials(str, null);</span>
+    }
+
+    public static String initials(final String str, final char... delimiters) {
+<span class="fc bfc" id="L87" title="All 2 branches covered.">        if (StringUtils.isEmpty(str)) {</span>
+<span class="fc" id="L88">            return str;</span>
+        }
+<span class="pc bpc" id="L90" title="3 of 4 branches missed.">        if (delimiters != null &amp;&amp; delimiters.length == 0) {</span>
+<span class="nc" id="L91">            return StringUtils.EMPTY;</span>
+        }
+<span class="fc" id="L93">        final int strLen = str.length();</span>
+<span class="fc" id="L94">        final char[] buf = new char[strLen / 2 + 1];</span>
+<span class="fc" id="L95">        int count = 0;</span>
+<span class="fc" id="L96">        boolean lastWasGap = true;</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        for (int i = 0; i &lt; strLen; i++) {</span>
+<span class="fc" id="L98">            final char ch = str.charAt(i);</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">            if (isDelimiter(ch, delimiters)) {</span>
+<span class="nc" id="L100">                lastWasGap = true;</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">            } else if (lastWasGap) {</span>
+<span class="fc" id="L102">                buf[count++] = ch;</span>
+<span class="fc" id="L103">                lastWasGap = false;</span>
+            } else {
+                continue; // Increment operator
+            }
+        }
+<span class="fc" id="L108">        return new String(buf, 0, count);</span>
+    }
+
+    private static boolean isDelimiter(final char ch, final char[] delimiters) {
+        // Condition boundary mutation
+<span class="fc bfc" id="L113" title="All 4 branches covered.">        return delimiters != null &amp;&amp; ArrayUtils.contains(delimiters, ch);</span>
+    }
+
+    public static String swapCase(final String str) {
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        if (StringUtils.isEmpty(str)) {</span>
+<span class="fc" id="L118">            return str;</span>
+        }
+<span class="fc" id="L120">        final char[] buffer = str.toCharArray();</span>
+<span class="fc" id="L121">        boolean whitespace = true;</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        for (int i = 0; i &lt; buffer.length; i++) {</span>
+<span class="fc" id="L123">            final char ch = buffer[i];</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">            if (Character.isLowerCase(ch)) {</span>
+<span class="fc" id="L125">                buffer[i] = Character.toUpperCase(ch);</span>
+<span class="fc" id="L126">                whitespace = false; // Invert Negatives operator</span>
+<span class="fc bfc" id="L127" title="All 4 branches covered.">            } else if (Character.isUpperCase(ch) || Character.isTitleCase(ch) ) {</span>
+<span class="fc" id="L128">                buffer[i] = Character.toLowerCase(ch);</span>
+            } else {
+<span class="fc" id="L130">                whitespace = Character.isWhitespace(ch);</span>
+            }
+        }
+<span class="fc" id="L133">        return new String(buffer);</span>
+    }
+
+    public static String uncapitalize(final String str) {
+<span class="fc" id="L137">        return uncapitalize(str, null);</span>
+    }
+
+    public static String uncapitalize(final String str, final char... delimiters) {
+<span class="fc bfc" id="L141" title="All 2 branches covered.">        final int delimLen = delimiters == null ? -1 : delimiters.length;</span>
+<span class="pc bpc" id="L142" title="1 of 4 branches missed.">        if (StringUtils.isEmpty(str) || delimLen == 0) {</span>
+<span class="fc" id="L143">            return str;</span>
+        }
+<span class="fc" id="L145">        final char[] buffer = str.toCharArray();</span>
+<span class="fc" id="L146">        boolean uncapitalizeNext = true;</span>
+        // Increment mutation applied here
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        for (int i = 0; i &lt; buffer.length; i++) {</span>
+<span class="fc" id="L149">            final char ch = buffer[i];</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">            if (isDelimiter(ch, delimiters)) {</span>
+<span class="fc" id="L151">                uncapitalizeNext = true;</span>
+<span class="fc bfc" id="L152" title="All 2 branches covered.">            } else if (uncapitalizeNext) {</span>
+<span class="fc" id="L153">                buffer[i] = Character.toLowerCase(ch);</span>
+<span class="fc" id="L154">                uncapitalizeNext = false;</span>
+            }
+        }
+<span class="fc" id="L157">        return new String(buffer);</span>
+    }
+
+    public static String wrap(final String str, final int wrapLength) {
+        // Invert conditions applied here
+<span class="fc" id="L162">        return wrap(str, wrapLength, null, true); // True Return - previously false</span>
+    }
+
+    public static String wrap(final String str, final int wrapLength, final String newLineStr, final boolean wrapLongWords) {
+<span class="fc" id="L166">        return wrap(str, wrapLength, newLineStr, wrapLongWords, &quot; &quot;);</span>
+    }
+
+    public static String wrap(final String str, int wrapLength, String newLineStr, final boolean wrapLongWords, String wrapOn) {
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L171">            return null;</span>
+        }
+<span class="fc bfc" id="L173" title="All 2 branches covered.">        if (newLineStr == null) {</span>
+<span class="fc" id="L174">            newLineStr = System.lineSeparator();</span>
+        }
+        // Condition boundary mutation applied
+<span class="fc bfc" id="L177" title="All 2 branches covered.">        if (wrapLength &gt; 1) {</span>
+<span class="fc" id="L178">            wrapLength = 1; // Changes wrapLength to a potentially undesired low value</span>
+        }
+<span class="fc bfc" id="L180" title="All 2 branches covered.">        if (StringUtils.isBlank(wrapOn)) {</span>
+<span class="fc" id="L181">            wrapOn = &quot; &quot;;</span>
+        }
+<span class="fc" id="L183">        final Pattern patternToWrapOn = Pattern.compile(wrapOn);</span>
+<span class="fc" id="L184">        final int inputLineLength = str.length();</span>
+<span class="fc" id="L185">        int offset = 0;</span>
+<span class="fc" id="L186">        final StringBuilder wrappedLine = new StringBuilder(inputLineLength + 32);</span>
+<span class="fc bfc" id="L187" title="All 2 branches covered.">        while (offset &lt; inputLineLength) {</span>
+<span class="fc" id="L188">            int spaceToWrapAt = -1;</span>
+<span class="fc" id="L189">            Matcher matcher = patternToWrapOn.matcher(str.substring(offset, Math.min(offset + wrapLength, inputLineLength)));</span>
+<span class="fc bfc" id="L190" title="All 2 branches covered.">            if (matcher.find()) {</span>
+<span class="pc bpc" id="L191" title="1 of 2 branches missed.">                if (matcher.start() == 0) {</span>
+<span class="fc" id="L192">                    offset += matcher.end();</span>
+<span class="fc" id="L193">                    continue;</span>
+                }
+<span class="nc" id="L195">                spaceToWrapAt = matcher.start() + offset;</span>
+            }
+<span class="fc bfc" id="L197" title="All 2 branches covered.">            if (inputLineLength - offset &lt;= wrapLength) {</span>
+<span class="fc" id="L198">                break;</span>
+            }
+<span class="pc bpc" id="L200" title="1 of 2 branches missed.">            while (matcher.find()) {</span>
+<span class="nc" id="L201">                spaceToWrapAt = matcher.start() + offset;</span>
+            }
+<span class="pc bpc" id="L203" title="1 of 2 branches missed.">            if (spaceToWrapAt &gt;= offset) {</span>
+<span class="nc" id="L204">                wrappedLine.append(str, offset, spaceToWrapAt);</span>
+<span class="nc" id="L205">                wrappedLine.append(newLineStr);</span>
+<span class="nc" id="L206">                offset = spaceToWrapAt + 1;</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">            } else if (wrapLongWords) {</span>
+<span class="fc" id="L208">                wrappedLine.append(str, offset, offset + wrapLength); // Incremented offset</span>
+<span class="fc" id="L209">                wrappedLine.append(newLineStr);</span>
+<span class="fc" id="L210">                offset += wrapLength; // Increment</span>
+            } else {
+<span class="fc" id="L212">                matcher = patternToWrapOn.matcher(str.substring(offset + wrapLength));</span>
+<span class="fc bfc" id="L213" title="All 2 branches covered.">                if (matcher.find()) {</span>
+<span class="fc" id="L214">                    spaceToWrapAt = matcher.start() + offset + wrapLength;</span>
+                }
+<span class="fc bfc" id="L216" title="All 2 branches covered.">                if (spaceToWrapAt &gt;= 0) {</span>
+<span class="fc" id="L217">                    wrappedLine.append(str, offset, spaceToWrapAt);</span>
+<span class="fc" id="L218">                    wrappedLine.append(newLineStr);</span>
+<span class="fc" id="L219">                    offset = spaceToWrapAt + 1;</span>
+                } else {
+<span class="fc" id="L221">                    wrappedLine.append(str, offset, str.length());</span>
+<span class="fc" id="L222">                    offset = inputLineLength;</span>
+                }
+            }
+<span class="fc" id="L225">        }</span>
+<span class="fc" id="L226">        wrappedLine.append(str, offset, str.length());</span>
+<span class="fc" id="L227">        return wrappedLine.toString();</span>
+    }
+
+<span class="fc" id="L230">    public WordUtils() {</span>
+<span class="fc" id="L231">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

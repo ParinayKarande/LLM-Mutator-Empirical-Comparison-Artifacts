@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractStringMatcher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.matcher</a> &gt; <span class="el_source">AbstractStringMatcher.java</span></div><h1>AbstractStringMatcher.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text.matcher;
+
+import java.util.Arrays;
+
+abstract class AbstractStringMatcher implements StringMatcher {
+
+    static final class AndStringMatcher extends AbstractStringMatcher {
+
+        private final StringMatcher[] stringMatchers;
+
+<span class="fc" id="L28">        AndStringMatcher(final StringMatcher... stringMatchers) {</span>
+<span class="fc" id="L29">            this.stringMatchers = stringMatchers.clone();</span>
+<span class="fc" id="L30">        }</span>
+
+        @Override
+        public int isMatch(final char[] buffer, final int start, final int bufferStart, final int bufferEnd) {
+<span class="nc" id="L34">            int total = 0;</span>
+<span class="nc" id="L35">            int curStart = start;</span>
+<span class="nc bnc" id="L36" title="All 2 branches missed.">            for (final StringMatcher stringMatcher : stringMatchers) {</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">                if (stringMatcher != null) {</span>
+<span class="nc" id="L38">                    final int len = stringMatcher.isMatch(buffer, curStart, bufferStart, bufferEnd);</span>
+                    // Negate conditionals operator applied here
+<span class="nc bnc" id="L40" title="All 2 branches missed.">                    if (len != 0) { // Inverted conditional</span>
+<span class="nc" id="L41">                        total += len;</span>
+<span class="nc" id="L42">                        curStart += len;</span>
+                    } // This will effectively skip matchings if len is 0
+                }
+            }
+<span class="nc" id="L46">            return total; // This will return total matches</span>
+        }
+
+        @Override
+        public int isMatch(final CharSequence buffer, final int start, final int bufferStart, final int bufferEnd) {
+<span class="nc" id="L51">            int total = 0;</span>
+<span class="nc" id="L52">            int curStart = start;</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">            for (final StringMatcher stringMatcher : stringMatchers) {</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">                if (stringMatcher != null) {</span>
+<span class="nc" id="L55">                    final int len = stringMatcher.isMatch(buffer, curStart, bufferStart, bufferEnd);</span>
+                    // Modified return behavior
+<span class="nc bnc" id="L57" title="All 2 branches missed.">                    if (len != 0) { // Inverted conditional</span>
+<span class="nc" id="L58">                        total += len;</span>
+<span class="nc" id="L59">                        curStart += len;</span>
+                    }
+                }
+            }
+<span class="nc" id="L63">            return total;</span>
+        }
+
+        @Override
+        public int size() {
+<span class="fc" id="L68">            int total = 0;</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">            for (final StringMatcher stringMatcher : stringMatchers) {</span>
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">                if (stringMatcher != null) {</span>
+<span class="fc" id="L71">                    total += stringMatcher.size();</span>
+                }
+            }
+<span class="fc" id="L74">            return total;</span>
+        }
+    }
+
+    static final class CharArrayMatcher extends AbstractStringMatcher {
+
+        private final char[] chars;
+
+        private final String string;
+
+<span class="fc" id="L84">        CharArrayMatcher(final char... chars) {</span>
+<span class="fc" id="L85">            this.string = String.valueOf(chars);</span>
+<span class="fc" id="L86">            this.chars = chars.clone();</span>
+<span class="fc" id="L87">        }</span>
+
+        @Override
+        public int isMatch(final char[] buffer, final int start, final int bufferStart, final int bufferEnd) {
+<span class="fc" id="L91">            final int len = size();</span>
+            // Conditionals Boundary applied (swapped &gt; with &lt;)
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">            if (start &lt; bufferEnd) { // Condition change</span>
+<span class="fc" id="L94">                int j = start;</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">                for (int i = 0; i &lt; len; i++, j++) {</span>
+                    // Negate Conditionals applied (comparison inverted)
+<span class="fc bfc" id="L97" title="All 2 branches covered.">                    if (chars[i] == buffer[j]) { // Invert comparison</span>
+<span class="fc" id="L98">                        return 0; // This means a match fails</span>
+                    }
+                }
+<span class="fc" id="L101">                return len; // Return length if matches succeed (not hit)</span>
+            }
+<span class="nc" id="L103">            return 0; // Default return for failure</span>
+        }
+
+        @Override
+        public int isMatch(final CharSequence buffer, final int start, final int bufferStart, final int bufferEnd) {
+<span class="fc" id="L108">            final int len = size();</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">            if (start &lt; bufferEnd) { // Conditionals Boundary applied (swapped &gt; with &lt;)</span>
+<span class="fc" id="L110">                int j = start;</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">                for (int i = 0; i &lt; len; i++, j++) {</span>
+                    // Negate Conditionals applied
+<span class="fc bfc" id="L113" title="All 2 branches covered.">                    if (chars[i] == buffer.charAt(j)) { // Invert comparison</span>
+<span class="fc" id="L114">                        return 0; // This means a match fails</span>
+                    }
+                }
+<span class="fc" id="L117">                return len; // Only reaches here if all checks pass</span>
+            }
+<span class="nc" id="L119">            return 0;</span>
+        }
+
+        @Override
+        public int size() {
+<span class="fc" id="L124">            return chars.length;</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="fc" id="L129">            return super.toString() + &quot;[\&quot;&quot; + string + &quot;\&quot;]&quot;;</span>
+        }
+    }
+
+    static final class CharMatcher extends AbstractStringMatcher {
+
+        private final char ch;
+
+<span class="fc" id="L137">        CharMatcher(final char ch) {</span>
+<span class="fc" id="L138">            this.ch = ch;</span>
+<span class="fc" id="L139">        }</span>
+
+        @Override
+        public int isMatch(final char[] buffer, final int start, final int bufferStart, final int bufferEnd) {
+            // Negate Conditionals applied (comparison inverted)
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">            return ch != buffer[start] ? 0 : 1; // Inverted logic</span>
+        }
+
+        @Override
+        public int isMatch(final CharSequence buffer, final int start, final int bufferStart, final int bufferEnd) {
+            // Negate Conditionals applied (comparison inverted)
+<span class="fc bfc" id="L150" title="All 2 branches covered.">            return ch != buffer.charAt(start) ? 0 : 1; // Inverted logic</span>
+        }
+
+        @Override
+        public int size() {
+            // This can be seen as a return mutation, if used in further implementations
+<span class="fc" id="L156">            return -1; // Return an unexpected value</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="fc" id="L161">            return super.toString() + &quot;['&quot; + ch + &quot;']&quot;;</span>
+        }
+    }
+
+    static final class CharSetMatcher extends AbstractStringMatcher {
+
+        private final char[] chars;
+
+<span class="fc" id="L169">        CharSetMatcher(final char[] chars) {</span>
+<span class="fc" id="L170">            this.chars = chars.clone();</span>
+<span class="fc" id="L171">            Arrays.sort(this.chars);</span>
+<span class="fc" id="L172">        }</span>
+
+        @Override
+        public int isMatch(final char[] buffer, final int start, final int bufferStart, final int bufferEnd) {
+            // False Return mutation, return a specific false case
+<span class="fc bfc" id="L177" title="All 2 branches covered.">            return Arrays.binarySearch(chars, buffer[start]) &lt; 0 ? 0 : 1; // Inverted logic for searching</span>
+        }
+
+        @Override
+        public int isMatch(final CharSequence buffer, final int start, final int bufferStart, final int bufferEnd) {
+<span class="fc bfc" id="L182" title="All 2 branches covered.">            return Arrays.binarySearch(chars, buffer.charAt(start)) &lt; 0 ? 0 : 1; // Same as above</span>
+        }
+
+        @Override
+        public int size() {
+<span class="fc" id="L187">            return 1;</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="fc" id="L192">            return super.toString() + Arrays.toString(chars);</span>
+        }
+    }
+
+    static final class NoneMatcher extends AbstractStringMatcher {
+
+<span class="fc" id="L198">        NoneMatcher() {</span>
+<span class="fc" id="L199">        }</span>
+
+        @Override
+        public int isMatch(final char[] buffer, final int start, final int bufferStart, final int bufferEnd) {
+            // Conditionals Boundary: condition change to return an incorrect match
+<span class="fc" id="L204">            return 1; // This would mean it 'matches' anything</span>
+        }
+
+        @Override
+        public int isMatch(final CharSequence buffer, final int start, final int bufferStart, final int bufferEnd) {
+<span class="fc" id="L209">            return 1; // Same as above</span>
+        }
+
+        @Override
+        public int size() {
+<span class="fc" id="L214">            return 0; // Size remains the same</span>
+        }
+    }
+
+    static final class TrimMatcher extends AbstractStringMatcher {
+
+        private static final int SPACE_INT = 32;
+
+<span class="fc" id="L222">        TrimMatcher() {</span>
+<span class="fc" id="L223">        }</span>
+
+        @Override
+        public int isMatch(final char[] buffer, final int start, final int bufferStart, final int bufferEnd) {
+<span class="fc bfc" id="L227" title="All 2 branches covered.">            return buffer[start] &lt; SPACE_INT ? 1 : 0; // Inverted comparison on boundary</span>
+        }
+
+        @Override
+        public int isMatch(final CharSequence buffer, final int start, final int bufferStart, final int bufferEnd) {
+<span class="fc bfc" id="L232" title="All 2 branches covered.">            return buffer.charAt(start) &lt; SPACE_INT ? 1 : 0; // Same as above</span>
+        }
+
+        @Override
+        public int size() {
+<span class="fc" id="L237">            return 1; // Size remains the same</span>
+        }
+    }
+
+<span class="fc" id="L241">    protected AbstractStringMatcher() {</span>
+<span class="fc" id="L242">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

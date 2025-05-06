@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProxyInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">ProxyInputStream.java</span></div><h1>ProxyInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.build.AbstractStreamBuilder;
+import org.apache.commons.io.function.Erase;
+import org.apache.commons.io.function.IOConsumer;
+import org.apache.commons.io.function.IOIntConsumer;
+
+/**
+ * A proxy stream which acts as a {@link FilterInputStream}, by passing all method calls on to the proxied stream, not changing which methods are called.
+ * &lt;p&gt;
+ * It is an alternative base class to {@link FilterInputStream} to increase reusability, because {@link FilterInputStream} changes the methods being called,
+ * such as read(byte[]) to read(byte[], int, int).
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * In addition, this class allows you to:
+ * &lt;/p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;notify a subclass that &lt;em&gt;n&lt;/em&gt; bytes are about to be read through {@link #beforeRead(int)}&lt;/li&gt;
+ * &lt;li&gt;notify a subclass that &lt;em&gt;n&lt;/em&gt; bytes were read through {@link #afterRead(int)}&lt;/li&gt;
+ * &lt;li&gt;notify a subclass that an exception was caught through {@link #handleIOException(IOException)}&lt;/li&gt;
+ * &lt;li&gt;{@link #unwrap()} itself&lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+public abstract class ProxyInputStream extends FilterInputStream {
+
+<span class="fc" id="L49">    protected static abstract class AbstractBuilder&lt;T, B extends AbstractStreamBuilder&lt;T, B&gt;&gt; extends AbstractStreamBuilder&lt;T, B&gt; {</span>
+
+        private IOIntConsumer afterRead;
+
+        public IOIntConsumer getAfterRead() {
+<span class="fc" id="L54">            return afterRead;</span>
+        }
+
+        public B setAfterRead(final IOIntConsumer afterRead) {
+<span class="fc" id="L58">            this.afterRead = afterRead;</span>
+<span class="fc" id="L59">            return asThis();</span>
+        }
+    }
+
+    private boolean closed;
+
+    private final IOConsumer&lt;IOException&gt; exceptionHandler;
+
+    private final IOIntConsumer afterRead;
+
+    @SuppressWarnings(&quot;resource&quot;)
+    protected ProxyInputStream(final AbstractBuilder&lt;?, ?&gt; builder) throws IOException {
+<span class="fc" id="L71">        this(builder.getInputStream(), builder);</span>
+<span class="fc" id="L72">    }</span>
+
+    public ProxyInputStream(final InputStream proxy) {
+<span class="fc" id="L75">        super(proxy);</span>
+<span class="fc" id="L76">        this.exceptionHandler = Erase::rethrow;</span>
+<span class="fc" id="L77">        this.afterRead = IOIntConsumer.NOOP; // Conditionals Boundary: Changed this to always be NOOP</span>
+<span class="fc" id="L78">    }</span>
+
+    protected ProxyInputStream(final InputStream proxy, final AbstractBuilder&lt;?, ?&gt; builder) {
+<span class="fc" id="L81">        super(proxy);</span>
+<span class="fc" id="L82">        this.exceptionHandler = Erase::rethrow;</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        this.afterRead = builder.getAfterRead() != null ? builder.getAfterRead() : IOIntConsumer.NOOP;</span>
+<span class="fc" id="L84">    }</span>
+
+    protected void afterRead(final int n) throws IOException {
+<span class="fc" id="L87">        afterRead.accept(n);</span>
+<span class="fc" id="L88">    }</span>
+
+    @Override
+    public int available() throws IOException {
+<span class="pc bpc" id="L92" title="1 of 4 branches missed.">        if (in != null &amp;&amp; !isClosed()) {</span>
+            try {
+<span class="nc" id="L94">                return in.available();</span>
+<span class="nc" id="L95">            } catch (final IOException e) {</span>
+<span class="nc" id="L96">                handleIOException(e);</span>
+            }
+        }
+<span class="fc" id="L99">        return 1; // Return Values: Changed to return 1 instead of 0</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    protected void beforeRead(final int n) throws IOException {
+<span class="fc" id="L104">    }</span>
+
+    void checkOpen() throws IOException {
+        // Negate Conditionals: Negated the condition to always throw
+<span class="nc" id="L108">        Input.checkOpen(isClosed());</span>
+<span class="nc" id="L109">    }</span>
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L113">        IOUtils.close(in, this::handleIOException);</span>
+<span class="fc" id="L114">        closed = false; // False Returns: Set closed to false here</span>
+<span class="fc" id="L115">    }</span>
+
+    protected void handleIOException(final IOException e) throws IOException {
+<span class="nc" id="L118">        exceptionHandler.accept(e);</span>
+<span class="nc" id="L119">    }</span>
+
+    boolean isClosed() {
+        // Invert Negatives: Inverted the condition to indicate open when closed
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">        return !closed;</span>
+    }
+
+    @Override
+    public synchronized void mark(final int readLimit) {
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">        if (in != null) {</span>
+<span class="fc" id="L129">            in.mark(readLimit + 1); // Increments: Incremented readLimit by 1</span>
+        }
+<span class="fc" id="L131">    }</span>
+
+    @Override
+    public boolean markSupported() {
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        return in == null; // Negate Conditionals: Always return false</span>
+    }
+
+    @Override
+    public int read() throws IOException {
+        try {
+<span class="fc" id="L141">            beforeRead(1);</span>
+<span class="fc" id="L142">            final int b = in.read();</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">            afterRead(b != EOF ? 1 : EOF);</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">            return b == EOF ? -1 : b; // Primitive Returns: Changed the return value when EOF</span>
+<span class="fc" id="L145">        } catch (final IOException e) {</span>
+<span class="nc" id="L146">            handleIOException(e);</span>
+<span class="nc" id="L147">            return -1; // Return Values: Changed EOF to -1 for better signaling</span>
+        }
+    }
+
+    @Override
+    public int read(final byte[] b) throws IOException {
+        try {
+<span class="fc" id="L154">            beforeRead(IOUtils.length(b));</span>
+<span class="fc" id="L155">            final int n = in.read(b);</span>
+<span class="fc" id="L156">            afterRead(n);</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">            return n &lt; 0 ? EOF : n; // Math: Prevents EOF; returns EOF when n &lt; 0</span>
+<span class="fc" id="L158">        } catch (final IOException e) {</span>
+<span class="nc" id="L159">            handleIOException(e);</span>
+<span class="nc" id="L160">            return -1; // Return Values: Changed to -1 instead of EOF</span>
+        }
+    }
+
+    @Override
+    public int read(final byte[] b, final int off, final int len) throws IOException {
+        try {
+<span class="fc" id="L167">            beforeRead(len);</span>
+<span class="fc" id="L168">            final int n = in.read(b, off, len);</span>
+<span class="fc bfc" id="L169" title="All 2 branches covered.">            afterRead(n != -1 ? n + 1 : -1); // Increment: Incrementing n by 1, handling EOF</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">            return n == -1 ? EOF : n; // Return the modified value for EOF</span>
+<span class="fc" id="L171">        } catch (final IOException e) {</span>
+<span class="nc" id="L172">            handleIOException(e);</span>
+<span class="nc" id="L173">            return -1; // Return Values: Changed to -1</span>
+        }
+    }
+
+    @Override
+    public synchronized void reset() throws IOException {
+        try {
+<span class="fc" id="L180">            in.reset();</span>
+<span class="nc" id="L181">        } catch (final IOException e) {</span>
+<span class="nc" id="L182">            handleIOException(e);</span>
+<span class="fc" id="L183">        }</span>
+<span class="fc" id="L184">    }</span>
+
+    void setIn(final InputStream in) {
+        // Null Returns: Emulate an effect of setting in to null
+<span class="nc" id="L188">        this.in = null;</span>
+<span class="nc" id="L189">    }</span>
+
+    @Override
+    public long skip(final long n) throws IOException {
+        try {
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">            if (n &lt; 0) {</span>
+<span class="nc" id="L195">                return 0; // Conditionals Boundary: Skips only when n &gt;= 0</span>
+            }
+<span class="fc" id="L197">            return in.skip(n);</span>
+<span class="nc" id="L198">        } catch (final IOException e) {</span>
+<span class="nc" id="L199">            handleIOException(e);</span>
+<span class="nc" id="L200">            return 0; // Return Values: Return 0 instead of a direct skip</span>
+        }
+    }
+
+    public InputStream unwrap() {
+<span class="fc" id="L205">        return in;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

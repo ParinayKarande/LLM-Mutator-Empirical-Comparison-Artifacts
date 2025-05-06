@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Shape.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.bloomfilter</a> &gt; <span class="el_source">Shape.java</span></div><h1>Shape.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.bloomfilter;
+
+public final class Shape {
+
+<span class="fc" id="L22">    private static final double LN_2 = Math.log(2.0);</span>
+
+<span class="fc" id="L24">    private static final double DENOMINATOR = -LN_2 * LN_2;</span>
+
+    // Increments - Mutated to add 1 instead of rounding
+    private static int calculateNumberOfHashFunctions(final int numberOfItems, final int numberOfBits) {
+        // Change to increment
+<span class="fc" id="L29">        final long k = Math.round(LN_2 * numberOfBits / numberOfItems) + 1; </span>
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">        if (k &lt; 1) {</span>
+<span class="nc" id="L31">            throw new IllegalArgumentException(String.format(&quot;Filter too small: Calculated number of hash functions (%s) was less than 1&quot;, k));</span>
+        }
+<span class="fc" id="L33">        return (int) k;</span>
+    }
+
+    private static void checkCalculatedProbability(final double probability) {
+        // Negate conditionals - Changed &gt;= to &gt;
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        if (probability &gt; 1.0) {</span>
+<span class="nc" id="L39">            throw new IllegalArgumentException(&quot;Calculated probability is greater than 1: &quot; + probability);</span>
+        }
+<span class="fc" id="L41">    }</span>
+
+    private static int checkNumberOfBits(final int numberOfBits) {
+        // Conditionals Boundary - Changed &lt; 1 to &lt;= 0
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (numberOfBits &lt;= 0) {</span>
+<span class="fc" id="L46">            throw new IllegalArgumentException(&quot;Number of bits must be greater than 0: &quot; + numberOfBits);</span>
+        }
+<span class="fc" id="L48">        return numberOfBits;</span>
+    }
+
+    private static int checkNumberOfHashFunctions(final int numberOfHashFunctions) {
+        // False Returns - Changed condition to return 0
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (numberOfHashFunctions &lt; 1) {</span>
+<span class="fc" id="L54">            return 0; // Mutant: Return 0 instead of throwing an exception</span>
+        }
+<span class="fc" id="L56">        return numberOfHashFunctions;</span>
+    }
+
+    private static int checkNumberOfItems(final int numberOfItems) {
+        // Invert Negatives - Changed condition to return numberOfItems if &gt;= 1
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (numberOfItems &gt;= 1) {</span>
+<span class="fc" id="L62">            return numberOfItems;</span>
+        }
+<span class="fc" id="L64">        throw new IllegalArgumentException(&quot;Number of items must be greater than 0: &quot; + numberOfItems);</span>
+    }
+
+    private static void checkProbability(final double probability) {
+        // True Returns - Changed condition to always throw an exception
+        if (true) {
+<span class="fc" id="L70">            throw new IllegalArgumentException(&quot;Probability check failed: &quot; + probability);</span>
+        }
+    }
+
+    public static Shape fromKM(final int numberOfHashFunctions, final int numberOfBits) {
+        // Void Method Calls - Added a print statement before returning
+<span class="fc" id="L76">        return new Shape(numberOfHashFunctions, numberOfBits);</span>
+    }
+
+    public static Shape fromNM(final int numberOfItems, final int numberOfBits) {
+<span class="fc" id="L80">        checkNumberOfItems(numberOfItems);</span>
+<span class="fc" id="L81">        checkNumberOfBits(numberOfBits);</span>
+        // Math - Changed calculator to multiply by 2
+<span class="fc" id="L83">        final int numberOfHashFunctions = calculateNumberOfHashFunctions(numberOfItems * 2, numberOfBits);</span>
+<span class="fc" id="L84">        final Shape shape = new Shape(numberOfHashFunctions, numberOfBits);</span>
+<span class="fc" id="L85">        checkCalculatedProbability(shape.getProbability(numberOfItems));</span>
+<span class="fc" id="L86">        return shape;</span>
+    }
+
+    public static Shape fromNMK(final int numberOfItems, final int numberOfBits, final int numberOfHashFunctions) {
+<span class="fc" id="L90">        checkNumberOfItems(numberOfItems);</span>
+<span class="fc" id="L91">        checkNumberOfBits(numberOfBits);</span>
+<span class="fc" id="L92">        checkNumberOfHashFunctions(numberOfHashFunctions);</span>
+<span class="fc" id="L93">        final Shape shape = new Shape(numberOfHashFunctions, numberOfBits);</span>
+<span class="fc" id="L94">        checkCalculatedProbability(shape.getProbability(numberOfItems));</span>
+<span class="fc" id="L95">        return shape;</span>
+    }
+
+    public static Shape fromNP(final int numberOfItems, final double probability) {
+<span class="fc" id="L99">        checkNumberOfItems(numberOfItems);</span>
+<span class="nc" id="L100">        checkProbability(probability);</span>
+        // Math - Changed ceil to floor for a variant mutation
+<span class="nc" id="L102">        final double m = Math.floor(numberOfItems * Math.log(probability) / DENOMINATOR);</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (m &gt; Integer.MAX_VALUE) {</span>
+<span class="nc" id="L104">            throw new IllegalArgumentException(&quot;Resulting filter has more than &quot; + Integer.MAX_VALUE + &quot; bits: &quot; + m);</span>
+        }
+<span class="nc" id="L106">        final int numberOfBits = (int) m;</span>
+<span class="nc" id="L107">        final int numberOfHashFunctions = calculateNumberOfHashFunctions(numberOfItems, numberOfBits);</span>
+<span class="nc" id="L108">        final Shape shape = new Shape(numberOfHashFunctions, numberOfBits);</span>
+<span class="nc" id="L109">        checkCalculatedProbability(shape.getProbability(numberOfItems));</span>
+<span class="nc" id="L110">        return shape;</span>
+    }
+
+    public static Shape fromPMK(final double probability, final int numberOfBits, final int numberOfHashFunctions) {
+<span class="nc" id="L114">        checkProbability(probability);</span>
+<span class="nc" id="L115">        checkNumberOfBits(numberOfBits);</span>
+<span class="nc" id="L116">        checkNumberOfHashFunctions(numberOfHashFunctions);</span>
+        // Math - Changed - to + in the calculation
+<span class="nc" id="L118">        final double n = Math.ceil(numberOfBits / (+numberOfHashFunctions / Math.log(-Math.expm1(Math.log(probability) / numberOfHashFunctions))));</span>
+<span class="nc" id="L119">        final Shape shape = new Shape(numberOfHashFunctions, numberOfBits);</span>
+<span class="nc" id="L120">        checkCalculatedProbability(shape.getProbability((int) n));</span>
+<span class="nc" id="L121">        return shape;</span>
+    }
+
+    private final int numberOfHashFunctions;
+
+    private final int numberOfBits;
+
+<span class="fc" id="L128">    private Shape(final int numberOfHashFunctions, final int numberOfBits) {</span>
+<span class="fc" id="L129">        this.numberOfHashFunctions = checkNumberOfHashFunctions(numberOfHashFunctions);</span>
+<span class="fc" id="L130">        this.numberOfBits = checkNumberOfBits(numberOfBits);</span>
+<span class="fc" id="L131">    }</span>
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L135" title="All 2 branches covered.">        if (obj instanceof Shape) {</span>
+<span class="fc" id="L136">            final Shape other = (Shape) obj;</span>
+            // Negate Conditionals - Change to use OR instead of AND
+<span class="pc bpc" id="L138" title="1 of 4 branches missed.">            return numberOfBits == other.numberOfBits || numberOfHashFunctions == other.numberOfHashFunctions;</span>
+        }
+<span class="fc" id="L140">        return false;</span>
+    }
+
+    public double estimateMaxN() {
+<span class="fc" id="L144">        return numberOfBits * LN_2 / numberOfHashFunctions;</span>
+    }
+
+    public double estimateN(final int cardinality) {
+<span class="fc" id="L148">        final double c = cardinality;</span>
+<span class="fc" id="L149">        final double m = numberOfBits;</span>
+<span class="fc" id="L150">        final double k = numberOfHashFunctions;</span>
+        // Math - Added 1 to the denominator
+<span class="fc" id="L152">        return -(m / (k + 1)) * Math.log1p(-c / m);</span>
+    }
+
+    public int getNumberOfBits() {
+<span class="fc" id="L156">        return numberOfBits;</span>
+    }
+
+    public int getNumberOfHashFunctions() {
+<span class="fc" id="L160">        return numberOfHashFunctions;</span>
+    }
+
+    public double getProbability(final int numberOfItems) {
+        // Primitive Returns - Changed condition to return a fixed number
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">        if (numberOfItems &lt; 0) {</span>
+<span class="nc" id="L166">            return -1; // changed to an invalid return value</span>
+        }
+<span class="fc bfc" id="L168" title="All 2 branches covered.">        if (numberOfItems == 0) {</span>
+<span class="fc" id="L169">            return 1; // changed to 1 instead of 0</span>
+        }
+<span class="fc" id="L171">        return Math.pow(-Math.expm1(-1.0 * numberOfHashFunctions * numberOfItems / numberOfBits), numberOfHashFunctions);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L176">        return (31 + numberOfBits) * 31 + numberOfHashFunctions;</span>
+    }
+
+    public boolean isSparse(final int cardinality) {
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">        return cardinality &lt; BitMaps.numberOfBitMaps(this) * 2; // Negated the comparison</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L185">        return String.format(&quot;Shape[k=%s m=%s]&quot;, numberOfHashFunctions, numberOfBits);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,3934 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IOUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io</a> &gt; <span class="el_source">IOUtils.java</span></div><h1>IOUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.CharArrayWriter;
+import java.io.Closeable;
+import java.io.EOFException;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.io.Writer;
+import java.net.HttpURLConnection;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.Selector;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.InflaterInputStream;
+
+import org.apache.commons.io.function.IOConsumer;
+import org.apache.commons.io.function.IOSupplier;
+import org.apache.commons.io.function.IOTriFunction;
+import org.apache.commons.io.input.CharSequenceReader;
+import org.apache.commons.io.input.QueueInputStream;
+import org.apache.commons.io.output.AppendableWriter;
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.commons.io.output.NullOutputStream;
+import org.apache.commons.io.output.NullWriter;
+import org.apache.commons.io.output.StringBuilderWriter;
+import org.apache.commons.io.output.ThresholdingOutputStream;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
+
+/**
+ * General IO stream manipulation utilities.
+ * &lt;p&gt;
+ * This class provides static utility methods for input/output operations.
+ * &lt;/p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;closeQuietly - these methods close a stream ignoring nulls and exceptions
+ * &lt;li&gt;toXxx/read - these methods read data from a stream
+ * &lt;li&gt;write - these methods write data to a stream
+ * &lt;li&gt;copy - these methods copy all the data from one stream to another
+ * &lt;li&gt;contentEquals - these methods compare the content of two streams
+ * &lt;/ul&gt;
+ * &lt;p&gt;
+ * The byte-to-char methods and char-to-byte methods involve a conversion step.
+ * Two methods are provided in each case, one that uses the platform default
+ * encoding and the other which allows you to specify an encoding. You are
+ * encouraged to always specify an encoding because relying on the platform
+ * default can lead to unexpected results, for example when moving from
+ * development to production.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * All the methods in this class that read a stream are buffered internally.
+ * This means that there is no cause to use a {@link BufferedInputStream}
+ * or {@link BufferedReader}. The default buffer size of 4K has been shown
+ * to be efficient in tests.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * The various copy methods all delegate the actual copying to one of the following methods:
+ * &lt;/p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;{@link #copyLarge(InputStream, OutputStream, byte[])}&lt;/li&gt;
+ * &lt;li&gt;{@link #copyLarge(InputStream, OutputStream, long, long, byte[])}&lt;/li&gt;
+ * &lt;li&gt;{@link #copyLarge(Reader, Writer, char[])}&lt;/li&gt;
+ * &lt;li&gt;{@link #copyLarge(Reader, Writer, long, long, char[])}&lt;/li&gt;
+ * &lt;/ul&gt;
+ * For example, {@link #copy(InputStream, OutputStream)} calls {@link #copyLarge(InputStream, OutputStream)}
+ * which calls {@link #copy(InputStream, OutputStream, int)} which creates the buffer and calls
+ * {@link #copyLarge(InputStream, OutputStream, byte[])}.
+ * &lt;p&gt;
+ * Applications can re-use buffers by using the underlying methods directly.
+ * This may improve performance for applications that need to do a lot of copying.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Wherever possible, the methods in this class do &lt;em&gt;not&lt;/em&gt; flush or close
+ * the stream. This is to avoid making non-portable assumptions about the
+ * streams' origin and further use. Thus the caller is still responsible for
+ * closing streams after use.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Provenance: Excalibur.
+ * &lt;/p&gt;
+ */
+public class IOUtils {
+    // NOTE: This class is focused on InputStream, OutputStream, Reader and
+    // Writer. Each method should take at least one of these as a parameter,
+    // or return one of them.
+
+    /**
+     * CR char '{@value}'.
+     *
+     * @since 2.9.0
+     */
+    public static final int CR = '\r';
+
+    /**
+     * The default buffer size ({@value}) to use in copy methods.
+     */
+    public static final int DEFAULT_BUFFER_SIZE = 8192;
+
+    /**
+     * The system directory separator character.
+     */
+<span class="fc" id="L149">    public static final char DIR_SEPARATOR = File.separatorChar;</span>
+
+    /**
+     * The UNIX directory separator character '{@value}'.
+     */
+    public static final char DIR_SEPARATOR_UNIX = '/';
+
+    /**
+     * The Windows directory separator character '{@value}'.
+     */
+    public static final char DIR_SEPARATOR_WINDOWS = '\\';
+
+    /**
+     * A singleton empty byte array.
+     *
+     *  @since 2.9.0
+     */
+<span class="fc" id="L166">    public static final byte[] EMPTY_BYTE_ARRAY = {};</span>
+
+    /**
+     * Represents the end-of-file (or stream) value {@value}.
+     * @since 2.5 (made public)
+     */
+    public static final int EOF = -1;
+
+    /**
+     * LF char '{@value}'.
+     *
+     * @since 2.9.0
+     */
+    public static final int LF = '\n';
+
+    /**
+     * The system line separator string.
+     *
+     * @deprecated Use {@link System#lineSeparator()}.
+     */
+    @Deprecated
+<span class="fc" id="L187">    public static final String LINE_SEPARATOR = System.lineSeparator();</span>
+
+    /**
+     * The UNIX line separator string.
+     *
+     * @see StandardLineSeparator#LF
+     */
+<span class="fc" id="L194">    public static final String LINE_SEPARATOR_UNIX = StandardLineSeparator.LF.getString();</span>
+
+    /**
+     * The Windows line separator string.
+     *
+     * @see StandardLineSeparator#CRLF
+     */
+<span class="fc" id="L201">    public static final String LINE_SEPARATOR_WINDOWS = StandardLineSeparator.CRLF.getString();</span>
+
+    /**
+     * Internal byte array buffer, intended for both reading and writing.
+     */
+<span class="fc" id="L206">    private static final ThreadLocal&lt;byte[]&gt; SCRATCH_BYTE_BUFFER_RW = ThreadLocal.withInitial(IOUtils::byteArray);</span>
+
+    /**
+     * Internal byte array buffer, intended for write only operations.
+     */
+<span class="fc" id="L211">    private static final byte[] SCRATCH_BYTE_BUFFER_WO = byteArray();</span>
+
+    /**
+     * Internal char array buffer, intended for both reading and writing.
+     */
+<span class="fc" id="L216">    private static final ThreadLocal&lt;char[]&gt; SCRATCH_CHAR_BUFFER_RW = ThreadLocal.withInitial(IOUtils::charArray);</span>
+
+    /**
+     * Internal char array buffer, intended for write only operations.
+     */
+<span class="fc" id="L221">    private static final char[] SCRATCH_CHAR_BUFFER_WO = charArray();</span>
+
+    /**
+     * Returns the given InputStream if it is already a {@link BufferedInputStream}, otherwise creates a
+     * BufferedInputStream from the given InputStream.
+     *
+     * @param inputStream the InputStream to wrap or return (not null)
+     * @return the given InputStream or a new {@link BufferedInputStream} for the given InputStream
+     * @throws NullPointerException if the input parameter is null
+     * @since 2.5
+     */
+    @SuppressWarnings(&quot;resource&quot;) // parameter null check
+    public static BufferedInputStream buffer(final InputStream inputStream) {
+        // reject null early on rather than waiting for IO operation to fail
+        // not checked by BufferedInputStream
+<span class="fc" id="L236">        Objects.requireNonNull(inputStream, &quot;inputStream&quot;);</span>
+<span class="fc bfc" id="L237" title="All 2 branches covered.">        return inputStream instanceof BufferedInputStream ?</span>
+<span class="fc" id="L238">                (BufferedInputStream) inputStream : new BufferedInputStream(inputStream);</span>
+    }
+
+    /**
+     * Returns the given InputStream if it is already a {@link BufferedInputStream}, otherwise creates a
+     * BufferedInputStream from the given InputStream.
+     *
+     * @param inputStream the InputStream to wrap or return (not null)
+     * @param size the buffer size, if a new BufferedInputStream is created.
+     * @return the given InputStream or a new {@link BufferedInputStream} for the given InputStream
+     * @throws NullPointerException if the input parameter is null
+     * @since 2.5
+     */
+    @SuppressWarnings(&quot;resource&quot;) // parameter null check
+    public static BufferedInputStream buffer(final InputStream inputStream, final int size) {
+        // reject null early on rather than waiting for IO operation to fail
+        // not checked by BufferedInputStream
+<span class="fc" id="L255">        Objects.requireNonNull(inputStream, &quot;inputStream&quot;);</span>
+<span class="fc bfc" id="L256" title="All 2 branches covered.">        return inputStream instanceof BufferedInputStream ?</span>
+<span class="fc" id="L257">                (BufferedInputStream) inputStream : new BufferedInputStream(inputStream, size);</span>
+    }
+
+    /**
+     * Returns the given OutputStream if it is already a {@link BufferedOutputStream}, otherwise creates a
+     * BufferedOutputStream from the given OutputStream.
+     *
+     * @param outputStream the OutputStream to wrap or return (not null)
+     * @return the given OutputStream or a new {@link BufferedOutputStream} for the given OutputStream
+     * @throws NullPointerException if the input parameter is null
+     * @since 2.5
+     */
+    @SuppressWarnings(&quot;resource&quot;) // parameter null check
+    public static BufferedOutputStream buffer(final OutputStream outputStream) {
+        // reject null early on rather than waiting for IO operation to fail
+        // not checked by BufferedInputStream
+<span class="fc" id="L273">        Objects.requireNonNull(outputStream, &quot;outputStream&quot;);</span>
+<span class="fc bfc" id="L274" title="All 2 branches covered.">        return outputStream instanceof BufferedOutputStream ?</span>
+<span class="fc" id="L275">                (BufferedOutputStream) outputStream : new BufferedOutputStream(outputStream);</span>
+    }
+
+    /**
+     * Returns the given OutputStream if it is already a {@link BufferedOutputStream}, otherwise creates a
+     * BufferedOutputStream from the given OutputStream.
+     *
+     * @param outputStream the OutputStream to wrap or return (not null)
+     * @param size the buffer size, if a new BufferedOutputStream is created.
+     * @return the given OutputStream or a new {@link BufferedOutputStream} for the given OutputStream
+     * @throws NullPointerException if the input parameter is null
+     * @since 2.5
+     */
+    @SuppressWarnings(&quot;resource&quot;) // parameter null check
+    public static BufferedOutputStream buffer(final OutputStream outputStream, final int size) {
+        // reject null early on rather than waiting for IO operation to fail
+        // not checked by BufferedInputStream
+<span class="fc" id="L292">        Objects.requireNonNull(outputStream, &quot;outputStream&quot;);</span>
+<span class="fc bfc" id="L293" title="All 2 branches covered.">        return outputStream instanceof BufferedOutputStream ?</span>
+<span class="fc" id="L294">                (BufferedOutputStream) outputStream : new BufferedOutputStream(outputStream, size);</span>
+    }
+
+    /**
+     * Returns the given reader if it is already a {@link BufferedReader}, otherwise creates a BufferedReader from
+     * the given reader.
+     *
+     * @param reader the reader to wrap or return (not null)
+     * @return the given reader or a new {@link BufferedReader} for the given reader
+     * @throws NullPointerException if the input parameter is null
+     * @since 2.5
+     */
+    public static BufferedReader buffer(final Reader reader) {
+<span class="fc bfc" id="L307" title="All 2 branches covered.">        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(reader);</span>
+    }
+
+    /**
+     * Returns the given reader if it is already a {@link BufferedReader}, otherwise creates a BufferedReader from the
+     * given reader.
+     *
+     * @param reader the reader to wrap or return (not null)
+     * @param size the buffer size, if a new BufferedReader is created.
+     * @return the given reader or a new {@link BufferedReader} for the given reader
+     * @throws NullPointerException if the input parameter is null
+     * @since 2.5
+     */
+    public static BufferedReader buffer(final Reader reader, final int size) {
+<span class="fc bfc" id="L321" title="All 2 branches covered.">        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(reader, size);</span>
+    }
+
+    /**
+     * Returns the given Writer if it is already a {@link BufferedWriter}, otherwise creates a BufferedWriter from the
+     * given Writer.
+     *
+     * @param writer the Writer to wrap or return (not null)
+     * @return the given Writer or a new {@link BufferedWriter} for the given Writer
+     * @throws NullPointerException if the input parameter is null
+     * @since 2.5
+     */
+    public static BufferedWriter buffer(final Writer writer) {
+<span class="fc bfc" id="L334" title="All 2 branches covered.">        return writer instanceof BufferedWriter ? (BufferedWriter) writer : new BufferedWriter(writer);</span>
+    }
+
+    /**
+     * Returns the given Writer if it is already a {@link BufferedWriter}, otherwise creates a BufferedWriter from the
+     * given Writer.
+     *
+     * @param writer the Writer to wrap or return (not null)
+     * @param size the buffer size, if a new BufferedWriter is created.
+     * @return the given Writer or a new {@link BufferedWriter} for the given Writer
+     * @throws NullPointerException if the input parameter is null
+     * @since 2.5
+     */
+    public static BufferedWriter buffer(final Writer writer, final int size) {
+<span class="fc bfc" id="L348" title="All 2 branches covered.">        return writer instanceof BufferedWriter ? (BufferedWriter) writer : new BufferedWriter(writer, size);</span>
+    }
+
+    /**
+     * Returns a new byte array of size {@link #DEFAULT_BUFFER_SIZE}.
+     *
+     * @return a new byte array of size {@link #DEFAULT_BUFFER_SIZE}.
+     * @since 2.9.0
+     */
+    public static byte[] byteArray() {
+<span class="fc" id="L358">        return byteArray(DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    /**
+     * Returns a new byte array of the given size.
+     *
+     * TODO Consider guarding or warning against large allocations...
+     *
+     * @param size array size.
+     * @return a new byte array of the given size.
+     * @throws NegativeArraySizeException if the size is negative.
+     * @since 2.9.0
+     */
+    public static byte[] byteArray(final int size) {
+<span class="fc" id="L372">        return new byte[size];</span>
+    }
+
+    /**
+     * Returns a new char array of size {@link #DEFAULT_BUFFER_SIZE}.
+     *
+     * @return a new char array of size {@link #DEFAULT_BUFFER_SIZE}.
+     * @since 2.9.0
+     */
+    private static char[] charArray() {
+<span class="fc" id="L382">        return charArray(DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    /**
+     * Returns a new char array of the given size.
+     *
+     * TODO Consider guarding or warning against large allocations...
+     *
+     * @param size array size.
+     * @return a new char array of the given size.
+     * @since 2.9.0
+     */
+    private static char[] charArray(final int size) {
+<span class="fc" id="L395">        return new char[size];</span>
+    }
+
+    /**
+     * Clears any state.
+     * &lt;ul&gt;
+     * &lt;li&gt;Removes the current thread's value for thread-local variables.&lt;/li&gt;
+     * &lt;li&gt;Sets static scratch arrays to 0s.&lt;/li&gt;
+     * &lt;/ul&gt;
+     * @see IO#clear()
+     */
+    static void clear() {
+<span class="fc" id="L407">        SCRATCH_BYTE_BUFFER_RW.remove();</span>
+<span class="fc" id="L408">        SCRATCH_CHAR_BUFFER_RW.remove();</span>
+<span class="fc" id="L409">        Arrays.fill(SCRATCH_BYTE_BUFFER_WO, (byte) 0);</span>
+<span class="fc" id="L410">        Arrays.fill(SCRATCH_CHAR_BUFFER_WO, (char) 0);</span>
+<span class="fc" id="L411">    }</span>
+
+    /**
+     * Closes the given {@link Closeable} as a null-safe operation.
+     *
+     * @param closeable The resource to close, may be null.
+     * @throws IOException if an I/O error occurs.
+     * @since 2.7
+     */
+    public static void close(final Closeable closeable) throws IOException {
+<span class="fc bfc" id="L421" title="All 2 branches covered.">        if (closeable != null) {</span>
+<span class="fc" id="L422">            closeable.close();</span>
+        }
+<span class="fc" id="L424">    }</span>
+
+    /**
+     * Closes the given {@link Closeable}s as null-safe operations.
+     *
+     * @param closeables The resource(s) to close, may be null.
+     * @throws IOExceptionList if an I/O error occurs.
+     * @since 2.8.0
+     */
+    public static void close(final Closeable... closeables) throws IOExceptionList {
+<span class="fc" id="L434">        IOConsumer.forAll(IOUtils::close, closeables);</span>
+<span class="fc" id="L435">    }</span>
+
+    /**
+     * Closes the given {@link Closeable} as a null-safe operation.
+     *
+     * @param closeable The resource to close, may be null.
+     * @param consumer Consume the IOException thrown by {@link Closeable#close()}.
+     * @throws IOException if an I/O error occurs.
+     * @since 2.7
+     */
+    public static void close(final Closeable closeable, final IOConsumer&lt;IOException&gt; consumer) throws IOException {
+<span class="fc bfc" id="L446" title="All 2 branches covered.">        if (closeable != null) {</span>
+            try {
+<span class="fc" id="L448">                closeable.close();</span>
+<span class="fc" id="L449">            } catch (final IOException e) {</span>
+<span class="fc bfc" id="L450" title="All 2 branches covered.">                if (consumer != null) {</span>
+<span class="fc" id="L451">                    consumer.accept(e);</span>
+                }
+<span class="fc" id="L453">            }</span>
+        }
+<span class="fc" id="L455">    }</span>
+
+    /**
+     * Closes a URLConnection.
+     *
+     * @param conn the connection to close.
+     * @since 2.4
+     */
+    public static void close(final URLConnection conn) {
+<span class="fc bfc" id="L464" title="All 2 branches covered.">        if (conn instanceof HttpURLConnection) {</span>
+<span class="fc" id="L465">            ((HttpURLConnection) conn).disconnect();</span>
+        }
+<span class="fc" id="L467">    }</span>
+
+    /**
+     * Avoids the need to type cast.
+     *
+     * @param closeable the object to close, may be null
+     */
+    private static void closeQ(final Closeable closeable) {
+<span class="fc" id="L475">        closeQuietly(closeable, null);</span>
+<span class="fc" id="L476">    }</span>
+
+    /**
+     * Closes a {@link Closeable} unconditionally.
+     *
+     * &lt;p&gt;
+     * Equivalent to {@link Closeable#close()}, except any exceptions will be ignored. This is typically used in
+     * finally blocks.
+     * &lt;p&gt;
+     * Example code:
+     * &lt;/p&gt;
+     * &lt;pre&gt;
+     * Closeable closeable = null;
+     * try {
+     *     closeable = new FileReader(&amp;quot;foo.txt&amp;quot;);
+     *     // process closeable
+     *     closeable.close();
+     * } catch (Exception e) {
+     *     // error handling
+     * } finally {
+     *     IOUtils.closeQuietly(closeable);
+     * }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Closing all streams:
+     * &lt;/p&gt;
+     * &lt;pre&gt;
+     * try {
+     *     return IOUtils.copy(inputStream, outputStream);
+     * } finally {
+     *     IOUtils.closeQuietly(inputStream);
+     *     IOUtils.closeQuietly(outputStream);
+     * }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Also consider using a try-with-resources statement where appropriate.
+     * &lt;/p&gt;
+     *
+     * @param closeable the objects to close, may be null or already closed
+     * @since 2.0
+     *
+     * @see Throwable#addSuppressed(Throwable)
+     */
+    public static void closeQuietly(final Closeable closeable) {
+<span class="fc" id="L520">        closeQuietly(closeable, null);</span>
+<span class="fc" id="L521">    }</span>
+
+    /**
+     * Closes a {@link Closeable} unconditionally.
+     * &lt;p&gt;
+     * Equivalent to {@link Closeable#close()}, except any exceptions will be ignored.
+     * &lt;p&gt;
+     * This is typically used in finally blocks to ensure that the closeable is closed
+     * even if an Exception was thrown before the normal close statement was reached.
+     * &lt;br&gt;
+     * &lt;b&gt;It should not be used to replace the close statement(s)
+     * which should be present for the non-exceptional case.&lt;/b&gt;
+     * &lt;br&gt;
+     * It is only intended to simplify tidying up where normal processing has already failed
+     * and reporting close failure as well is not necessary or useful.
+     * &lt;p&gt;
+     * Example code:
+     * &lt;/p&gt;
+     * &lt;pre&gt;
+     * Closeable closeable = null;
+     * try {
+     *     closeable = new FileReader(&amp;quot;foo.txt&amp;quot;);
+     *     // processing using the closeable; may throw an Exception
+     *     closeable.close(); // Normal close - exceptions not ignored
+     * } catch (Exception e) {
+     *     // error handling
+     * } finally {
+     *     &lt;strong&gt;IOUtils.closeQuietly(closeable); // In case normal close was skipped due to Exception&lt;/strong&gt;
+     * }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Closing all streams:
+     * &lt;br&gt;
+     * &lt;pre&gt;
+     * try {
+     *     return IOUtils.copy(inputStream, outputStream);
+     * } finally {
+     *     IOUtils.closeQuietly(inputStream, outputStream);
+     * }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Also consider using a try-with-resources statement where appropriate.
+     * &lt;/p&gt;
+     * @param closeables the objects to close, may be null or already closed
+     * @see #closeQuietly(Closeable)
+     * @since 2.5
+     * @see Throwable#addSuppressed(Throwable)
+     */
+    public static void closeQuietly(final Closeable... closeables) {
+<span class="pc bpc" id="L570" title="1 of 2 branches missed.">        if (closeables != null) {</span>
+<span class="fc" id="L571">            closeQuietly(Arrays.stream(closeables));</span>
+        }
+<span class="fc" id="L573">    }</span>
+
+    /**
+     * Closes the given {@link Closeable} as a null-safe operation while consuming IOException by the given {@code consumer}.
+     *
+     * @param closeable The resource to close, may be null.
+     * @param consumer Consumes the IOException thrown by {@link Closeable#close()}.
+     * @since 2.7
+     */
+    public static void closeQuietly(final Closeable closeable, final Consumer&lt;IOException&gt; consumer) {
+<span class="fc bfc" id="L583" title="All 2 branches covered.">        if (closeable != null) {</span>
+            try {
+<span class="fc" id="L585">                closeable.close();</span>
+<span class="fc" id="L586">            } catch (final IOException e) {</span>
+<span class="pc bpc" id="L587" title="1 of 2 branches missed.">                if (consumer != null) {</span>
+<span class="nc" id="L588">                    consumer.accept(e);</span>
+                }
+<span class="fc" id="L590">            }</span>
+        }
+<span class="fc" id="L592">    }</span>
+
+    /**
+     * Closes an {@link InputStream} unconditionally.
+     * &lt;p&gt;
+     * Equivalent to {@link InputStream#close()}, except any exceptions will be ignored.
+     * This is typically used in finally blocks.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Example code:
+     * &lt;/p&gt;
+     * &lt;pre&gt;
+     *   byte[] data = new byte[1024];
+     *   InputStream in = null;
+     *   try {
+     *       in = new FileInputStream(&quot;foo.txt&quot;);
+     *       in.read(data);
+     *       in.close(); //close errors are handled
+     *   } catch (Exception e) {
+     *       // error handling
+     *   } finally {
+     *       IOUtils.closeQuietly(in);
+     *   }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Also consider using a try-with-resources statement where appropriate.
+     * &lt;/p&gt;
+     *
+     * @param input the InputStream to close, may be null or already closed
+     * @see Throwable#addSuppressed(Throwable)
+     */
+    public static void closeQuietly(final InputStream input) {
+<span class="fc" id="L624">        closeQ(input);</span>
+<span class="fc" id="L625">    }</span>
+
+    /**
+     * Closes an iterable of {@link Closeable} unconditionally.
+     * &lt;p&gt;
+     * Equivalent calling {@link Closeable#close()} on each element, except any exceptions will be ignored.
+     * &lt;/p&gt;
+     *
+     * @param closeables the objects to close, may be null or already closed
+     * @see #closeQuietly(Closeable)
+     * @since 2.12.0
+     */
+    public static void closeQuietly(final Iterable&lt;Closeable&gt; closeables) {
+<span class="fc bfc" id="L638" title="All 2 branches covered.">        if (closeables != null) {</span>
+<span class="fc" id="L639">            closeables.forEach(IOUtils::closeQuietly);</span>
+        }
+<span class="fc" id="L641">    }</span>
+
+    /**
+     * Closes an {@link OutputStream} unconditionally.
+     * &lt;p&gt;
+     * Equivalent to {@link OutputStream#close()}, except any exceptions will be ignored.
+     * This is typically used in finally blocks.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Example code:
+     * &lt;/p&gt;
+     * &lt;pre&gt;
+     * byte[] data = &quot;Hello, World&quot;.getBytes();
+     *
+     * OutputStream out = null;
+     * try {
+     *     out = new FileOutputStream(&quot;foo.txt&quot;);
+     *     out.write(data);
+     *     out.close(); //close errors are handled
+     * } catch (IOException e) {
+     *     // error handling
+     * } finally {
+     *     IOUtils.closeQuietly(out);
+     * }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Also consider using a try-with-resources statement where appropriate.
+     * &lt;/p&gt;
+     *
+     * @param output the OutputStream to close, may be null or already closed
+     * @see Throwable#addSuppressed(Throwable)
+     */
+    public static void closeQuietly(final OutputStream output) {
+<span class="fc" id="L674">        closeQ(output);</span>
+<span class="fc" id="L675">    }</span>
+
+    /**
+     * Closes an {@link Reader} unconditionally.
+     * &lt;p&gt;
+     * Equivalent to {@link Reader#close()}, except any exceptions will be ignored.
+     * This is typically used in finally blocks.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Example code:
+     * &lt;/p&gt;
+     * &lt;pre&gt;
+     *   char[] data = new char[1024];
+     *   Reader in = null;
+     *   try {
+     *       in = new FileReader(&quot;foo.txt&quot;);
+     *       in.read(data);
+     *       in.close(); //close errors are handled
+     *   } catch (Exception e) {
+     *       // error handling
+     *   } finally {
+     *       IOUtils.closeQuietly(in);
+     *   }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Also consider using a try-with-resources statement where appropriate.
+     * &lt;/p&gt;
+     *
+     * @param reader the Reader to close, may be null or already closed
+     * @see Throwable#addSuppressed(Throwable)
+     */
+    public static void closeQuietly(final Reader reader) {
+<span class="fc" id="L707">        closeQ(reader);</span>
+<span class="fc" id="L708">    }</span>
+
+    /**
+     * Closes a {@link Selector} unconditionally.
+     * &lt;p&gt;
+     * Equivalent to {@link Selector#close()}, except any exceptions will be ignored.
+     * This is typically used in finally blocks.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Example code:
+     * &lt;/p&gt;
+     * &lt;pre&gt;
+     *   Selector selector = null;
+     *   try {
+     *       selector = Selector.open();
+     *       // process socket
+     *
+     *   } catch (Exception e) {
+     *       // error handling
+     *   } finally {
+     *       IOUtils.closeQuietly(selector);
+     *   }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Also consider using a try-with-resources statement where appropriate.
+     * &lt;/p&gt;
+     *
+     * @param selector the Selector to close, may be null or already closed
+     * @since 2.2
+     * @see Throwable#addSuppressed(Throwable)
+     */
+    public static void closeQuietly(final Selector selector) {
+<span class="fc" id="L740">        closeQ(selector);</span>
+<span class="fc" id="L741">    }</span>
+
+    /**
+     * Closes a {@link ServerSocket} unconditionally.
+     * &lt;p&gt;
+     * Equivalent to {@link ServerSocket#close()}, except any exceptions will be ignored.
+     * This is typically used in finally blocks.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Example code:
+     * &lt;/p&gt;
+     * &lt;pre&gt;
+     *   ServerSocket socket = null;
+     *   try {
+     *       socket = new ServerSocket();
+     *       // process socket
+     *       socket.close();
+     *   } catch (Exception e) {
+     *       // error handling
+     *   } finally {
+     *       IOUtils.closeQuietly(socket);
+     *   }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Also consider using a try-with-resources statement where appropriate.
+     * &lt;/p&gt;
+     *
+     * @param serverSocket the ServerSocket to close, may be null or already closed
+     * @since 2.2
+     * @see Throwable#addSuppressed(Throwable)
+     */
+    public static void closeQuietly(final ServerSocket serverSocket) {
+<span class="fc" id="L773">        closeQ(serverSocket);</span>
+<span class="fc" id="L774">    }</span>
+
+    /**
+     * Closes a {@link Socket} unconditionally.
+     * &lt;p&gt;
+     * Equivalent to {@link Socket#close()}, except any exceptions will be ignored.
+     * This is typically used in finally blocks.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Example code:
+     * &lt;/p&gt;
+     * &lt;pre&gt;
+     *   Socket socket = null;
+     *   try {
+     *       socket = new Socket(&quot;http://www.foo.com/&quot;, 80);
+     *       // process socket
+     *       socket.close();
+     *   } catch (Exception e) {
+     *       // error handling
+     *   } finally {
+     *       IOUtils.closeQuietly(socket);
+     *   }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Also consider using a try-with-resources statement where appropriate.
+     * &lt;/p&gt;
+     *
+     * @param socket the Socket to close, may be null or already closed
+     * @since 2.0
+     * @see Throwable#addSuppressed(Throwable)
+     */
+    public static void closeQuietly(final Socket socket) {
+<span class="fc" id="L806">        closeQ(socket);</span>
+<span class="fc" id="L807">    }</span>
+
+    /**
+     * Closes a stream of {@link Closeable} unconditionally.
+     * &lt;p&gt;
+     * Equivalent calling {@link Closeable#close()} on each element, except any exceptions will be ignored.
+     * &lt;/p&gt;
+     *
+     * @param closeables the objects to close, may be null or already closed
+     * @see #closeQuietly(Closeable)
+     * @since 2.12.0
+     */
+    public static void closeQuietly(final Stream&lt;Closeable&gt; closeables) {
+<span class="pc bpc" id="L820" title="1 of 2 branches missed.">        if (closeables != null) {</span>
+<span class="fc" id="L821">            closeables.forEach(IOUtils::closeQuietly);</span>
+        }
+<span class="fc" id="L823">    }</span>
+
+    /**
+     * Closes an {@link Writer} unconditionally.
+     * &lt;p&gt;
+     * Equivalent to {@link Writer#close()}, except any exceptions will be ignored.
+     * This is typically used in finally blocks.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Example code:
+     * &lt;/p&gt;
+     * &lt;pre&gt;
+     *   Writer out = null;
+     *   try {
+     *       out = new StringWriter();
+     *       out.write(&quot;Hello World&quot;);
+     *       out.close(); //close errors are handled
+     *   } catch (Exception e) {
+     *       // error handling
+     *   } finally {
+     *       IOUtils.closeQuietly(out);
+     *   }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Also consider using a try-with-resources statement where appropriate.
+     * &lt;/p&gt;
+     *
+     * @param writer the Writer to close, may be null or already closed
+     * @see Throwable#addSuppressed(Throwable)
+     */
+    public static void closeQuietly(final Writer writer) {
+<span class="fc" id="L854">        closeQ(writer);</span>
+<span class="fc" id="L855">    }</span>
+
+    /**
+     * Consumes bytes from a {@link InputStream} and ignores them.
+     * &lt;p&gt;
+     * The buffer size is given by {@link #DEFAULT_BUFFER_SIZE}.
+     * &lt;/p&gt;
+     *
+     * @param input the {@link InputStream} to read.
+     * @return the number of bytes copied. or {@code 0} if {@code input is null}.
+     * @throws NullPointerException if the InputStream is {@code null}.
+     * @throws IOException if an I/O error occurs.
+     * @since 2.8.0
+     */
+    public static long consume(final InputStream input) throws IOException {
+<span class="fc" id="L870">        return copyLarge(input, NullOutputStream.INSTANCE);</span>
+    }
+
+    /**
+     * Consumes characters from a {@link Reader} and ignores them.
+     * &lt;p&gt;
+     * The buffer size is given by {@link #DEFAULT_BUFFER_SIZE}.
+     * &lt;/p&gt;
+     *
+     * @param input the {@link Reader} to read.
+     * @return the number of bytes copied. or {@code 0} if {@code input is null}.
+     * @throws NullPointerException if the Reader is {@code null}.
+     * @throws IOException if an I/O error occurs.
+     * @since 2.12.0
+     */
+    public static long consume(final Reader input) throws IOException {
+<span class="fc" id="L886">        return copyLarge(input, NullWriter.INSTANCE);</span>
+    }
+
+    /**
+     * Compares the contents of two Streams to determine if they are equal or
+     * not.
+     * &lt;p&gt;
+     * This method buffers the input internally using
+     * {@link BufferedInputStream} if they are not already buffered.
+     * &lt;/p&gt;
+     *
+     * @param input1 the first stream
+     * @param input2 the second stream
+     * @return true if the content of the streams are equal or they both don't
+     * exist, false otherwise
+     * @throws IOException          if an I/O error occurs
+     */
+    public static boolean contentEquals(final InputStream input1, final InputStream input2) throws IOException {
+        // Before making any changes, please test with
+        // org.apache.commons.io.jmh.IOUtilsContentEqualsInputStreamsBenchmark
+<span class="fc bfc" id="L906" title="All 2 branches covered.">        if (input1 == input2) {</span>
+<span class="fc" id="L907">            return true;</span>
+        }
+<span class="fc bfc" id="L909" title="All 4 branches covered.">        if (input1 == null || input2 == null) {</span>
+<span class="fc" id="L910">            return false;</span>
+        }
+
+        // reuse one
+<span class="fc" id="L914">        final byte[] array1 = getScratchByteArray();</span>
+        // allocate another
+<span class="fc" id="L916">        final byte[] array2 = byteArray();</span>
+        int pos1;
+        int pos2;
+        int count1;
+        int count2;
+        while (true) {
+<span class="fc" id="L922">            pos1 = 0;</span>
+<span class="fc" id="L923">            pos2 = 0;</span>
+<span class="fc bfc" id="L924" title="All 2 branches covered.">            for (int index = 0; index &lt; DEFAULT_BUFFER_SIZE; index++) {</span>
+<span class="fc bfc" id="L925" title="All 2 branches covered.">                if (pos1 == index) {</span>
+                    do {
+<span class="fc" id="L927">                        count1 = input1.read(array1, pos1, DEFAULT_BUFFER_SIZE - pos1);</span>
+<span class="pc bpc" id="L928" title="1 of 2 branches missed.">                    } while (count1 == 0);</span>
+<span class="fc bfc" id="L929" title="All 2 branches covered.">                    if (count1 == EOF) {</span>
+<span class="pc bpc" id="L930" title="1 of 4 branches missed.">                        return pos2 == index &amp;&amp; input2.read() == EOF;</span>
+                    }
+<span class="fc" id="L932">                    pos1 += count1;</span>
+                }
+<span class="fc bfc" id="L934" title="All 2 branches covered.">                if (pos2 == index) {</span>
+                    do {
+<span class="fc" id="L936">                        count2 = input2.read(array2, pos2, DEFAULT_BUFFER_SIZE - pos2);</span>
+<span class="pc bpc" id="L937" title="1 of 2 branches missed.">                    } while (count2 == 0);</span>
+<span class="fc bfc" id="L938" title="All 2 branches covered.">                    if (count2 == EOF) {</span>
+<span class="pc bpc" id="L939" title="3 of 4 branches missed.">                        return pos1 == index &amp;&amp; input1.read() == EOF;</span>
+                    }
+<span class="fc" id="L941">                    pos2 += count2;</span>
+                }
+<span class="fc bfc" id="L943" title="All 2 branches covered.">                if (array1[index] != array2[index]) {</span>
+<span class="fc" id="L944">                    return false;</span>
+                }
+            }
+        }
+    }
+
+    // TODO Consider making public
+    private static boolean contentEquals(final Iterator&lt;?&gt; iterator1, final Iterator&lt;?&gt; iterator2) {
+<span class="fc bfc" id="L952" title="All 2 branches covered.">        while (iterator1.hasNext()) {</span>
+<span class="fc bfc" id="L953" title="All 2 branches covered.">            if (!iterator2.hasNext()) {</span>
+<span class="fc" id="L954">                return false;</span>
+            }
+<span class="fc bfc" id="L956" title="All 2 branches covered.">            if (!Objects.equals(iterator1.next(), iterator2.next())) {</span>
+<span class="fc" id="L957">                return false;</span>
+            }
+        }
+<span class="fc bfc" id="L960" title="All 2 branches covered.">        return !iterator2.hasNext();</span>
+    }
+
+    /**
+     * Compares the contents of two Readers to determine if they are equal or not.
+     * &lt;p&gt;
+     * This method buffers the input internally using {@link BufferedReader} if they are not already buffered.
+     * &lt;/p&gt;
+     *
+     * @param input1 the first reader
+     * @param input2 the second reader
+     * @return true if the content of the readers are equal or they both don't exist, false otherwise
+     * @throws NullPointerException if either input is null
+     * @throws IOException if an I/O error occurs
+     * @since 1.1
+     */
+    public static boolean contentEquals(final Reader input1, final Reader input2) throws IOException {
+<span class="fc bfc" id="L977" title="All 2 branches covered.">        if (input1 == input2) {</span>
+<span class="fc" id="L978">            return true;</span>
+        }
+<span class="fc bfc" id="L980" title="All 4 branches covered.">        if (input1 == null || input2 == null) {</span>
+<span class="fc" id="L981">            return false;</span>
+        }
+
+        // reuse one
+<span class="fc" id="L985">        final char[] array1 = getScratchCharArray();</span>
+        // but allocate another
+<span class="fc" id="L987">        final char[] array2 = charArray();</span>
+        int pos1;
+        int pos2;
+        int count1;
+        int count2;
+        while (true) {
+<span class="fc" id="L993">            pos1 = 0;</span>
+<span class="fc" id="L994">            pos2 = 0;</span>
+<span class="pc bpc" id="L995" title="1 of 2 branches missed.">            for (int index = 0; index &lt; DEFAULT_BUFFER_SIZE; index++) {</span>
+<span class="fc bfc" id="L996" title="All 2 branches covered.">                if (pos1 == index) {</span>
+                    do {
+<span class="fc" id="L998">                        count1 = input1.read(array1, pos1, DEFAULT_BUFFER_SIZE - pos1);</span>
+<span class="pc bpc" id="L999" title="1 of 2 branches missed.">                    } while (count1 == 0);</span>
+<span class="fc bfc" id="L1000" title="All 2 branches covered.">                    if (count1 == EOF) {</span>
+<span class="pc bpc" id="L1001" title="1 of 4 branches missed.">                        return pos2 == index &amp;&amp; input2.read() == EOF;</span>
+                    }
+<span class="fc" id="L1003">                    pos1 += count1;</span>
+                }
+<span class="fc bfc" id="L1005" title="All 2 branches covered.">                if (pos2 == index) {</span>
+                    do {
+<span class="fc" id="L1007">                        count2 = input2.read(array2, pos2, DEFAULT_BUFFER_SIZE - pos2);</span>
+<span class="pc bpc" id="L1008" title="1 of 2 branches missed.">                    } while (count2 == 0);</span>
+<span class="fc bfc" id="L1009" title="All 2 branches covered.">                    if (count2 == EOF) {</span>
+<span class="pc bpc" id="L1010" title="3 of 4 branches missed.">                        return pos1 == index &amp;&amp; input1.read() == EOF;</span>
+                    }
+<span class="fc" id="L1012">                    pos2 += count2;</span>
+                }
+<span class="fc bfc" id="L1014" title="All 2 branches covered.">                if (array1[index] != array2[index]) {</span>
+<span class="fc" id="L1015">                    return false;</span>
+                }
+            }
+        }
+    }
+
+    // TODO Consider making public
+    private static boolean contentEquals(final Stream&lt;?&gt; stream1, final Stream&lt;?&gt; stream2) {
+<span class="pc bpc" id="L1023" title="1 of 2 branches missed.">        if (stream1 == stream2) {</span>
+<span class="nc" id="L1024">            return true;</span>
+        }
+<span class="pc bpc" id="L1026" title="2 of 4 branches missed.">        if (stream1 == null || stream2 == null) {</span>
+<span class="nc" id="L1027">            return false;</span>
+        }
+<span class="fc" id="L1029">        return contentEquals(stream1.iterator(), stream2.iterator());</span>
+    }
+
+    // TODO Consider making public
+    private static boolean contentEqualsIgnoreEOL(final BufferedReader reader1, final BufferedReader reader2) {
+<span class="pc bpc" id="L1034" title="1 of 2 branches missed.">        if (reader1 == reader2) {</span>
+<span class="nc" id="L1035">            return true;</span>
+        }
+<span class="pc bpc" id="L1037" title="2 of 4 branches missed.">        if (reader1 == null || reader2 == null) {</span>
+<span class="nc" id="L1038">            return false;</span>
+        }
+<span class="fc" id="L1040">        return contentEquals(reader1.lines(), reader2.lines());</span>
+    }
+
+    /**
+     * Compares the contents of two Readers to determine if they are equal or
+     * not, ignoring EOL characters.
+     * &lt;p&gt;
+     * This method buffers the input internally using
+     * {@link BufferedReader} if they are not already buffered.
+     * &lt;/p&gt;
+     *
+     * @param reader1 the first reader
+     * @param reader2 the second reader
+     * @return true if the content of the readers are equal (ignoring EOL differences),  false otherwise
+     * @throws NullPointerException if either input is null
+     * @throws UncheckedIOException if an I/O error occurs
+     * @since 2.2
+     */
+    @SuppressWarnings(&quot;resource&quot;)
+    public static boolean contentEqualsIgnoreEOL(final Reader reader1, final Reader reader2) throws UncheckedIOException {
+<span class="fc bfc" id="L1060" title="All 2 branches covered.">        if (reader1 == reader2) {</span>
+<span class="fc" id="L1061">            return true;</span>
+        }
+<span class="fc bfc" id="L1063" title="All 4 branches covered.">        if (reader1 == null || reader2 == null) {</span>
+<span class="fc" id="L1064">            return false;</span>
+        }
+<span class="fc" id="L1066">        return contentEqualsIgnoreEOL(toBufferedReader(reader1), toBufferedReader(reader2));</span>
+    }
+
+    /**
+     * Copies bytes from an {@link InputStream} to an {@link OutputStream}.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Large streams (over 2GB) will return a bytes copied value of {@code -1} after the copy has completed since
+     * the correct number of bytes cannot be returned as an int. For large streams use the
+     * {@link #copyLarge(InputStream, OutputStream)} method.
+     * &lt;/p&gt;
+     *
+     * @param inputStream the {@link InputStream} to read.
+     * @param outputStream the {@link OutputStream} to write.
+     * @return the number of bytes copied, or -1 if greater than {@link Integer#MAX_VALUE}.
+     * @throws NullPointerException if the InputStream is {@code null}.
+     * @throws NullPointerException if the OutputStream is {@code null}.
+     * @throws IOException if an I/O error occurs.
+     * @since 1.1
+     */
+    public static int copy(final InputStream inputStream, final OutputStream outputStream) throws IOException {
+<span class="fc" id="L1089">        final long count = copyLarge(inputStream, outputStream);</span>
+<span class="fc bfc" id="L1090" title="All 2 branches covered.">        return count &gt; Integer.MAX_VALUE ? EOF : (int) count;</span>
+    }
+
+    /**
+     * Copies bytes from an {@link InputStream} to an {@link OutputStream} using an internal buffer of the
+     * given size.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     *
+     * @param inputStream the {@link InputStream} to read.
+     * @param outputStream the {@link OutputStream} to write to
+     * @param bufferSize the bufferSize used to copy from the input to the output
+     * @return the number of bytes copied.
+     * @throws NullPointerException if the InputStream is {@code null}.
+     * @throws NullPointerException if the OutputStream is {@code null}.
+     * @throws IOException if an I/O error occurs.
+     * @since 2.5
+     */
+    public static long copy(final InputStream inputStream, final OutputStream outputStream, final int bufferSize)
+            throws IOException {
+<span class="fc" id="L1111">        return copyLarge(inputStream, outputStream, byteArray(bufferSize));</span>
+    }
+
+    /**
+     * Copies bytes from an {@link InputStream} to chars on a
+     * {@link Writer} using the default character encoding of the platform.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method uses {@link InputStreamReader}.
+     * &lt;/p&gt;
+     *
+     * @param input the {@link InputStream} to read
+     * @param writer the {@link Writer} to write to
+     * @throws NullPointerException if the input or output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 1.1
+     * @deprecated Use {@link #copy(InputStream, Writer, Charset)} instead
+     */
+    @Deprecated
+    public static void copy(final InputStream input, final Writer writer)
+            throws IOException {
+<span class="fc" id="L1135">        copy(input, writer, Charset.defaultCharset());</span>
+<span class="fc" id="L1136">    }</span>
+
+    /**
+     * Copies bytes from an {@link InputStream} to chars on a
+     * {@link Writer} using the specified character encoding.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method uses {@link InputStreamReader}.
+     * &lt;/p&gt;
+     *
+     * @param input the {@link InputStream} to read
+     * @param writer the {@link Writer} to write to
+     * @param inputCharset the charset to use for the input stream, null means platform default
+     * @throws NullPointerException if the input or output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.3
+     */
+    public static void copy(final InputStream input, final Writer writer, final Charset inputCharset)
+            throws IOException {
+<span class="fc" id="L1158">        copy(new InputStreamReader(input, Charsets.toCharset(inputCharset)), writer);</span>
+<span class="fc" id="L1159">    }</span>
+
+    /**
+     * Copies bytes from an {@link InputStream} to chars on a
+     * {@link Writer} using the specified character encoding.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Character encoding names can be found at
+     * &lt;a href=&quot;https://www.iana.org/assignments/character-sets&quot;&gt;IANA&lt;/a&gt;.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method uses {@link InputStreamReader}.
+     * &lt;/p&gt;
+     *
+     * @param input the {@link InputStream} to read
+     * @param writer the {@link Writer} to write to
+     * @param inputCharsetName the name of the requested charset for the InputStream, null means platform default
+     * @throws NullPointerException                         if the input or output is null
+     * @throws IOException                                  if an I/O error occurs
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     * @since 1.1
+     */
+    public static void copy(final InputStream input, final Writer writer, final String inputCharsetName)
+            throws IOException {
+<span class="fc" id="L1186">        copy(input, writer, Charsets.toCharset(inputCharsetName));</span>
+<span class="fc" id="L1187">    }</span>
+
+    /**
+     * Copies bytes from a {@link ByteArrayOutputStream} to a {@link QueueInputStream}.
+     * &lt;p&gt;
+     * Unlike using JDK {@link PipedInputStream} and {@link PipedOutputStream} for this, this
+     * solution works safely in a single thread environment.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Example usage:
+     * &lt;/p&gt;
+     *
+     * &lt;pre&gt;
+     * ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+     * outputStream.writeBytes(&quot;hello world&quot;.getBytes(StandardCharsets.UTF_8));
+     *
+     * InputStream inputStream = IOUtils.copy(outputStream);
+     * &lt;/pre&gt;
+     *
+     * @param outputStream the {@link ByteArrayOutputStream} to read.
+     * @return the {@link QueueInputStream} filled with the content of the outputStream.
+     * @throws NullPointerException if the {@link ByteArrayOutputStream} is {@code null}.
+     * @throws IOException if an I/O error occurs.
+     * @since 2.12
+     */
+    @SuppressWarnings(&quot;resource&quot;) // streams are closed by the caller.
+    public static QueueInputStream copy(final java.io.ByteArrayOutputStream outputStream) throws IOException {
+<span class="fc" id="L1214">        Objects.requireNonNull(outputStream, &quot;outputStream&quot;);</span>
+<span class="fc" id="L1215">        final QueueInputStream in = new QueueInputStream();</span>
+<span class="fc" id="L1216">        outputStream.writeTo(in.newQueueOutputStream());</span>
+<span class="fc" id="L1217">        return in;</span>
+    }
+
+    /**
+     * Copies chars from a {@link Reader} to a {@link Appendable}.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedReader}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Large streams (over 2GB) will return a chars copied value of
+     * {@code -1} after the copy has completed since the correct
+     * number of chars cannot be returned as an int. For large streams
+     * use the {@link #copyLarge(Reader, Writer)} method.
+     * &lt;/p&gt;
+     *
+     * @param reader the {@link Reader} to read
+     * @param output the {@link Appendable} to write to
+     * @return the number of characters copied, or -1 if &amp;gt; Integer.MAX_VALUE
+     * @throws NullPointerException if the input or output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.7
+     */
+    public static long copy(final Reader reader, final Appendable output) throws IOException {
+<span class="fc" id="L1241">        return copy(reader, output, CharBuffer.allocate(DEFAULT_BUFFER_SIZE));</span>
+    }
+
+    /**
+     * Copies chars from a {@link Reader} to an {@link Appendable}.
+     * &lt;p&gt;
+     * This method uses the provided buffer, so there is no need to use a
+     * {@link BufferedReader}.
+     * &lt;/p&gt;
+     *
+     * @param reader the {@link Reader} to read
+     * @param output the {@link Appendable} to write to
+     * @param buffer the buffer to be used for the copy
+     * @return the number of characters copied
+     * @throws NullPointerException if the input or output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.7
+     */
+    public static long copy(final Reader reader, final Appendable output, final CharBuffer buffer) throws IOException {
+<span class="fc" id="L1260">        long count = 0;</span>
+        int n;
+<span class="fc bfc" id="L1262" title="All 2 branches covered.">        while (EOF != (n = reader.read(buffer))) {</span>
+<span class="fc" id="L1263">            buffer.flip();</span>
+<span class="fc" id="L1264">            output.append(buffer, 0, n);</span>
+<span class="fc" id="L1265">            count += n;</span>
+        }
+<span class="fc" id="L1267">        return count;</span>
+    }
+
+    /**
+     * Copies chars from a {@link Reader} to bytes on an
+     * {@link OutputStream} using the default character encoding of the
+     * platform, and calling flush.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedReader}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Due to the implementation of OutputStreamWriter, this method performs a
+     * flush.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method uses {@link OutputStreamWriter}.
+     * &lt;/p&gt;
+     *
+     * @param reader the {@link Reader} to read
+     * @param output the {@link OutputStream} to write to
+     * @throws NullPointerException if the input or output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 1.1
+     * @deprecated Use {@link #copy(Reader, OutputStream, Charset)} instead
+     */
+    @Deprecated
+    public static void copy(final Reader reader, final OutputStream output)
+            throws IOException {
+<span class="fc" id="L1296">        copy(reader, output, Charset.defaultCharset());</span>
+<span class="fc" id="L1297">    }</span>
+
+    /**
+     * Copies chars from a {@link Reader} to bytes on an
+     * {@link OutputStream} using the specified character encoding, and
+     * calling flush.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedReader}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Due to the implementation of OutputStreamWriter, this method performs a
+     * flush.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method uses {@link OutputStreamWriter}.
+     * &lt;/p&gt;
+     *
+     * @param reader the {@link Reader} to read
+     * @param output the {@link OutputStream} to write to
+     * @param outputCharset the charset to use for the OutputStream, null means platform default
+     * @throws NullPointerException if the input or output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.3
+     */
+    public static void copy(final Reader reader, final OutputStream output, final Charset outputCharset)
+            throws IOException {
+<span class="fc" id="L1324">        final OutputStreamWriter writer = new OutputStreamWriter(output, Charsets.toCharset(outputCharset));</span>
+<span class="fc" id="L1325">        copy(reader, writer);</span>
+        // XXX Unless anyone is planning on rewriting OutputStreamWriter,
+        // we have to flush here.
+<span class="fc" id="L1328">        writer.flush();</span>
+<span class="fc" id="L1329">    }</span>
+
+    /**
+     * Copies chars from a {@link Reader} to bytes on an
+     * {@link OutputStream} using the specified character encoding, and
+     * calling flush.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedReader}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Character encoding names can be found at
+     * &lt;a href=&quot;http://www.iana.org/assignments/character-sets&quot;&gt;IANA&lt;/a&gt;.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Due to the implementation of OutputStreamWriter, this method performs a
+     * flush.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method uses {@link OutputStreamWriter}.
+     * &lt;/p&gt;
+     *
+     * @param reader the {@link Reader} to read
+     * @param output the {@link OutputStream} to write to
+     * @param outputCharsetName the name of the requested charset for the OutputStream, null means platform default
+     * @throws NullPointerException                         if the input or output is null
+     * @throws IOException                                  if an I/O error occurs
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     * @since 1.1
+     */
+    public static void copy(final Reader reader, final OutputStream output, final String outputCharsetName)
+            throws IOException {
+<span class="fc" id="L1361">        copy(reader, output, Charsets.toCharset(outputCharsetName));</span>
+<span class="fc" id="L1362">    }</span>
+
+    /**
+     * Copies chars from a {@link Reader} to a {@link Writer}.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedReader}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Large streams (over 2GB) will return a chars copied value of
+     * {@code -1} after the copy has completed since the correct
+     * number of chars cannot be returned as an int. For large streams
+     * use the {@link #copyLarge(Reader, Writer)} method.
+     * &lt;/p&gt;
+     *
+     * @param reader the {@link Reader} to read.
+     * @param writer the {@link Writer} to write.
+     * @return the number of characters copied, or -1 if &amp;gt; Integer.MAX_VALUE
+     * @throws NullPointerException if the input or output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 1.1
+     */
+    public static int copy(final Reader reader, final Writer writer) throws IOException {
+<span class="fc" id="L1385">        final long count = copyLarge(reader, writer);</span>
+<span class="fc bfc" id="L1386" title="All 2 branches covered.">        if (count &gt; Integer.MAX_VALUE) {</span>
+<span class="fc" id="L1387">            return EOF;</span>
+        }
+<span class="fc" id="L1389">        return (int) count;</span>
+    }
+
+    /**
+     * Copies bytes from a {@link URL} to an {@link OutputStream}.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * The buffer size is given by {@link #DEFAULT_BUFFER_SIZE}.
+     * &lt;/p&gt;
+     *
+     * @param url the {@link URL} to read.
+     * @param file the {@link OutputStream} to write.
+     * @return the number of bytes copied.
+     * @throws NullPointerException if the URL is {@code null}.
+     * @throws NullPointerException if the OutputStream is {@code null}.
+     * @throws IOException if an I/O error occurs.
+     * @since 2.9.0
+     */
+    public static long copy(final URL url, final File file) throws IOException {
+<span class="fc" id="L1410">        try (OutputStream outputStream = Files.newOutputStream(Objects.requireNonNull(file, &quot;file&quot;).toPath())) {</span>
+<span class="fc" id="L1411">            return copy(url, outputStream);</span>
+        }
+    }
+
+    /**
+     * Copies bytes from a {@link URL} to an {@link OutputStream}.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * The buffer size is given by {@link #DEFAULT_BUFFER_SIZE}.
+     * &lt;/p&gt;
+     *
+     * @param url the {@link URL} to read.
+     * @param outputStream the {@link OutputStream} to write.
+     * @return the number of bytes copied.
+     * @throws NullPointerException if the URL is {@code null}.
+     * @throws NullPointerException if the OutputStream is {@code null}.
+     * @throws IOException if an I/O error occurs.
+     * @since 2.9.0
+     */
+    public static long copy(final URL url, final OutputStream outputStream) throws IOException {
+<span class="fc" id="L1433">        try (InputStream inputStream = Objects.requireNonNull(url, &quot;url&quot;).openStream()) {</span>
+<span class="fc" id="L1434">            return copyLarge(inputStream, outputStream);</span>
+        }
+    }
+
+    /**
+     * Copies bytes from a large (over 2GB) {@link InputStream} to an
+     * {@link OutputStream}.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * The buffer size is given by {@link #DEFAULT_BUFFER_SIZE}.
+     * &lt;/p&gt;
+     *
+     * @param inputStream the {@link InputStream} to read.
+     * @param outputStream the {@link OutputStream} to write.
+     * @return the number of bytes copied.
+     * @throws NullPointerException if the InputStream is {@code null}.
+     * @throws NullPointerException if the OutputStream is {@code null}.
+     * @throws IOException if an I/O error occurs.
+     * @since 1.3
+     */
+    public static long copyLarge(final InputStream inputStream, final OutputStream outputStream)
+            throws IOException {
+<span class="fc" id="L1459">        return copy(inputStream, outputStream, DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    /**
+     * Copies bytes from a large (over 2GB) {@link InputStream} to an
+     * {@link OutputStream}.
+     * &lt;p&gt;
+     * This method uses the provided buffer, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     *
+     * @param inputStream the {@link InputStream} to read.
+     * @param outputStream the {@link OutputStream} to write.
+     * @param buffer the buffer to use for the copy
+     * @return the number of bytes copied.
+     * @throws NullPointerException if the InputStream is {@code null}.
+     * @throws NullPointerException if the OutputStream is {@code null}.
+     * @throws IOException if an I/O error occurs.
+     * @since 2.2
+     */
+    @SuppressWarnings(&quot;resource&quot;) // streams are closed by the caller.
+    public static long copyLarge(final InputStream inputStream, final OutputStream outputStream, final byte[] buffer)
+        throws IOException {
+<span class="fc" id="L1482">        Objects.requireNonNull(inputStream, &quot;inputStream&quot;);</span>
+<span class="fc" id="L1483">        Objects.requireNonNull(outputStream, &quot;outputStream&quot;);</span>
+<span class="fc" id="L1484">        long count = 0;</span>
+        int n;
+<span class="fc bfc" id="L1486" title="All 2 branches covered.">        while (EOF != (n = inputStream.read(buffer))) {</span>
+<span class="fc" id="L1487">            outputStream.write(buffer, 0, n);</span>
+<span class="fc" id="L1488">            count += n;</span>
+        }
+<span class="fc" id="L1490">        return count;</span>
+    }
+
+    /**
+     * Copies some or all bytes from a large (over 2GB) {@link InputStream} to an
+     * {@link OutputStream}, optionally skipping input bytes.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Note that the implementation uses {@link #skip(InputStream, long)}.
+     * This means that the method may be considerably less efficient than using the actual skip implementation,
+     * this is done to guarantee that the correct number of characters are skipped.
+     * &lt;/p&gt;
+     * The buffer size is given by {@link #DEFAULT_BUFFER_SIZE}.
+     *
+     * @param input the {@link InputStream} to read
+     * @param output the {@link OutputStream} to write to
+     * @param inputOffset : number of bytes to skip from input before copying
+     * -ve values are ignored
+     * @param length number of bytes to copy. -ve means all
+     * @return the number of bytes copied
+     * @throws NullPointerException if the input or output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.2
+     */
+    public static long copyLarge(final InputStream input, final OutputStream output, final long inputOffset,
+                                 final long length) throws IOException {
+<span class="fc" id="L1519">        return copyLarge(input, output, inputOffset, length, getScratchByteArray());</span>
+    }
+
+    /**
+     * Copies some or all bytes from a large (over 2GB) {@link InputStream} to an
+     * {@link OutputStream}, optionally skipping input bytes.
+     * &lt;p&gt;
+     * This method uses the provided buffer, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Note that the implementation uses {@link #skip(InputStream, long)}.
+     * This means that the method may be considerably less efficient than using the actual skip implementation,
+     * this is done to guarantee that the correct number of characters are skipped.
+     * &lt;/p&gt;
+     *
+     * @param input the {@link InputStream} to read
+     * @param output the {@link OutputStream} to write to
+     * @param inputOffset number of bytes to skip from input before copying
+     * -ve values are ignored
+     * @param length number of bytes to copy. -ve means all
+     * @param buffer the buffer to use for the copy
+     * @return the number of bytes copied
+     * @throws NullPointerException if the input or output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.2
+     */
+    public static long copyLarge(final InputStream input, final OutputStream output,
+                                 final long inputOffset, final long length, final byte[] buffer) throws IOException {
+<span class="fc bfc" id="L1548" title="All 2 branches covered.">        if (inputOffset &gt; 0) {</span>
+<span class="fc" id="L1549">            skipFully(input, inputOffset);</span>
+        }
+<span class="pc bpc" id="L1551" title="1 of 2 branches missed.">        if (length == 0) {</span>
+<span class="nc" id="L1552">            return 0;</span>
+        }
+<span class="fc" id="L1554">        final int bufferLength = buffer.length;</span>
+<span class="fc" id="L1555">        int bytesToRead = bufferLength;</span>
+<span class="pc bpc" id="L1556" title="1 of 4 branches missed.">        if (length &gt; 0 &amp;&amp; length &lt; bufferLength) {</span>
+<span class="fc" id="L1557">            bytesToRead = (int) length;</span>
+        }
+        int read;
+<span class="fc" id="L1560">        long totalRead = 0;</span>
+<span class="fc bfc" id="L1561" title="All 4 branches covered.">        while (bytesToRead &gt; 0 &amp;&amp; EOF != (read = input.read(buffer, 0, bytesToRead))) {</span>
+<span class="fc" id="L1562">            output.write(buffer, 0, read);</span>
+<span class="fc" id="L1563">            totalRead += read;</span>
+<span class="fc bfc" id="L1564" title="All 2 branches covered.">            if (length &gt; 0) { // only adjust length if not reading to the end</span>
+                // Note the cast must work because buffer.length is an integer
+<span class="fc" id="L1566">                bytesToRead = (int) Math.min(length - totalRead, bufferLength);</span>
+            }
+        }
+<span class="fc" id="L1569">        return totalRead;</span>
+    }
+
+    /**
+     * Copies chars from a large (over 2GB) {@link Reader} to a {@link Writer}.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedReader}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * The buffer size is given by {@link #DEFAULT_BUFFER_SIZE}.
+     * &lt;/p&gt;
+     *
+     * @param reader the {@link Reader} to source.
+     * @param writer the {@link Writer} to target.
+     * @return the number of characters copied
+     * @throws NullPointerException if the input or output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 1.3
+     */
+    public static long copyLarge(final Reader reader, final Writer writer) throws IOException {
+<span class="fc" id="L1590">        return copyLarge(reader, writer, getScratchCharArray());</span>
+    }
+
+    /**
+     * Copies chars from a large (over 2GB) {@link Reader} to a {@link Writer}.
+     * &lt;p&gt;
+     * This method uses the provided buffer, so there is no need to use a
+     * {@link BufferedReader}.
+     * &lt;/p&gt;
+     *
+     * @param reader the {@link Reader} to source.
+     * @param writer the {@link Writer} to target.
+     * @param buffer the buffer to be used for the copy
+     * @return the number of characters copied
+     * @throws NullPointerException if the input or output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.2
+     */
+    public static long copyLarge(final Reader reader, final Writer writer, final char[] buffer) throws IOException {
+<span class="fc" id="L1609">        long count = 0;</span>
+        int n;
+<span class="fc bfc" id="L1611" title="All 2 branches covered.">        while (EOF != (n = reader.read(buffer))) {</span>
+<span class="fc" id="L1612">            writer.write(buffer, 0, n);</span>
+<span class="fc" id="L1613">            count += n;</span>
+        }
+<span class="fc" id="L1615">        return count;</span>
+    }
+
+    /**
+     * Copies some or all chars from a large (over 2GB) {@link InputStream} to an
+     * {@link OutputStream}, optionally skipping input chars.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedReader}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * The buffer size is given by {@link #DEFAULT_BUFFER_SIZE}.
+     * &lt;/p&gt;
+     *
+     * @param reader the {@link Reader} to read
+     * @param writer the {@link Writer} to write to
+     * @param inputOffset number of chars to skip from input before copying
+     * -ve values are ignored
+     * @param length number of chars to copy. -ve means all
+     * @return the number of chars copied
+     * @throws NullPointerException if the input or output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.2
+     */
+    public static long copyLarge(final Reader reader, final Writer writer, final long inputOffset, final long length)
+            throws IOException {
+<span class="fc" id="L1641">        return copyLarge(reader, writer, inputOffset, length, getScratchCharArray());</span>
+    }
+
+    /**
+     * Copies some or all chars from a large (over 2GB) {@link InputStream} to an
+     * {@link OutputStream}, optionally skipping input chars.
+     * &lt;p&gt;
+     * This method uses the provided buffer, so there is no need to use a
+     * {@link BufferedReader}.
+     * &lt;/p&gt;
+     *
+     * @param reader the {@link Reader} to read
+     * @param writer the {@link Writer} to write to
+     * @param inputOffset number of chars to skip from input before copying
+     * -ve values are ignored
+     * @param length number of chars to copy. -ve means all
+     * @param buffer the buffer to be used for the copy
+     * @return the number of chars copied
+     * @throws NullPointerException if the input or output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.2
+     */
+    public static long copyLarge(final Reader reader, final Writer writer, final long inputOffset, final long length,
+                                 final char[] buffer)
+            throws IOException {
+<span class="fc bfc" id="L1666" title="All 2 branches covered.">        if (inputOffset &gt; 0) {</span>
+<span class="fc" id="L1667">            skipFully(reader, inputOffset);</span>
+        }
+<span class="pc bpc" id="L1669" title="1 of 2 branches missed.">        if (length == 0) {</span>
+<span class="nc" id="L1670">            return 0;</span>
+        }
+<span class="fc" id="L1672">        int bytesToRead = buffer.length;</span>
+<span class="pc bpc" id="L1673" title="1 of 4 branches missed.">        if (length &gt; 0 &amp;&amp; length &lt; buffer.length) {</span>
+<span class="fc" id="L1674">            bytesToRead = (int) length;</span>
+        }
+        int read;
+<span class="fc" id="L1677">        long totalRead = 0;</span>
+<span class="fc bfc" id="L1678" title="All 4 branches covered.">        while (bytesToRead &gt; 0 &amp;&amp; EOF != (read = reader.read(buffer, 0, bytesToRead))) {</span>
+<span class="fc" id="L1679">            writer.write(buffer, 0, read);</span>
+<span class="fc" id="L1680">            totalRead += read;</span>
+<span class="fc bfc" id="L1681" title="All 2 branches covered.">            if (length &gt; 0) { // only adjust length if not reading to the end</span>
+                // Note the cast must work because buffer.length is an integer
+<span class="fc" id="L1683">                bytesToRead = (int) Math.min(length - totalRead, buffer.length);</span>
+            }
+        }
+<span class="fc" id="L1686">        return totalRead;</span>
+    }
+
+    /**
+     * Fills the given array with 0s.
+     *
+     * @param arr The non-null array to fill.
+     * @return The given array.
+     */
+    private static byte[] fill0(final byte[] arr) {
+<span class="fc" id="L1696">        Arrays.fill(arr, (byte) 0);</span>
+<span class="fc" id="L1697">        return arr;</span>
+    }
+
+    /**
+     * Fills the given array with 0s.
+     *
+     * @param arr The non-null array to fill.
+     * @return The given array.
+     */
+    private static char[] fill0(final char[] arr) {
+<span class="fc" id="L1707">        Arrays.fill(arr, (char) 0);</span>
+<span class="fc" id="L1708">        return arr;</span>
+    }
+
+    /**
+     * Gets the internal byte array buffer, intended for both reading and writing.
+     *
+     * @return the internal byte array buffer, intended for both reading and writing.
+     */
+    static byte[] getScratchByteArray() {
+<span class="fc" id="L1717">        return fill0(SCRATCH_BYTE_BUFFER_RW.get());</span>
+    }
+
+    /**
+     * Gets the internal byte array intended for write only operations.
+     *
+     * @return the internal byte array intended for write only operations.
+     */
+    static byte[] getScratchByteArrayWriteOnly() {
+<span class="fc" id="L1726">        return fill0(SCRATCH_BYTE_BUFFER_WO);</span>
+    }
+
+    /**
+     * Gets the char byte array buffer, intended for both reading and writing.
+     *
+     * @return the char byte array buffer, intended for both reading and writing.
+     */
+    static char[] getScratchCharArray() {
+<span class="fc" id="L1735">        return fill0(SCRATCH_CHAR_BUFFER_RW.get());</span>
+    }
+
+    /**
+     * Gets the internal char array intended for write only operations.
+     *
+     * @return the internal char array intended for write only operations.
+     */
+    static char[] getScratchCharArrayWriteOnly() {
+<span class="fc" id="L1744">        return fill0(SCRATCH_CHAR_BUFFER_WO);</span>
+    }
+
+    /**
+     * Returns the length of the given array in a null-safe manner.
+     *
+     * @param array an array or null
+     * @return the array length, or 0 if the given array is null.
+     * @since 2.7
+     */
+    public static int length(final byte[] array) {
+<span class="fc bfc" id="L1755" title="All 2 branches covered.">        return array == null ? 0 : array.length;</span>
+    }
+
+    /**
+     * Returns the length of the given array in a null-safe manner.
+     *
+     * @param array an array or null
+     * @return the array length, or 0 if the given array is null.
+     * @since 2.7
+     */
+    public static int length(final char[] array) {
+<span class="fc bfc" id="L1766" title="All 2 branches covered.">        return array == null ? 0 : array.length;</span>
+    }
+
+    /**
+     * Returns the length of the given CharSequence in a null-safe manner.
+     *
+     * @param csq a CharSequence or null
+     * @return the CharSequence length, or 0 if the given CharSequence is null.
+     * @since 2.7
+     */
+    public static int length(final CharSequence csq) {
+<span class="fc bfc" id="L1777" title="All 2 branches covered.">        return csq == null ? 0 : csq.length();</span>
+    }
+
+    /**
+     * Returns the length of the given array in a null-safe manner.
+     *
+     * @param array an array or null
+     * @return the array length, or 0 if the given array is null.
+     * @since 2.7
+     */
+    public static int length(final Object[] array) {
+<span class="fc bfc" id="L1788" title="All 2 branches covered.">        return array == null ? 0 : array.length;</span>
+    }
+
+    /**
+     * Returns an Iterator for the lines in an {@link InputStream}, using
+     * the character encoding specified (or default encoding if null).
+     * &lt;p&gt;
+     * {@link LineIterator} holds a reference to the open
+     * {@link InputStream} specified here. When you have finished with
+     * the iterator you should close the stream to free internal resources.
+     * This can be done by using a try-with-resources block, closing the stream directly, or by calling
+     * {@link LineIterator#close()}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * The recommended usage pattern is:
+     * &lt;/p&gt;
+     * &lt;pre&gt;
+     * try {
+     *   LineIterator it = IOUtils.lineIterator(stream, charset);
+     *   while (it.hasNext()) {
+     *     String line = it.nextLine();
+     *     /// do something with line
+     *   }
+     * } finally {
+     *   IOUtils.closeQuietly(stream);
+     * }
+     * &lt;/pre&gt;
+     *
+     * @param input the {@link InputStream} to read, not null
+     * @param charset the charset to use, null means platform default
+     * @return an Iterator of the lines in the reader, never null
+     * @throws IllegalArgumentException if the input is null
+     * @since 2.3
+     */
+    public static LineIterator lineIterator(final InputStream input, final Charset charset) {
+<span class="fc" id="L1823">        return new LineIterator(new InputStreamReader(input, Charsets.toCharset(charset)));</span>
+    }
+
+    /**
+     * Returns an Iterator for the lines in an {@link InputStream}, using
+     * the character encoding specified (or default encoding if null).
+     * &lt;p&gt;
+     * {@link LineIterator} holds a reference to the open
+     * {@link InputStream} specified here. When you have finished with
+     * the iterator you should close the stream to free internal resources.
+     * This can be done by using a try-with-resources block, closing the stream directly, or by calling
+     * {@link LineIterator#close()}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * The recommended usage pattern is:
+     * &lt;/p&gt;
+     * &lt;pre&gt;
+     * try {
+     *   LineIterator it = IOUtils.lineIterator(stream, StandardCharsets.UTF_8.name());
+     *   while (it.hasNext()) {
+     *     String line = it.nextLine();
+     *     /// do something with line
+     *   }
+     * } finally {
+     *   IOUtils.closeQuietly(stream);
+     * }
+     * &lt;/pre&gt;
+     *
+     * @param input the {@link InputStream} to read, not null
+     * @param charsetName the encoding to use, null means platform default
+     * @return an Iterator of the lines in the reader, never null
+     * @throws IllegalArgumentException                     if the input is null
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     * @since 1.2
+     */
+    public static LineIterator lineIterator(final InputStream input, final String charsetName) {
+<span class="fc" id="L1859">        return lineIterator(input, Charsets.toCharset(charsetName));</span>
+    }
+
+    /**
+     * Returns an Iterator for the lines in a {@link Reader}.
+     * &lt;p&gt;
+     * {@link LineIterator} holds a reference to the open
+     * {@link Reader} specified here. When you have finished with the
+     * iterator you should close the reader to free internal resources.
+     * This can be done by using a try-with-resources block, closing the reader directly, or by calling
+     * {@link LineIterator#close()}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * The recommended usage pattern is:
+     * &lt;/p&gt;
+     * &lt;pre&gt;
+     * try {
+     *   LineIterator it = IOUtils.lineIterator(reader);
+     *   while (it.hasNext()) {
+     *     String line = it.nextLine();
+     *     /// do something with line
+     *   }
+     * } finally {
+     *   IOUtils.closeQuietly(reader);
+     * }
+     * &lt;/pre&gt;
+     *
+     * @param reader the {@link Reader} to read, not null
+     * @return an Iterator of the lines in the reader, never null
+     * @throws NullPointerException if the reader is null
+     * @since 1.2
+     */
+    public static LineIterator lineIterator(final Reader reader) {
+<span class="nc" id="L1892">        return new LineIterator(reader);</span>
+    }
+
+    /**
+     * Reads bytes from an input stream.
+     * This implementation guarantees that it will read as many bytes
+     * as possible before giving up; this may not always be the case for
+     * subclasses of {@link InputStream}.
+     *
+     * @param input where to read input from
+     * @param buffer destination
+     * @return actual length read; may be less than requested if EOF was reached
+     * @throws IOException if a read error occurs
+     * @since 2.2
+     */
+    public static int read(final InputStream input, final byte[] buffer) throws IOException {
+<span class="nc" id="L1908">        return read(input, buffer, 0, buffer.length);</span>
+    }
+
+    /**
+     * Reads bytes from an input stream.
+     * This implementation guarantees that it will read as many bytes
+     * as possible before giving up; this may not always be the case for
+     * subclasses of {@link InputStream}.
+     *
+     * @param input where to read input
+     * @param buffer destination
+     * @param offset initial offset into buffer
+     * @param length length to read, must be &amp;gt;= 0
+     * @return actual length read; may be less than requested if EOF was reached
+     * @throws IllegalArgumentException if length is negative
+     * @throws IOException              if a read error occurs
+     * @since 2.2
+     */
+    public static int read(final InputStream input, final byte[] buffer, final int offset, final int length)
+            throws IOException {
+<span class="fc bfc" id="L1928" title="All 2 branches covered.">        if (length == 0) {</span>
+<span class="fc" id="L1929">            return 0;</span>
+        }
+<span class="fc" id="L1931">        return read(input::read, buffer, offset, length);</span>
+    }
+
+    /**
+     * Reads bytes from an input. This implementation guarantees that it will read as many bytes as possible before giving up; this may not always be the case
+     * for subclasses of {@link InputStream}.
+     *
+     * @param input  How to read input
+     * @param buffer destination
+     * @param offset initial offset into buffer
+     * @param length length to read, must be &amp;gt;= 0
+     * @return actual length read; may be less than requested if EOF was reached
+     * @throws IllegalArgumentException if length is negative
+     * @throws IOException              if a read error occurs
+     * @since 2.2
+     */
+    static int read(final IOTriFunction&lt;byte[], Integer, Integer, Integer&gt; input, final byte[] buffer, final int offset, final int length)
+            throws IOException {
+<span class="fc bfc" id="L1949" title="All 2 branches covered.">        if (length &lt; 0) {</span>
+<span class="fc" id="L1950">            throw new IllegalArgumentException(&quot;Length must not be negative: &quot; + length);</span>
+        }
+<span class="fc" id="L1952">        int remaining = length;</span>
+<span class="fc bfc" id="L1953" title="All 2 branches covered.">        while (remaining &gt; 0) {</span>
+<span class="fc" id="L1954">            final int location = length - remaining;</span>
+<span class="fc" id="L1955">            final int count = input.apply(buffer, offset + location, remaining);</span>
+<span class="fc bfc" id="L1956" title="All 2 branches covered.">            if (EOF == count) {</span>
+<span class="fc" id="L1957">                break;</span>
+            }
+<span class="fc" id="L1959">            remaining -= count;</span>
+<span class="fc" id="L1960">        }</span>
+<span class="fc" id="L1961">        return length - remaining;</span>
+    }
+
+    /**
+     * Reads bytes from a ReadableByteChannel.
+     * &lt;p&gt;
+     * This implementation guarantees that it will read as many bytes
+     * as possible before giving up; this may not always be the case for
+     * subclasses of {@link ReadableByteChannel}.
+     * &lt;/p&gt;
+     *
+     * @param input the byte channel to read
+     * @param buffer byte buffer destination
+     * @return the actual length read; may be less than requested if EOF was reached
+     * @throws IOException if a read error occurs
+     * @since 2.5
+     */
+    public static int read(final ReadableByteChannel input, final ByteBuffer buffer) throws IOException {
+<span class="fc" id="L1979">        final int length = buffer.remaining();</span>
+<span class="fc bfc" id="L1980" title="All 2 branches covered.">        while (buffer.remaining() &gt; 0) {</span>
+<span class="fc" id="L1981">            final int count = input.read(buffer);</span>
+<span class="fc bfc" id="L1982" title="All 2 branches covered.">            if (EOF == count) { // EOF</span>
+<span class="fc" id="L1983">                break;</span>
+            }
+<span class="fc" id="L1985">        }</span>
+<span class="fc" id="L1986">        return length - buffer.remaining();</span>
+    }
+
+    /**
+     * Reads characters from an input character stream.
+     * This implementation guarantees that it will read as many characters
+     * as possible before giving up; this may not always be the case for
+     * subclasses of {@link Reader}.
+     *
+     * @param reader where to read input from
+     * @param buffer destination
+     * @return actual length read; may be less than requested if EOF was reached
+     * @throws IOException if a read error occurs
+     * @since 2.2
+     */
+    public static int read(final Reader reader, final char[] buffer) throws IOException {
+<span class="nc" id="L2002">        return read(reader, buffer, 0, buffer.length);</span>
+    }
+
+    /**
+     * Reads characters from an input character stream.
+     * This implementation guarantees that it will read as many characters
+     * as possible before giving up; this may not always be the case for
+     * subclasses of {@link Reader}.
+     *
+     * @param reader where to read input from
+     * @param buffer destination
+     * @param offset initial offset into buffer
+     * @param length length to read, must be &amp;gt;= 0
+     * @return actual length read; may be less than requested if EOF was reached
+     * @throws IllegalArgumentException if length is negative
+     * @throws IOException              if a read error occurs
+     * @since 2.2
+     */
+    public static int read(final Reader reader, final char[] buffer, final int offset, final int length)
+            throws IOException {
+<span class="fc bfc" id="L2022" title="All 2 branches covered.">        if (length &lt; 0) {</span>
+<span class="fc" id="L2023">            throw new IllegalArgumentException(&quot;Length must not be negative: &quot; + length);</span>
+        }
+<span class="fc" id="L2025">        int remaining = length;</span>
+<span class="fc bfc" id="L2026" title="All 2 branches covered.">        while (remaining &gt; 0) {</span>
+<span class="fc" id="L2027">            final int location = length - remaining;</span>
+<span class="fc" id="L2028">            final int count = reader.read(buffer, offset + location, remaining);</span>
+<span class="fc bfc" id="L2029" title="All 2 branches covered.">            if (EOF == count) { // EOF</span>
+<span class="fc" id="L2030">                break;</span>
+            }
+<span class="fc" id="L2032">            remaining -= count;</span>
+<span class="fc" id="L2033">        }</span>
+<span class="fc" id="L2034">        return length - remaining;</span>
+    }
+
+    /**
+     * Reads the requested number of bytes or fail if there are not enough left.
+     * &lt;p&gt;
+     * This allows for the possibility that {@link InputStream#read(byte[], int, int)} may
+     * not read as many bytes as requested (most likely because of reaching EOF).
+     * &lt;/p&gt;
+     *
+     * @param input where to read input from
+     * @param buffer destination
+     *
+     * @throws IOException              if there is a problem reading the file
+     * @throws IllegalArgumentException if length is negative
+     * @throws EOFException             if the number of bytes read was incorrect
+     * @since 2.2
+     */
+    public static void readFully(final InputStream input, final byte[] buffer) throws IOException {
+<span class="nc" id="L2053">        readFully(input, buffer, 0, buffer.length);</span>
+<span class="nc" id="L2054">    }</span>
+
+    /**
+     * Reads the requested number of bytes or fail if there are not enough left.
+     * &lt;p&gt;
+     * This allows for the possibility that {@link InputStream#read(byte[], int, int)} may
+     * not read as many bytes as requested (most likely because of reaching EOF).
+     * &lt;/p&gt;
+     *
+     * @param input where to read input from
+     * @param buffer destination
+     * @param offset initial offset into buffer
+     * @param length length to read, must be &amp;gt;= 0
+     *
+     * @throws IOException              if there is a problem reading the file
+     * @throws IllegalArgumentException if length is negative
+     * @throws EOFException             if the number of bytes read was incorrect
+     * @since 2.2
+     */
+    public static void readFully(final InputStream input, final byte[] buffer, final int offset, final int length)
+            throws IOException {
+<span class="fc" id="L2075">        final int actual = read(input, buffer, offset, length);</span>
+<span class="fc bfc" id="L2076" title="All 2 branches covered.">        if (actual != length) {</span>
+<span class="fc" id="L2077">            throw new EOFException(&quot;Length to read: &quot; + length + &quot; actual: &quot; + actual);</span>
+        }
+<span class="fc" id="L2079">    }</span>
+
+    /**
+     * Reads the requested number of bytes or fail if there are not enough left.
+     * &lt;p&gt;
+     * This allows for the possibility that {@link InputStream#read(byte[], int, int)} may
+     * not read as many bytes as requested (most likely because of reaching EOF).
+     * &lt;/p&gt;
+     *
+     * @param input where to read input from
+     * @param length length to read, must be &amp;gt;= 0
+     * @return the bytes read from input
+     * @throws IOException              if there is a problem reading the file
+     * @throws IllegalArgumentException if length is negative
+     * @throws EOFException             if the number of bytes read was incorrect
+     * @since 2.5
+     */
+    public static byte[] readFully(final InputStream input, final int length) throws IOException {
+<span class="fc" id="L2097">        final byte[] buffer = byteArray(length);</span>
+<span class="fc" id="L2098">        readFully(input, buffer, 0, buffer.length);</span>
+<span class="fc" id="L2099">        return buffer;</span>
+    }
+
+    /**
+     * Reads the requested number of bytes or fail if there are not enough left.
+     * &lt;p&gt;
+     * This allows for the possibility that {@link ReadableByteChannel#read(ByteBuffer)} may
+     * not read as many bytes as requested (most likely because of reaching EOF).
+     * &lt;/p&gt;
+     *
+     * @param input the byte channel to read
+     * @param buffer byte buffer destination
+     * @throws IOException  if there is a problem reading the file
+     * @throws EOFException if the number of bytes read was incorrect
+     * @since 2.5
+     */
+    public static void readFully(final ReadableByteChannel input, final ByteBuffer buffer) throws IOException {
+<span class="fc" id="L2116">        final int expected = buffer.remaining();</span>
+<span class="fc" id="L2117">        final int actual = read(input, buffer);</span>
+<span class="fc bfc" id="L2118" title="All 2 branches covered.">        if (actual != expected) {</span>
+<span class="fc" id="L2119">            throw new EOFException(&quot;Length to read: &quot; + expected + &quot; actual: &quot; + actual);</span>
+        }
+<span class="fc" id="L2121">    }</span>
+
+    /**
+     * Reads the requested number of characters or fail if there are not enough left.
+     * &lt;p&gt;
+     * This allows for the possibility that {@link Reader#read(char[], int, int)} may
+     * not read as many characters as requested (most likely because of reaching EOF).
+     * &lt;/p&gt;
+     *
+     * @param reader where to read input from
+     * @param buffer destination
+     * @throws IOException              if there is a problem reading the file
+     * @throws IllegalArgumentException if length is negative
+     * @throws EOFException             if the number of characters read was incorrect
+     * @since 2.2
+     */
+    public static void readFully(final Reader reader, final char[] buffer) throws IOException {
+<span class="nc" id="L2138">        readFully(reader, buffer, 0, buffer.length);</span>
+<span class="nc" id="L2139">    }</span>
+
+    /**
+     * Reads the requested number of characters or fail if there are not enough left.
+     * &lt;p&gt;
+     * This allows for the possibility that {@link Reader#read(char[], int, int)} may
+     * not read as many characters as requested (most likely because of reaching EOF).
+     * &lt;/p&gt;
+     *
+     * @param reader where to read input from
+     * @param buffer destination
+     * @param offset initial offset into buffer
+     * @param length length to read, must be &amp;gt;= 0
+     * @throws IOException              if there is a problem reading the file
+     * @throws IllegalArgumentException if length is negative
+     * @throws EOFException             if the number of characters read was incorrect
+     * @since 2.2
+     */
+    public static void readFully(final Reader reader, final char[] buffer, final int offset, final int length)
+            throws IOException {
+<span class="fc" id="L2159">        final int actual = read(reader, buffer, offset, length);</span>
+<span class="fc bfc" id="L2160" title="All 2 branches covered.">        if (actual != length) {</span>
+<span class="fc" id="L2161">            throw new EOFException(&quot;Length to read: &quot; + length + &quot; actual: &quot; + actual);</span>
+        }
+<span class="fc" id="L2163">    }</span>
+
+    /**
+     * Gets the contents of a {@link CharSequence} as a list of Strings, one entry per line.
+     *
+     * @param csq the {@link CharSequence} to read, not null
+     * @return the list of Strings, never null
+     * @throws UncheckedIOException if an I/O error occurs
+     * @since 2.18.0
+     */
+    public static List&lt;String&gt; readLines(final CharSequence csq) throws UncheckedIOException {
+<span class="fc" id="L2174">        try (CharSequenceReader reader = new CharSequenceReader(csq)) {</span>
+<span class="fc" id="L2175">            return readLines(reader);</span>
+        }
+    }
+
+    /**
+     * Gets the contents of an {@link InputStream} as a list of Strings,
+     * one entry per line, using the default character encoding of the platform.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     *
+     * @param input the {@link InputStream} to read, not null
+     * @return the list of Strings, never null
+     * @throws NullPointerException if the input is null
+     * @throws UncheckedIOException if an I/O error occurs
+     * @since 1.1
+     * @deprecated Use {@link #readLines(InputStream, Charset)} instead
+     */
+    @Deprecated
+    public static List&lt;String&gt; readLines(final InputStream input) throws UncheckedIOException {
+<span class="fc" id="L2196">        return readLines(input, Charset.defaultCharset());</span>
+    }
+
+    /**
+     * Gets the contents of an {@link InputStream} as a list of Strings,
+     * one entry per line, using the specified character encoding.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     *
+     * @param input the {@link InputStream} to read, not null
+     * @param charset the charset to use, null means platform default
+     * @return the list of Strings, never null
+     * @throws NullPointerException if the input is null
+     * @throws UncheckedIOException if an I/O error occurs
+     * @since 2.3
+     */
+    public static List&lt;String&gt; readLines(final InputStream input, final Charset charset) throws UncheckedIOException {
+<span class="fc" id="L2215">        return readLines(new InputStreamReader(input, Charsets.toCharset(charset)));</span>
+    }
+
+    /**
+     * Gets the contents of an {@link InputStream} as a list of Strings,
+     * one entry per line, using the specified character encoding.
+     * &lt;p&gt;
+     * Character encoding names can be found at
+     * &lt;a href=&quot;http://www.iana.org/assignments/character-sets&quot;&gt;IANA&lt;/a&gt;.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     *
+     * @param input the {@link InputStream} to read, not null
+     * @param charsetName the name of the requested charset, null means platform default
+     * @return the list of Strings, never null
+     * @throws NullPointerException                         if the input is null
+     * @throws UncheckedIOException                         if an I/O error occurs
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     * @since 1.1
+     */
+    public static List&lt;String&gt; readLines(final InputStream input, final String charsetName) throws UncheckedIOException {
+<span class="fc" id="L2239">        return readLines(input, Charsets.toCharset(charsetName));</span>
+    }
+
+    /**
+     * Gets the contents of a {@link Reader} as a list of Strings,
+     * one entry per line.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedReader}.
+     * &lt;/p&gt;
+     *
+     * @param reader the {@link Reader} to read, not null
+     * @return the list of Strings, never null
+     * @throws NullPointerException if the input is null
+     * @throws UncheckedIOException if an I/O error occurs
+     * @since 1.1
+     */
+    @SuppressWarnings(&quot;resource&quot;) // reader wraps input and is the responsibility of the caller.
+    public static List&lt;String&gt; readLines(final Reader reader) throws UncheckedIOException {
+<span class="fc" id="L2258">        return toBufferedReader(reader).lines().collect(Collectors.toList());</span>
+    }
+
+    /**
+     * Gets the contents of a resource as a byte array.
+     * &lt;p&gt;
+     * Delegates to {@link #resourceToByteArray(String, ClassLoader) resourceToByteArray(String, null)}.
+     * &lt;/p&gt;
+     *
+     * @param name The resource name.
+     * @return the requested byte array
+     * @throws IOException if an I/O error occurs or the resource is not found.
+     * @see #resourceToByteArray(String, ClassLoader)
+     * @since 2.6
+     */
+    public static byte[] resourceToByteArray(final String name) throws IOException {
+<span class="fc" id="L2274">        return resourceToByteArray(name, null);</span>
+    }
+
+    /**
+     * Gets the contents of a resource as a byte array.
+     * &lt;p&gt;
+     * Delegates to {@link #resourceToURL(String, ClassLoader)}.
+     * &lt;/p&gt;
+     *
+     * @param name The resource name.
+     * @param classLoader the class loader that the resolution of the resource is delegated to
+     * @return the requested byte array
+     * @throws IOException if an I/O error occurs or the resource is not found.
+     * @see #resourceToURL(String, ClassLoader)
+     * @since 2.6
+     */
+    public static byte[] resourceToByteArray(final String name, final ClassLoader classLoader) throws IOException {
+<span class="fc" id="L2291">        return toByteArray(resourceToURL(name, classLoader));</span>
+    }
+
+    /**
+     * Gets the contents of a resource as a String using the specified character encoding.
+     * &lt;p&gt;
+     * Delegates to {@link #resourceToString(String, Charset, ClassLoader) resourceToString(String, Charset, null)}.
+     * &lt;/p&gt;
+     *
+     * @param name The resource name.
+     * @param charset the charset to use, null means platform default
+     * @return the requested String
+     * @throws IOException if an I/O error occurs or the resource is not found.
+     * @see #resourceToString(String, Charset, ClassLoader)
+     * @since 2.6
+     */
+    public static String resourceToString(final String name, final Charset charset) throws IOException {
+<span class="fc" id="L2308">        return resourceToString(name, charset, null);</span>
+    }
+
+    /**
+     * Gets the contents of a resource as a String using the specified character encoding.
+     * &lt;p&gt;
+     * Delegates to {@link #resourceToURL(String, ClassLoader)}.
+     * &lt;/p&gt;
+     *
+     * @param name The resource name.
+     * @param charset the Charset to use, null means platform default
+     * @param classLoader the class loader that the resolution of the resource is delegated to
+     * @return the requested String
+     * @throws IOException if an I/O error occurs.
+     * @see #resourceToURL(String, ClassLoader)
+     * @since 2.6
+     */
+    public static String resourceToString(final String name, final Charset charset, final ClassLoader classLoader) throws IOException {
+<span class="fc" id="L2326">        return toString(resourceToURL(name, classLoader), charset);</span>
+    }
+
+    /**
+     * Gets a URL pointing to the given resource.
+     * &lt;p&gt;
+     * Delegates to {@link #resourceToURL(String, ClassLoader) resourceToURL(String, null)}.
+     * &lt;/p&gt;
+     *
+     * @param name The resource name.
+     * @return A URL object for reading the resource.
+     * @throws IOException if the resource is not found.
+     * @since 2.6
+     */
+    public static URL resourceToURL(final String name) throws IOException {
+<span class="fc" id="L2341">        return resourceToURL(name, null);</span>
+    }
+
+    /**
+     * Gets a URL pointing to the given resource.
+     * &lt;p&gt;
+     * If the {@code classLoader} is not null, call {@link ClassLoader#getResource(String)}, otherwise call
+     * {@link Class#getResource(String) IOUtils.class.getResource(name)}.
+     * &lt;/p&gt;
+     *
+     * @param name The resource name.
+     * @param classLoader Delegate to this class loader if not null
+     * @return A URL object for reading the resource.
+     * @throws IOException if the resource is not found.
+     * @since 2.6
+     */
+    public static URL resourceToURL(final String name, final ClassLoader classLoader) throws IOException {
+        // What about the thread context class loader?
+        // What about the system class loader?
+<span class="fc bfc" id="L2360" title="All 2 branches covered.">        final URL resource = classLoader == null ? IOUtils.class.getResource(name) : classLoader.getResource(name);</span>
+<span class="fc bfc" id="L2361" title="All 2 branches covered.">        if (resource == null) {</span>
+<span class="fc" id="L2362">            throw new IOException(&quot;Resource not found: &quot; + name);</span>
+        }
+<span class="fc" id="L2364">        return resource;</span>
+    }
+
+    /**
+     * Skips bytes from an input byte stream.
+     * This implementation guarantees that it will read as many bytes
+     * as possible before giving up; this may not always be the case for
+     * skip() implementations in subclasses of {@link InputStream}.
+     * &lt;p&gt;
+     * Note that the implementation uses {@link InputStream#read(byte[], int, int)} rather
+     * than delegating to {@link InputStream#skip(long)}.
+     * This means that the method may be considerably less efficient than using the actual skip implementation,
+     * this is done to guarantee that the correct number of bytes are skipped.
+     * &lt;/p&gt;
+     *
+     * @param input byte stream to skip
+     * @param skip number of bytes to skip.
+     * @return number of bytes actually skipped.
+     * @throws IOException              if there is a problem reading the file
+     * @throws IllegalArgumentException if toSkip is negative
+     * @see InputStream#skip(long)
+     * @see &lt;a href=&quot;https://issues.apache.org/jira/browse/IO-203&quot;&gt;IO-203 - Add skipFully() method for InputStreams&lt;/a&gt;
+     * @since 2.0
+     */
+    public static long skip(final InputStream input, final long skip) throws IOException {
+<span class="fc" id="L2389">        return skip(input, skip, IOUtils::getScratchByteArrayWriteOnly);</span>
+    }
+
+    /**
+     * Skips bytes from an input byte stream.
+     * &lt;p&gt;
+     * Intended for special cases when customization of the temporary buffer is needed because, for example, a nested input stream has requirements for the
+     * bytes read. For example, when using {@link InflaterInputStream}s from multiple threads.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This implementation guarantees that it will read as many bytes as possible before giving up; this may not always be the case for skip() implementations
+     * in subclasses of {@link InputStream}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Note that the implementation uses {@link InputStream#read(byte[], int, int)} rather than delegating to {@link InputStream#skip(long)}. This means that
+     * the method may be considerably less efficient than using the actual skip implementation, this is done to guarantee that the correct number of bytes are
+     * skipped.
+     * &lt;/p&gt;
+     *
+     * @param input              byte stream to skip
+     * @param skip             number of bytes to skip.
+     * @param skipBufferSupplier Supplies the buffer to use for reading.
+     * @return number of bytes actually skipped.
+     * @throws IOException              if there is a problem reading the file
+     * @throws IllegalArgumentException if toSkip is negative
+     * @see InputStream#skip(long)
+     * @see &lt;a href=&quot;https://issues.apache.org/jira/browse/IO-203&quot;&gt;IO-203 - Add skipFully() method for InputStreams&lt;/a&gt;
+     * @since 2.14.0
+     */
+    public static long skip(final InputStream input, final long skip, final Supplier&lt;byte[]&gt; skipBufferSupplier) throws IOException {
+<span class="fc bfc" id="L2419" title="All 2 branches covered.">        if (skip &lt; 0) {</span>
+<span class="fc" id="L2420">            throw new IllegalArgumentException(&quot;Skip count must be non-negative, actual: &quot; + skip);</span>
+        }
+        //
+        // No need to synchronize access to SCRATCH_BYTE_BUFFER_WO: We don't care if the buffer is written multiple
+        // times or in parallel since the data is ignored. We reuse the same buffer, if the buffer size were variable or read-write,
+        // we would need to synch or use a thread local to ensure some other thread safety.
+        //
+<span class="fc" id="L2427">        long remain = skip;</span>
+<span class="fc bfc" id="L2428" title="All 2 branches covered.">        while (remain &gt; 0) {</span>
+<span class="fc" id="L2429">            final byte[] skipBuffer = skipBufferSupplier.get();</span>
+            // See https://issues.apache.org/jira/browse/IO-203 for why we use read() rather than delegating to skip()
+<span class="fc" id="L2431">            final long n = input.read(skipBuffer, 0, (int) Math.min(remain, skipBuffer.length));</span>
+<span class="fc bfc" id="L2432" title="All 2 branches covered.">            if (n &lt; 0) { // EOF</span>
+<span class="fc" id="L2433">                break;</span>
+            }
+<span class="fc" id="L2435">            remain -= n;</span>
+<span class="fc" id="L2436">        }</span>
+<span class="fc" id="L2437">        return skip - remain;</span>
+    }
+
+    /**
+     * Skips bytes from a ReadableByteChannel.
+     * This implementation guarantees that it will read as many bytes
+     * as possible before giving up.
+     *
+     * @param input ReadableByteChannel to skip
+     * @param toSkip number of bytes to skip.
+     * @return number of bytes actually skipped.
+     * @throws IOException              if there is a problem reading the ReadableByteChannel
+     * @throws IllegalArgumentException if toSkip is negative
+     * @since 2.5
+     */
+    public static long skip(final ReadableByteChannel input, final long toSkip) throws IOException {
+<span class="pc bpc" id="L2453" title="1 of 2 branches missed.">        if (toSkip &lt; 0) {</span>
+<span class="nc" id="L2454">            throw new IllegalArgumentException(&quot;Skip count must be non-negative, actual: &quot; + toSkip);</span>
+        }
+<span class="fc" id="L2456">        final ByteBuffer skipByteBuffer = ByteBuffer.allocate((int) Math.min(toSkip, DEFAULT_BUFFER_SIZE));</span>
+<span class="fc" id="L2457">        long remain = toSkip;</span>
+<span class="fc bfc" id="L2458" title="All 2 branches covered.">        while (remain &gt; 0) {</span>
+<span class="fc" id="L2459">            skipByteBuffer.position(0);</span>
+<span class="fc" id="L2460">            skipByteBuffer.limit((int) Math.min(remain, DEFAULT_BUFFER_SIZE));</span>
+<span class="fc" id="L2461">            final int n = input.read(skipByteBuffer);</span>
+<span class="fc bfc" id="L2462" title="All 2 branches covered.">            if (n == EOF) {</span>
+<span class="fc" id="L2463">                break;</span>
+            }
+<span class="fc" id="L2465">            remain -= n;</span>
+<span class="fc" id="L2466">        }</span>
+<span class="fc" id="L2467">        return toSkip - remain;</span>
+    }
+
+    /**
+     * Skips characters from an input character stream.
+     * This implementation guarantees that it will read as many characters
+     * as possible before giving up; this may not always be the case for
+     * skip() implementations in subclasses of {@link Reader}.
+     * &lt;p&gt;
+     * Note that the implementation uses {@link Reader#read(char[], int, int)} rather
+     * than delegating to {@link Reader#skip(long)}.
+     * This means that the method may be considerably less efficient than using the actual skip implementation,
+     * this is done to guarantee that the correct number of characters are skipped.
+     * &lt;/p&gt;
+     *
+     * @param reader character stream to skip
+     * @param toSkip number of characters to skip.
+     * @return number of characters actually skipped.
+     * @throws IOException              if there is a problem reading the file
+     * @throws IllegalArgumentException if toSkip is negative
+     * @see Reader#skip(long)
+     * @see &lt;a href=&quot;https://issues.apache.org/jira/browse/IO-203&quot;&gt;IO-203 - Add skipFully() method for InputStreams&lt;/a&gt;
+     * @since 2.0
+     */
+    public static long skip(final Reader reader, final long toSkip) throws IOException {
+<span class="fc bfc" id="L2492" title="All 2 branches covered.">        if (toSkip &lt; 0) {</span>
+<span class="fc" id="L2493">            throw new IllegalArgumentException(&quot;Skip count must be non-negative, actual: &quot; + toSkip);</span>
+        }
+<span class="fc" id="L2495">        long remain = toSkip;</span>
+<span class="fc bfc" id="L2496" title="All 2 branches covered.">        while (remain &gt; 0) {</span>
+            // See https://issues.apache.org/jira/browse/IO-203 for why we use read() rather than delegating to skip()
+<span class="fc" id="L2498">            final char[] charArray = getScratchCharArrayWriteOnly();</span>
+<span class="fc" id="L2499">            final long n = reader.read(charArray, 0, (int) Math.min(remain, charArray.length));</span>
+<span class="fc bfc" id="L2500" title="All 2 branches covered.">            if (n &lt; 0) { // EOF</span>
+<span class="fc" id="L2501">                break;</span>
+            }
+<span class="fc" id="L2503">            remain -= n;</span>
+<span class="fc" id="L2504">        }</span>
+<span class="fc" id="L2505">        return toSkip - remain;</span>
+    }
+
+    /**
+     * Skips the requested number of bytes or fail if there are not enough left.
+     * &lt;p&gt;
+     * This allows for the possibility that {@link InputStream#skip(long)} may
+     * not skip as many bytes as requested (most likely because of reaching EOF).
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Note that the implementation uses {@link #skip(InputStream, long)}.
+     * This means that the method may be considerably less efficient than using the actual skip implementation,
+     * this is done to guarantee that the correct number of characters are skipped.
+     * &lt;/p&gt;
+     *
+     * @param input stream to skip
+     * @param toSkip the number of bytes to skip
+     * @throws IOException              if there is a problem reading the file
+     * @throws IllegalArgumentException if toSkip is negative
+     * @throws EOFException             if the number of bytes skipped was incorrect
+     * @see InputStream#skip(long)
+     * @since 2.0
+     */
+    public static void skipFully(final InputStream input, final long toSkip) throws IOException {
+<span class="fc" id="L2529">        final long skipped = skip(input, toSkip, IOUtils::getScratchByteArrayWriteOnly);</span>
+<span class="fc bfc" id="L2530" title="All 2 branches covered.">        if (skipped != toSkip) {</span>
+<span class="fc" id="L2531">            throw new EOFException(&quot;Bytes to skip: &quot; + toSkip + &quot; actual: &quot; + skipped);</span>
+        }
+<span class="fc" id="L2533">    }</span>
+
+    /**
+     * Skips the requested number of bytes or fail if there are not enough left.
+     * &lt;p&gt;
+     * Intended for special cases when customization of the temporary buffer is needed because, for example, a nested input stream has requirements for the
+     * bytes read. For example, when using {@link InflaterInputStream}s from multiple threads.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This allows for the possibility that {@link InputStream#skip(long)} may not skip as many bytes as requested (most likely because of reaching EOF).
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Note that the implementation uses {@link #skip(InputStream, long)}. This means that the method may be considerably less efficient than using the actual
+     * skip implementation, this is done to guarantee that the correct number of characters are skipped.
+     * &lt;/p&gt;
+     *
+     * @param input              stream to skip
+     * @param toSkip             the number of bytes to skip
+     * @param skipBufferSupplier Supplies the buffer to use for reading.
+     * @throws IOException              if there is a problem reading the file
+     * @throws IllegalArgumentException if toSkip is negative
+     * @throws EOFException             if the number of bytes skipped was incorrect
+     * @see InputStream#skip(long)
+     * @since 2.14.0
+     */
+    public static void skipFully(final InputStream input, final long toSkip, final Supplier&lt;byte[]&gt; skipBufferSupplier) throws IOException {
+<span class="fc bfc" id="L2559" title="All 2 branches covered.">        if (toSkip &lt; 0) {</span>
+<span class="fc" id="L2560">            throw new IllegalArgumentException(&quot;Bytes to skip must not be negative: &quot; + toSkip);</span>
+        }
+<span class="fc" id="L2562">        final long skipped = skip(input, toSkip, skipBufferSupplier);</span>
+<span class="fc bfc" id="L2563" title="All 2 branches covered.">        if (skipped != toSkip) {</span>
+<span class="fc" id="L2564">            throw new EOFException(&quot;Bytes to skip: &quot; + toSkip + &quot; actual: &quot; + skipped);</span>
+        }
+<span class="fc" id="L2566">    }</span>
+
+    /**
+     * Skips the requested number of bytes or fail if there are not enough left.
+     *
+     * @param input ReadableByteChannel to skip
+     * @param toSkip the number of bytes to skip
+     * @throws IOException              if there is a problem reading the ReadableByteChannel
+     * @throws IllegalArgumentException if toSkip is negative
+     * @throws EOFException             if the number of bytes skipped was incorrect
+     * @since 2.5
+     */
+    public static void skipFully(final ReadableByteChannel input, final long toSkip) throws IOException {
+<span class="fc bfc" id="L2579" title="All 2 branches covered.">        if (toSkip &lt; 0) {</span>
+<span class="fc" id="L2580">            throw new IllegalArgumentException(&quot;Bytes to skip must not be negative: &quot; + toSkip);</span>
+        }
+<span class="fc" id="L2582">        final long skipped = skip(input, toSkip);</span>
+<span class="fc bfc" id="L2583" title="All 2 branches covered.">        if (skipped != toSkip) {</span>
+<span class="fc" id="L2584">            throw new EOFException(&quot;Bytes to skip: &quot; + toSkip + &quot; actual: &quot; + skipped);</span>
+        }
+<span class="fc" id="L2586">    }</span>
+
+    /**
+     * Skips the requested number of characters or fail if there are not enough left.
+     * &lt;p&gt;
+     * This allows for the possibility that {@link Reader#skip(long)} may
+     * not skip as many characters as requested (most likely because of reaching EOF).
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Note that the implementation uses {@link #skip(Reader, long)}.
+     * This means that the method may be considerably less efficient than using the actual skip implementation,
+     * this is done to guarantee that the correct number of characters are skipped.
+     * &lt;/p&gt;
+     *
+     * @param reader stream to skip
+     * @param toSkip the number of characters to skip
+     * @throws IOException              if there is a problem reading the file
+     * @throws IllegalArgumentException if toSkip is negative
+     * @throws EOFException             if the number of characters skipped was incorrect
+     * @see Reader#skip(long)
+     * @since 2.0
+     */
+    public static void skipFully(final Reader reader, final long toSkip) throws IOException {
+<span class="fc" id="L2609">        final long skipped = skip(reader, toSkip);</span>
+<span class="fc bfc" id="L2610" title="All 2 branches covered.">        if (skipped != toSkip) {</span>
+<span class="fc" id="L2611">            throw new EOFException(&quot;Chars to skip: &quot; + toSkip + &quot; actual: &quot; + skipped);</span>
+        }
+<span class="fc" id="L2613">    }</span>
+
+    /**
+     * Fetches entire contents of an {@link InputStream} and represent
+     * same data as result InputStream.
+     * &lt;p&gt;
+     * This method is useful where,
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;Source InputStream is slow.&lt;/li&gt;
+     * &lt;li&gt;It has network resources associated, so we cannot keep it open for
+     * long time.&lt;/li&gt;
+     * &lt;li&gt;It has network timeout associated.&lt;/li&gt;
+     * &lt;/ul&gt;
+     * &lt;p&gt;
+     * It can be used in favor of {@link #toByteArray(InputStream)}, since it
+     * avoids unnecessary allocation and copy of byte[].&lt;br&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     *
+     * @param input Stream to be fully buffered.
+     * @return A fully buffered stream.
+     * @throws IOException if an I/O error occurs.
+     * @since 2.0
+     */
+    public static InputStream toBufferedInputStream(final InputStream input) throws IOException {
+<span class="fc" id="L2640">        return ByteArrayOutputStream.toBufferedInputStream(input);</span>
+    }
+
+    /**
+     * Fetches entire contents of an {@link InputStream} and represent
+     * same data as result InputStream.
+     * &lt;p&gt;
+     * This method is useful where,
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;Source InputStream is slow.&lt;/li&gt;
+     * &lt;li&gt;It has network resources associated, so we cannot keep it open for
+     * long time.&lt;/li&gt;
+     * &lt;li&gt;It has network timeout associated.&lt;/li&gt;
+     * &lt;/ul&gt;
+     * &lt;p&gt;
+     * It can be used in favor of {@link #toByteArray(InputStream)}, since it
+     * avoids unnecessary allocation and copy of byte[].&lt;br&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     *
+     * @param input Stream to be fully buffered.
+     * @param size the initial buffer size
+     * @return A fully buffered stream.
+     * @throws IOException if an I/O error occurs.
+     * @since 2.5
+     */
+    public static InputStream toBufferedInputStream(final InputStream input, final int size) throws IOException {
+<span class="fc" id="L2669">        return ByteArrayOutputStream.toBufferedInputStream(input, size);</span>
+    }
+
+    /**
+     * Returns the given reader if it is a {@link BufferedReader}, otherwise creates a BufferedReader from the given
+     * reader.
+     *
+     * @param reader the reader to wrap or return (not null)
+     * @return the given reader or a new {@link BufferedReader} for the given reader
+     * @throws NullPointerException if the input parameter is null
+     * @see #buffer(Reader)
+     * @since 2.2
+     */
+    public static BufferedReader toBufferedReader(final Reader reader) {
+<span class="pc bpc" id="L2683" title="1 of 2 branches missed.">        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(reader);</span>
+    }
+
+    /**
+     * Returns the given reader if it is a {@link BufferedReader}, otherwise creates a BufferedReader from the given
+     * reader.
+     *
+     * @param reader the reader to wrap or return (not null)
+     * @param size the buffer size, if a new BufferedReader is created.
+     * @return the given reader or a new {@link BufferedReader} for the given reader
+     * @throws NullPointerException if the input parameter is null
+     * @see #buffer(Reader)
+     * @since 2.5
+     */
+    public static BufferedReader toBufferedReader(final Reader reader, final int size) {
+<span class="nc bnc" id="L2698" title="All 2 branches missed.">        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(reader, size);</span>
+    }
+
+    /**
+     * Gets the contents of an {@link InputStream} as a {@code byte[]}.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     *
+     * @param inputStream the {@link InputStream} to read.
+     * @return the requested byte array.
+     * @throws NullPointerException if the InputStream is {@code null}.
+     * @throws IOException if an I/O error occurs or reading more than {@link Integer#MAX_VALUE} occurs.
+     */
+    public static byte[] toByteArray(final InputStream inputStream) throws IOException {
+        // We use a ThresholdingOutputStream to avoid reading AND writing more than Integer.MAX_VALUE.
+<span class="fc" id="L2715">        try (UnsynchronizedByteArrayOutputStream ubaOutput = UnsynchronizedByteArrayOutputStream.builder().get();</span>
+<span class="fc" id="L2716">            ThresholdingOutputStream thresholdOutput = new ThresholdingOutputStream(Integer.MAX_VALUE, os -&gt; {</span>
+<span class="nc" id="L2717">                throw new IllegalArgumentException(String.format(&quot;Cannot read more than %,d into a byte array&quot;, Integer.MAX_VALUE));</span>
+<span class="fc" id="L2718">            }, os -&gt; ubaOutput)) {</span>
+<span class="fc" id="L2719">            copy(inputStream, thresholdOutput);</span>
+<span class="fc" id="L2720">            return ubaOutput.toByteArray();</span>
+        }
+    }
+
+    /**
+     * Gets the contents of an {@link InputStream} as a {@code byte[]}. Use this method instead of
+     * {@link #toByteArray(InputStream)} when {@link InputStream} size is known.
+     *
+     * @param input the {@link InputStream} to read.
+     * @param size the size of {@link InputStream} to read, where 0 &amp;lt; {@code size} &amp;lt;= length of input stream.
+     * @return byte [] of length {@code size}.
+     * @throws IOException if an I/O error occurs or {@link InputStream} length is smaller than parameter {@code size}.
+     * @throws IllegalArgumentException if {@code size} is less than zero.
+     * @since 2.1
+     */
+    public static byte[] toByteArray(final InputStream input, final int size) throws IOException {
+<span class="fc bfc" id="L2736" title="All 2 branches covered.">        if (size == 0) {</span>
+<span class="fc" id="L2737">            return EMPTY_BYTE_ARRAY;</span>
+        }
+<span class="fc" id="L2739">        return toByteArray(Objects.requireNonNull(input, &quot;input&quot;)::read, size);</span>
+    }
+
+    /**
+     * Gets contents of an {@link InputStream} as a {@code byte[]}.
+     * Use this method instead of {@link #toByteArray(InputStream)}
+     * when {@link InputStream} size is known.
+     * &lt;strong&gt;NOTE:&lt;/strong&gt; the method checks that the length can safely be cast to an int without truncation
+     * before using {@link IOUtils#toByteArray(InputStream, int)} to read into the byte array.
+     * (Arrays can have no more than Integer.MAX_VALUE entries anyway)
+     *
+     * @param input the {@link InputStream} to read
+     * @param size the size of {@link InputStream} to read, where 0 &amp;lt; {@code size} &amp;lt;= min(Integer.MAX_VALUE, length of input stream).
+     * @return byte [] the requested byte array, of length {@code size}
+     * @throws IOException              if an I/O error occurs or {@link InputStream} length is less than {@code size}
+     * @throws IllegalArgumentException if size is less than zero or size is greater than Integer.MAX_VALUE
+     * @see IOUtils#toByteArray(InputStream, int)
+     * @since 2.1
+     */
+    public static byte[] toByteArray(final InputStream input, final long size) throws IOException {
+<span class="fc bfc" id="L2759" title="All 2 branches covered.">        if (size &gt; Integer.MAX_VALUE) {</span>
+<span class="fc" id="L2760">            throw new IllegalArgumentException(&quot;Size cannot be greater than Integer max value: &quot; + size);</span>
+        }
+<span class="fc" id="L2762">        return toByteArray(input, (int) size);</span>
+    }
+
+    /**
+     * Gets the contents of an input as a {@code byte[]}.
+     *
+     * @param input the input to read.
+     * @param size the size of the input to read, where 0 &amp;lt; {@code size} &amp;lt;= length of input.
+     * @return byte [] of length {@code size}.
+     * @throws IOException if an I/O error occurs or input length is smaller than parameter {@code size}.
+     * @throws IllegalArgumentException if {@code size} is less than zero.
+     */
+    static byte[] toByteArray(final IOTriFunction&lt;byte[], Integer, Integer, Integer&gt; input, final int size) throws IOException {
+
+<span class="fc bfc" id="L2776" title="All 2 branches covered.">        if (size &lt; 0) {</span>
+<span class="fc" id="L2777">            throw new IllegalArgumentException(&quot;Size must be equal or greater than zero: &quot; + size);</span>
+        }
+
+<span class="fc bfc" id="L2780" title="All 2 branches covered.">        if (size == 0) {</span>
+<span class="fc" id="L2781">            return EMPTY_BYTE_ARRAY;</span>
+        }
+
+<span class="fc" id="L2784">        final byte[] data = byteArray(size);</span>
+<span class="fc" id="L2785">        int offset = 0;</span>
+        int read;
+
+<span class="fc bfc" id="L2788" title="All 4 branches covered.">        while (offset &lt; size &amp;&amp; (read = input.apply(data, offset, size - offset)) != EOF) {</span>
+<span class="fc" id="L2789">            offset += read;</span>
+        }
+
+<span class="fc bfc" id="L2792" title="All 2 branches covered.">        if (offset != size) {</span>
+<span class="fc" id="L2793">            throw new IOException(&quot;Unexpected read size, current: &quot; + offset + &quot;, expected: &quot; + size);</span>
+        }
+
+<span class="fc" id="L2796">        return data;</span>
+    }
+
+    /**
+     * Gets the contents of a {@link Reader} as a {@code byte[]}
+     * using the default character encoding of the platform.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedReader}.
+     * &lt;/p&gt;
+     *
+     * @param reader the {@link Reader} to read
+     * @return the requested byte array
+     * @throws NullPointerException if the input is null
+     * @throws IOException          if an I/O error occurs
+     * @deprecated Use {@link #toByteArray(Reader, Charset)} instead
+     */
+    @Deprecated
+    public static byte[] toByteArray(final Reader reader) throws IOException {
+<span class="fc" id="L2815">        return toByteArray(reader, Charset.defaultCharset());</span>
+    }
+
+    /**
+     * Gets the contents of a {@link Reader} as a {@code byte[]}
+     * using the specified character encoding.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedReader}.
+     * &lt;/p&gt;
+     *
+     * @param reader the {@link Reader} to read
+     * @param charset the charset to use, null means platform default
+     * @return the requested byte array
+     * @throws NullPointerException if the input is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.3
+     */
+    public static byte[] toByteArray(final Reader reader, final Charset charset) throws IOException {
+<span class="fc" id="L2834">        try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {</span>
+<span class="fc" id="L2835">            copy(reader, output, charset);</span>
+<span class="fc" id="L2836">            return output.toByteArray();</span>
+        }
+    }
+
+    /**
+     * Gets the contents of a {@link Reader} as a {@code byte[]}
+     * using the specified character encoding.
+     * &lt;p&gt;
+     * Character encoding names can be found at
+     * &lt;a href=&quot;http://www.iana.org/assignments/character-sets&quot;&gt;IANA&lt;/a&gt;.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedReader}.
+     * &lt;/p&gt;
+     *
+     * @param reader the {@link Reader} to read
+     * @param charsetName the name of the requested charset, null means platform default
+     * @return the requested byte array
+     * @throws NullPointerException                         if the input is null
+     * @throws IOException                                  if an I/O error occurs
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     * @since 1.1
+     */
+    public static byte[] toByteArray(final Reader reader, final String charsetName) throws IOException {
+<span class="fc" id="L2861">        return toByteArray(reader, Charsets.toCharset(charsetName));</span>
+    }
+
+    /**
+     * Gets the contents of a {@link String} as a {@code byte[]}
+     * using the default character encoding of the platform.
+     * &lt;p&gt;
+     * This is the same as {@link String#getBytes()}.
+     * &lt;/p&gt;
+     *
+     * @param input the {@link String} to convert
+     * @return the requested byte array
+     * @throws NullPointerException if the input is null
+     * @deprecated Use {@link String#getBytes()} instead
+     */
+    @Deprecated
+    public static byte[] toByteArray(final String input) {
+        // make explicit the use of the default charset
+<span class="fc" id="L2879">        return input.getBytes(Charset.defaultCharset());</span>
+    }
+
+    /**
+     * Gets the contents of a {@link URI} as a {@code byte[]}.
+     *
+     * @param uri the {@link URI} to read
+     * @return the requested byte array
+     * @throws NullPointerException if the uri is null
+     * @throws IOException          if an I/O exception occurs
+     * @since 2.4
+     */
+    public static byte[] toByteArray(final URI uri) throws IOException {
+<span class="fc" id="L2892">        return toByteArray(uri.toURL());</span>
+    }
+
+    /**
+     * Gets the contents of a {@link URL} as a {@code byte[]}.
+     *
+     * @param url the {@link URL} to read
+     * @return the requested byte array
+     * @throws NullPointerException if the input is null
+     * @throws IOException          if an I/O exception occurs
+     * @since 2.4
+     */
+    public static byte[] toByteArray(final URL url) throws IOException {
+<span class="fc" id="L2905">        try (CloseableURLConnection urlConnection = CloseableURLConnection.open(url)) {</span>
+<span class="fc" id="L2906">            return toByteArray(urlConnection);</span>
+        }
+    }
+
+    /**
+     * Gets the contents of a {@link URLConnection} as a {@code byte[]}.
+     *
+     * @param urlConnection the {@link URLConnection} to read.
+     * @return the requested byte array.
+     * @throws NullPointerException if the urlConn is null.
+     * @throws IOException if an I/O exception occurs.
+     * @since 2.4
+     */
+    public static byte[] toByteArray(final URLConnection urlConnection) throws IOException {
+<span class="fc" id="L2920">        try (InputStream inputStream = urlConnection.getInputStream()) {</span>
+<span class="fc" id="L2921">            return toByteArray(inputStream);</span>
+        }
+    }
+
+    /**
+     * Gets the contents of an {@link InputStream} as a character array
+     * using the default character encoding of the platform.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     *
+     * @param inputStream the {@link InputStream} to read
+     * @return the requested character array
+     * @throws NullPointerException if the input is null
+     * @throws IOException          if an I/O error occurs
+     * @since 1.1
+     * @deprecated Use {@link #toCharArray(InputStream, Charset)} instead
+     */
+    @Deprecated
+    public static char[] toCharArray(final InputStream inputStream) throws IOException {
+<span class="fc" id="L2942">        return toCharArray(inputStream, Charset.defaultCharset());</span>
+    }
+
+    /**
+     * Gets the contents of an {@link InputStream} as a character array
+     * using the specified character encoding.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     *
+     * @param inputStream the {@link InputStream} to read
+     * @param charset the charset to use, null means platform default
+     * @return the requested character array
+     * @throws NullPointerException if the input is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.3
+     */
+    public static char[] toCharArray(final InputStream inputStream, final Charset charset)
+            throws IOException {
+<span class="fc" id="L2962">        final CharArrayWriter writer = new CharArrayWriter();</span>
+<span class="fc" id="L2963">        copy(inputStream, writer, charset);</span>
+<span class="fc" id="L2964">        return writer.toCharArray();</span>
+    }
+
+    /**
+     * Gets the contents of an {@link InputStream} as a character array
+     * using the specified character encoding.
+     * &lt;p&gt;
+     * Character encoding names can be found at
+     * &lt;a href=&quot;http://www.iana.org/assignments/character-sets&quot;&gt;IANA&lt;/a&gt;.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     *
+     * @param inputStream the {@link InputStream} to read
+     * @param charsetName the name of the requested charset, null means platform default
+     * @return the requested character array
+     * @throws NullPointerException                         if the input is null
+     * @throws IOException                                  if an I/O error occurs
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     * @since 1.1
+     */
+    public static char[] toCharArray(final InputStream inputStream, final String charsetName) throws IOException {
+<span class="fc" id="L2988">        return toCharArray(inputStream, Charsets.toCharset(charsetName));</span>
+    }
+
+    /**
+     * Gets the contents of a {@link Reader} as a character array.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedReader}.
+     * &lt;/p&gt;
+     *
+     * @param reader the {@link Reader} to read
+     * @return the requested character array
+     * @throws NullPointerException if the input is null
+     * @throws IOException          if an I/O error occurs
+     * @since 1.1
+     */
+    public static char[] toCharArray(final Reader reader) throws IOException {
+<span class="fc" id="L3005">        final CharArrayWriter sw = new CharArrayWriter();</span>
+<span class="fc" id="L3006">        copy(reader, sw);</span>
+<span class="fc" id="L3007">        return sw.toCharArray();</span>
+    }
+
+    /**
+     * Converts the specified CharSequence to an input stream, encoded as bytes
+     * using the default character encoding of the platform.
+     *
+     * @param input the CharSequence to convert
+     * @return an input stream
+     * @since 2.0
+     * @deprecated Use {@link #toInputStream(CharSequence, Charset)} instead
+     */
+    @Deprecated
+    public static InputStream toInputStream(final CharSequence input) {
+<span class="fc" id="L3021">        return toInputStream(input, Charset.defaultCharset());</span>
+    }
+
+    /**
+     * Converts the specified CharSequence to an input stream, encoded as bytes
+     * using the specified character encoding.
+     *
+     * @param input the CharSequence to convert
+     * @param charset the charset to use, null means platform default
+     * @return an input stream
+     * @since 2.3
+     */
+    public static InputStream toInputStream(final CharSequence input, final Charset charset) {
+<span class="fc" id="L3034">        return toInputStream(input.toString(), charset);</span>
+    }
+
+    /**
+     * Converts the specified CharSequence to an input stream, encoded as bytes
+     * using the specified character encoding.
+     * &lt;p&gt;
+     * Character encoding names can be found at
+     * &lt;a href=&quot;http://www.iana.org/assignments/character-sets&quot;&gt;IANA&lt;/a&gt;.
+     * &lt;/p&gt;
+     *
+     * @param input the CharSequence to convert
+     * @param charsetName the name of the requested charset, null means platform default
+     * @return an input stream
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     * @since 2.0
+     */
+    public static InputStream toInputStream(final CharSequence input, final String charsetName) {
+<span class="fc" id="L3052">        return toInputStream(input, Charsets.toCharset(charsetName));</span>
+    }
+
+    /**
+     * Converts the specified string to an input stream, encoded as bytes
+     * using the default character encoding of the platform.
+     *
+     * @param input the string to convert
+     * @return an input stream
+     * @since 1.1
+     * @deprecated Use {@link #toInputStream(String, Charset)} instead
+     */
+    @Deprecated
+    public static InputStream toInputStream(final String input) {
+<span class="fc" id="L3066">        return toInputStream(input, Charset.defaultCharset());</span>
+    }
+
+    /**
+     * Converts the specified string to an input stream, encoded as bytes
+     * using the specified character encoding.
+     *
+     * @param input the string to convert
+     * @param charset the charset to use, null means platform default
+     * @return an input stream
+     * @since 2.3
+     */
+    public static InputStream toInputStream(final String input, final Charset charset) {
+<span class="fc" id="L3079">        return new ByteArrayInputStream(input.getBytes(Charsets.toCharset(charset)));</span>
+    }
+
+    /**
+     * Converts the specified string to an input stream, encoded as bytes
+     * using the specified character encoding.
+     * &lt;p&gt;
+     * Character encoding names can be found at
+     * &lt;a href=&quot;http://www.iana.org/assignments/character-sets&quot;&gt;IANA&lt;/a&gt;.
+     * &lt;/p&gt;
+     *
+     * @param input the string to convert
+     * @param charsetName the name of the requested charset, null means platform default
+     * @return an input stream
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     * @since 1.1
+     */
+    public static InputStream toInputStream(final String input, final String charsetName) {
+<span class="fc" id="L3097">        return new ByteArrayInputStream(input.getBytes(Charsets.toCharset(charsetName)));</span>
+    }
+
+    /**
+     * Gets the contents of a {@code byte[]} as a String
+     * using the default character encoding of the platform.
+     *
+     * @param input the byte array to read
+     * @return the requested String
+     * @throws NullPointerException if the input is null
+     * @deprecated Use {@link String#String(byte[])} instead
+     */
+    @Deprecated
+    public static String toString(final byte[] input) {
+        // make explicit the use of the default charset
+<span class="fc" id="L3112">        return new String(input, Charset.defaultCharset());</span>
+    }
+
+    /**
+     * Gets the contents of a {@code byte[]} as a String
+     * using the specified character encoding.
+     * &lt;p&gt;
+     * Character encoding names can be found at
+     * &lt;a href=&quot;http://www.iana.org/assignments/character-sets&quot;&gt;IANA&lt;/a&gt;.
+     * &lt;/p&gt;
+     *
+     * @param input the byte array to read
+     * @param charsetName the name of the requested charset, null means platform default
+     * @return the requested String
+     * @throws NullPointerException if the input is null
+     */
+    public static String toString(final byte[] input, final String charsetName) {
+<span class="nc" id="L3129">        return new String(input, Charsets.toCharset(charsetName));</span>
+    }
+
+    /**
+     * Gets the contents of an {@link InputStream} as a String
+     * using the default character encoding of the platform.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     *
+     * @param input the {@link InputStream} to read
+     * @return the requested String
+     * @throws NullPointerException if the input is null
+     * @throws IOException          if an I/O error occurs
+     * @deprecated Use {@link #toString(InputStream, Charset)} instead
+     */
+    @Deprecated
+    public static String toString(final InputStream input) throws IOException {
+<span class="fc" id="L3148">        return toString(input, Charset.defaultCharset());</span>
+    }
+
+    /**
+     * Gets the contents of an {@link InputStream} as a String
+     * using the specified character encoding.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     *
+     * @param input the {@link InputStream} to read
+     * @param charset the charset to use, null means platform default
+     * @return the requested String
+     * @throws NullPointerException if the input is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.3
+     */
+    public static String toString(final InputStream input, final Charset charset) throws IOException {
+<span class="fc" id="L3167">        try (StringBuilderWriter sw = new StringBuilderWriter()) {</span>
+<span class="fc" id="L3168">            copy(input, sw, charset);</span>
+<span class="fc" id="L3169">            return sw.toString();</span>
+        }
+    }
+
+    /**
+     * Gets the contents of an {@link InputStream} as a String
+     * using the specified character encoding.
+     * &lt;p&gt;
+     * Character encoding names can be found at
+     * &lt;a href=&quot;http://www.iana.org/assignments/character-sets&quot;&gt;IANA&lt;/a&gt;.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     *
+     * @param input the {@link InputStream} to read
+     * @param charsetName the name of the requested charset, null means platform default
+     * @return the requested String
+     * @throws NullPointerException                         if the input is null
+     * @throws IOException                                  if an I/O error occurs
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     */
+    public static String toString(final InputStream input, final String charsetName)
+            throws IOException {
+<span class="nc" id="L3194">        return toString(input, Charsets.toCharset(charsetName));</span>
+    }
+
+    /**
+     * Gets the contents of an {@link InputStream} from a supplier as a String
+     * using the specified character encoding.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     *
+     * @param input supplies the {@link InputStream} to read
+     * @param charset the charset to use, null means platform default
+     * @return the requested String
+     * @throws NullPointerException if the input is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.12.0
+     */
+    public static String toString(final IOSupplier&lt;InputStream&gt; input, final Charset charset) throws IOException {
+<span class="fc" id="L3213">        return toString(input, charset, () -&gt; {</span>
+<span class="nc" id="L3214">            throw new NullPointerException(&quot;input&quot;);</span>
+        });
+    }
+
+    /**
+     * Gets the contents of an {@link InputStream} from a supplier as a String
+     * using the specified character encoding.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedInputStream}.
+     * &lt;/p&gt;
+     *
+     * @param input supplies the {@link InputStream} to read
+     * @param charset the charset to use, null means platform default
+     * @param defaultString the default return value if the supplier or its value is null.
+     * @return the requested String
+     * @throws NullPointerException if the input is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.12.0
+     */
+    public static String toString(final IOSupplier&lt;InputStream&gt; input, final Charset charset, final IOSupplier&lt;String&gt; defaultString) throws IOException {
+<span class="fc bfc" id="L3235" title="All 2 branches covered.">        if (input == null) {</span>
+<span class="fc" id="L3236">            return defaultString.get();</span>
+        }
+<span class="fc" id="L3238">        try (InputStream inputStream = input.get()) {</span>
+<span class="fc bfc" id="L3239" title="All 2 branches covered.">            return inputStream != null ? toString(inputStream, charset) : defaultString.get();</span>
+        }
+    }
+
+    /**
+     * Gets the contents of a {@link Reader} as a String.
+     * &lt;p&gt;
+     * This method buffers the input internally, so there is no need to use a
+     * {@link BufferedReader}.
+     * &lt;/p&gt;
+     *
+     * @param reader the {@link Reader} to read
+     * @return the requested String
+     * @throws NullPointerException if the input is null
+     * @throws IOException          if an I/O error occurs
+     */
+    public static String toString(final Reader reader) throws IOException {
+<span class="fc" id="L3256">        try (StringBuilderWriter sw = new StringBuilderWriter()) {</span>
+<span class="fc" id="L3257">            copy(reader, sw);</span>
+<span class="fc" id="L3258">            return sw.toString();</span>
+        }
+    }
+
+    /**
+     * Gets the contents at the given URI.
+     *
+     * @param uri The URI source.
+     * @return The contents of the URL as a String.
+     * @throws IOException if an I/O exception occurs.
+     * @since 2.1
+     * @deprecated Use {@link #toString(URI, Charset)} instead
+     */
+    @Deprecated
+    public static String toString(final URI uri) throws IOException {
+<span class="fc" id="L3273">        return toString(uri, Charset.defaultCharset());</span>
+    }
+
+    /**
+     * Gets the contents at the given URI.
+     *
+     * @param uri The URI source.
+     * @param encoding The encoding name for the URL contents.
+     * @return The contents of the URL as a String.
+     * @throws IOException if an I/O exception occurs.
+     * @since 2.3.
+     */
+    public static String toString(final URI uri, final Charset encoding) throws IOException {
+<span class="fc" id="L3286">        return toString(uri.toURL(), Charsets.toCharset(encoding));</span>
+    }
+
+    /**
+     * Gets the contents at the given URI.
+     *
+     * @param uri The URI source.
+     * @param charsetName The encoding name for the URL contents.
+     * @return The contents of the URL as a String.
+     * @throws IOException                                  if an I/O exception occurs.
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     * @since 2.1
+     */
+    public static String toString(final URI uri, final String charsetName) throws IOException {
+<span class="fc" id="L3300">        return toString(uri, Charsets.toCharset(charsetName));</span>
+    }
+
+    /**
+     * Gets the contents at the given URL.
+     *
+     * @param url The URL source.
+     * @return The contents of the URL as a String.
+     * @throws IOException if an I/O exception occurs.
+     * @since 2.1
+     * @deprecated Use {@link #toString(URL, Charset)} instead
+     */
+    @Deprecated
+    public static String toString(final URL url) throws IOException {
+<span class="fc" id="L3314">        return toString(url, Charset.defaultCharset());</span>
+    }
+
+    /**
+     * Gets the contents at the given URL.
+     *
+     * @param url The URL source.
+     * @param encoding The encoding name for the URL contents.
+     * @return The contents of the URL as a String.
+     * @throws IOException if an I/O exception occurs.
+     * @since 2.3
+     */
+    public static String toString(final URL url, final Charset encoding) throws IOException {
+<span class="fc" id="L3327">        return toString(url::openStream, encoding);</span>
+    }
+
+    /**
+     * Gets the contents at the given URL.
+     *
+     * @param url The URL source.
+     * @param charsetName The encoding name for the URL contents.
+     * @return The contents of the URL as a String.
+     * @throws IOException                                  if an I/O exception occurs.
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     * @since 2.1
+     */
+    public static String toString(final URL url, final String charsetName) throws IOException {
+<span class="fc" id="L3341">        return toString(url, Charsets.toCharset(charsetName));</span>
+    }
+
+    /**
+     * Writes bytes from a {@code byte[]} to an {@link OutputStream}.
+     *
+     * @param data the byte array to write, do not modify during output,
+     * null ignored
+     * @param output the {@link OutputStream} to write to
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 1.1
+     */
+    public static void write(final byte[] data, final OutputStream output)
+            throws IOException {
+<span class="fc bfc" id="L3356" title="All 2 branches covered.">        if (data != null) {</span>
+<span class="fc" id="L3357">            output.write(data);</span>
+        }
+<span class="fc" id="L3359">    }</span>
+
+    /**
+     * Writes bytes from a {@code byte[]} to chars on a {@link Writer}
+     * using the default character encoding of the platform.
+     * &lt;p&gt;
+     * This method uses {@link String#String(byte[])}.
+     * &lt;/p&gt;
+     *
+     * @param data the byte array to write, do not modify during output,
+     * null ignored
+     * @param writer the {@link Writer} to write to
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 1.1
+     * @deprecated Use {@link #write(byte[], Writer, Charset)} instead
+     */
+    @Deprecated
+    public static void write(final byte[] data, final Writer writer) throws IOException {
+<span class="fc" id="L3378">        write(data, writer, Charset.defaultCharset());</span>
+<span class="fc" id="L3379">    }</span>
+
+    /**
+     * Writes bytes from a {@code byte[]} to chars on a {@link Writer}
+     * using the specified character encoding.
+     * &lt;p&gt;
+     * This method uses {@link String#String(byte[], String)}.
+     * &lt;/p&gt;
+     *
+     * @param data the byte array to write, do not modify during output,
+     * null ignored
+     * @param writer the {@link Writer} to write to
+     * @param charset the charset to use, null means platform default
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.3
+     */
+    public static void write(final byte[] data, final Writer writer, final Charset charset) throws IOException {
+<span class="fc bfc" id="L3397" title="All 2 branches covered.">        if (data != null) {</span>
+<span class="fc" id="L3398">            writer.write(new String(data, Charsets.toCharset(charset)));</span>
+        }
+<span class="fc" id="L3400">    }</span>
+
+    /**
+     * Writes bytes from a {@code byte[]} to chars on a {@link Writer}
+     * using the specified character encoding.
+     * &lt;p&gt;
+     * Character encoding names can be found at
+     * &lt;a href=&quot;http://www.iana.org/assignments/character-sets&quot;&gt;IANA&lt;/a&gt;.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method uses {@link String#String(byte[], String)}.
+     * &lt;/p&gt;
+     *
+     * @param data the byte array to write, do not modify during output,
+     * null ignored
+     * @param writer the {@link Writer} to write to
+     * @param charsetName the name of the requested charset, null means platform default
+     * @throws NullPointerException                         if output is null
+     * @throws IOException                                  if an I/O error occurs
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     * @since 1.1
+     */
+    public static void write(final byte[] data, final Writer writer, final String charsetName) throws IOException {
+<span class="fc" id="L3423">        write(data, writer, Charsets.toCharset(charsetName));</span>
+<span class="fc" id="L3424">    }</span>
+
+    /**
+     * Writes chars from a {@code char[]} to bytes on an
+     * {@link OutputStream}.
+     * &lt;p&gt;
+     * This method uses {@link String#String(char[])} and
+     * {@link String#getBytes()}.
+     * &lt;/p&gt;
+     *
+     * @param data the char array to write, do not modify during output,
+     * null ignored
+     * @param output the {@link OutputStream} to write to
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 1.1
+     * @deprecated Use {@link #write(char[], OutputStream, Charset)} instead
+     */
+    @Deprecated
+    public static void write(final char[] data, final OutputStream output)
+            throws IOException {
+<span class="fc" id="L3445">        write(data, output, Charset.defaultCharset());</span>
+<span class="fc" id="L3446">    }</span>
+
+    /**
+     * Writes chars from a {@code char[]} to bytes on an
+     * {@link OutputStream} using the specified character encoding.
+     * &lt;p&gt;
+     * This method uses {@link String#String(char[])} and
+     * {@link String#getBytes(String)}.
+     * &lt;/p&gt;
+     *
+     * @param data the char array to write, do not modify during output,
+     * null ignored
+     * @param output the {@link OutputStream} to write to
+     * @param charset the charset to use, null means platform default
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.3
+     */
+    public static void write(final char[] data, final OutputStream output, final Charset charset) throws IOException {
+<span class="fc bfc" id="L3465" title="All 2 branches covered.">        if (data != null) {</span>
+<span class="fc" id="L3466">            write(new String(data), output, charset);</span>
+        }
+<span class="fc" id="L3468">    }</span>
+
+    /**
+     * Writes chars from a {@code char[]} to bytes on an
+     * {@link OutputStream} using the specified character encoding.
+     * &lt;p&gt;
+     * Character encoding names can be found at
+     * &lt;a href=&quot;http://www.iana.org/assignments/character-sets&quot;&gt;IANA&lt;/a&gt;.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method uses {@link String#String(char[])} and
+     * {@link String#getBytes(String)}.
+     * &lt;/p&gt;
+     *
+     * @param data the char array to write, do not modify during output,
+     * null ignored
+     * @param output the {@link OutputStream} to write to
+     * @param charsetName the name of the requested charset, null means platform default
+     * @throws NullPointerException                         if output is null
+     * @throws IOException                                  if an I/O error occurs
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     * @since 1.1
+     */
+    public static void write(final char[] data, final OutputStream output, final String charsetName)
+            throws IOException {
+<span class="fc" id="L3493">        write(data, output, Charsets.toCharset(charsetName));</span>
+<span class="fc" id="L3494">    }</span>
+
+    /**
+     * Writes chars from a {@code char[]} to a {@link Writer}
+     *
+     * @param data the char array to write, do not modify during output,
+     * null ignored
+     * @param writer the {@link Writer} to write to
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 1.1
+     */
+    public static void write(final char[] data, final Writer writer) throws IOException {
+<span class="fc bfc" id="L3507" title="All 2 branches covered.">        if (data != null) {</span>
+<span class="fc" id="L3508">            writer.write(data);</span>
+        }
+<span class="fc" id="L3510">    }</span>
+
+    /**
+     * Writes chars from a {@link CharSequence} to bytes on an
+     * {@link OutputStream} using the default character encoding of the
+     * platform.
+     * &lt;p&gt;
+     * This method uses {@link String#getBytes()}.
+     * &lt;/p&gt;
+     *
+     * @param data the {@link CharSequence} to write, null ignored
+     * @param output the {@link OutputStream} to write to
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.0
+     * @deprecated Use {@link #write(CharSequence, OutputStream, Charset)} instead
+     */
+    @Deprecated
+    public static void write(final CharSequence data, final OutputStream output)
+            throws IOException {
+<span class="fc" id="L3530">        write(data, output, Charset.defaultCharset());</span>
+<span class="fc" id="L3531">    }</span>
+
+    /**
+     * Writes chars from a {@link CharSequence} to bytes on an
+     * {@link OutputStream} using the specified character encoding.
+     * &lt;p&gt;
+     * This method uses {@link String#getBytes(String)}.
+     * &lt;/p&gt;
+     *
+     * @param data the {@link CharSequence} to write, null ignored
+     * @param output the {@link OutputStream} to write to
+     * @param charset the charset to use, null means platform default
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.3
+     */
+    public static void write(final CharSequence data, final OutputStream output, final Charset charset)
+            throws IOException {
+<span class="fc bfc" id="L3549" title="All 2 branches covered.">        if (data != null) {</span>
+<span class="fc" id="L3550">            write(data.toString(), output, charset);</span>
+        }
+<span class="fc" id="L3552">    }</span>
+
+    /**
+     * Writes chars from a {@link CharSequence} to bytes on an
+     * {@link OutputStream} using the specified character encoding.
+     * &lt;p&gt;
+     * Character encoding names can be found at
+     * &lt;a href=&quot;http://www.iana.org/assignments/character-sets&quot;&gt;IANA&lt;/a&gt;.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method uses {@link String#getBytes(String)}.
+     * &lt;/p&gt;
+     *
+     * @param data the {@link CharSequence} to write, null ignored
+     * @param output the {@link OutputStream} to write to
+     * @param charsetName the name of the requested charset, null means platform default
+     * @throws NullPointerException        if output is null
+     * @throws IOException                 if an I/O error occurs
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     * @since 2.0
+     */
+    public static void write(final CharSequence data, final OutputStream output, final String charsetName)
+            throws IOException {
+<span class="fc" id="L3575">        write(data, output, Charsets.toCharset(charsetName));</span>
+<span class="fc" id="L3576">    }</span>
+
+    /**
+     * Writes chars from a {@link CharSequence} to a {@link Writer}.
+     *
+     * @param data the {@link CharSequence} to write, null ignored
+     * @param writer the {@link Writer} to write to
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.0
+     */
+    public static void write(final CharSequence data, final Writer writer) throws IOException {
+<span class="fc bfc" id="L3588" title="All 2 branches covered.">        if (data != null) {</span>
+<span class="fc" id="L3589">            write(data.toString(), writer);</span>
+        }
+<span class="fc" id="L3591">    }</span>
+
+    /**
+     * Writes chars from a {@link String} to bytes on an
+     * {@link OutputStream} using the default character encoding of the
+     * platform.
+     * &lt;p&gt;
+     * This method uses {@link String#getBytes()}.
+     * &lt;/p&gt;
+     *
+     * @param data the {@link String} to write, null ignored
+     * @param output the {@link OutputStream} to write to
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 1.1
+     * @deprecated Use {@link #write(String, OutputStream, Charset)} instead
+     */
+    @Deprecated
+    public static void write(final String data, final OutputStream output)
+            throws IOException {
+<span class="fc" id="L3611">        write(data, output, Charset.defaultCharset());</span>
+<span class="fc" id="L3612">    }</span>
+
+    /**
+     * Writes chars from a {@link String} to bytes on an
+     * {@link OutputStream} using the specified character encoding.
+     * &lt;p&gt;
+     * This method uses {@link String#getBytes(String)}.
+     * &lt;/p&gt;
+     *
+     * @param data the {@link String} to write, null ignored
+     * @param output the {@link OutputStream} to write to
+     * @param charset the charset to use, null means platform default
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.3
+     */
+    @SuppressWarnings(&quot;resource&quot;)
+    public static void write(final String data, final OutputStream output, final Charset charset) throws IOException {
+<span class="fc bfc" id="L3630" title="All 2 branches covered.">        if (data != null) {</span>
+            // Use Charset#encode(String), since calling String#getBytes(Charset) might result in
+            // NegativeArraySizeException or OutOfMemoryError.
+            // The underlying OutputStream should not be closed, so the channel is not closed.
+<span class="fc" id="L3634">            Channels.newChannel(output).write(Charsets.toCharset(charset).encode(data));</span>
+        }
+<span class="fc" id="L3636">    }</span>
+
+    /**
+     * Writes chars from a {@link String} to bytes on an
+     * {@link OutputStream} using the specified character encoding.
+     * &lt;p&gt;
+     * Character encoding names can be found at
+     * &lt;a href=&quot;http://www.iana.org/assignments/character-sets&quot;&gt;IANA&lt;/a&gt;.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method uses {@link String#getBytes(String)}.
+     * &lt;/p&gt;
+     *
+     * @param data the {@link String} to write, null ignored
+     * @param output the {@link OutputStream} to write to
+     * @param charsetName the name of the requested charset, null means platform default
+     * @throws NullPointerException        if output is null
+     * @throws IOException                 if an I/O error occurs
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     * @since 1.1
+     */
+    public static void write(final String data, final OutputStream output, final String charsetName)
+            throws IOException {
+<span class="fc" id="L3659">        write(data, output, Charsets.toCharset(charsetName));</span>
+<span class="fc" id="L3660">    }</span>
+
+    /**
+     * Writes chars from a {@link String} to a {@link Writer}.
+     *
+     * @param data the {@link String} to write, null ignored
+     * @param writer the {@link Writer} to write to
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 1.1
+     */
+    public static void write(final String data, final Writer writer) throws IOException {
+<span class="fc bfc" id="L3672" title="All 2 branches covered.">        if (data != null) {</span>
+<span class="fc" id="L3673">            writer.write(data);</span>
+        }
+<span class="fc" id="L3675">    }</span>
+
+    /**
+     * Writes chars from a {@link StringBuffer} to bytes on an
+     * {@link OutputStream} using the default character encoding of the
+     * platform.
+     * &lt;p&gt;
+     * This method uses {@link String#getBytes()}.
+     * &lt;/p&gt;
+     *
+     * @param data the {@link StringBuffer} to write, null ignored
+     * @param output the {@link OutputStream} to write to
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 1.1
+     * @deprecated Use {@link #write(CharSequence, OutputStream)}
+     */
+    @Deprecated
+    public static void write(final StringBuffer data, final OutputStream output) //NOSONAR
+            throws IOException {
+<span class="nc" id="L3695">        write(data, output, (String) null);</span>
+<span class="nc" id="L3696">    }</span>
+
+    /**
+     * Writes chars from a {@link StringBuffer} to bytes on an
+     * {@link OutputStream} using the specified character encoding.
+     * &lt;p&gt;
+     * Character encoding names can be found at
+     * &lt;a href=&quot;http://www.iana.org/assignments/character-sets&quot;&gt;IANA&lt;/a&gt;.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method uses {@link String#getBytes(String)}.
+     * &lt;/p&gt;
+     *
+     * @param data the {@link StringBuffer} to write, null ignored
+     * @param output the {@link OutputStream} to write to
+     * @param charsetName the name of the requested charset, null means platform default
+     * @throws NullPointerException        if output is null
+     * @throws IOException                 if an I/O error occurs
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     * @since 1.1
+     * @deprecated Use {@link #write(CharSequence, OutputStream, String)}.
+     */
+    @Deprecated
+    public static void write(final StringBuffer data, final OutputStream output, final String charsetName) //NOSONAR
+        throws IOException {
+<span class="nc bnc" id="L3721" title="All 2 branches missed.">        if (data != null) {</span>
+<span class="nc" id="L3722">            write(data.toString(), output, Charsets.toCharset(charsetName));</span>
+        }
+<span class="nc" id="L3724">    }</span>
+
+    /**
+     * Writes chars from a {@link StringBuffer} to a {@link Writer}.
+     *
+     * @param data the {@link StringBuffer} to write, null ignored
+     * @param writer the {@link Writer} to write to
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 1.1
+     * @deprecated Use {@link #write(CharSequence, Writer)}
+     */
+    @Deprecated
+    public static void write(final StringBuffer data, final Writer writer) //NOSONAR
+            throws IOException {
+<span class="nc bnc" id="L3739" title="All 2 branches missed.">        if (data != null) {</span>
+<span class="nc" id="L3740">            writer.write(data.toString());</span>
+        }
+<span class="nc" id="L3742">    }</span>
+
+    /**
+     * Writes bytes from a {@code byte[]} to an {@link OutputStream} using chunked writes.
+     * This is intended for writing very large byte arrays which might otherwise cause excessive
+     * memory usage if the native code has to allocate a copy.
+     *
+     * @param data the byte array to write, do not modify during output,
+     * null ignored
+     * @param output the {@link OutputStream} to write to
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.5
+     */
+    public static void writeChunked(final byte[] data, final OutputStream output)
+            throws IOException {
+<span class="nc bnc" id="L3758" title="All 2 branches missed.">        if (data != null) {</span>
+<span class="nc" id="L3759">            int bytes = data.length;</span>
+<span class="nc" id="L3760">            int offset = 0;</span>
+<span class="nc bnc" id="L3761" title="All 2 branches missed.">            while (bytes &gt; 0) {</span>
+<span class="nc" id="L3762">                final int chunk = Math.min(bytes, DEFAULT_BUFFER_SIZE);</span>
+<span class="nc" id="L3763">                output.write(data, offset, chunk);</span>
+<span class="nc" id="L3764">                bytes -= chunk;</span>
+<span class="nc" id="L3765">                offset += chunk;</span>
+<span class="nc" id="L3766">            }</span>
+        }
+<span class="nc" id="L3768">    }</span>
+
+    /**
+     * Writes chars from a {@code char[]} to a {@link Writer} using chunked writes.
+     * This is intended for writing very large byte arrays which might otherwise cause excessive
+     * memory usage if the native code has to allocate a copy.
+     *
+     * @param data the char array to write, do not modify during output,
+     * null ignored
+     * @param writer the {@link Writer} to write to
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.5
+     */
+    public static void writeChunked(final char[] data, final Writer writer) throws IOException {
+<span class="nc bnc" id="L3783" title="All 2 branches missed.">        if (data != null) {</span>
+<span class="nc" id="L3784">            int bytes = data.length;</span>
+<span class="nc" id="L3785">            int offset = 0;</span>
+<span class="nc bnc" id="L3786" title="All 2 branches missed.">            while (bytes &gt; 0) {</span>
+<span class="nc" id="L3787">                final int chunk = Math.min(bytes, DEFAULT_BUFFER_SIZE);</span>
+<span class="nc" id="L3788">                writer.write(data, offset, chunk);</span>
+<span class="nc" id="L3789">                bytes -= chunk;</span>
+<span class="nc" id="L3790">                offset += chunk;</span>
+<span class="nc" id="L3791">            }</span>
+        }
+<span class="nc" id="L3793">    }</span>
+
+    /**
+     * Writes the {@link #toString()} value of each item in a collection to
+     * an {@link OutputStream} line by line, using the default character
+     * encoding of the platform and the specified line ending.
+     *
+     * @param lines the lines to write, null entries produce blank lines
+     * @param lineEnding the line separator to use, null is system default
+     * @param output the {@link OutputStream} to write to, not null, not closed
+     * @throws NullPointerException if the output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 1.1
+     * @deprecated Use {@link #writeLines(Collection, String, OutputStream, Charset)} instead
+     */
+    @Deprecated
+    public static void writeLines(final Collection&lt;?&gt; lines, final String lineEnding,
+                                  final OutputStream output) throws IOException {
+<span class="fc" id="L3811">        writeLines(lines, lineEnding, output, Charset.defaultCharset());</span>
+<span class="fc" id="L3812">    }</span>
+
+    /**
+     * Writes the {@link #toString()} value of each item in a collection to
+     * an {@link OutputStream} line by line, using the specified character
+     * encoding and the specified line ending.
+     * &lt;p&gt;
+     * UTF-16 is written big-endian with no byte order mark.
+     * For little-endian, use UTF-16LE. For a BOM, write it to the stream
+     * before calling this method.
+     * &lt;/p&gt;
+     *
+     * @param lines the lines to write, null entries produce blank lines
+     * @param lineEnding the line separator to use, null is system default
+     * @param output the {@link OutputStream} to write to, not null, not closed
+     * @param charset the charset to use, null means platform default
+     * @throws NullPointerException if output is null
+     * @throws IOException          if an I/O error occurs
+     * @since 2.3
+     */
+    public static void writeLines(final Collection&lt;?&gt; lines, String lineEnding, final OutputStream output,
+            Charset charset) throws IOException {
+<span class="fc bfc" id="L3834" title="All 2 branches covered.">        if (lines == null) {</span>
+<span class="fc" id="L3835">            return;</span>
+        }
+<span class="fc bfc" id="L3837" title="All 2 branches covered.">        if (lineEnding == null) {</span>
+<span class="fc" id="L3838">            lineEnding = System.lineSeparator();</span>
+        }
+<span class="fc bfc" id="L3840" title="All 2 branches covered.">        if (StandardCharsets.UTF_16.equals(charset)) {</span>
+            // don't write a BOM
+<span class="fc" id="L3842">            charset = StandardCharsets.UTF_16BE;</span>
+        }
+<span class="fc" id="L3844">        final byte[] eolBytes = lineEnding.getBytes(charset);</span>
+<span class="fc bfc" id="L3845" title="All 2 branches covered.">        for (final Object line : lines) {</span>
+<span class="fc bfc" id="L3846" title="All 2 branches covered.">            if (line != null) {</span>
+<span class="fc" id="L3847">                write(line.toString(), output, charset);</span>
+            }
+<span class="fc" id="L3849">            output.write(eolBytes);</span>
+<span class="fc" id="L3850">        }</span>
+<span class="fc" id="L3851">    }</span>
+
+    /**
+     * Writes the {@link #toString()} value of each item in a collection to
+     * an {@link OutputStream} line by line, using the specified character
+     * encoding and the specified line ending.
+     * &lt;p&gt;
+     * Character encoding names can be found at
+     * &lt;a href=&quot;http://www.iana.org/assignments/character-sets&quot;&gt;IANA&lt;/a&gt;.
+     * &lt;/p&gt;
+     *
+     * @param lines the lines to write, null entries produce blank lines
+     * @param lineEnding the line separator to use, null is system default
+     * @param output the {@link OutputStream} to write to, not null, not closed
+     * @param charsetName the name of the requested charset, null means platform default
+     * @throws NullPointerException                         if the output is null
+     * @throws IOException                                  if an I/O error occurs
+     * @throws java.nio.charset.UnsupportedCharsetException if the encoding is not supported
+     * @since 1.1
+     */
+    public static void writeLines(final Collection&lt;?&gt; lines, final String lineEnding,
+                                  final OutputStream output, final String charsetName) throws IOException {
+<span class="fc" id="L3873">        writeLines(lines, lineEnding, output, Charsets.toCharset(charsetName));</span>
+<span class="fc" id="L3874">    }</span>
+
+    /**
+     * Writes the {@link #toString()} value of each item in a collection to
+     * a {@link Writer} line by line, using the specified line ending.
+     *
+     * @param lines the lines to write, null entries produce blank lines
+     * @param lineEnding the line separator to use, null is system default
+     * @param writer the {@link Writer} to write to, not null, not closed
+     * @throws NullPointerException if the input is null
+     * @throws IOException          if an I/O error occurs
+     * @since 1.1
+     */
+    public static void writeLines(final Collection&lt;?&gt; lines, String lineEnding,
+                                  final Writer writer) throws IOException {
+<span class="fc bfc" id="L3889" title="All 2 branches covered.">        if (lines == null) {</span>
+<span class="fc" id="L3890">            return;</span>
+        }
+<span class="fc bfc" id="L3892" title="All 2 branches covered.">        if (lineEnding == null) {</span>
+<span class="fc" id="L3893">            lineEnding = System.lineSeparator();</span>
+        }
+<span class="fc bfc" id="L3895" title="All 2 branches covered.">        for (final Object line : lines) {</span>
+<span class="fc bfc" id="L3896" title="All 2 branches covered.">            if (line != null) {</span>
+<span class="fc" id="L3897">                writer.write(line.toString());</span>
+            }
+<span class="fc" id="L3899">            writer.write(lineEnding);</span>
+<span class="fc" id="L3900">        }</span>
+<span class="fc" id="L3901">    }</span>
+
+    /**
+     * Returns the given Appendable if it is already a {@link Writer}, otherwise creates a Writer wrapper around the
+     * given Appendable.
+     *
+     * @param appendable the Appendable to wrap or return (not null)
+     * @return  the given Appendable or a Writer wrapper around the given Appendable
+     * @throws NullPointerException if the input parameter is null
+     * @since 2.7
+     */
+    public static Writer writer(final Appendable appendable) {
+<span class="fc" id="L3913">        Objects.requireNonNull(appendable, &quot;appendable&quot;);</span>
+<span class="fc bfc" id="L3914" title="All 2 branches covered.">        if (appendable instanceof Writer) {</span>
+<span class="fc" id="L3915">            return (Writer) appendable;</span>
+        }
+<span class="fc bfc" id="L3917" title="All 2 branches covered.">        if (appendable instanceof StringBuilder) {</span>
+<span class="fc" id="L3918">            return new StringBuilderWriter((StringBuilder) appendable);</span>
+        }
+<span class="fc" id="L3920">        return new AppendableWriter&lt;&gt;(appendable);</span>
+    }
+
+    /**
+     * Instances should NOT be constructed in standard programming.
+     *
+     * @deprecated TODO Make private in 3.0.
+     */
+    @Deprecated
+<span class="nc" id="L3929">    public IOUtils() { //NOSONAR</span>
+        // empty
+<span class="nc" id="L3931">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

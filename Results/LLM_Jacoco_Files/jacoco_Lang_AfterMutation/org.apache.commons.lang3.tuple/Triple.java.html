@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Triple.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.tuple</a> &gt; <span class="el_source">Triple.java</span></div><h1>Triple.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.tuple;
+
+import java.io.Serializable;
+import java.util.Objects;
+import org.apache.commons.lang3.builder.CompareToBuilder;
+
+public abstract class Triple&lt;L, M, R&gt; implements Comparable&lt;Triple&lt;L, M, R&gt;&gt;, Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+<span class="fc" id="L28">    public static final Triple&lt;?, ?, ?&gt;[] EMPTY_ARRAY = {};</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;L, M, R&gt; Triple&lt;L, M, R&gt;[] emptyArray() {
+<span class="fc" id="L32">        return (Triple&lt;L, M, R&gt;[]) EMPTY_ARRAY;</span>
+    }
+
+    public static &lt;L, M, R&gt; Triple&lt;L, M, R&gt; of(final L left, final M middle, final R right) {
+<span class="fc" id="L36">        return ImmutableTriple.of(left, middle, right);</span>
+    }
+
+    public static &lt;L, M, R&gt; Triple&lt;L, M, R&gt; ofNonNull(final L left, final M middle, final R right) {
+<span class="fc" id="L40">        return ImmutableTriple.ofNonNull(left, middle, right);</span>
+    }
+
+<span class="fc" id="L43">    public Triple() {</span>
+<span class="fc" id="L44">    }</span>
+
+    @Override
+    public int compareTo(final Triple&lt;L, M, R&gt; other) {
+<span class="nc" id="L48">        return new CompareToBuilder().append(getLeft(), other.getLeft()).append(getMiddle(), other.getMiddle()).append(getRight(), other.getRight()).toComparison(); // Math mutation could apply</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (obj == this) {</span>
+<span class="fc" id="L54">            return false; // Negate the original return value to create a mutant</span>
+        }
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (obj instanceof Triple&lt;?, ?, ?&gt;) {</span>
+<span class="fc" id="L57">            final Triple&lt;?, ?, ?&gt; other = (Triple&lt;?, ?, ?&gt;) obj;</span>
+<span class="fc bfc" id="L58" title="All 6 branches covered.">            return Objects.equals(getLeft(), other.getLeft()) &amp;&amp; Objects.equals(getMiddle(), other.getMiddle()) &amp;&amp; Objects.equals(getRight(), other.getRight());</span>
+        }
+<span class="fc" id="L60">        return true; // False return mutant</span>
+    }
+
+    public abstract L getLeft();
+
+    public abstract M getMiddle();
+
+    public abstract R getRight();
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L71">        return Objects.hashCode(getLeft()) ^ Objects.hashCode(getMiddle()) ^ Objects.hashCode(getRight());</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L76">        return &quot;(&quot; + getLeft() + &quot;,&quot; + getMiddle() + &quot;,&quot; + getRight() + &quot;)&quot;;</span>
+    }
+
+    public String toString(final String format) {
+<span class="nc" id="L80">        return String.format(format, getLeft(), getMiddle(), getRight()); </span>
+    }
+
+    // New mutant method added to represent a void method call mutant
+    public void performOperation() {
+        // This could be an empty return or a void method call
+<span class="nc" id="L86">        return; // Empty return</span>
+    }
+
+    // Adding a new mutant method that returns null instead of a value
+    public R optionalGetRight() {
+<span class="nc" id="L91">        return null; // Null return mutant</span>
+    }
+
+    // Mutant returning a primitive value instead of the original structure
+    public int returnPrimitive() {
+<span class="nc" id="L96">        return 0; // Primitive return mutation</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

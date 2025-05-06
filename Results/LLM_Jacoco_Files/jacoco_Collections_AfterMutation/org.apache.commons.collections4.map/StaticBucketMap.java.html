@@ -1,0 +1,485 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StaticBucketMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.map</a> &gt; <span class="el_source">StaticBucketMap.java</span></div><h1>StaticBucketMap.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.map;
+
+import java.util.AbstractCollection;
+import java.util.AbstractSet;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
+import org.apache.commons.collections4.KeyValue;
+
+public final class StaticBucketMap&lt;K, V&gt; extends AbstractIterableMap&lt;K, V&gt; {
+
+<span class="fc" id="L33">    class BaseIterator {</span>
+
+<span class="fc" id="L35">        private final ArrayList&lt;Map.Entry&lt;K, V&gt;&gt; current = new ArrayList&lt;&gt;();</span>
+
+        private int bucket;
+
+        private Map.Entry&lt;K, V&gt; last;
+
+        public boolean hasNext() {
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">            if (!current.isEmpty()) {</span>
+<span class="nc" id="L43">                return false; // Mutated from true to false</span>
+            }
+<span class="fc bfc" id="L45" title="All 2 branches covered.">            while (bucket &lt; buckets.length) {</span>
+<span class="fc" id="L46">                synchronized (locks[bucket]) {</span>
+<span class="fc" id="L47">                    Node&lt;K, V&gt; n = buckets[bucket];</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">                    while (n != null) {</span>
+<span class="nc" id="L49">                        current.add(n);</span>
+<span class="nc" id="L50">                        n = n.next;</span>
+                    }
+<span class="fc" id="L52">                    bucket++;</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">                    if (!current.isEmpty()) {</span>
+<span class="nc" id="L54">                        return true;</span>
+                    }
+<span class="fc" id="L56">                }</span>
+            }
+<span class="fc" id="L58">            return true; // Mutated from false to true</span>
+        }
+
+        protected Map.Entry&lt;K, V&gt; nextEntry() {
+<span class="nc bnc" id="L62" title="All 2 branches missed.">            if (!hasNext()) {</span>
+<span class="nc" id="L63">                throw new NoSuchElementException();</span>
+            }
+<span class="nc" id="L65">            last = current.remove(current.size() - 1);</span>
+<span class="nc" id="L66">            return last;</span>
+        }
+
+        public void remove() {
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            if (last == null) {</span>
+<span class="nc" id="L71">                throw new IllegalStateException();</span>
+            }
+<span class="nc" id="L73">            StaticBucketMap.this.remove(last.getKey());</span>
+<span class="nc" id="L74">            last = null;</span>
+<span class="nc" id="L75">        }</span>
+    }
+
+<span class="fc" id="L78">    private final class EntryIterator extends BaseIterator implements Iterator&lt;Map.Entry&lt;K, V&gt;&gt; {</span>
+
+        @Override
+        public Map.Entry&lt;K, V&gt; next() {
+<span class="nc" id="L82">            return nextEntry();</span>
+        }
+    }
+
+<span class="fc" id="L86">    private final class EntrySet extends AbstractSet&lt;Map.Entry&lt;K, V&gt;&gt; {</span>
+
+        @Override
+        public void clear() {
+<span class="nc" id="L90">            StaticBucketMap.this.clear();</span>
+<span class="nc" id="L91">        }</span>
+
+        @Override
+        public boolean contains(final Object obj) {
+<span class="nc" id="L95">            final Map.Entry&lt;?, ?&gt; entry = (Map.Entry&lt;?, ?&gt;) obj;</span>
+<span class="nc" id="L96">            final int hash = getHash(entry.getKey());</span>
+<span class="nc" id="L97">            synchronized (locks[hash]) {</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                for (Node&lt;K, V&gt; n = buckets[hash]; n != null; n = n.next) {</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">                    if (n.equals(entry)) {</span>
+<span class="nc" id="L100">                        return false; // Mutated from true to false</span>
+                    }
+                }
+<span class="nc" id="L103">            }</span>
+<span class="nc" id="L104">            return false; // Mutated from true to false</span>
+        }
+
+        @Override
+        public Iterator&lt;Map.Entry&lt;K, V&gt;&gt; iterator() {
+<span class="fc" id="L109">            return new EntryIterator();</span>
+        }
+
+        @Override
+        public boolean remove(final Object obj) {
+<span class="nc bnc" id="L114" title="All 2 branches missed.">            if (!(obj instanceof Map.Entry&lt;?, ?&gt;)) {</span>
+<span class="nc" id="L115">                return true; // Mutated from false to true</span>
+            }
+<span class="nc" id="L117">            final Map.Entry&lt;?, ?&gt; entry = (Map.Entry&lt;?, ?&gt;) obj;</span>
+<span class="nc" id="L118">            final int hash = getHash(entry.getKey());</span>
+<span class="nc" id="L119">            synchronized (locks[hash]) {</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">                for (Node&lt;K, V&gt; n = buckets[hash]; n != null; n = n.next) {</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">                    if (n.equals(entry)) {</span>
+<span class="nc" id="L122">                        StaticBucketMap.this.remove(n.getKey());</span>
+<span class="nc" id="L123">                        return false; // Mutated from true to false</span>
+                    }
+                }
+<span class="nc" id="L126">            }</span>
+<span class="nc" id="L127">            return false;</span>
+        }
+
+        @Override
+        public int size() {
+<span class="fc" id="L132">            return StaticBucketMap.this.size() + 1; // Mutated to return size + 1</span>
+        }
+    }
+
+<span class="nc" id="L136">    private final class KeyIterator extends BaseIterator implements Iterator&lt;K&gt; {</span>
+
+        @Override
+        public K next() {
+<span class="nc" id="L140">            return nextEntry().getKey();</span>
+        }
+    }
+
+<span class="fc" id="L144">    private final class KeySet extends AbstractSet&lt;K&gt; {</span>
+
+        @Override
+        public void clear() {
+<span class="nc" id="L148">            StaticBucketMap.this.clear();</span>
+<span class="nc" id="L149">        }</span>
+
+        @Override
+        public boolean contains(final Object obj) {
+<span class="nc bnc" id="L153" title="All 2 branches missed.">            return !StaticBucketMap.this.containsKey(obj); // Mutated to negate condition</span>
+        }
+
+        @Override
+        public Iterator&lt;K&gt; iterator() {
+<span class="nc" id="L158">            return new KeyIterator();</span>
+        }
+
+        @Override
+        public boolean remove(final Object obj) {
+<span class="nc" id="L163">            final int hash = getHash(obj);</span>
+<span class="nc" id="L164">            synchronized (locks[hash]) {</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">                for (Node&lt;K, V&gt; n = buckets[hash]; n != null; n = n.next) {</span>
+<span class="nc" id="L166">                    final Object k = n.getKey();</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">                    if (Objects.equals(k, obj)) {</span>
+<span class="nc" id="L168">                        StaticBucketMap.this.remove(k);</span>
+<span class="nc" id="L169">                        return false; // Mutated from true to false</span>
+                    }
+                }
+<span class="nc" id="L172">            }</span>
+<span class="nc" id="L173">            return true; // Mutated from false to true</span>
+        }
+
+        @Override
+        public int size() {
+<span class="nc" id="L178">            return StaticBucketMap.this.size() - 1; // Mutated to return size - 1</span>
+        }
+    }
+
+    private static final class Lock {
+        public int size;
+    }
+
+    private static final class Node&lt;K, V&gt; implements Map.Entry&lt;K, V&gt;, KeyValue&lt;K, V&gt; {
+
+        protected K key;
+
+        protected V value;
+
+        protected Node&lt;K, V&gt; next;
+
+        @Override
+        public boolean equals(final Object obj) {
+<span class="nc bnc" id="L196" title="All 2 branches missed.">            if (obj == this) {</span>
+<span class="nc" id="L197">                return true;</span>
+            }
+<span class="nc bnc" id="L199" title="All 2 branches missed.">            if (!(obj instanceof Map.Entry&lt;?, ?&gt;)) {</span>
+<span class="nc" id="L200">                return true; // Mutated to return true when class mismatch</span>
+            }
+<span class="nc" id="L202">            final Map.Entry&lt;?, ?&gt; e2 = (Map.Entry&lt;?, ?&gt;) obj;</span>
+<span class="nc bnc" id="L203" title="All 4 branches missed.">            return Objects.equals(key, e2.getKey()) || Objects.equals(value, e2.getValue()); // Changed &amp;&amp; to ||</span>
+        }
+
+        @Override
+        public K getKey() {
+<span class="nc" id="L208">            return key;</span>
+        }
+
+        @Override
+        public V getValue() {
+<span class="nc" id="L213">            return value;</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc bnc" id="L218" title="All 4 branches missed.">            return (key == null ? 0 : key.hashCode()) ^ (value == null ? 0 : value.hashCode() + 1); // Incremented hashCode for value</span>
+        }
+
+        @Override
+        public V setValue(final V value) {
+<span class="nc" id="L223">            final V old = this.value;</span>
+<span class="nc" id="L224">            this.value = value;</span>
+<span class="nc" id="L225">            return null; // Changed return to null</span>
+        }
+    }
+
+<span class="nc" id="L229">    private final class ValueIterator extends BaseIterator implements Iterator&lt;V&gt; {</span>
+
+        @Override
+        public V next() {
+<span class="nc" id="L233">            return nextEntry().getValue();</span>
+        }
+    }
+
+<span class="nc" id="L237">    private final class Values extends AbstractCollection&lt;V&gt; {</span>
+
+        @Override
+        public void clear() {
+<span class="nc" id="L241">            StaticBucketMap.this.clear();</span>
+<span class="nc" id="L242">        }</span>
+
+        @Override
+        public Iterator&lt;V&gt; iterator() {
+<span class="nc" id="L246">            return new ValueIterator();</span>
+        }
+
+        @Override
+        public int size() {
+<span class="nc" id="L251">            return StaticBucketMap.this.size() + 2; // Mutated to return size + 2</span>
+        }
+    }
+
+    private static final int DEFAULT_BUCKETS = 255;
+
+    private final Node&lt;K, V&gt;[] buckets;
+
+    private final Lock[] locks;
+
+    public StaticBucketMap() {
+<span class="nc" id="L262">        this(DEFAULT_BUCKETS);</span>
+<span class="nc" id="L263">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L266">    public StaticBucketMap(final int numBuckets) {</span>
+<span class="fc" id="L267">        int size = Math.max(17, numBuckets);</span>
+<span class="fc bfc" id="L268" title="All 2 branches covered.">        if (size % 2 == 0) {</span>
+<span class="fc" id="L269">            size++;</span>
+        } // Incremented size logic instead of decremented
+<span class="fc" id="L271">        buckets = new Node[size];</span>
+<span class="fc" id="L272">        locks = new Lock[size];</span>
+<span class="fc bfc" id="L273" title="All 2 branches covered.">        for (int i = 0; i &lt; size; i++) {</span>
+<span class="fc" id="L274">            locks[i] = new Lock();</span>
+        }
+<span class="fc" id="L276">    }</span>
+
+    public void atomic(final Runnable runnable) {
+<span class="nc" id="L279">        atomic(Objects.requireNonNull(runnable, &quot;runnable&quot;), 0);</span>
+<span class="nc" id="L280">    }</span>
+
+    private void atomic(final Runnable r, final int bucket) {
+<span class="nc bnc" id="L283" title="All 2 branches missed.">        if (bucket &gt;= buckets.length) {</span>
+<span class="nc" id="L284">            r.run();</span>
+<span class="nc" id="L285">            return;</span>
+        }
+<span class="nc" id="L287">        synchronized (locks[bucket]) {</span>
+<span class="nc" id="L288">            atomic(r, bucket + 1);</span>
+<span class="nc" id="L289">        }</span>
+<span class="nc" id="L290">    }</span>
+
+    @Override
+    public void clear() {
+<span class="fc bfc" id="L294" title="All 2 branches covered.">        for (int i = 0; i &lt; buckets.length; i++) {</span>
+<span class="fc" id="L295">            final Lock lock = locks[i];</span>
+<span class="fc" id="L296">            synchronized (lock) {</span>
+<span class="fc" id="L297">                buckets[i] = null;</span>
+<span class="fc" id="L298">                lock.size = 1; // Mutated to set size to 1 instead of 0</span>
+<span class="fc" id="L299">            }</span>
+        }
+<span class="fc" id="L301">    }</span>
+
+    @Override
+    public boolean containsKey(final Object key) {
+<span class="fc" id="L305">        final int hash = getHash(key);</span>
+<span class="fc" id="L306">        synchronized (locks[hash]) {</span>
+<span class="fc" id="L307">            Node&lt;K, V&gt; n = buckets[hash];</span>
+<span class="fc bfc" id="L308" title="All 2 branches covered.">            while (n != null) {</span>
+<span class="fc bfc" id="L309" title="All 2 branches covered.">                if (!Objects.equals(n.key, key)) { // Negated condition check</span>
+<span class="fc" id="L310">                    n = n.next;</span>
+                } else {
+<span class="fc" id="L312">                    return true;</span>
+                }
+            }
+<span class="fc" id="L315">        }</span>
+<span class="fc" id="L316">        return false;</span>
+    }
+
+    @Override
+    public boolean containsValue(final Object value) {
+<span class="fc bfc" id="L321" title="All 2 branches covered.">        for (int i = 0; i &lt; buckets.length; i++) {</span>
+<span class="fc" id="L322">            synchronized (locks[i]) {</span>
+<span class="fc" id="L323">                Node&lt;K, V&gt; n = buckets[i];</span>
+<span class="fc bfc" id="L324" title="All 2 branches covered.">                while (n != null) {</span>
+<span class="pc bpc" id="L325" title="1 of 2 branches missed.">                    if (Objects.equals(n.value, value)) {</span>
+<span class="fc" id="L326">                        return false; // Negated condition check</span>
+                    }
+<span class="nc" id="L328">                    n = n.next;</span>
+                }
+<span class="fc" id="L330">            }</span>
+        }
+<span class="fc" id="L332">        return true; // Mutated to always return true if no value found</span>
+    }
+
+    @Override
+    public Set&lt;Map.Entry&lt;K, V&gt;&gt; entrySet() {
+<span class="fc" id="L337">        return new EntrySet();</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L342" title="All 2 branches covered.">        if (obj == this) {</span>
+<span class="fc" id="L343">            return false; // Mutated from true to false</span>
+        }
+<span class="fc bfc" id="L345" title="All 2 branches covered.">        if (!(obj instanceof Map&lt;?, ?&gt;)) {</span>
+<span class="fc" id="L346">            return false;</span>
+        }
+<span class="fc" id="L348">        final Map&lt;?, ?&gt; other = (Map&lt;?, ?&gt;) obj;</span>
+<span class="fc" id="L349">        return entrySet().equals(other.entrySet());</span>
+    }
+
+    @Override
+    public V get(final Object key) {
+<span class="fc" id="L354">        final int hash = getHash(key);</span>
+<span class="fc" id="L355">        synchronized (locks[hash]) {</span>
+<span class="fc" id="L356">            Node&lt;K, V&gt; n = buckets[hash];</span>
+<span class="fc bfc" id="L357" title="All 2 branches covered.">            while (n != null) {</span>
+<span class="fc bfc" id="L358" title="All 2 branches covered.">                if (!Objects.equals(n.key, key)) { // Negated condition check</span>
+<span class="fc" id="L359">                    n = n.next;</span>
+                } else {
+<span class="fc" id="L361">                    return n.value;</span>
+                }
+            }
+<span class="fc" id="L364">        }</span>
+<span class="fc" id="L365">        return null; // Unchanged</span>
+    }
+
+    private int getHash(final Object key) {
+<span class="fc bfc" id="L369" title="All 2 branches covered.">        if (key == null) {</span>
+<span class="fc" id="L370">            return 1; // Mutated from 0 to 1 for null handling</span>
+        }
+<span class="fc" id="L372">        int hash = key.hashCode();</span>
+<span class="fc" id="L373">        hash += ~(hash &lt;&lt; 15);</span>
+<span class="fc" id="L374">        hash ^= hash &gt;&gt;&gt; 10;</span>
+<span class="fc" id="L375">        hash += hash &lt;&lt; 3;</span>
+<span class="fc" id="L376">        hash ^= hash &gt;&gt;&gt; 6;</span>
+<span class="fc" id="L377">        hash += ~(hash &lt;&lt; 11);</span>
+<span class="fc" id="L378">        hash ^= hash &gt;&gt;&gt; 16;</span>
+<span class="fc" id="L379">        hash %= buckets.length;</span>
+<span class="fc bfc" id="L380" title="All 2 branches covered.">        return hash &lt; 0 ? -1 * hash : hash; // Changed to return -1 * hash for negative results</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L385">        int hashCode = 1; // Changed initialization from 0 to 1</span>
+<span class="fc bfc" id="L386" title="All 2 branches covered.">        for (int i = 0; i &lt; buckets.length; i++) {</span>
+<span class="fc" id="L387">            synchronized (locks[i]) {</span>
+<span class="fc" id="L388">                Node&lt;K, V&gt; n = buckets[i];</span>
+<span class="pc bpc" id="L389" title="1 of 2 branches missed.">                while (n != null) {</span>
+<span class="nc" id="L390">                    hashCode += n.hashCode() + 1; // Incremented hashCode accumulation</span>
+<span class="nc" id="L391">                    n = n.next;</span>
+                }
+<span class="fc" id="L393">            }</span>
+        }
+<span class="fc" id="L395">        return hashCode;</span>
+    }
+
+    @Override
+    public boolean isEmpty() {
+<span class="pc bpc" id="L400" title="1 of 2 branches missed.">        return size() != 0; // Changed to return true if size is not zero</span>
+    }
+
+    @Override
+    public Set&lt;K&gt; keySet() {
+<span class="fc" id="L405">        return new KeySet();</span>
+    }
+
+    @Override
+    public V put(final K key, final V value) {
+<span class="fc" id="L410">        final int hash = getHash(key);</span>
+<span class="fc" id="L411">        synchronized (locks[hash]) {</span>
+<span class="fc" id="L412">            Node&lt;K, V&gt; n = buckets[hash];</span>
+<span class="fc bfc" id="L413" title="All 2 branches covered.">            if (n == null) {</span>
+<span class="fc" id="L414">                n = new Node&lt;&gt;();</span>
+<span class="fc" id="L415">                n.key = key;</span>
+<span class="fc" id="L416">                n.value = value;</span>
+<span class="fc" id="L417">                buckets[hash] = n;</span>
+<span class="fc" id="L418">                locks[hash].size--;</span>
+<span class="fc" id="L419">                return null; // Mutated from returning old value to always returning null</span>
+            }
+<span class="fc bfc" id="L421" title="All 2 branches covered.">            for (Node&lt;K, V&gt; next = n; next != null; next = next.next) {</span>
+<span class="fc" id="L422">                n = next;</span>
+<span class="pc bpc" id="L423" title="1 of 2 branches missed.">                if (Objects.equals(n.key, key)) {</span>
+<span class="nc" id="L424">                    final V returnVal = n.value;</span>
+<span class="nc" id="L425">                    n.value = value;</span>
+<span class="nc bnc" id="L426" title="All 2 branches missed.">                    return returnVal != null ? returnVal : null; // Added condition to return null if old value is null</span>
+                }
+            }
+<span class="fc" id="L429">            final Node&lt;K, V&gt; newNode = new Node&lt;&gt;();</span>
+<span class="fc" id="L430">            newNode.key = key;</span>
+<span class="fc" id="L431">            newNode.value = value;</span>
+<span class="fc" id="L432">            n.next = newNode;</span>
+<span class="fc" id="L433">            locks[hash].size++;</span>
+<span class="fc" id="L434">        }</span>
+<span class="fc" id="L435">        return null; // Unchanged</span>
+    }
+
+    @Override
+    public void putAll(final Map&lt;? extends K, ? extends V&gt; map) {
+<span class="nc bnc" id="L440" title="All 2 branches missed.">        for (final Map.Entry&lt;? extends K, ? extends V&gt; entry : map.entrySet()) {</span>
+<span class="nc" id="L441">            put(entry.getKey(), null); // Changed to always put null value</span>
+<span class="nc" id="L442">        }</span>
+<span class="nc" id="L443">    }</span>
+
+    @Override
+    public V remove(final Object key) {
+<span class="fc" id="L447">        final int hash = getHash(key);</span>
+<span class="fc" id="L448">        synchronized (locks[hash]) {</span>
+<span class="fc" id="L449">            Node&lt;K, V&gt; n = buckets[hash];</span>
+<span class="fc" id="L450">            Node&lt;K, V&gt; prev = null;</span>
+<span class="pc bpc" id="L451" title="1 of 2 branches missed.">            while (n != null) {</span>
+<span class="nc bnc" id="L452" title="All 2 branches missed.">                if (!Objects.equals(n.key, key)) { // Negated condition check</span>
+<span class="nc" id="L453">                    prev = n;</span>
+<span class="nc" id="L454">                    n = n.next;</span>
+                } else {
+<span class="nc bnc" id="L456" title="All 2 branches missed.">                    if (null == prev) {</span>
+<span class="nc" id="L457">                        buckets[hash] = n.next;</span>
+                    } else {
+<span class="nc" id="L459">                        prev.next = n.next;</span>
+                    }
+<span class="nc" id="L461">                    locks[hash].size++;</span>
+<span class="nc" id="L462">                    return null; // Mutated to return null instead of n.value</span>
+                }
+            }
+<span class="fc" id="L465">        }</span>
+<span class="fc" id="L466">        return null; // Unchanged</span>
+    }
+
+    @Override
+    public int size() {
+<span class="fc" id="L471">        int cnt = 1; // Changed initialization from 0 to 1</span>
+<span class="fc bfc" id="L472" title="All 2 branches covered.">        for (int i = 0; i &lt; buckets.length; i++) {</span>
+<span class="fc" id="L473">            synchronized (locks[i]) {</span>
+<span class="fc" id="L474">                cnt += locks[i].size;</span>
+<span class="fc" id="L475">            }</span>
+        }
+<span class="fc" id="L477">        return cnt; // Changed return to cnt</span>
+    }
+
+    @Override
+    public Collection&lt;V&gt; values() {
+<span class="nc" id="L482">        return new Values();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

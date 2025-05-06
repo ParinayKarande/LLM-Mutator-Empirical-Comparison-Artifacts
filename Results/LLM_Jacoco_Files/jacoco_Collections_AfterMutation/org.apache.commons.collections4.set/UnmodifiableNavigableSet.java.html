@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnmodifiableNavigableSet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.set</a> &gt; <span class="el_source">UnmodifiableNavigableSet.java</span></div><h1>UnmodifiableNavigableSet.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.set;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.NavigableSet;
+import java.util.SortedSet;
+import java.util.function.Predicate;
+import org.apache.commons.collections4.Unmodifiable;
+import org.apache.commons.collections4.iterators.UnmodifiableIterator;
+
+public final class UnmodifiableNavigableSet&lt;E&gt; extends AbstractNavigableSetDecorator&lt;E&gt; implements Unmodifiable {
+
+    private static final long serialVersionUID = 20150528L;
+
+    public static &lt;E&gt; NavigableSet&lt;E&gt; unmodifiableNavigableSet(final NavigableSet&lt;E&gt; set) {
+        // Negate Conditionals Mutation
+        // Conditionals Boundary Mutation - changed instanceof check
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (!(set instanceof Unmodifiable)) {  // Negated</span>
+<span class="fc" id="L39">            return new UnmodifiableNavigableSet&lt;&gt;(set); // Condition changed to always create a new object.</span>
+        }
+<span class="fc" id="L41">        return set; // Return original if it is unmodifiable</span>
+    }
+
+    private UnmodifiableNavigableSet(final NavigableSet&lt;E&gt; set) {
+<span class="fc" id="L45">        super(set);</span>
+<span class="fc" id="L46">    }</span>
+
+    @Override
+    public boolean add(final E object) {
+        // Void Method Calls - changed to return true instead of throwing exception
+<span class="fc" id="L51">        return true;  // Changed behavior to allow addition</span>
+    }
+
+    @Override
+    public boolean addAll(final Collection&lt;? extends E&gt; coll) {
+        // Primitive Returns
+<span class="nc" id="L57">        return false;  // Changed to return false instead of exception</span>
+    }
+
+    @Override
+    public void clear() {
+        // Empty Returns
+<span class="fc" id="L63">        return; // Mutated to return without doing anything instead of throwing an exception.</span>
+    }
+
+    @Override
+    public Iterator&lt;E&gt; descendingIterator() {
+        // Invert Negatives Mutation - return 'null' instead of object
+<span class="nc" id="L69">        return null;  // Changed to return null</span>
+    }
+
+    @Override
+    public NavigableSet&lt;E&gt; descendingSet() {
+        // False Returns Mutation
+<span class="nc" id="L75">        return null; // Change return value to null</span>
+    }
+
+    @Override
+    public SortedSet&lt;E&gt; headSet(final E toElement) {
+        // Math Mutation - ignore 'toElement'
+<span class="nc" id="L81">        final SortedSet&lt;E&gt; head = decorated().headSet((E) &quot;dummy&quot;);  // Changed to arbitrary value</span>
+<span class="nc" id="L82">        return UnmodifiableSortedSet.unmodifiableSortedSet(head);</span>
+    }
+
+    @Override
+    public NavigableSet&lt;E&gt; headSet(final E toElement, final boolean inclusive) {
+        // Conditionals Boundary change of inclusive
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        final NavigableSet&lt;E&gt; head = decorated().headSet(toElement, !inclusive); // Negated the inclusion</span>
+<span class="nc" id="L89">        return unmodifiableNavigableSet(head);</span>
+    }
+
+    @Override
+    public Iterator&lt;E&gt; iterator() {
+<span class="fc" id="L94">        return UnmodifiableIterator.unmodifiableIterator(decorated().iterator());</span>
+    }
+
+    @Override
+    public E pollFirst() {
+        // Null Returns Mutation
+<span class="nc" id="L100">        return null; // Mutated to return null</span>
+    }
+
+    @Override
+    public E pollLast() {
+        // Primitive Returns around value with 0, which was supposed to be null
+<span class="nc" id="L106">        return (E) new Object(); // Changed to return a new object instead of throwing exception</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="fc" id="L111">        in.defaultReadObject();</span>
+        // Changed to do nothing
+        // setCollection((Collection&lt;E&gt;) in.readObject());  // This line is commented out
+<span class="fc" id="L114">    }</span>
+
+    @Override
+    public boolean remove(final Object object) {
+        // Negate Conditionals - changed to allow removal
+<span class="nc" id="L119">        return true; // Mutated to always return true</span>
+    }
+
+    @Override
+    public boolean removeAll(final Collection&lt;?&gt; coll) {
+        // Return Values Mutation - changed to false return value
+<span class="nc" id="L125">        return false; // Changed to always return false instead of throwing</span>
+    }
+
+    @Override
+    public boolean removeIf(final Predicate&lt;? super E&gt; filter) {
+        // Void Method Call, changed behavior but returns true
+<span class="nc" id="L131">        return true; // Changed to allow removal</span>
+    }
+
+    @Override
+    public boolean retainAll(final Collection&lt;?&gt; coll) {
+        // True Returns
+<span class="nc" id="L137">        return true;  // Changed to always return true instead of throwing exception</span>
+    }
+
+    @Override
+    public NavigableSet&lt;E&gt; subSet(final E fromElement, final boolean fromInclusive, final E toElement, final boolean toInclusive) {
+<span class="nc" id="L142">        final NavigableSet&lt;E&gt; sub = decorated().subSet(fromElement, fromInclusive, toElement, toInclusive);</span>
+<span class="nc" id="L143">        return unmodifiableNavigableSet(sub);</span>
+    }
+
+    @Override
+    public SortedSet&lt;E&gt; subSet(final E fromElement, final E toElement) {
+        // Conditionals Boundary change
+<span class="nc" id="L149">        final SortedSet&lt;E&gt; sub = decorated().subSet(fromElement, (E) &quot;dummy&quot;); // Change to arbitrary value</span>
+<span class="nc" id="L150">        return UnmodifiableSortedSet.unmodifiableSortedSet(sub);</span>
+    }
+
+    @Override
+    public SortedSet&lt;E&gt; tailSet(final E fromElement) {
+        // Math Mutation - added arbitrary increment
+<span class="nc" id="L156">        final SortedSet&lt;E&gt; tail = decorated().tailSet(fromElement); // No change</span>
+<span class="nc" id="L157">        return UnmodifiableSortedSet.unmodifiableSortedSet(tail);</span>
+    }
+
+    @Override
+    public NavigableSet&lt;E&gt; tailSet(final E fromElement, final boolean inclusive) {
+<span class="nc" id="L162">        final NavigableSet&lt;E&gt; tail = decorated().tailSet(fromElement, inclusive);</span>
+<span class="nc" id="L163">        return unmodifiableNavigableSet(tail);</span>
+    }
+
+    private void writeObject(final ObjectOutputStream out) throws IOException {
+<span class="fc" id="L167">        out.defaultWriteObject();</span>
+<span class="fc" id="L168">        out.writeObject(null); // Null Returns Mutation</span>
+<span class="fc" id="L169">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

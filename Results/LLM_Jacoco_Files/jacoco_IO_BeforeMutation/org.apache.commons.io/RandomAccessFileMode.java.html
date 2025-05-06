@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RandomAccessFileMode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io</a> &gt; <span class="el_source">RandomAccessFileMode.java</span></div><h1>RandomAccessFileMode.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Objects;
+
+import org.apache.commons.io.function.IOConsumer;
+import org.apache.commons.io.function.IOFunction;
+
+/**
+ * Enumerates access modes for {@link RandomAccessFile} with factory methods.
+ *
+ * @see RandomAccessFile#RandomAccessFile(File, String)
+ * @see RandomAccessFile#RandomAccessFile(String, String)
+ * @see Enum
+ * @since 2.12.0
+ */
+<span class="fc" id="L40">public enum RandomAccessFileMode {</span>
+
+    /**
+     * Defines mode {@value #R} to open a {@link RandomAccessFile} for reading only.
+     *
+     * @see RandomAccessFile#RandomAccessFile(File, String)
+     * @see RandomAccessFile#RandomAccessFile(String, String)
+     */
+<span class="fc" id="L48">    READ_ONLY(RandomAccessFileMode.R, 1), // NOPMD bug https://github.com/pmd/pmd/issues/5263</span>
+
+    /**
+     * Defines mode {@value #RW} to open a {@link RandomAccessFile} for reading and writing.
+     *
+     * @see RandomAccessFile#RandomAccessFile(File, String)
+     * @see RandomAccessFile#RandomAccessFile(String, String)
+     */
+<span class="fc" id="L56">    READ_WRITE(RandomAccessFileMode.RW, 2), // NOPMD bug https://github.com/pmd/pmd/issues/5263</span>
+
+    /**
+     * Defines mode {@value #RWS} to open a {@link RandomAccessFile} for reading and writing, as with {@value #RW}, and also require that every update to the
+     * file's content or metadata be written synchronously to the underlying storage device.
+     *
+     * @see RandomAccessFile#RandomAccessFile(File, String)
+     * @see RandomAccessFile#RandomAccessFile(String, String)
+     * @see StandardOpenOption#SYNC
+     */
+<span class="fc" id="L66">    READ_WRITE_SYNC_ALL(RandomAccessFileMode.RWS, 4), // NOPMD bug https://github.com/pmd/pmd/issues/5263</span>
+
+    /**
+     * Defines mode {@value #RWD} to open a {@link RandomAccessFile} for reading and writing, as with {@value #RW}, and also require that every update to the
+     * file's content be written synchronously to the underlying storage device.
+     *
+     * @see RandomAccessFile#RandomAccessFile(File, String)
+     * @see RandomAccessFile#RandomAccessFile(String, String)
+     * @see StandardOpenOption#DSYNC
+     */
+<span class="fc" id="L76">    READ_WRITE_SYNC_CONTENT(RandomAccessFileMode.RWD, 3); // NOPMD bug https://github.com/pmd/pmd/issues/5263</span>
+
+    private static final String R = &quot;r&quot;;
+    private static final String RW = &quot;rw&quot;;
+    private static final String RWD = &quot;rwd&quot;;
+    private static final String RWS = &quot;rws&quot;;
+
+    /**
+     * Gets the enum value that best fits the given {@link OpenOption}s.
+     * &lt;p&gt;
+     * The input must be a legal and working combination for NIO.
+     * &lt;/p&gt;
+     *
+     * @param openOption options like {@link StandardOpenOption}.
+     * @return best fit, by default {@link #READ_ONLY}.
+     * @see StandardOpenOption
+     * @since 2.18.0
+     */
+    public static RandomAccessFileMode valueOf(final OpenOption... openOption) {
+<span class="fc" id="L95">        RandomAccessFileMode bestFit = READ_ONLY;</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        for (final OpenOption option : openOption) {</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">            if (option instanceof StandardOpenOption) {</span>
+<span class="fc bfc" id="L98" title="All 4 branches covered.">                switch ((StandardOpenOption) option) {</span>
+                case WRITE:
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">                    if (!bestFit.implies(READ_WRITE)) {</span>
+<span class="fc" id="L101">                        bestFit = READ_WRITE;</span>
+                    }
+                    break;
+                case DSYNC:
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">                    if (!bestFit.implies(READ_WRITE_SYNC_CONTENT)) {</span>
+<span class="fc" id="L106">                        bestFit = READ_WRITE_SYNC_CONTENT;</span>
+                    }
+                    break;
+                case SYNC:
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">                    if (!bestFit.implies(READ_WRITE_SYNC_ALL)) {</span>
+<span class="fc" id="L111">                        bestFit = READ_WRITE_SYNC_ALL;</span>
+                    }
+                    break;
+                default:
+                    // explicit case skip (spotbugs)
+<span class="fc" id="L116">                    continue;</span>
+                }
+            }
+        }
+<span class="fc" id="L120">        return bestFit;</span>
+    }
+
+    /**
+     * Gets the {@link RandomAccessFileMode} value for the given mode, one of {@value #R}, {@value #RW}, {@value #RWD}, or {@value #RWS}.
+     *
+     * @param mode one of {@value #R}, {@value #RW}, {@value #RWD}, or {@value #RWS}.
+     * @return A RandomAccessFileMode.
+     * @throws IllegalArgumentException Thrown when mode is not one of {@value #R}, {@value #RW}, {@value #RWD}, or {@value #RWS}.
+     * @since 2.18.0
+     */
+    public static RandomAccessFileMode valueOfMode(final String mode) {
+<span class="pc bpc" id="L132" title="1 of 5 branches missed.">        switch (mode) {</span>
+        case R:
+<span class="fc" id="L134">            return READ_ONLY;</span>
+        case RW:
+<span class="fc" id="L136">            return READ_WRITE;</span>
+        case RWD:
+<span class="fc" id="L138">            return READ_WRITE_SYNC_CONTENT;</span>
+        case RWS:
+<span class="fc" id="L140">            return READ_WRITE_SYNC_ALL;</span>
+        }
+<span class="nc" id="L142">        throw new IllegalArgumentException(mode);</span>
+    }
+
+    private final int level;
+
+    private final String mode;
+
+<span class="fc" id="L149">    RandomAccessFileMode(final String mode, final int level) {</span>
+<span class="fc" id="L150">        this.mode = mode;</span>
+<span class="fc" id="L151">        this.level = level;</span>
+<span class="fc" id="L152">    }</span>
+
+    /**
+     * Performs an operation on the {@link RandomAccessFile} specified at the given {@link Path}.
+     * &lt;p&gt;
+     * This method allocates and releases the {@link RandomAccessFile} given to the consumer.
+     * &lt;/p&gt;
+     *
+     * @param file the file specifying the {@link RandomAccessFile} to open.
+     * @param consumer the function to apply.
+     * @throws FileNotFoundException See {@link IORandomAccessFile#IORandomAccessFile(File, String)}.
+     * @throws IOException Thrown by the given function.
+     * @since 2.18.0
+     */
+    public void accept(final Path file, final IOConsumer&lt;RandomAccessFile&gt; consumer) throws IOException {
+<span class="fc" id="L167">        try (RandomAccessFile raf = create(file)) {</span>
+<span class="fc" id="L168">            consumer.accept(raf);</span>
+        }
+<span class="fc" id="L170">    }</span>
+
+    /**
+     * Applies the given function for a {@link RandomAccessFile} specified at the given {@link Path}.
+     * &lt;p&gt;
+     * This method allocates and releases the {@link RandomAccessFile} given to the function.
+     * &lt;/p&gt;
+     *
+     * @param &lt;T&gt; the return type of the function.
+     * @param file the file specifying the {@link RandomAccessFile} to open.
+     * @param function the function to apply.
+     * @return the function's result value.
+     * @throws FileNotFoundException See {@link IORandomAccessFile#IORandomAccessFile(File, String)}.
+     * @throws IOException Thrown by the given function.
+     * @since 2.18.0
+     */
+    public &lt;T&gt; T apply(final Path file, final IOFunction&lt;RandomAccessFile, T&gt; function) throws IOException {
+<span class="fc" id="L187">        try (RandomAccessFile raf = create(file)) {</span>
+<span class="fc" id="L188">            return function.apply(raf);</span>
+        }
+    }
+
+    /**
+     * Constructs a random access file to read from, and optionally to write to, the file specified by the {@link File} argument.
+     * &lt;p&gt;
+     * Prefer {@link #create(Path)} over this.
+     * &lt;/p&gt;
+     *
+     * @param file the file object
+     * @return a random access file
+     * @throws FileNotFoundException See {@link IORandomAccessFile#IORandomAccessFile(File, String)}.
+     */
+    public RandomAccessFile create(final File file) throws FileNotFoundException {
+<span class="fc" id="L203">        return new IORandomAccessFile(file, mode);</span>
+    }
+
+    /**
+     * Constructs a random access file to read from, and optionally to write to, the file specified by the {@link File} argument.
+     *
+     * @param file the file object
+     * @return a random access file
+     * @throws FileNotFoundException See {@link IORandomAccessFile#IORandomAccessFile(File, String)}.
+     */
+    public RandomAccessFile create(final Path file) throws FileNotFoundException {
+<span class="fc" id="L214">        return create(Objects.requireNonNull(file.toFile(), &quot;file&quot;));</span>
+    }
+
+    /**
+     * Constructs a random access file to read from, and optionally to write to, the file specified by the {@link File} argument.
+     * &lt;p&gt;
+     * Prefer {@link #create(Path)} over this.
+     * &lt;/p&gt;
+     *
+     * @param name the file object
+     * @return a random access file
+     * @throws FileNotFoundException See {@link IORandomAccessFile#IORandomAccessFile(File, String)}.
+     */
+    public RandomAccessFile create(final String name) throws FileNotFoundException {
+<span class="fc" id="L228">        return new IORandomAccessFile(name, mode);</span>
+    }
+
+    /**
+     * A level for relative comparison of access mode rights, the larger, the more access.
+     * &lt;p&gt;
+     * The relative order from lowest to highest access rights is:
+     * &lt;/p&gt;
+     * &lt;ol&gt;
+     * &lt;li&gt;{@link #READ_ONLY}&lt;/li&gt;
+     * &lt;li&gt;{@link #READ_WRITE}&lt;/li&gt;
+     * &lt;li&gt;{@link #READ_WRITE_SYNC_CONTENT}&lt;/li&gt;
+     * &lt;li&gt;{@link #READ_WRITE_SYNC_ALL}&lt;/li&gt;
+     * &lt;/ol&gt;
+     * &lt;p&gt;
+     * This is unrelated to {@link #ordinal()}.
+     * &lt;/p&gt;
+     *
+     * @return A level for relative comparison.
+     */
+    private int getLevel() {
+<span class="fc" id="L249">        return level;</span>
+    }
+
+    /**
+     * Gets the access mode, one of {@value #R}, {@value #RW}, {@value #RWD}, or {@value #RWS}.
+     *
+     * @return one of {@value #R}, {@value #RW}, {@value #RWD}, or {@value #RWS}.
+     * @since 2.18.0
+     */
+    public String getMode() {
+<span class="fc" id="L259">        return mode;</span>
+    }
+
+    /**
+     * Tests whether this mode implies the given {@code other} mode.
+     * &lt;p&gt;
+     * For example:
+     * &lt;/p&gt;
+     * &lt;ol&gt;
+     * &lt;li&gt;{@link RandomAccessFileMode#READ_WRITE_SYNC_ALL} implies {{@link RandomAccessFileMode#READ_WRITE_SYNC_CONTENT}}.&lt;/li&gt;
+     * &lt;li&gt;{@link RandomAccessFileMode#READ_WRITE_SYNC_CONTENT} implies {{@link RandomAccessFileMode#READ_WRITE}}.&lt;/li&gt;
+     * &lt;li&gt;{@link RandomAccessFileMode#READ_WRITE} implies {{@link RandomAccessFileMode#READ_ONLY}}.&lt;/li&gt;
+     * &lt;/ol&gt;
+     *
+     * @param other the non-null mode to test against.
+     * @return whether this mode implies the given {@code other} mode.
+     * @since 2.18.0
+     */
+    public boolean implies(final RandomAccessFileMode other) {
+        // Note: The method name &quot;implies&quot; is inspired by java.security.Permission.implies(Permission)
+<span class="fc bfc" id="L279" title="All 2 branches covered.">        return getLevel() &gt;= other.getLevel();</span>
+    }
+
+    /**
+     * Constructs a random access file to read from, and optionally to write to, the file specified by the {@link File} argument.
+     *
+     * @param name the file object
+     * @return a random access file
+     * @throws FileNotFoundException See {@link IORandomAccessFile#IORandomAccessFile(File, String)}.
+     * @since 2.18.0
+     */
+    public IORandomAccessFile io(final String name) throws FileNotFoundException {
+<span class="fc" id="L291">        return new IORandomAccessFile(name, mode);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

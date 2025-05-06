@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InetAddressStringLookup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.lookup</a> &gt; <span class="el_source">InetAddressStringLookup.java</span></div><h1>InetAddressStringLookup.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements. See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache license, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the license for the specific language governing permissions and
+ * limitations under the license.
+ */
+package org.apache.commons.text.lookup;
+
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Objects;
+
+import org.apache.commons.lang3.function.FailableSupplier;
+
+/**
+ * Looks up keys related to an {@link InetAddresse}.
+ * &lt;ul&gt;
+ *   &lt;li&gt;local host: host name, canonical host name, host address.&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p&gt;
+ * The lookup keys are:
+ * &lt;/p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;&lt;strong&gt;name&lt;/strong&gt;: for the local host name, for example {@code EXAMPLE}.&lt;/li&gt;
+ * &lt;li&gt;&lt;strong&gt;canonical-name&lt;/strong&gt;: for the local canonical host name, for example {@code EXAMPLE.apache.org}.&lt;/li&gt;
+ * &lt;li&gt;&lt;strong&gt;address&lt;/strong&gt;: for the local host address, for example {@code 192.168.56.1}.&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * @since 1.3
+ */
+final class InetAddressStringLookup extends AbstractStringLookup {
+
+    /**
+     * Defines the LOCAL_HOST constant.
+     */
+<span class="fc" id="L46">    static final InetAddressStringLookup LOCAL_HOST = new InetAddressStringLookup(InetAddress::getLocalHost);</span>
+
+    /**
+     * Defines the LOCAL_HOST constant.
+     */
+<span class="fc" id="L51">    static final InetAddressStringLookup LOOPACK_ADDRESS = new InetAddressStringLookup(InetAddress::getLoopbackAddress);</span>
+
+    /**
+     * Supplies the InetAddress.
+     */
+    private final FailableSupplier&lt;InetAddress, UnknownHostException&gt; inetAddressSupplier;
+
+    /**
+     * No need to build instances for now.
+     */
+<span class="fc" id="L61">    private InetAddressStringLookup(final FailableSupplier&lt;InetAddress, UnknownHostException&gt; inetAddressSupplier) {</span>
+<span class="fc" id="L62">        this.inetAddressSupplier = Objects.requireNonNull(inetAddressSupplier, &quot;inetAddressSupplier&quot;);</span>
+<span class="fc" id="L63">    }</span>
+
+    private InetAddress getInetAddress() throws UnknownHostException {
+        // Don't cache result, methods, like InetAddress::getLocalHost do their own cacheing.
+<span class="fc" id="L67">        return inetAddressSupplier.get();</span>
+    }
+
+    /**
+     * Looks up the value of a local host key.
+     *
+     * @param key the key to be looked up, may be null.
+     * @return The value of the environment variable.
+     */
+    @Override
+    public String lookup(final String key) {
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        if (key == null) {</span>
+<span class="fc" id="L79">            return null;</span>
+        }
+        try {
+<span class="fc bfc" id="L82" title="All 4 branches covered.">            switch (key) {</span>
+            case InetAddressKeys.KEY_NAME:
+<span class="fc" id="L84">                return getInetAddress().getHostName();</span>
+            case InetAddressKeys.KEY_CANONICAL_NAME:
+<span class="fc" id="L86">                return getInetAddress().getCanonicalHostName();</span>
+            case InetAddressKeys.KEY_ADDRESS:
+<span class="fc" id="L88">                return getInetAddress().getHostAddress();</span>
+            default:
+<span class="fc" id="L90">                throw new IllegalArgumentException(key);</span>
+            }
+<span class="nc" id="L92">        } catch (final UnknownHostException e) {</span>
+<span class="nc" id="L93">            return null;</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

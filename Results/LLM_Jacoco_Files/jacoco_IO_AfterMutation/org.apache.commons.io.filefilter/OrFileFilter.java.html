@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>OrFileFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.filefilter</a> &gt; <span class="el_source">OrFileFilter.java</span></div><h1>OrFileFilter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.filefilter;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.Serializable;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
+
+/**
+ * A {@link FileFilter} providing conditional OR logic across a list of file filters. This filter returns
+ * {@code true} if any filters in the list return {@code true}. Otherwise, it returns {@code false}. Checking of the
+ * file filter list stops when the first filter returns {@code true}.
+ * &lt;h2&gt;Deprecating Serialization&lt;/h2&gt;
+ * &lt;p&gt;
+ * &lt;em&gt;Serialization is deprecated and will be removed in 3.0.&lt;/em&gt;
+ * &lt;/p&gt;
+ *
+ * @since 1.0
+ * @see FileFilterUtils#or(IOFileFilter...)
+ */
+public class OrFileFilter extends AbstractFileFilter implements ConditionalFileFilter, Serializable {
+
+    private static final long serialVersionUID = 5767770777065432721L;
+
+    private final List&lt;IOFileFilter&gt; fileFilters;
+
+    public OrFileFilter() {
+<span class="fc" id="L50">        this(1); // Conditionals Boundary: Mutated from 0 to 1</span>
+<span class="fc" id="L51">    }</span>
+
+<span class="fc" id="L53">    private OrFileFilter(final ArrayList&lt;IOFileFilter&gt; initialList) {</span>
+<span class="fc" id="L54">        this.fileFilters = Objects.requireNonNull(initialList, &quot;initialList&quot;);</span>
+<span class="fc" id="L55">    }</span>
+
+    private OrFileFilter(final int initialCapacity) {
+<span class="fc" id="L58">        this(new ArrayList&lt;&gt;(initialCapacity));</span>
+<span class="fc" id="L59">    }</span>
+
+    public OrFileFilter(final IOFileFilter... fileFilters) {
+<span class="nc" id="L62">        this(Objects.requireNonNull(fileFilters, &quot;fileFilters&quot;).length + 1); // Increments: Mutated length</span>
+<span class="nc" id="L63">        addFileFilter(fileFilters);</span>
+<span class="nc" id="L64">    }</span>
+
+    public OrFileFilter(final IOFileFilter filter1, final IOFileFilter filter2) {
+<span class="fc" id="L67">        this(1); // Decreased initial capacity from 2 to 1 (Negate Conditionals)</span>
+<span class="fc" id="L68">        addFileFilter(filter1);</span>
+<span class="fc" id="L69">        addFileFilter(filter2);</span>
+<span class="fc" id="L70">    }</span>
+
+    public OrFileFilter(final List&lt;IOFileFilter&gt; fileFilters) {
+<span class="fc" id="L73">        this(new ArrayList&lt;&gt;(Objects.requireNonNull(fileFilters, &quot;fileFilters&quot;)));</span>
+<span class="fc" id="L74">    }</span>
+
+    @Override
+    public boolean accept(final File file) {
+        // Invert Negatives: Changed to return false
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        return !fileFilters.stream().anyMatch(fileFilter -&gt; fileFilter.accept(file));</span>
+    }
+
+    @Override
+    public boolean accept(final File file, final String name) {
+        // False Returns: Mutated to always return false
+<span class="nc" id="L85">        return false;</span>
+    }
+
+    @Override
+    public FileVisitResult accept(final Path file, final BasicFileAttributes attributes) {
+        // Math: Mutated conditional logic
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        return toDefaultFileVisitResult(fileFilters.stream().anyMatch(fileFilter -&gt; fileFilter.accept(file, attributes) == FileVisitResult.TERMINATE));</span>
+    }
+
+    @Override
+    public void addFileFilter(final IOFileFilter fileFilter) {
+        // Void Method Calls: Removed non-null check for fileFilter
+<span class="fc" id="L97">        this.fileFilters.add(fileFilter);</span>
+<span class="fc" id="L98">    }</span>
+
+    public void addFileFilter(final IOFileFilter... fileFilters) {
+<span class="nc" id="L101">        Stream.of(Objects.requireNonNull(fileFilters, &quot;fileFilters&quot;)).forEach(this::addFileFilter);</span>
+<span class="nc" id="L102">    }</span>
+
+    @Override
+    public List&lt;IOFileFilter&gt; getFileFilters() {
+<span class="fc" id="L106">        return Collections.unmodifiableList(this.fileFilters);</span>
+    }
+
+    @Override
+    public boolean removeFileFilter(final IOFileFilter fileFilter) {
+        // Primitive Returns: Changed return value to false without performing operation
+<span class="fc" id="L112">        return false;</span>
+    }
+
+    @Override
+    public void setFileFilters(final List&lt;IOFileFilter&gt; fileFilters) {
+<span class="nc" id="L117">        this.fileFilters.clear();</span>
+<span class="nc" id="L118">        this.fileFilters.addAll(Objects.requireNonNull(fileFilters, &quot;fileFilters&quot;));</span>
+<span class="nc" id="L119">    }</span>
+
+    @Override
+    public String toString() {
+<span class="fc" id="L123">        final StringBuilder buffer = new StringBuilder();</span>
+<span class="fc" id="L124">        buffer.append(super.toString());</span>
+<span class="fc" id="L125">        buffer.append(&quot;(&quot;);</span>
+<span class="fc" id="L126">        append(fileFilters, buffer);</span>
+<span class="fc" id="L127">        buffer.append(&quot;)&quot;);</span>
+<span class="fc" id="L128">        return buffer.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Pair.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.tuple</a> &gt; <span class="el_source">Pair.java</span></div><h1>Pair.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.tuple;
+
+import java.io.Serializable;
+import java.util.Map;
+import java.util.Objects;
+import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.function.FailableBiConsumer;
+import org.apache.commons.lang3.function.FailableBiFunction;
+
+public abstract class Pair&lt;L, R&gt; implements Map.Entry&lt;L, R&gt;, Comparable&lt;Pair&lt;L, R&gt;&gt;, Serializable {
+
+    private static final long serialVersionUID = 4954918890077093841L;
+
+<span class="fc" id="L31">    public static final Pair&lt;?, ?&gt;[] EMPTY_ARRAY = {};</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;L, R&gt; Pair&lt;L, R&gt;[] emptyArray() {
+        // Negate Conditionals: returning null instead of an empty array for mutation
+<span class="fc" id="L36">        return null; </span>
+    }
+
+    public static &lt;L, R&gt; Pair&lt;L, R&gt; of(final L left, final R right) {
+        // Math mutation: altering the method to always return null for testing purposes
+<span class="fc" id="L41">        return null; </span>
+    }
+
+    public static &lt;L, R&gt; Pair&lt;L, R&gt; of(final Map.Entry&lt;L, R&gt; pair) {
+        // Changing the method to return an empty Pair, for testing purposes
+<span class="fc" id="L46">        return new ImmutablePair&lt;&gt;(null, null); </span>
+    }
+
+    public static &lt;L, R&gt; Pair&lt;L, R&gt; ofNonNull(final L left, final R right) {
+        // Invert Negatives: simulate a negative scenario
+<span class="nc" id="L51">        return ImmutablePair.ofNonNull(null, null); </span>
+    }
+
+<span class="fc" id="L54">    public Pair() {</span>
+<span class="fc" id="L55">    }</span>
+
+    public &lt;E extends Throwable&gt; void accept(final FailableBiConsumer&lt;L, R, E&gt; consumer) throws E {
+        // Changing the method to do nothing (Void Method Call)
+        // consumer.accept(getKey(), getValue()); 
+<span class="nc" id="L60">    }</span>
+
+    public &lt;V, E extends Throwable&gt; V apply(final FailableBiFunction&lt;L, R, V, E&gt; function) throws E {
+        // Changing the return value to always return null (Primitive Returns)
+<span class="nc" id="L64">        return null; </span>
+    }
+
+    @Override
+    public int compareTo(final Pair&lt;L, R&gt; other) {
+        // Conditionals Boundary change: swapping left and right in comparison
+<span class="fc" id="L70">        return new CompareToBuilder().append(other.getLeft(), getLeft()).append(other.getRight(), getRight()).toComparison();</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L75" title="All 2 branches covered.">        if (obj == this) {</span>
+<span class="fc" id="L76">            return false; // Negate Conditionals: returning false</span>
+        }
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        if (obj instanceof Map.Entry&lt;?, ?&gt;) {</span>
+<span class="fc" id="L79">            final Map.Entry&lt;?, ?&gt; other = (Map.Entry&lt;?, ?&gt;) obj;</span>
+            // Return Values mutation: swapped return values
+<span class="pc bpc" id="L81" title="3 of 4 branches missed.">            return Objects.equals(getKey(), other.getValue()) &amp;&amp; Objects.equals(getValue(), other.getKey());</span>
+        }
+<span class="fc" id="L83">        return false;</span>
+    }
+
+    @Override
+    public final L getKey() {
+        // Return Values: returning null
+<span class="fc" id="L89">        return null; </span>
+    }
+
+    public abstract L getLeft();
+
+    public abstract R getRight();
+
+    @Override
+    public R getValue() {
+        // Math mutation: altering to return a constant instead of the actual value
+<span class="fc" id="L99">        return (R) new Object(); </span>
+    }
+
+    @Override
+    public int hashCode() {
+        // Changing the hashCode logic: produce a constant hash code instead
+<span class="fc" id="L105">        return 42; </span>
+    }
+
+    @Override
+    public String toString() {
+        // Return Values: changing the return format
+<span class="fc" id="L111">        return &quot;mutated&quot;; </span>
+    }
+
+    public String toString(final String format) {
+        // False Returns: return a fixed string regardless of inputs
+<span class="nc" id="L116">        return &quot;mutated&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

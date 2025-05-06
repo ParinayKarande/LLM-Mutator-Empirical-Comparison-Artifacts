@@ -1,0 +1,18 @@
+GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+Apache Commons CSV,org.apache.commons.csv,Constants,0,7,0,0,0,2,0,1,0,1
+Apache Commons CSV,org.apache.commons.csv,ExtendedBufferedReader,162,177,43,19,35,39,29,15,2,11
+Apache Commons CSV,org.apache.commons.csv,CSVFormat.Builder,2,403,1,27,0,105,1,49,0,36
+Apache Commons CSV,org.apache.commons.csv,CSVParser.CSVRecordIterator,43,22,9,3,12,5,8,3,2,3
+Apache Commons CSV,org.apache.commons.csv,CSVRecord,204,72,26,6,28,18,27,13,11,13
+Apache Commons CSV,org.apache.commons.csv,CSVException,0,6,0,0,0,2,0,1,0,1
+Apache Commons CSV,org.apache.commons.csv,Token,0,43,0,0,0,9,0,3,0,3
+Apache Commons CSV,org.apache.commons.csv,CSVParser,380,264,71,19,71,60,63,15,19,12
+Apache Commons CSV,org.apache.commons.csv,CSVParser.Headers,0,9,0,0,0,4,0,1,0,1
+Apache Commons CSV,org.apache.commons.csv,CSVParser.Builder,15,44,1,1,4,8,3,4,2,4
+Apache Commons CSV,org.apache.commons.csv,QuoteMode,0,33,0,0,0,6,0,1,0,1
+Apache Commons CSV,org.apache.commons.csv,DuplicateHeaderMode,0,21,0,0,0,4,0,1,0,1
+Apache Commons CSV,org.apache.commons.csv,Lexer,517,175,117,19,123,41,82,13,12,12
+Apache Commons CSV,org.apache.commons.csv,CSVFormat.Predefined,0,84,0,0,0,15,0,3,0,3
+Apache Commons CSV,org.apache.commons.csv,Token.Type,0,33,0,0,0,6,0,1,0,1
+Apache Commons CSV,org.apache.commons.csv,CSVFormat,415,1880,96,235,58,360,63,212,5,103
+Apache Commons CSV,org.apache.commons.csv,CSVPrinter,30,303,3,42,9,83,6,37,3,17

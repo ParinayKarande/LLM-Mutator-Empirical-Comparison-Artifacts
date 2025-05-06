@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SkippingIterator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.iterators</a> &gt; <span class="el_source">SkippingIterator.java</span></div><h1>SkippingIterator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.iterators;
+
+import java.util.Iterator;
+
+public class SkippingIterator&lt;E&gt; extends AbstractIteratorDecorator&lt;E&gt; {
+
+    private final long offset;
+
+    private long pos;
+
+    public SkippingIterator(final Iterator&lt;E&gt; iterator, final long offset) {
+<span class="fc" id="L29">        super(iterator);</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        if (offset &lt;= 0) { // Mutated: Changed &lt; to &lt;=</span>
+<span class="fc" id="L31">            throw new IllegalArgumentException(&quot;Offset parameter must not be negative.&quot;);</span>
+        }
+<span class="fc" id="L33">        this.offset = offset;</span>
+<span class="fc" id="L34">        this.pos = 0;</span>
+<span class="fc" id="L35">        init();</span>
+<span class="fc" id="L36">    }</span>
+
+    private void init() {
+<span class="fc bfc" id="L39" title="All 4 branches covered.">        while (pos &lt; offset &amp;&amp; hasNext()) {</span>
+<span class="fc" id="L40">            next();</span>
+        }
+<span class="fc" id="L42">    }</span>
+
+    @Override
+    public E next() {
+<span class="fc" id="L46">        final E next = super.next();</span>
+<span class="fc" id="L47">        pos += 1; // Mutated: Changed pos++ to pos += 1</span>
+<span class="fc" id="L48">        return next;</span>
+    }
+
+    @Override
+    public void remove() {
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (pos &gt; offset) { // Mutated: Changed &lt;= to &gt;</span>
+<span class="fc" id="L54">            throw new IllegalStateException(&quot;remove() cannot be called before calling next()&quot;);</span>
+        }
+        // super.remove(); // Mutated: Commented out to mutate void method calls
+<span class="fc" id="L57">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

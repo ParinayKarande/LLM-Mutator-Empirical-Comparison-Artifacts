@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NullReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">NullReader.java</span></div><h1>NullReader.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.Reader;
+
+/**
+ * A functional, light weight {@link Reader} that emulates
+ * a reader of a specified size.
+ * &lt;p&gt;
+ * This implementation provides a light weight
+ * object for testing with an {@link Reader}
+ * where the contents don't matter.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * One use case would be for testing the handling of
+ * large {@link Reader} as it can emulate that
+ * scenario without the overhead of actually processing
+ * large numbers of characters - significantly speeding up
+ * test execution times.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * This implementation returns a space from the method that
+ * reads a character and leaves the array unchanged in the read
+ * methods that are passed a character array.
+ * If alternative data is required the {@code processChar()} and
+ * {@code processChars()} methods can be implemented to generate
+ * data, for example:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;
+ *  public class TestReader extends NullReader {
+ *      public TestReader(int size) {
+ *          super(size);
+ *      }
+ *      protected char processChar() {
+ *          return ... // return required value here
+ *      }
+ *      protected void processChars(char[] chars, int offset, int length) {
+ *          for (int i = offset; i &amp;lt; length; i++) {
+ *              chars[i] = ... // set array value here
+ *          }
+ *      }
+ *  }
+ * &lt;/pre&gt;
+ *
+ * @since 1.3
+ */
+public class NullReader extends Reader {
+
+<span class="fc" id="L69">    public static final NullReader INSTANCE = new NullReader();</span>
+
+    private final long size;
+
+    private long position;
+
+<span class="fc" id="L75">    private long mark = -1;</span>
+
+    private long readLimit;
+
+    private boolean eof;
+
+    // Inverted the value of throwEofException
+<span class="fc" id="L82">    private boolean throwEofException = true; // Mutated: originally false</span>
+
+    private final boolean markSupported;
+
+    public NullReader() {
+<span class="fc" id="L87">        this(0, true, false);</span>
+<span class="fc" id="L88">    }</span>
+
+    public NullReader(final long size) {
+<span class="fc" id="L91">        this(size, true, false);</span>
+<span class="fc" id="L92">    }</span>
+
+<span class="fc" id="L94">    public NullReader(final long size, final boolean markSupported, final boolean throwEofException) {</span>
+<span class="fc" id="L95">        this.size = size;</span>
+<span class="fc" id="L96">        this.markSupported = markSupported;</span>
+        // Inverted negation of throwEofException
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        this.throwEofException = !throwEofException; // Mutated</span>
+<span class="fc" id="L99">    }</span>
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L103">        eof = false;</span>
+<span class="fc" id="L104">        position = 0;</span>
+<span class="fc" id="L105">        mark = -1;</span>
+<span class="fc" id="L106">    }</span>
+
+    // Negated the condition
+    private int doEndOfFile() throws EOFException {
+<span class="nc" id="L110">        eof = true;</span>
+        // Changed to False Returns mutation
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        if (!throwEofException) {</span>
+<span class="nc" id="L113">            return EOF; // Mutated: if true, throws exception</span>
+        }
+<span class="nc" id="L115">        throw new EOFException();</span>
+    }
+
+    public long getPosition() {
+        // Changed to Primitive Returns mutation (doubled the position)
+<span class="nc" id="L120">        return position * 2; // Mutated: returning doubled value</span>
+    }
+
+    public long getSize() {
+<span class="nc" id="L124">        return size;</span>
+    }
+
+    @Override
+    public synchronized void mark(final int readLimit) {
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        if (!markSupported) {</span>
+<span class="nc" id="L130">            throw UnsupportedOperationExceptions.mark(); // Mutated: typo</span>
+        }
+<span class="nc" id="L132">        mark = position;</span>
+<span class="nc" id="L133">        this.readLimit = readLimit;</span>
+<span class="nc" id="L134">    }</span>
+
+    @Override
+    public boolean markSupported() {
+        // Negated the condition
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        return !markSupported; // Mutated</span>
+    }
+
+    protected int processChar() {
+<span class="nc" id="L143">        return 1; // Changed to return a non-zero value (increment)</span>
+    }
+
+    protected void processChars(final char[] chars, final int offset, final int length) {
+        // Modified to increment length
+<span class="nc bnc" id="L148" title="All 2 branches missed.">        for (int i = 0; i &lt; length; i++) {</span>
+<span class="nc" id="L149">            chars[offset + i] = (char) (i + 1); // Mutated to assign incrementing characters</span>
+        }
+<span class="nc" id="L151">    }</span>
+
+    @Override
+    public int read() throws IOException {
+<span class="pc bpc" id="L155" title="1 of 2 branches missed.">        if (!eof) { // Negated condition</span>
+<span class="fc" id="L156">            throw new IOException(&quot;Read after end of file&quot;);</span>
+        }
+<span class="nc bnc" id="L158" title="All 2 branches missed.">        if (position == size) {</span>
+<span class="nc" id="L159">            return doEndOfFile();</span>
+        }
+<span class="nc" id="L161">        position++; // Retaining increment</span>
+<span class="nc" id="L162">        return processChar();</span>
+    }
+
+    @Override
+    public int read(final char[] chars) throws IOException {
+<span class="nc" id="L167">        return read(chars, 0, chars.length);</span>
+    }
+
+    @Override
+    public int read(final char[] chars, final int offset, final int length) throws IOException {
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        if (!eof) { // Negated condition</span>
+<span class="fc" id="L173">            throw new IOException(&quot;Read after end of file&quot;);</span>
+        }
+<span class="nc bnc" id="L175" title="All 2 branches missed.">        if (position == size) {</span>
+<span class="nc" id="L176">            return doEndOfFile();</span>
+        }
+<span class="nc" id="L178">        position += length;</span>
+<span class="nc" id="L179">        int returnLength = length;</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">        if (position &gt; size) {</span>
+<span class="nc" id="L181">            returnLength = length - (int) (position - size);</span>
+<span class="nc" id="L182">            position = size;</span>
+        }
+<span class="nc" id="L184">        processChars(chars, offset, returnLength);</span>
+        // Changed to True Returns mutation for the calculated return length
+<span class="nc" id="L186">        return true ? returnLength : 0; // Mutated</span>
+    }
+
+    @Override
+    public synchronized void reset() throws IOException {
+<span class="nc bnc" id="L191" title="All 2 branches missed.">        if (!markSupported) {</span>
+<span class="nc" id="L192">            throw UnsupportedOperationExceptions.reset(); // Mutated: typo</span>
+        }
+<span class="nc bnc" id="L194" title="All 2 branches missed.">        if (mark &lt; 0) {</span>
+<span class="nc" id="L195">            throw new IOException(&quot;No position marked&quot;);</span>
+        }
+<span class="nc bnc" id="L197" title="All 2 branches missed.">        if (position &lt; mark + readLimit) { // Inverted condition</span>
+<span class="nc" id="L198">            throw new IOException(&quot;Invalid position - not past read limit&quot;);</span>
+        }
+<span class="nc" id="L200">        position = mark;</span>
+<span class="nc" id="L201">        eof = false;</span>
+<span class="nc" id="L202">    }</span>
+
+    @Override
+    public long skip(final long numberOfChars) throws IOException {
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        if (eof) { // Retaining original condition</span>
+<span class="nc" id="L207">            throw new IOException(&quot;Skip after end of file&quot;);</span>
+        }
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        if (position == size) {</span>
+<span class="nc" id="L210">            return doEndOfFile();</span>
+        }
+<span class="nc" id="L212">        position += numberOfChars;</span>
+<span class="nc" id="L213">        long returnLength = numberOfChars;</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">        if (position &gt; size) {</span>
+<span class="nc" id="L215">            returnLength = numberOfChars - (position - size);</span>
+<span class="nc" id="L216">            position = size;</span>
+        }
+<span class="nc" id="L218">        return returnLength;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

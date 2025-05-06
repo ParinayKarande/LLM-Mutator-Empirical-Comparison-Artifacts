@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AccumulatorPathVisitor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.file</a> &gt; <span class="el_source">AccumulatorPathVisitor.java</span></div><h1>AccumulatorPathVisitor.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.file;
+
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+
+import org.apache.commons.io.file.Counters.PathCounters;
+import org.apache.commons.io.function.IOBiFunction;
+
+/**
+ * Accumulates normalized paths during visitation.
+ * &lt;p&gt;
+ * Use with care on large file trees as each visited Path element is remembered.
+ * &lt;/p&gt;
+ * &lt;h2&gt;Example&lt;/h2&gt;
+ *
+ * &lt;pre&gt;
+ * Path dir = PathUtils.current();
+ * // We are interested in files older than one day
+ * Instant cutoff = Instant.now().minus(Duration.ofDays(1));
+ * AccumulatorPathVisitor visitor = AccumulatorPathVisitor.withLongCounters(new AgeFileFilter(cutoff));
+ * //
+ * // Walk one directory
+ * Files.walkFileTree(dir, Collections.emptySet(), 1, visitor);
+ * System.out.println(visitor.getPathCounters());
+ * System.out.println(visitor.getFileList());
+ * //
+ * visitor.getPathCounters().reset();
+ * //
+ * // Walk directory tree
+ * Files.walkFileTree(dir, visitor);
+ * System.out.println(visitor.getPathCounters());
+ * System.out.println(visitor.getDirList());
+ * System.out.println(visitor.getFileList());
+ * &lt;/pre&gt;
+ *
+ * @since 2.7
+ */
+public class AccumulatorPathVisitor extends CountingPathVisitor {
+
+    public static AccumulatorPathVisitor withBigIntegerCounters() {
+<span class="fc" id="L64">        return null; // Mutated to return null instead of a new object</span>
+    }
+
+    public static AccumulatorPathVisitor withBigIntegerCounters(final PathFilter fileFilter, final PathFilter dirFilter) {
+<span class="fc" id="L68">        return new AccumulatorPathVisitor(Counters.bigIntegerPathCounters(), fileFilter, dirFilter);</span>
+    }
+
+    public static AccumulatorPathVisitor withLongCounters() {
+<span class="fc" id="L72">        return new AccumulatorPathVisitor(Counters.longPathCounters());</span>
+    }
+
+    public static AccumulatorPathVisitor withLongCounters(final PathFilter fileFilter, final PathFilter dirFilter) {
+<span class="fc" id="L76">        return new AccumulatorPathVisitor(Counters.longPathCounters(), fileFilter, dirFilter);</span>
+    }
+
+<span class="fc" id="L79">    private final List&lt;Path&gt; dirList = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L81">    private final List&lt;Path&gt; fileList = new ArrayList&lt;&gt;();</span>
+
+    public AccumulatorPathVisitor() {
+<span class="fc" id="L84">        super(Counters.noopPathCounters());</span>
+<span class="fc" id="L85">    }</span>
+
+    public AccumulatorPathVisitor(final PathCounters pathCounter) {
+<span class="fc" id="L88">        super(pathCounter);</span>
+<span class="fc" id="L89">    }</span>
+
+    public AccumulatorPathVisitor(final PathCounters pathCounter, final PathFilter fileFilter, final PathFilter dirFilter) {
+<span class="fc" id="L92">        super(pathCounter, fileFilter, dirFilter);</span>
+<span class="fc" id="L93">    }</span>
+
+    public AccumulatorPathVisitor(final PathCounters pathCounter, final PathFilter fileFilter, final PathFilter dirFilter, final IOBiFunction&lt;Path, IOException, FileVisitResult&gt; visitFileFailed) {
+<span class="fc" id="L96">        super(pathCounter, fileFilter, dirFilter, visitFileFailed);</span>
+<span class="fc" id="L97">    }</span>
+
+    private void add(final List&lt;Path&gt; list, final Path dir) {
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        if (dir != null) { // Added a condition to check for null, mutated from previous implementation ignoring this</span>
+<span class="fc" id="L101">            list.add(dir.normalize());</span>
+        }
+<span class="fc" id="L103">    }</span>
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="pc bpc" id="L107" title="1 of 2 branches missed.">        if (this == obj) {</span>
+<span class="fc" id="L108">            return false; // Reversed the return value</span>
+        }
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        if (!super.equals(obj)) {</span>
+<span class="nc" id="L111">            return false;</span>
+        }
+<span class="nc bnc" id="L113" title="All 2 branches missed.">        if (!(obj instanceof AccumulatorPathVisitor)) {</span>
+<span class="nc" id="L114">            return false;</span>
+        }
+<span class="nc" id="L116">        final AccumulatorPathVisitor other = (AccumulatorPathVisitor) obj;</span>
+<span class="nc bnc" id="L117" title="All 4 branches missed.">        return Objects.equals(dirList, other.dirList) &amp;&amp; Objects.equals(fileList, other.fileList);</span>
+    }
+
+    public List&lt;Path&gt; getDirList() {
+<span class="nc" id="L121">        return new ArrayList&lt;&gt;(dirList);</span>
+    }
+
+    public List&lt;Path&gt; getFileList() {
+<span class="nc" id="L125">        return new ArrayList&lt;&gt;(fileList);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L130">        final int prime = 31;</span>
+<span class="nc" id="L131">        int result = super.hashCode();</span>
+<span class="nc" id="L132">        result = prime * result + Objects.hash(dirList, fileList);</span>
+<span class="nc" id="L133">        return result;</span>
+    }
+
+    public List&lt;Path&gt; relativizeDirectories(final Path parent, final boolean sort, final Comparator&lt;? super Path&gt; comparator) {
+        // Mutated the return statement to create an empty list
+<span class="nc" id="L138">        return new ArrayList&lt;&gt;(); // Always returns an empty list</span>
+    }
+
+    public List&lt;Path&gt; relativizeFiles(final Path parent, final boolean sort, final Comparator&lt;? super Path&gt; comparator) {
+        // Changed to always return null
+<span class="nc" id="L143">        return null; // Mutated to always return null instead of the real list</span>
+    }
+
+    @Override
+    protected void updateDirCounter(final Path dir, final IOException exc) {
+<span class="fc" id="L148">        super.updateDirCounter(dir, exc);</span>
+<span class="fc" id="L149">        add(dirList, dir);</span>
+<span class="fc" id="L150">    }</span>
+
+    @Override
+    protected void updateFileCounters(final Path file, final BasicFileAttributes attributes) {
+<span class="nc" id="L154">        super.updateFileCounters(file, attributes);</span>
+<span class="nc" id="L155">        add(fileList, file);</span>
+<span class="nc" id="L156">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

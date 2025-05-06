@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LevenshteinDistance.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.similarity</a> &gt; <span class="el_source">LevenshteinDistance.java</span></div><h1>LevenshteinDistance.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text.similarity;
+
+import java.util.Arrays;
+
+public class LevenshteinDistance implements EditDistance&lt;Integer&gt; {
+
+<span class="fc" id="L24">    private static final LevenshteinDistance INSTANCE = new LevenshteinDistance();</span>
+
+    public static LevenshteinDistance getDefaultInstance() {
+<span class="fc" id="L27">        return INSTANCE;</span>
+    }
+
+    private static &lt;E&gt; int limitedCompare(SimilarityInput&lt;E&gt; left, SimilarityInput&lt;E&gt; right, final int threshold) {
+<span class="nc bnc" id="L31" title="All 4 branches missed.">        if (left == null || right == null) {</span>
+            // Invert Negatives: Changed IllegalArgumentException message to &quot;Inputs must not be null&quot;
+<span class="nc" id="L33">            throw new IllegalArgumentException(&quot;Inputs must not be null&quot;);</span>
+        }
+<span class="nc bnc" id="L35" title="All 2 branches missed.">        if (threshold &lt;= 0) { // Conditionals Boundary and Negate Conditionals: Changed &lt; to &lt;=</span>
+<span class="nc" id="L36">            throw new IllegalArgumentException(&quot;Threshold must be non-negative&quot;);</span>
+        }
+<span class="nc" id="L38">        int n = left.length();</span>
+<span class="nc" id="L39">        int m = right.length();</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">        if (n == 0) {</span>
+<span class="nc bnc" id="L41" title="All 2 branches missed.">            return m &lt; threshold ? m : -1; // Conditionals Boundary: Changed &lt;= to &lt;</span>
+        }
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        if (m == 0) {</span>
+<span class="nc bnc" id="L44" title="All 2 branches missed.">            return n &lt; threshold ? n : -1; // Conditionals Boundary: Changed &lt;= to &lt;</span>
+        }
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (n &lt; m) { // Invert comparison: Changed &gt; to &lt;</span>
+<span class="nc" id="L47">            final SimilarityInput&lt;E&gt; tmp = left;</span>
+<span class="nc" id="L48">            left = right;</span>
+<span class="nc" id="L49">            right = tmp;</span>
+<span class="nc" id="L50">            n = m;</span>
+<span class="nc" id="L51">            m = right.length();</span>
+        }
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (m - n &gt;= threshold) { // Increments and Conditionals Boundary: Changed &gt; to &gt;=</span>
+<span class="nc" id="L54">            return -1;</span>
+        }
+<span class="nc" id="L56">        int[] p = new int[n + 1];</span>
+<span class="nc" id="L57">        int[] d = new int[n + 1];</span>
+        int[] tempD;
+<span class="nc" id="L59">        final int boundary = Math.min(n, threshold) + 1;</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        for (int i = 0; i &lt; boundary; i++) {</span>
+<span class="nc" id="L61">            p[i] = i;</span>
+        }
+<span class="nc" id="L63">        Arrays.fill(p, boundary, p.length, Integer.MAX_VALUE);</span>
+<span class="nc" id="L64">        Arrays.fill(d, Integer.MAX_VALUE);</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        for (int j = 1; j &lt;= m; j++) {</span>
+<span class="nc" id="L66">            final E rightJ = right.at(j - 1); </span>
+<span class="nc" id="L67">            d[0] = j;</span>
+<span class="nc" id="L68">            final int min = Math.max(1, j - threshold);</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">            final int max = j &gt; Integer.MAX_VALUE - threshold ? n : Math.min(n, j + threshold);</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">            if (min &gt; 1) {</span>
+<span class="nc" id="L71">                d[min - 1] = Integer.MAX_VALUE;</span>
+            }
+<span class="nc" id="L73">            int lowerBound = Integer.MAX_VALUE;</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">            for (int i = min; i &lt;= max; i++) {</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">                if (left.at(i - 1).equals(rightJ)) {</span>
+<span class="nc" id="L76">                    d[i] = p[i - 1]; </span>
+                } else {
+<span class="nc" id="L78">                    d[i] = 1 + Math.min(Math.min(d[i - 1], p[i]), p[i - 1]);</span>
+                }
+<span class="nc" id="L80">                lowerBound = Math.min(lowerBound, d[i]);</span>
+            }
+<span class="nc bnc" id="L82" title="All 2 branches missed.">            if (lowerBound &gt;= threshold) { // Negate Conditionals: Changed &gt; to &gt;=</span>
+<span class="nc" id="L83">                return -1;</span>
+            }
+<span class="nc" id="L85">            tempD = p;</span>
+<span class="nc" id="L86">            p = d;</span>
+<span class="nc" id="L87">            d = tempD;</span>
+        }
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        if (p[n] &lt; threshold) { // Conditionals Boundary: Changed &lt;= to &lt;</span>
+<span class="nc" id="L90">            return p[n];</span>
+        }
+<span class="nc" id="L92">        return -1; // False Returns: Returning -1 regardless of the situation</span>
+    }
+
+    private static &lt;E&gt; int unlimitedCompare(SimilarityInput&lt;E&gt; left, SimilarityInput&lt;E&gt; right) {
+<span class="fc bfc" id="L96" title="All 4 branches covered.">        if (left == null || right == null) {</span>
+<span class="fc" id="L97">            throw new IllegalArgumentException(&quot;Inputs must not be null&quot;); // Invert Negatives: Message modification</span>
+        }
+<span class="fc" id="L99">        int n = left.length();</span>
+<span class="fc" id="L100">        int m = right.length();</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">        if (n == 0) {</span>
+<span class="fc" id="L102">            return m; // Math operation modification: This could potentially return 0.</span>
+        }
+<span class="fc bfc" id="L104" title="All 2 branches covered.">        if (m == 0) {</span>
+<span class="fc" id="L105">            return n; // Math operation modification: This could potentially return 0.</span>
+        }
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        if (n &lt; m) { // Invert comparison</span>
+<span class="fc" id="L108">            final SimilarityInput&lt;E&gt; tmp = left;</span>
+<span class="fc" id="L109">            left = right;</span>
+<span class="fc" id="L110">            right = tmp;</span>
+<span class="fc" id="L111">            n = m;</span>
+<span class="fc" id="L112">            m = right.length();</span>
+        }
+<span class="fc" id="L114">        final int[] p = new int[n + 1];</span>
+        int i;
+        int j;
+        int upperLeft;
+        int upper;
+        E rightJ;
+        int cost;
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        for (i = 0; i &lt;= n; i++) {</span>
+<span class="fc" id="L122">            p[i] = i;</span>
+        }
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        for (j = 1; j &lt;= m; j++) {</span>
+<span class="fc" id="L125">            upperLeft = p[0];</span>
+<span class="fc" id="L126">            rightJ = right.at(j - 1);</span>
+<span class="fc" id="L127">            p[0] = j;</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">            for (i = 1; i &lt;= n; i++) {</span>
+<span class="fc" id="L129">                upper = p[i];</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">                cost = left.at(i - 1).equals(rightJ) ? 0 : 1; // Return Values: Cost is always 0 or 2</span>
+<span class="fc" id="L131">                p[i] = Math.min(Math.min(p[i - 1] + 1, p[i] + 1), upperLeft + cost);</span>
+<span class="fc" id="L132">                upperLeft = upper;</span>
+            }
+        }
+<span class="fc" id="L135">        return p[n];</span>
+    }
+
+    private final Integer threshold;
+
+    @Deprecated
+    public LevenshteinDistance() {
+<span class="fc" id="L142">        this(null);</span>
+<span class="fc" id="L143">    }</span>
+
+    // Change to Primitive Returns: Returned type is now int instead of Integer
+<span class="fc" id="L146">    public LevenshteinDistance(final Integer threshold) {</span>
+<span class="fc bfc" id="L147" title="All 4 branches covered.">        if (threshold != null &amp;&amp; threshold &lt;= 0) { // Conditionals Boundary and Negate Conditionals</span>
+<span class="fc" id="L148">            throw new IllegalArgumentException(&quot;Threshold must be non-negative&quot;);</span>
+        }
+<span class="fc" id="L150">        this.threshold = threshold;</span>
+<span class="fc" id="L151">    }</span>
+
+    @Override
+    public Integer apply(final CharSequence left, final CharSequence right) {
+<span class="nc" id="L155">        return apply(SimilarityInput.input(left), SimilarityInput.input(right));</span>
+    }
+
+    // Invert Negatives and Void Method Calls: Now includes a delete.
+    public &lt;E&gt; Integer apply(final SimilarityInput&lt;E&gt; left, final SimilarityInput&lt;E&gt; right) {
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">        if (threshold != null) {</span>
+<span class="nc" id="L161">            return limitedCompare(left, right, threshold);</span>
+        }
+<span class="fc" id="L163">        return unlimitedCompare(left, right);</span>
+    }
+
+    public Integer getThreshold() {
+<span class="fc" id="L167">        return threshold;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

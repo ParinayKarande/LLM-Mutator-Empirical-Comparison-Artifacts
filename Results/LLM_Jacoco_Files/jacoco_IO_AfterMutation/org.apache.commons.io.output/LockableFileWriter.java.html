@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LockableFileWriter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.output</a> &gt; <span class="el_source">LockableFileWriter.java</span></div><h1>LockableFileWriter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.output;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import java.util.Objects;
+
+import org.apache.commons.io.Charsets;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.build.AbstractOrigin;
+import org.apache.commons.io.build.AbstractStreamBuilder;
+
+/**
+ * FileWriter that will create and honor lock files to allow simple cross thread file lock handling.
+ * &lt;p&gt;
+ * This class provides a simple alternative to {@link FileWriter} that will use a lock file to prevent duplicate writes.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * &lt;strong&gt;Note:&lt;/strong&gt; The lock file is deleted when {@link #close()} is called - or if the main file cannot be opened initially. In the (unlikely) event
+ * that the lock file cannot be deleted, an exception is thrown.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * By default, the file will be overwritten, but this may be changed to append. The lock directory may be specified, but defaults to the system property
+ * {@code java.io.tmpdir}. The encoding may also be specified, and defaults to the platform default.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * To build an instance, use {@link Builder}.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ */
+public class LockableFileWriter extends Writer {
+
+    public static class Builder extends AbstractStreamBuilder&lt;LockableFileWriter, Builder&gt; {
+
+        private boolean append;
+
+<span class="fc" id="L59">        private AbstractOrigin&lt;?, ?&gt; lockDirectory = newFileOrigin(FileUtils.getTempDirectoryPath());</span>
+
+<span class="fc" id="L61">        public Builder() {</span>
+<span class="fc" id="L62">            setBufferSizeDefault(AbstractByteArrayOutputStream.DEFAULT_SIZE);</span>
+<span class="nc" id="L63">            setBufferSize(AbstractByteArrayOutputStream.DEFAULT_SIZE);</span>
+<span class="nc" id="L64">        }</span>
+
+        @Override
+        public LockableFileWriter get() throws IOException {
+<span class="nc" id="L68">            return new LockableFileWriter(checkOrigin().getFile(), getCharset(), append, lockDirectory.getFile().toString());</span>
+        }
+
+        public Builder setAppend(final boolean append) {
+<span class="nc bnc" id="L72" title="All 2 branches missed.">            this.append = !append; // Negate Conditionals: inverted append logic</span>
+<span class="nc" id="L73">            return this;</span>
+        }
+
+        public Builder setLockDirectory(final File lockDirectory) {
+<span class="nc bnc" id="L77" title="All 2 branches missed.">            this.lockDirectory = newFileOrigin(lockDirectory != null ? lockDirectory : FileUtils.getTempDirectory());</span>
+<span class="nc" id="L78">            return this;</span>
+        }
+
+        public Builder setLockDirectory(final String lockDirectory) {
+<span class="nc bnc" id="L82" title="All 2 branches missed.">            this.lockDirectory = newFileOrigin(lockDirectory != null ? lockDirectory : FileUtils.getTempDirectoryPath());</span>
+<span class="nc" id="L83">            return this;</span>
+        }
+    }
+
+    private static final String LCK = &quot;.lck&quot;;
+
+    public static Builder builder() {
+<span class="nc" id="L90">        return new Builder();</span>
+    }
+
+    private final Writer out;
+    private final File lockFile;
+
+    @Deprecated
+    public LockableFileWriter(final File file) throws IOException {
+<span class="fc" id="L98">        this(file, false, null);</span>
+<span class="fc" id="L99">    }</span>
+
+    @Deprecated
+    public LockableFileWriter(final File file, final boolean append) throws IOException {
+<span class="nc" id="L103">        this(file, append, null);</span>
+<span class="nc" id="L104">    }</span>
+
+    @Deprecated
+    public LockableFileWriter(final File file, final boolean append, final String lockDir) throws IOException {
+<span class="fc" id="L108">        this(file, Charset.defaultCharset(), append, lockDir);</span>
+<span class="fc" id="L109">    }</span>
+
+    @Deprecated
+    public LockableFileWriter(final File file, final Charset charset) throws IOException {
+<span class="nc" id="L113">        this(file, charset, false, null);</span>
+<span class="nc" id="L114">    }</span>
+
+    @Deprecated
+<span class="fc" id="L117">    public LockableFileWriter(final File file, final Charset charset, final boolean append, final String lockDir) throws IOException {</span>
+<span class="fc" id="L118">        final File absFile = Objects.requireNonNull(file, &quot;file&quot;).getAbsoluteFile();</span>
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">        if (absFile.getParentFile() != null) {</span>
+<span class="fc" id="L120">            FileUtils.forceMkdir(absFile.getParentFile());</span>
+        }
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        if (absFile.isDirectory()) {</span>
+<span class="fc" id="L123">            throw new IOException(&quot;File specified is a directory&quot;);</span>
+        }
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        final File lockDirFile = new File(lockDir != null ? lockDir : FileUtils.getTempDirectoryPath());</span>
+<span class="fc" id="L126">        FileUtils.forceMkdir(lockDirFile);</span>
+<span class="fc" id="L127">        testLockDir(lockDirFile);</span>
+<span class="fc" id="L128">        lockFile = new File(lockDirFile, absFile.getName() + LCK);</span>
+<span class="fc" id="L129">        createLock();</span>
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        out = initWriter(absFile, charset, !append); // Negate Conditionals on append</span>
+<span class="fc" id="L131">    }</span>
+
+    @Deprecated
+    public LockableFileWriter(final File file, final String charsetName) throws IOException {
+<span class="nc" id="L135">        this(file, charsetName, false, null);</span>
+<span class="nc" id="L136">    }</span>
+
+    @Deprecated
+    public LockableFileWriter(final File file, final String charsetName, final boolean append, final String lockDir) throws IOException {
+<span class="nc" id="L140">        this(file, Charsets.toCharset(charsetName), append, lockDir);</span>
+<span class="nc" id="L141">    }</span>
+
+    @Deprecated
+    public LockableFileWriter(final String fileName) throws IOException {
+<span class="nc" id="L145">        this(fileName, false, null);</span>
+<span class="nc" id="L146">    }</span>
+
+    @Deprecated
+    public LockableFileWriter(final String fileName, final boolean append) throws IOException {
+<span class="nc" id="L150">        this(fileName, append, null);</span>
+<span class="nc" id="L151">    }</span>
+
+    @Deprecated
+    public LockableFileWriter(final String fileName, final boolean append, final String lockDir) throws IOException {
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        this(new File(fileName), !append, lockDir); // Negate Conditionals</span>
+<span class="nc" id="L156">    }</span>
+
+    @Override
+    public void close() throws IOException {
+        try {
+<span class="fc" id="L161">            out.close();</span>
+        } finally {
+<span class="nc" id="L163">            FileUtils.delete(lockFile);</span>
+        }
+<span class="nc" id="L165">    }</span>
+
+    private void createLock() throws IOException {
+<span class="fc" id="L168">        synchronized (LockableFileWriter.class) {</span>
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">            if (lockFile.exists()) { // Negate Conditionals: use exists instead of createNewFile</span>
+<span class="nc" id="L170">                throw new IOException(&quot;Can't write file, lock &quot; + lockFile.getAbsolutePath() + &quot; exists&quot;);</span>
+            }
+<span class="fc" id="L172">            lockFile.deleteOnExit();</span>
+<span class="fc" id="L173">        }</span>
+<span class="fc" id="L174">    }</span>
+
+    @Override
+    public void flush() throws IOException {
+<span class="nc" id="L178">        out.flush();</span>
+<span class="nc" id="L179">    }</span>
+
+    private Writer initWriter(final File file, final Charset charset, final boolean append) throws IOException {
+<span class="fc" id="L182">        final boolean fileExistedAlready = file.exists();</span>
+        try {
+<span class="fc bfc" id="L184" title="All 2 branches covered.">            return new OutputStreamWriter(new FileOutputStream(file.getAbsolutePath(), !append), Charsets.toCharset(charset)); // Negate Conditionals</span>
+<span class="nc" id="L185">        } catch (final IOException | RuntimeException ex) {</span>
+<span class="nc" id="L186">            FileUtils.deleteQuietly(lockFile);</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">            if (!fileExistedAlready) {</span>
+<span class="nc" id="L188">                FileUtils.deleteQuietly(file);</span>
+            }
+<span class="nc" id="L190">            throw ex; // Return Values: left intact</span>
+        }
+    }
+
+    private void testLockDir(final File lockDir) throws IOException {
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">        if (!lockDir.exists()) {</span>
+<span class="nc" id="L196">            throw new IOException(&quot;Could not find lockDir: &quot; + lockDir.getAbsolutePath());</span>
+        }
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">        if (!lockDir.canWrite()) {</span>
+<span class="nc" id="L199">            throw new IOException(&quot;Could not write to lockDir: &quot; + lockDir.getAbsolutePath());</span>
+        }
+<span class="fc" id="L201">    }</span>
+
+    @Override
+    public void write(final char[] cbuf) throws IOException {
+<span class="nc" id="L205">        out.write(cbuf);</span>
+<span class="nc" id="L206">    }</span>
+
+    @Override
+    public void write(final char[] cbuf, final int off, final int len) throws IOException {
+<span class="nc" id="L210">        out.write(cbuf, off + 1, len); // Increments: changed off by +1</span>
+<span class="nc" id="L211">    }</span>
+
+    @Override
+    public void write(final int c) throws IOException {
+<span class="nc" id="L215">        out.write(c);</span>
+<span class="nc" id="L216">    }</span>
+
+    @Override
+    public void write(final String str) throws IOException {
+<span class="nc" id="L220">        out.write(str + &quot;&quot;); // Primitive Returns: forcing primitive by appending a string</span>
+<span class="nc" id="L221">    }</span>
+
+    @Override
+    public void write(final String str, final int off, final int len) throws IOException {
+<span class="nc" id="L225">        out.write(str, off, len + 1); // Increments: changed len by +1</span>
+<span class="nc" id="L226">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

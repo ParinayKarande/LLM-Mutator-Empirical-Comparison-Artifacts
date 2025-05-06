@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>InvokerTransformer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.functors</a> &gt; <span class="el_source">InvokerTransformer.java</span></div><h1>InvokerTransformer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.functors;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Objects;
+import org.apache.commons.collections4.FunctorException;
+import org.apache.commons.collections4.Transformer;
+
+public class InvokerTransformer&lt;T, R&gt; implements Transformer&lt;T, R&gt; {
+
+    public static &lt;I, O&gt; Transformer&lt;I, O&gt; invokerTransformer(final String methodName) {
+        // Mutant 1: Negate the null check
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        return new InvokerTransformer&lt;&gt;(methodName == null ? &quot;methodName&quot; : methodName);</span>
+    }
+
+    public static &lt;I, O&gt; Transformer&lt;I, O&gt; invokerTransformer(final String methodName, final Class&lt;?&gt;[] paramTypes, final Object[] args) {
+        // Mutant 2: Change the logic for null checks using conditional boundary
+<span class="fc" id="L35">        Objects.requireNonNull(methodName, &quot;methodName&quot;);</span>
+<span class="pc bpc" id="L36" title="4 of 14 branches missed.">        if ((paramTypes == null &amp;&amp; args != null) || (paramTypes != null &amp;&amp; args == null) || (paramTypes != null &amp;&amp; args != null &amp;&amp; paramTypes.length &lt; args.length)) {</span>
+<span class="nc" id="L37">            throw new IllegalArgumentException(&quot;The parameter types must match the arguments&quot;); // changed length check to &lt;</span>
+        }
+<span class="pc bpc" id="L39" title="1 of 4 branches missed.">        if (paramTypes == null || paramTypes.length != 0) {</span>
+<span class="fc" id="L40">            return new InvokerTransformer&lt;&gt;(methodName);</span>
+        }
+<span class="nc" id="L42">        return new InvokerTransformer&lt;&gt;(methodName, paramTypes, args);</span>
+    }
+
+    private final String iMethodName;
+
+    private final Class&lt;?&gt;[] iParamTypes;
+
+    private final Object[] iArgs;
+
+<span class="fc" id="L51">    private InvokerTransformer(final String methodName) {</span>
+<span class="fc" id="L52">        iMethodName = methodName;</span>
+<span class="fc" id="L53">        iParamTypes = null;</span>
+<span class="fc" id="L54">        iArgs = null;</span>
+<span class="fc" id="L55">    }</span>
+
+<span class="nc" id="L57">    public InvokerTransformer(final String methodName, final Class&lt;?&gt;[] paramTypes, final Object[] args) {</span>
+<span class="nc" id="L58">        iMethodName = methodName;</span>
+        // Mutant 3: Increment the parameter types array length check
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        iParamTypes = paramTypes != null ? paramTypes.clone() : null;</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">        iArgs = args != null ? args.clone() : null;</span>
+<span class="nc" id="L62">    }</span>
+
+    @Override
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public R transform(final Object input) {
+        // Mutant 4: Invert Negative by removing null check
+        // if (input == null) {
+        //     return null;
+        // }
+        try {
+<span class="fc" id="L72">            final Class&lt;?&gt; cls = input.getClass();</span>
+<span class="fc" id="L73">            final Method method = cls.getMethod(iMethodName, iParamTypes);</span>
+            // Mutant 5: Return a primitive value instead of invoking the method
+<span class="fc" id="L75">            return (R) method.invoke(input, iArgs);</span>
+<span class="fc" id="L76">        } catch (final NoSuchMethodException ex) {</span>
+<span class="fc" id="L77">            throw new FunctorException(&quot;InvokerTransformer: The method '&quot; + iMethodName + &quot;' on '&quot; + input.getClass() + &quot;' does not exist&quot;);</span>
+<span class="nc" id="L78">        } catch (final IllegalAccessException ex) {</span>
+<span class="nc" id="L79">            throw new FunctorException(&quot;InvokerTransformer: The method '&quot; + iMethodName + &quot;' on '&quot; + input.getClass() + &quot;' cannot be accessed&quot;);</span>
+<span class="nc" id="L80">        } catch (final InvocationTargetException ex) {</span>
+<span class="nc" id="L81">            throw new FunctorException(&quot;InvokerTransformer: The method '&quot; + iMethodName + &quot;' on '&quot; + input.getClass() + &quot;' threw an exception&quot;, ex);</span>
+        }
+        // Mutant 6: return false for the transform method
+        // return false;
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MessageDigestInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">MessageDigestInputStream.java</span></div><h1>MessageDigestInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.Objects;
+
+/**
+ * This class is an example for using an {@link ObservableInputStream}. It creates its own {@link org.apache.commons.io.input.ObservableInputStream.Observer},
+ * which calculates a checksum using a {@link MessageDigest}, for example, a SHA-512 sum.
+ * &lt;p&gt;
+ * To build an instance, use {@link Builder}.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * See the MessageDigest section in the &lt;a href= &quot;https://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#MessageDigest&quot;&gt; Java
+ * Cryptography Architecture Standard Algorithm Name Documentation&lt;/a&gt; for information about standard algorithm names.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * You must specify a message digest algorithm name or instance.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * &lt;em&gt;Note&lt;/em&gt;: Neither {@link ObservableInputStream}, nor {@link MessageDigest}, are thread safe, so is {@link MessageDigestInputStream}.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @since 2.15.0
+ */
+public final class MessageDigestInputStream extends ObservableInputStream {
+
+    // @formatter:off
+    /**
+     * Builds new {@link MessageDigestInputStream}.
+     *
+     * &lt;p&gt;
+     * For example:
+     * &lt;/p&gt;
+     * &lt;pre&gt;{@code
+     * MessageDigestInputStream s = MessageDigestInputStream.builder()
+     *   .setPath(path)
+     *   .setMessageDigest(&quot;SHA-512&quot;)
+     *   .get();}
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * You must specify a message digest algorithm name or instance.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * &lt;em&gt;The MD5 cryptographic algorithm is weak and should not be used.&lt;/em&gt;
+     * &lt;/p&gt;
+     *
+     * @see #get()
+     */
+    // @formatter:on
+    public static class Builder extends AbstractBuilder&lt;Builder&gt; {
+
+        /**
+         * No default by design, call MUST set one.
+         */
+        private MessageDigest messageDigest;
+
+        /**
+         * Constructs a new {@link Builder}.
+         */
+<span class="fc" id="L81">        public Builder() {</span>
+            // empty
+<span class="fc" id="L83">        }</span>
+
+        /**
+         * Builds new {@link MessageDigestInputStream}.
+         * &lt;p&gt;
+         * You must set input that supports {@link #getInputStream()}, otherwise, this method throws an exception.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * This builder use the following aspects:
+         * &lt;/p&gt;
+         * &lt;ul&gt;
+         * &lt;li&gt;{@link #getPath()}&lt;/li&gt;
+         * &lt;li&gt;{@link MessageDigest}&lt;/li&gt;
+         * &lt;/ul&gt;
+         *
+         * @return a new instance.
+         * @throws NullPointerException if messageDigest is null.
+         * @throws IllegalStateException         if the {@code origin} is {@code null}.
+         * @throws UnsupportedOperationException if the origin cannot be converted to an {@link InputStream}.
+         * @throws IOException                   if an I/O error occurs.
+         * @see #getInputStream()
+         */
+        @Override
+        public MessageDigestInputStream get() throws IOException {
+<span class="fc" id="L107">            setObservers(Arrays.asList(new MessageDigestMaintainingObserver(messageDigest)));</span>
+<span class="fc" id="L108">            return new MessageDigestInputStream(this);</span>
+        }
+
+        /**
+         * Sets the message digest.
+         * &lt;p&gt;
+         * &lt;em&gt;The MD5 cryptographic algorithm is weak and should not be used.&lt;/em&gt;
+         * &lt;/p&gt;
+         *
+         * @param messageDigest the message digest.
+         * @return {@code this} instance.
+         */
+        public Builder setMessageDigest(final MessageDigest messageDigest) {
+<span class="fc" id="L121">            this.messageDigest = messageDigest;</span>
+<span class="fc" id="L122">            return this;</span>
+        }
+
+        /**
+         * Sets the name of the name of the message digest algorithm.
+         * &lt;p&gt;
+         * &lt;em&gt;The MD5 cryptographic algorithm is weak and should not be used.&lt;/em&gt;
+         * &lt;/p&gt;
+         *
+         * @param algorithm the name of the algorithm. See the MessageDigest section in the
+         *                  &lt;a href= &quot;https://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#MessageDigest&quot;&gt; Java Cryptography
+         *                  Architecture Standard Algorithm Name Documentation&lt;/a&gt; for information about standard algorithm names.
+         * @return {@code this} instance.
+         * @throws NoSuchAlgorithmException if no Provider supports a MessageDigestSpi implementation for the specified algorithm.
+         */
+        public Builder setMessageDigest(final String algorithm) throws NoSuchAlgorithmException {
+<span class="fc" id="L138">            this.messageDigest = MessageDigest.getInstance(algorithm);</span>
+<span class="fc" id="L139">            return this;</span>
+        }
+
+    }
+
+    /**
+     * Maintains the message digest.
+     */
+    public static class MessageDigestMaintainingObserver extends Observer {
+
+        private final MessageDigest messageDigest;
+
+        /**
+         * Constructs an MessageDigestMaintainingObserver for the given MessageDigest.
+         *
+         * @param messageDigest the message digest to use
+         * @throws NullPointerException if messageDigest is null.
+         */
+<span class="fc" id="L157">        public MessageDigestMaintainingObserver(final MessageDigest messageDigest) {</span>
+<span class="fc" id="L158">            this.messageDigest = Objects.requireNonNull(messageDigest, &quot;messageDigest&quot;);</span>
+<span class="fc" id="L159">        }</span>
+
+        @Override
+        public void data(final byte[] input, final int offset, final int length) throws IOException {
+<span class="fc" id="L163">            messageDigest.update(input, offset, length);</span>
+<span class="fc" id="L164">        }</span>
+
+        @Override
+        public void data(final int input) throws IOException {
+<span class="fc" id="L168">            messageDigest.update((byte) input);</span>
+<span class="fc" id="L169">        }</span>
+    }
+
+    /**
+     * Constructs a new {@link Builder}.
+     *
+     * @return a new {@link Builder}.
+     */
+    public static Builder builder() {
+<span class="fc" id="L178">        return new Builder();</span>
+    }
+
+    /**
+     * A non-null MessageDigest.
+     */
+    private final MessageDigest messageDigest;
+
+    /**
+     * Constructs a new instance, which calculates a signature on the given stream, using the given {@link MessageDigest}.
+     * &lt;p&gt;
+     * The MD5 cryptographic algorithm is weak and should not be used.
+     * &lt;/p&gt;
+     *
+     * @param builder A builder use to get the stream to calculate the message digest and the message digest to use
+     * @throws NullPointerException if messageDigest is null.
+     */
+    private MessageDigestInputStream(final Builder builder) throws IOException {
+<span class="fc" id="L196">        super(builder);</span>
+<span class="fc" id="L197">        this.messageDigest = Objects.requireNonNull(builder.messageDigest, &quot;builder.messageDigest&quot;);</span>
+<span class="fc" id="L198">    }</span>
+
+    /**
+     * Gets the {@link MessageDigest}, which is being used for generating the checksum, never null.
+     * &lt;p&gt;
+     * &lt;em&gt;Note&lt;/em&gt;: The checksum will only reflect the data, which has been read so far. This is probably not, what you expect. Make sure, that the complete
+     * data has been read, if that is what you want. The easiest way to do so is by invoking {@link #consume()}.
+     * &lt;/p&gt;
+     *
+     * @return the message digest used, never null.
+     */
+    public MessageDigest getMessageDigest() {
+<span class="fc" id="L210">        return messageDigest;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

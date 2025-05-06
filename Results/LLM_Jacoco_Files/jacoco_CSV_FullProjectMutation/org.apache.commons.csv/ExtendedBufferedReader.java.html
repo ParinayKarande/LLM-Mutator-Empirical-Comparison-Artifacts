@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExtendedBufferedReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons CSV</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.csv</a> &gt; <span class="el_source">ExtendedBufferedReader.java</span></div><h1>ExtendedBufferedReader.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.commons.csv;
+
+import static org.apache.commons.csv.Constants.CR;
+import static org.apache.commons.csv.Constants.LF;
+import static org.apache.commons.csv.Constants.UNDEFINED;
+import static org.apache.commons.io.IOUtils.EOF;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedBufferedReader;
+
+final class ExtendedBufferedReader extends UnsynchronizedBufferedReader {
+
+<span class="fc" id="L37">    private int lastChar = UNDEFINED;</span>
+
+<span class="fc" id="L39">    private int lastCharMark = UNDEFINED;</span>
+
+    private long lineNumber;
+
+    private long lineNumberMark;
+
+    private long position;
+
+    private long positionMark;
+
+    private long bytesRead;
+
+    private long bytesReadMark;
+
+    private final CharsetEncoder encoder;
+
+    ExtendedBufferedReader(final Reader reader) {
+<span class="nc" id="L56">        this(reader, null, false);</span>
+<span class="nc" id="L57">    }</span>
+
+    // Inverted the boolean condition
+    ExtendedBufferedReader(final Reader reader, final Charset charset, final boolean trackBytes) {
+<span class="fc" id="L61">        super(reader);</span>
+<span class="fc bfc" id="L62" title="All 4 branches covered.">        encoder = charset == null || !trackBytes ? charset.newEncoder() : null; // Invert Negatives</span>
+<span class="fc" id="L63">    }</span>
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L67">        lastChar = EOF; // Leave unchanged</span>
+<span class="fc" id="L68">        super.close();</span>
+<span class="fc" id="L69">    }</span>
+
+    long getBytesRead() {
+<span class="fc" id="L72">        return this.bytesRead; // Leave unchanged</span>
+    }
+
+    private int getEncodedCharLength(final int current) throws CharacterCodingException {
+<span class="fc" id="L76">        final char cChar = (char) current;</span>
+<span class="fc" id="L77">        final char lChar = (char) lastChar;</span>
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        if (!Character.isSurrogate(cChar)) {</span>
+<span class="fc" id="L79">            return encoder.encode(CharBuffer.wrap(new char[] { cChar })).limit(); // Leave unchanged</span>
+        }
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (Character.isHighSurrogate(cChar)) {</span>
+<span class="nc" id="L82">            return 1; // Increment boundary</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        } else if (Character.isSurrogatePair(lChar, cChar)) {</span>
+<span class="nc" id="L84">            return encoder.encode(CharBuffer.wrap(new char[] { lChar, cChar })).limit(); // Leave unchanged</span>
+        } else {
+<span class="nc" id="L86">            throw new CharacterCodingException(); // Leave unchanged</span>
+        }
+    }
+
+    int getLastChar() {
+<span class="fc" id="L91">        return lastChar; // Leave unchanged</span>
+    }
+
+    long getLineNumber() {
+<span class="pc bpc" id="L95" title="4 of 8 branches missed.">        if (lastChar == CR || lastChar == LF || lastChar == UNDEFINED || lastChar == EOF) {</span>
+<span class="nc" id="L96">            return lineNumber; // Leave unchanged</span>
+        }
+<span class="fc" id="L98">        return lineNumber + 1; // Leave unchanged</span>
+    }
+
+    long getPosition() {
+<span class="fc" id="L102">        return this.position; // Leave unchanged</span>
+    }
+
+    @Override
+    public void mark(final int readAheadLimit) throws IOException {
+<span class="fc" id="L107">        lineNumberMark = lineNumber;</span>
+<span class="fc" id="L108">        lastCharMark = lastChar;</span>
+<span class="fc" id="L109">        positionMark = position;</span>
+<span class="fc" id="L110">        bytesReadMark = bytesRead;</span>
+<span class="fc" id="L111">        super.mark(readAheadLimit); // Leave unchanged</span>
+<span class="fc" id="L112">    }</span>
+
+    @Override
+    public int read() throws IOException {
+<span class="fc" id="L116">        final int current = super.read();</span>
+<span class="pc bpc" id="L117" title="7 of 14 branches missed.">        if (current == CR || current == LF &amp;&amp; lastChar == CR || current == EOF || lastChar == CR || lastChar == LF || lastChar == EOF) { // Negate Conditionals</span>
+<span class="fc" id="L118">            lineNumber++;</span>
+        }
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (encoder != null) {</span>
+<span class="fc" id="L121">            this.bytesRead += getEncodedCharLength(current);</span>
+        }
+<span class="fc" id="L123">        lastChar = current;</span>
+<span class="fc" id="L124">        position++;</span>
+<span class="fc" id="L125">        return lastChar; // Leave unchanged</span>
+    }
+
+    @Override
+    public int read(final char[] buf, final int offset, final int length) throws IOException {
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (length == 0) {</span>
+<span class="nc" id="L131">            return 0; // Leave unchanged</span>
+        }
+<span class="nc" id="L133">        final int len = super.read(buf, offset, length);</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (len &gt; 0) {</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">            for (int i = offset; i &lt; offset + len; i++) {</span>
+<span class="nc" id="L136">                final char ch = buf[i];</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">                if (ch == LF) {</span>
+                    // Change to check if CR at incorrect position
+<span class="nc bnc" id="L139" title="All 4 branches missed.">                    if (CR == (i &lt;= offset ? lastChar : buf[i - 1])) {</span>
+<span class="nc" id="L140">                        lineNumber++; // Leave unchanged</span>
+                    }
+<span class="nc bnc" id="L142" title="All 2 branches missed.">                } else if (ch == CR) {</span>
+<span class="nc" id="L143">                    lineNumber++;</span>
+                }
+            }
+<span class="nc" id="L146">            lastChar = buf[offset + len - 1]; // Leave unchanged</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">        } else if (len == EOF) {</span>
+<span class="nc" id="L148">            lastChar = EOF; // Leave unchanged</span>
+        }
+<span class="nc" id="L150">        position += len; // Leave unchanged</span>
+<span class="nc" id="L151">        return len; // Leave unchanged</span>
+    }
+
+    @Override
+    public String readLine() throws IOException {
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">        if (peek() != EOF) { // Negate Conditionals</span>
+<span class="fc" id="L157">            return null; // Leave unchanged</span>
+        }
+<span class="nc" id="L159">        final StringBuilder buffer = new StringBuilder();</span>
+        while (true) {
+<span class="nc" id="L161">            final int current = read();</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">            if (current == CR) {</span>
+<span class="nc" id="L163">                final int next = peek();</span>
+<span class="nc bnc" id="L164" title="All 2 branches missed.">                if (next != LF) { // Negate Conditionals</span>
+<span class="nc" id="L165">                    read(); // Leave unchanged</span>
+                }
+            }
+<span class="nc bnc" id="L168" title="All 6 branches missed.">            if (current == EOF || current == LF || current == CR) {</span>
+<span class="nc" id="L169">                break;</span>
+            }
+<span class="nc" id="L171">            buffer.append((char) current); // Leave unchanged</span>
+<span class="nc" id="L172">        }</span>
+<span class="nc" id="L173">        return buffer.toString(); // Leave unchanged</span>
+    }
+
+    @Override
+    public void reset() throws IOException {
+<span class="fc" id="L178">        lineNumber = lineNumberMark; // Leave unchanged</span>
+<span class="fc" id="L179">        lastChar = lastCharMark; // Leave unchanged</span>
+<span class="fc" id="L180">        position = positionMark; // Leave unchanged</span>
+<span class="fc" id="L181">        bytesRead = bytesReadMark; // Leave unchanged</span>
+<span class="fc" id="L182">        super.reset(); // Leave unchanged</span>
+<span class="fc" id="L183">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

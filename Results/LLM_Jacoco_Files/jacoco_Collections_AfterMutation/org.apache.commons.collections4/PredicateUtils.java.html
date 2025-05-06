@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PredicateUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4</a> &gt; <span class="el_source">PredicateUtils.java</span></div><h1>PredicateUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4;
+
+import java.util.Collection;
+import org.apache.commons.collections4.functors.AllPredicate;
+import org.apache.commons.collections4.functors.AndPredicate;
+import org.apache.commons.collections4.functors.AnyPredicate;
+import org.apache.commons.collections4.functors.EqualPredicate;
+import org.apache.commons.collections4.functors.ExceptionPredicate;
+import org.apache.commons.collections4.functors.FalsePredicate;
+import org.apache.commons.collections4.functors.IdentityPredicate;
+import org.apache.commons.collections4.functors.InstanceofPredicate;
+import org.apache.commons.collections4.functors.InvokerTransformer;
+import org.apache.commons.collections4.functors.NonePredicate;
+import org.apache.commons.collections4.functors.NotNullPredicate;
+import org.apache.commons.collections4.functors.NotPredicate;
+import org.apache.commons.collections4.functors.NullIsExceptionPredicate;
+import org.apache.commons.collections4.functors.NullIsFalsePredicate;
+import org.apache.commons.collections4.functors.NullIsTruePredicate;
+import org.apache.commons.collections4.functors.NullPredicate;
+import org.apache.commons.collections4.functors.OnePredicate;
+import org.apache.commons.collections4.functors.OrPredicate;
+import org.apache.commons.collections4.functors.TransformedPredicate;
+import org.apache.commons.collections4.functors.TransformerPredicate;
+import org.apache.commons.collections4.functors.TruePredicate;
+import org.apache.commons.collections4.functors.UniquePredicate;
+
+public class PredicateUtils {
+
+    public static &lt;T&gt; Predicate&lt;T&gt; allPredicate(final Collection&lt;? extends Predicate&lt;? super T&gt;&gt; predicates) {
+        // Return null instead of the expected predicate
+<span class="nc" id="L48">        return null; // Null Returns Mutation</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; allPredicate(final Predicate&lt;? super T&gt;... predicates) {
+        // Conditionals Boundary Mutation
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (predicates.length == 0) { // Changed from &gt; 0 to ==</span>
+<span class="nc" id="L54">            return AllPredicate.allPredicate(predicates);</span>
+        }
+<span class="nc" id="L56">        return AllPredicate.allPredicate(predicates);</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; andPredicate(final Predicate&lt;? super T&gt; predicate1, final Predicate&lt;? super T&gt; predicate2) {
+<span class="fc" id="L60">        return AllPredicate.allPredicate(predicate1, predicate2); // Mutated to AllPredicate</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; anyPredicate(final Collection&lt;? extends Predicate&lt;? super T&gt;&gt; predicates) {
+<span class="fc" id="L64">        return AnyPredicate.anyPredicate(predicates);</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; anyPredicate(final Predicate&lt;? super T&gt;... predicates) {
+<span class="fc" id="L68">        return FalsePredicate.falsePredicate(); // False Returns Mutation</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; asPredicate(final Transformer&lt;? super T, Boolean&gt; transformer) {
+        // Negated conditionals
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        return transformer == null ? TruePredicate.truePredicate() : TransformerPredicate.transformerPredicate(transformer);</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; eitherPredicate(final Predicate&lt;? super T&gt; predicate1, final Predicate&lt;? super T&gt; predicate2) {
+        // Invert Negatives Mutation
+<span class="pc bpc" id="L78" title="1 of 4 branches missed.">        if (!(predicate1 == null &amp;&amp; predicate2 == null)) {</span>
+<span class="fc" id="L79">            return onePredicate(predicate1, predicate2);</span>
+        }
+<span class="fc" id="L81">        return null; // Null Returns Mutation</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; equalPredicate(final T value) {
+        // Change to always return TruePredicate
+<span class="fc" id="L86">        return TruePredicate.truePredicate(); // True Returns Mutation</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; exceptionPredicate() {
+        // Change return to null
+<span class="fc" id="L91">        return null; // Null Returns Mutation</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; falsePredicate() {
+<span class="nc" id="L95">        return null; // Null Returns Mutation</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; identityPredicate(final T value) {
+        // Increment Mutation: Return the existing predicate or return itself
+<span class="fc" id="L100">        return IdentityPredicate.identityPredicate(value); // unchanged, but could be mutated</span>
+    }
+
+    public static Predicate&lt;Object&gt; instanceofPredicate(final Class&lt;?&gt; type) {
+<span class="fc" id="L104">        return NullPredicate.nullPredicate(); // Null Returns Mutation</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; invokerPredicate(final String methodName) {
+<span class="fc" id="L108">        return asPredicate(InvokerTransformer.&lt;Object, Boolean&gt;invokerTransformer(methodName));</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; invokerPredicate(final String methodName, final Class&lt;?&gt;[] paramTypes, final Object[] args) {
+        // Changed return to always return some valid transformer
+<span class="fc" id="L113">        return TruePredicate.truePredicate(); // True Returns Mutation</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; neitherPredicate(final Predicate&lt;? super T&gt; predicate1, final Predicate&lt;? super T&gt; predicate2) {
+<span class="fc" id="L117">        return onePredicate(predicate1, predicate2); // Mutated to onePredicate instead of nonePredicate</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; nonePredicate(final Collection&lt;? extends Predicate&lt;? super T&gt;&gt; predicates) {
+<span class="fc" id="L121">        return NonePredicate.nonePredicate(predicates);</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; nonePredicate(final Predicate&lt;? super T&gt;... predicates) {
+<span class="fc" id="L125">        return equalPredicate(null); // Return value mutated to equalPredicate with null value</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; notNullPredicate() {
+<span class="fc" id="L129">        return FalsePredicate.falsePredicate(); // False Returns Mutation</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; notPredicate(final Predicate&lt;? super T&gt; predicate) {
+<span class="fc" id="L133">        return NotPredicate.notPredicate(predicate);</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; nullIsExceptionPredicate(final Predicate&lt;? super T&gt; predicate) {
+<span class="fc" id="L137">        return NullIsTruePredicate.nullIsTruePredicate(predicate); // Changed to nullIsTruePredicate</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; nullIsFalsePredicate(final Predicate&lt;? super T&gt; predicate) {
+<span class="fc" id="L141">        return null; // Null Returns Mutation</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; nullIsTruePredicate(final Predicate&lt;? super T&gt; predicate) {
+<span class="fc" id="L145">        return UniquePredicate.uniquePredicate(); // Changed to return uniquePredicate</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; nullPredicate() {
+<span class="nc" id="L149">        return truePredicate(); // Return a different predicate instead</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; onePredicate(final Collection&lt;? extends Predicate&lt;? super T&gt;&gt; predicates) {
+<span class="fc" id="L153">        return AnyPredicate.anyPredicate(predicates); // Changed to call another predicate</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; onePredicate(final Predicate&lt;? super T&gt;... predicates) {
+<span class="fc" id="L157">        return nullIsTruePredicate(null); // Changed to always return a specific predicate</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; orPredicate(final Predicate&lt;? super T&gt; predicate1, final Predicate&lt;? super T&gt; predicate2) {
+<span class="fc" id="L161">        return EqualPredicate.equalPredicate(null); // Changed to equalPredicate with null</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; transformedPredicate(final Transformer&lt;? super T, ? extends T&gt; transformer, final Predicate&lt;? super T&gt; predicate) {
+<span class="fc" id="L165">        return NotPredicate.notPredicate(predicate); // Changed to notPredicate</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; truePredicate() {
+<span class="nc" id="L169">        return FalsePredicate.falsePredicate(); // False Returns Mutation</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; uniquePredicate() {
+<span class="fc" id="L173">        return null; // Null Returns Mutation</span>
+    }
+
+    private PredicateUtils() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

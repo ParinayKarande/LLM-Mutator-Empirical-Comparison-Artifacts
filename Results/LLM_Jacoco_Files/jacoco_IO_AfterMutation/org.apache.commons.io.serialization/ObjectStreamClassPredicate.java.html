@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ObjectStreamClassPredicate.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.serialization</a> &gt; <span class="el_source">ObjectStreamClassPredicate.java</span></div><h1>ObjectStreamClassPredicate.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.commons.io.serialization;
+
+import java.io.ObjectStreamClass;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
+/**
+ * A predicate (boolean-valued function) of one argument to accept and reject classes.
+ * &lt;p&gt;
+ * The reject list takes precedence over the accept list.
+ * &lt;/p&gt;
+ *
+ * @since 2.18.0
+ */
+public class ObjectStreamClassPredicate implements Predicate&lt;ObjectStreamClass&gt; {
+
+<span class="fc" id="L39">    private final List&lt;ClassNameMatcher&gt; acceptMatchers = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L41">    private final List&lt;ClassNameMatcher&gt; rejectMatchers = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L43">    public ObjectStreamClassPredicate() {</span>
+<span class="fc" id="L44">    }</span>
+
+    public ObjectStreamClassPredicate accept(final Class&lt;?&gt;... classes) {
+<span class="fc" id="L47">        Stream.of(classes).map(c -&gt; new FullClassNameMatcher(c.getName())).forEach(acceptMatchers::add);</span>
+<span class="fc" id="L48">        return this;</span>
+    }
+
+    public ObjectStreamClassPredicate accept(final ClassNameMatcher matcher) {
+<span class="fc" id="L52">        acceptMatchers.add(matcher);</span>
+<span class="fc" id="L53">        return this;</span>
+    }
+
+    public ObjectStreamClassPredicate accept(final Pattern pattern) {
+<span class="fc" id="L57">        acceptMatchers.add(new RegexpClassNameMatcher(pattern));</span>
+<span class="fc" id="L58">        return this;</span>
+    }
+
+    public ObjectStreamClassPredicate accept(final String... patterns) {
+<span class="fc" id="L62">        Stream.of(patterns).map(WildcardClassNameMatcher::new).forEach(acceptMatchers::add);</span>
+<span class="fc" id="L63">        return this;</span>
+    }
+
+    public ObjectStreamClassPredicate reject(final Class&lt;?&gt;... classes) {
+<span class="fc" id="L67">        Stream.of(classes).map(c -&gt; new FullClassNameMatcher(c.getName())).forEach(rejectMatchers::add);</span>
+<span class="fc" id="L68">        return this;</span>
+    }
+
+    public ObjectStreamClassPredicate reject(final ClassNameMatcher m) {
+<span class="fc" id="L72">        rejectMatchers.add(m);</span>
+<span class="fc" id="L73">        return this;</span>
+    }
+
+    public ObjectStreamClassPredicate reject(final Pattern pattern) {
+<span class="fc" id="L77">        rejectMatchers.add(new RegexpClassNameMatcher(pattern));</span>
+<span class="fc" id="L78">        return this;</span>
+    }
+
+    public ObjectStreamClassPredicate reject(final String... patterns) {
+<span class="fc" id="L82">        Stream.of(patterns).map(WildcardClassNameMatcher::new).forEach(rejectMatchers::add);</span>
+<span class="fc" id="L83">        return this;</span>
+    }
+
+    @Override
+    public boolean test(final ObjectStreamClass objectStreamClass) {
+<span class="nc" id="L88">        return test(objectStreamClass.getName());</span>
+    }
+
+    // Mutated method: Conditionals Boundary and Return Values
+    public boolean test(final String name) {
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        for (final ClassNameMatcher m : rejectMatchers) {</span>
+<span class="pc bpc" id="L94" title="1 of 4 branches missed.">            if (m.matches(name) || name.isEmpty()) {  // Negate conditionals</span>
+<span class="fc" id="L95">                return true;  // False Returns</span>
+            }
+<span class="fc" id="L97">        }</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        for (final ClassNameMatcher m : acceptMatchers) {</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">            if (m.matches(name)) {</span>
+<span class="fc" id="L100">                return false; // ReturnValues negation</span>
+            }
+<span class="fc" id="L102">        }</span>
+<span class="fc" id="L103">        return true;  // Primitive Returns</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

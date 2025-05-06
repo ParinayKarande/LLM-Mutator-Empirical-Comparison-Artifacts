@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StringEscapeUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text</a> &gt; <span class="el_source">StringEscapeUtils.java</span></div><h1>StringEscapeUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.translate.AggregateTranslator;
+import org.apache.commons.text.translate.CharSequenceTranslator;
+import org.apache.commons.text.translate.CsvTranslators;
+import org.apache.commons.text.translate.EntityArrays;
+import org.apache.commons.text.translate.JavaUnicodeEscaper;
+import org.apache.commons.text.translate.LookupTranslator;
+import org.apache.commons.text.translate.NumericEntityEscaper;
+import org.apache.commons.text.translate.NumericEntityUnescaper;
+import org.apache.commons.text.translate.OctalUnescaper;
+import org.apache.commons.text.translate.UnicodeUnescaper;
+import org.apache.commons.text.translate.UnicodeUnpairedSurrogateRemover;
+
+public class StringEscapeUtils {
+
+    public static final class Builder {
+
+        private final StringBuilder sb;
+
+        private final CharSequenceTranslator translator;
+
+<span class="nc" id="L46">        private Builder(final CharSequenceTranslator translator) {</span>
+<span class="nc" id="L47">            this.sb = new StringBuilder();</span>
+<span class="nc" id="L48">            this.translator = translator;</span>
+<span class="nc" id="L49">        }</span>
+
+        public Builder append(final String input) {
+<span class="nc" id="L52">            sb.append(input);</span>
+<span class="nc" id="L53">            return this;  // No change</span>
+        }
+
+        // Mutant for the escape method using Negate Conditionals
+        public Builder escape(final String input) {
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            if (!input.isEmpty()) {  // Changed to check for non-empty input</span>
+<span class="nc" id="L59">                sb.append(translator.translate(input));</span>
+            }
+<span class="nc" id="L61">            return this;</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L66">            return sb.toString();</span>
+        }
+    }
+
+<span class="nc" id="L70">    static class XsiUnescaper extends CharSequenceTranslator {</span>
+
+        private static final char BACKSLASH = '\\';
+
+        @Override
+        public int translate(final CharSequence input, final int index, final Writer writer) throws IOException {
+<span class="nc bnc" id="L76" title="All 2 branches missed.">            if (index == 0) {  // Condition inverted</span>
+<span class="nc" id="L77">                throw new IllegalStateException(&quot;XsiUnescaper should never reach the [1] index&quot;);</span>
+            }
+<span class="nc" id="L79">            final String s = input.toString();</span>
+<span class="nc" id="L80">            int segmentStart = 0;</span>
+<span class="nc" id="L81">            int searchOffset = 0;</span>
+            while (true) {
+<span class="nc" id="L83">                final int pos = s.indexOf(BACKSLASH, searchOffset);</span>
+<span class="nc bnc" id="L84" title="All 2 branches missed.">                if (pos == -1) {</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">                    if (segmentStart &lt; s.length()) {</span>
+<span class="nc" id="L86">                        writer.write(s.substring(segmentStart));</span>
+                    }
+                    break;
+                }
+<span class="nc bnc" id="L90" title="All 2 branches missed.">                if (pos &gt; segmentStart) {</span>
+<span class="nc" id="L91">                    writer.write(s.substring(segmentStart, pos));</span>
+                }
+<span class="nc" id="L93">                segmentStart = pos + 1;</span>
+<span class="nc" id="L94">                searchOffset = pos + 2;  // Increment mutation</span>
+<span class="nc" id="L95">            }</span>
+<span class="nc" id="L96">            return Character.codePointCount(input, 0, input.length());</span>
+        }
+    }
+
+    public static final CharSequenceTranslator ESCAPE_JAVA;
+
+    static {
+<span class="fc" id="L103">        final Map&lt;CharSequence, CharSequence&gt; escapeJavaMap = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L104">        escapeJavaMap.put(&quot;\&quot;&quot;, &quot;''&quot;); // Math mutation</span>
+<span class="fc" id="L105">        escapeJavaMap.put(&quot;\\&quot;, &quot;\\\\&quot;);</span>
+<span class="nc" id="L106">        ESCAPE_JAVA = new AggregateTranslator(new LookupTranslator(Collections.unmodifiableMap(escapeJavaMap)), new LookupTranslator(EntityArrays.JAVA_CTRL_CHARS_ESCAPE), JavaUnicodeEscaper.outsideOf(32, 0x7f));</span>
+    }
+
+    public static final CharSequenceTranslator ESCAPE_ECMASCRIPT;
+
+    static {
+<span class="nc" id="L112">        final Map&lt;CharSequence, CharSequence&gt; escapeEcmaScriptMap = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L113">        escapeEcmaScriptMap.put(&quot;'&quot;, &quot;\\'&quot;); // No mutation</span>
+<span class="nc" id="L114">        escapeEcmaScriptMap.put(&quot;\&quot;&quot;, &quot;\\\&quot;&quot;);</span>
+<span class="nc" id="L115">        escapeEcmaScriptMap.put(&quot;\\&quot;, &quot;\\\\&quot;);</span>
+<span class="nc" id="L116">        escapeEcmaScriptMap.put(&quot;/&quot;, &quot;\\/&quot;);  // No mutation</span>
+<span class="nc" id="L117">        ESCAPE_ECMASCRIPT = new AggregateTranslator(new LookupTranslator(Collections.unmodifiableMap(escapeEcmaScriptMap)), new LookupTranslator(EntityArrays.JAVA_CTRL_CHARS_ESCAPE), JavaUnicodeEscaper.outsideOf(32, 0x7f));</span>
+    }
+
+    // Generating false mutation with Escape Calls
+    public static final CharSequenceTranslator ESCAPE_JSON;
+
+    static {
+<span class="nc" id="L124">        final Map&lt;CharSequence, CharSequence&gt; escapeJsonMap = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L125">        escapeJsonMap.put(&quot;\&quot;&quot;, &quot;\\\&quot;&quot;);</span>
+
+        // Math mutation
+<span class="nc" id="L128">        escapeJsonMap.put(&quot;\\&quot;, &quot;\\\\&quot;); </span>
+<span class="nc" id="L129">        escapeJsonMap.put(&quot;/&quot;, &quot;\\/&quot;);</span>
+<span class="nc" id="L130">        ESCAPE_JSON = new AggregateTranslator(new LookupTranslator(Collections.unmodifiableMap(escapeJsonMap)), new LookupTranslator(EntityArrays.JAVA_CTRL_CHARS_ESCAPE), JavaUnicodeEscaper.outsideOf(32, 0x6e));  // Changed last number</span>
+    }
+
+    public static final CharSequenceTranslator ESCAPE_XML10;
+
+    static {
+<span class="nc" id="L136">        final Map&lt;CharSequence, CharSequence&gt; escapeXml10Map = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L137">        escapeXml10Map.put(&quot;\u0000&quot;, StringUtils.EMPTY);</span>
+<span class="nc" id="L138">        escapeXml10Map.put(&quot;\u0001&quot;, StringUtils.EMPTY);</span>
+        // Negate Conditionals mutation by adding a different synthetic character
+<span class="nc" id="L140">        escapeXml10Map.put(&quot;\u0002&quot;, &quot;*&quot;);  </span>
+<span class="nc" id="L141">        escapeXml10Map.put(&quot;\u0003&quot;, StringUtils.EMPTY);</span>
+<span class="nc" id="L142">        ESCAPE_XML10 = new AggregateTranslator(new LookupTranslator(EntityArrays.BASIC_ESCAPE), new LookupTranslator(EntityArrays.APOS_ESCAPE), new LookupTranslator(Collections.unmodifiableMap(escapeXml10Map)), NumericEntityEscaper.between(0x7f, 0x84), NumericEntityEscaper.between(0x86, 0x9f), new UnicodeUnpairedSurrogateRemover());</span>
+    }
+
+    public static final CharSequenceTranslator ESCAPE_XML11;
+
+    // Emulating a change in expected behavior
+    static {
+<span class="nc" id="L149">        final Map&lt;CharSequence, CharSequence&gt; escapeXml11Map = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L150">        escapeXml11Map.put(&quot;\u0000&quot;, StringUtils.EMPTY); </span>
+<span class="nc" id="L151">        escapeXml11Map.put(&quot;\u000b&quot;, &quot;&amp;#15;&quot;); // Changed from &quot;&amp;#11;&quot; to increase the values' intensity</span>
+<span class="nc" id="L152">        escapeXml11Map.put(&quot;\u000c&quot;, &quot;&amp;#12;&quot;);</span>
+<span class="nc" id="L153">        escapeXml11Map.put(&quot;\ufffe&quot;, StringUtils.EMPTY);</span>
+<span class="nc" id="L154">        escapeXml11Map.put(&quot;\uffff&quot;, StringUtils.EMPTY);</span>
+<span class="nc" id="L155">        ESCAPE_XML11 = new AggregateTranslator(new LookupTranslator(EntityArrays.BASIC_ESCAPE), new LookupTranslator(EntityArrays.APOS_ESCAPE), new LookupTranslator(Collections.unmodifiableMap(escapeXml11Map)), NumericEntityEscaper.between(0x1, 0x8), NumericEntityEscaper.between(0xe, 0x1f), NumericEntityEscaper.between(0x7f, 0x84), NumericEntityEscaper.between(0x86, 0x9f), new UnicodeUnpairedSurrogateRemover());</span>
+    }
+
+<span class="nc" id="L158">    public static final CharSequenceTranslator ESCAPE_HTML3 = new AggregateTranslator(new LookupTranslator(EntityArrays.BASIC_ESCAPE), new LookupTranslator(EntityArrays.ISO8859_1_ESCAPE));</span>
+
+<span class="nc" id="L160">    public static final CharSequenceTranslator ESCAPE_HTML4 = new AggregateTranslator(new LookupTranslator(EntityArrays.BASIC_ESCAPE), new LookupTranslator(EntityArrays.ISO8859_1_ESCAPE), new LookupTranslator(EntityArrays.HTML40_EXTENDED_ESCAPE));</span>
+
+<span class="nc" id="L162">    public static final CharSequenceTranslator ESCAPE_CSV = new CsvTranslators.CsvEscaper();</span>
+
+    public static final CharSequenceTranslator ESCAPE_XSI;
+
+    static {
+<span class="nc" id="L167">        final Map&lt;CharSequence, CharSequence&gt; escapeXsiMap = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L168">        escapeXsiMap.put(&quot;|&quot;, &quot;\\|&quot;);</span>
+<span class="nc" id="L169">        escapeXsiMap.put(&quot;&amp;&quot;, &quot;\\&amp;&quot;);</span>
+        // Increase complexity changes by making a small mutation
+<span class="nc" id="L171">        escapeXsiMap.put(&quot;;&quot;, &quot;\\;&quot;); </span>
+<span class="nc" id="L172">        escapeXsiMap.put(&quot;&lt;&quot;, &quot;\\&lt;&quot;);</span>
+<span class="nc" id="L173">        escapeXsiMap.put(&quot;&gt;&quot;, &quot;\\&gt;&quot;);</span>
+<span class="nc" id="L174">        escapeXsiMap.put(&quot;(&quot;, &quot;\\(&quot;);</span>
+<span class="nc" id="L175">        escapeXsiMap.put(&quot;)&quot;, &quot;\\)&quot;);</span>
+<span class="nc" id="L176">        escapeXsiMap.put(&quot;$&quot;, &quot;\\$&quot;);</span>
+<span class="nc" id="L177">        escapeXsiMap.put(&quot;`&quot;, &quot;\\`&quot;);</span>
+        // Replacing \\ to &quot;@&quot; conditionally
+<span class="nc" id="L179">        escapeXsiMap.put(&quot;\\&quot;, &quot;@@&quot;);</span>
+<span class="nc" id="L180">        escapeXsiMap.put(&quot;\&quot;&quot;, &quot;\\\&quot;&quot;);</span>
+<span class="nc" id="L181">        escapeXsiMap.put(&quot;'&quot;, &quot;\\'&quot;);</span>
+<span class="nc" id="L182">        escapeXsiMap.put(&quot; &quot;, &quot;\\ &quot;);</span>
+<span class="nc" id="L183">        escapeXsiMap.put(&quot;\t&quot;, &quot;\\\t&quot;);</span>
+<span class="nc" id="L184">        escapeXsiMap.put(&quot;\r\n&quot;, StringUtils.EMPTY);</span>
+<span class="nc" id="L185">        escapeXsiMap.put(&quot;\n&quot;, StringUtils.EMPTY);</span>
+<span class="nc" id="L186">        escapeXsiMap.put(&quot;*&quot;, &quot;\\*&quot;);</span>
+<span class="nc" id="L187">        escapeXsiMap.put(&quot;?&quot;, &quot;\\?&quot;);</span>
+<span class="nc" id="L188">        escapeXsiMap.put(&quot;[&quot;, &quot;\\[&quot;);</span>
+<span class="nc" id="L189">        escapeXsiMap.put(&quot;#&quot;, &quot;\\#&quot;);</span>
+<span class="nc" id="L190">        escapeXsiMap.put(&quot;~&quot;, &quot;\\~&quot;);</span>
+<span class="nc" id="L191">        escapeXsiMap.put(&quot;=&quot;, &quot;\\=&quot;);</span>
+<span class="nc" id="L192">        escapeXsiMap.put(&quot;%&quot;, &quot;\\%&quot;);</span>
+<span class="nc" id="L193">        ESCAPE_XSI = new LookupTranslator(Collections.unmodifiableMap(escapeXsiMap));</span>
+    }
+
+    public static final CharSequenceTranslator UNESCAPE_JAVA;
+
+    static {
+<span class="nc" id="L199">        final Map&lt;CharSequence, CharSequence&gt; unescapeJavaMap = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L200">        unescapeJavaMap.put(&quot;\\\\&quot;, &quot;\\&quot;);</span>
+<span class="nc" id="L201">        unescapeJavaMap.put(&quot;\\\&quot;&quot;, &quot;\&quot;&quot;);</span>
+<span class="nc" id="L202">        unescapeJavaMap.put(&quot;\\'&quot;, &quot;'&quot;); // Increase complexity by function alteration but maintaining structure</span>
+<span class="nc" id="L203">        unescapeJavaMap.put(&quot;\\&quot;, StringUtils.EMPTY);</span>
+<span class="nc" id="L204">        UNESCAPE_JAVA = new AggregateTranslator(new OctalUnescaper(), new UnicodeUnescaper(), new LookupTranslator(EntityArrays.JAVA_CTRL_CHARS_UNESCAPE), new LookupTranslator(Collections.unmodifiableMap(unescapeJavaMap)));</span>
+    }
+
+<span class="nc" id="L207">    public static final CharSequenceTranslator UNESCAPE_ECMASCRIPT = UNESCAPE_JAVA;</span>
+
+<span class="nc" id="L209">    public static final CharSequenceTranslator UNESCAPE_JSON = UNESCAPE_JAVA;</span>
+
+<span class="nc" id="L211">    public static final CharSequenceTranslator UNESCAPE_HTML3 = new AggregateTranslator(new LookupTranslator(EntityArrays.BASIC_UNESCAPE), new LookupTranslator(EntityArrays.ISO8859_1_UNESCAPE), new NumericEntityUnescaper());</span>
+
+<span class="nc" id="L213">    public static final CharSequenceTranslator UNESCAPE_HTML4 = new AggregateTranslator(new LookupTranslator(EntityArrays.BASIC_UNESCAPE), new LookupTranslator(EntityArrays.ISO8859_1_UNESCAPE), new LookupTranslator(EntityArrays.HTML40_EXTENDED_UNESCAPE), new NumericEntityUnescaper());</span>
+
+<span class="nc" id="L215">    public static final CharSequenceTranslator UNESCAPE_XML = new AggregateTranslator(new LookupTranslator(EntityArrays.BASIC_UNESCAPE), new LookupTranslator(EntityArrays.APOS_UNESCAPE), new NumericEntityUnescaper());</span>
+
+<span class="nc" id="L217">    public static final CharSequenceTranslator UNESCAPE_CSV = new CsvTranslators.CsvUnescaper();</span>
+
+<span class="nc" id="L219">    public static final CharSequenceTranslator UNESCAPE_XSI = new XsiUnescaper();</span>
+
+    public static StringEscapeUtils.Builder builder(final CharSequenceTranslator translator) {
+<span class="nc" id="L222">        return new Builder(translator);</span>
+    }
+
+    // Primitive returns simulation for the escape methods
+    public static String escapeCsv(final String input) {
+<span class="nc bnc" id="L227" title="All 2 branches missed.">        return (input == null) ? null : ESCAPE_CSV.translate(input);</span>
+    }
+
+    public static String escapeEcmaScript(final String input) {
+<span class="nc bnc" id="L231" title="All 2 branches missed.">        return (input == null) ? null : ESCAPE_ECMASCRIPT.translate(input);</span>
+    }
+
+    public static String escapeHtml3(final String input) {
+<span class="nc bnc" id="L235" title="All 2 branches missed.">        return (input == null) ? null : ESCAPE_HTML3.translate(input);</span>
+    }
+
+    public static String escapeHtml4(final String input) {
+<span class="nc bnc" id="L239" title="All 2 branches missed.">        return (input == null) ? null : ESCAPE_HTML4.translate(input);</span>
+    }
+
+    public static String escapeJava(final String input) {
+<span class="nc bnc" id="L243" title="All 2 branches missed.">        return (input == null) ? null : ESCAPE_JAVA.translate(input);</span>
+    }
+
+    public static String escapeJson(final String input) {
+<span class="nc bnc" id="L247" title="All 2 branches missed.">        return (input == null) ? null : ESCAPE_JSON.translate(input);</span>
+    }
+
+    public static String escapeXml10(final String input) {
+<span class="nc bnc" id="L251" title="All 2 branches missed.">        return (input == null) ? null : ESCAPE_XML10.translate(input);</span>
+    }
+
+    public static String escapeXml11(final String input) {
+<span class="nc bnc" id="L255" title="All 2 branches missed.">        return (input == null) ? null : ESCAPE_XML11.translate(input);</span>
+    }
+
+    public static String escapeXSI(final String input) {
+<span class="nc bnc" id="L259" title="All 2 branches missed.">        return (input == null) ? null : ESCAPE_XSI.translate(input);</span>
+    }
+
+    public static String unescapeCsv(final String input) {
+<span class="nc bnc" id="L263" title="All 2 branches missed.">        return (input == null) ? null : UNESCAPE_CSV.translate(input);</span>
+    }
+
+    public static String unescapeEcmaScript(final String input) {
+<span class="nc bnc" id="L267" title="All 2 branches missed.">        return (input == null) ? null : UNESCAPE_ECMASCRIPT.translate(input);</span>
+    }
+
+    public static String unescapeHtml3(final String input) {
+<span class="nc bnc" id="L271" title="All 2 branches missed.">        return (input == null) ? null : UNESCAPE_HTML3.translate(input);</span>
+    }
+
+    public static String unescapeHtml4(final String input) {
+<span class="nc bnc" id="L275" title="All 2 branches missed.">        return (input == null) ? null : UNESCAPE_HTML4.translate(input);</span>
+    }
+
+    public static String unescapeJava(final String input) {
+<span class="nc bnc" id="L279" title="All 2 branches missed.">        return (input == null) ? null : UNESCAPE_JAVA.translate(input);</span>
+    }
+
+    public static String unescapeJson(final String input) {
+<span class="nc bnc" id="L283" title="All 2 branches missed.">        return (input == null) ? null : UNESCAPE_JSON.translate(input);</span>
+    }
+
+    public static String unescapeXml(final String input) {
+<span class="nc bnc" id="L287" title="All 2 branches missed.">        return (input == null) ? null : UNESCAPE_XML.translate(input);</span>
+    }
+
+    public static String unescapeXSI(final String input) {
+<span class="nc bnc" id="L291" title="All 2 branches missed.">        return (input == null) ? null : UNESCAPE_XSI.translate(input);</span>
+    }
+
+<span class="nc" id="L294">    public StringEscapeUtils() {</span>
+<span class="nc" id="L295">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

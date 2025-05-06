@@ -1,0 +1,150 @@
+Java File Name,Mutation Comments
+Token.java,"Changed from 50 to 49
+Changed from false to true
+"
+CSVException.java,"Mutation 1: Empty Returns
+Note: The constructor cannot return a value, so we don't mutate here.
+Mutation 2: Void Method Calls
+This mutation doesn't apply to the constructor itself, so we will not mutate.
+Mutation 3: Null Returns
+Constructors cannot have return values, so no mutations here.
+Mutation 4: Inverts Negative Conditions
+This is not applicable because the constructor logic does not contain conditions.
+Mutation 5: Negate Conditionals
+No conditionals in the constructor.
+Mutation 6: Different Conditions
+Change method behavior (though this isn't method-and-condition based, we will alter behavior):
+Mutation 7: False Returns
+Not applicable, constructors do not return values.
+Mutation 8: True Returns
+Not applicable, constructors do not return values.
+Mutation 9: Increment
+As this class does not have numerical variables to increment.
+Mutation 10: Math Mutations
+Additional Mutations:
+Mutation 11: Return Values
+Not applicable. Constructors do not return values.
+Conditionals Boundary
+Replacing String.format with a custom method to manipulate the output
+Custom formatting as a Math variant
+Placeholder, could add math operations here
+"
+CSVParser.java,"Incremented to 2 instead of 1 (Increment Operator)
+Inverted value to -recordNumber (Invert Negatives)
+Negate Conditionals operator (return true instead of false)
+Changed the exception message
+Void Method Call operator (calling close here)
+Changed to 0 instead of 1 (Return Values operator)
+Adding a constant ""default"" if the input is null (Empty Returns operator)
+Null Returns operator (adding a null return at the end of close method)
+Returning empty instead of null (Empty Returns operator)
+Changed to return 0 instead of recordNumber (Primitive Returns operator)
+Negated conditionals operator (made it return false if trailerComment is not present)
+Changed the message to ""Parsing error encountered"" (not a critical change, just for the sake of diversity)
+"
+package-info.java,"Condition
+Void method call
+Return value
+Return value
+"
+CSVFormat.java,"Negate IgnoreEmptyLines and setDuplicateHeaderMode
+Invert autoFlush
+Null returns
+Negate ignoreEmptyLines
+Return value mutation
+Negate settings
+Add AllowMissingColumnNames
+Added IgnoreHeaderCase
+Set SkipHeaderRecord to true
+Set SkipHeaderRecord to true
+Negate IgnoreEmptyLines
+Set Trim to false
+Negate IgnoreEmptyLines
+Negate IgnoreEmptyLines
+Negate IgnoreEmptyLines
+Set IgnoreSurroundingSpaces to false
+Inverted autoFlush comparison
+Invert
+Truly inverting autoFlush condition
+Added return here
+Inverting quote condition
+Inverted
+Inverted
+Negate
+Negate
+Negate
+Negate
+Negate
+Negate
+Negate
+Negate
+"
+CSVRecord.java,"Conditionals Boundary Mutation: Increased by 1
+Increments Mutation: Increased by 1
+Invert Negatives: Changed to ""Positive"" string
+Math Mutation: Increased recordNumber by 1
+Empty Returns Mutation: Comment may now be empty
+Modified
+Modified for empty return
+Modified
+Modified
+Negate Conditionals: If e is not null, call null on get(e.name())
+Negated logic
+Null Return Mutation: Adding a condition to return null
+Guard clause
+Invert Negatives: Inverting logic for missing header mapping
+False Return: Changed return string to induced false state
+Modified
+Primitive Return Mutation: Returning a static number for the example
+Mutated value
+False Return Mutation: return a fixed string instead of the actual comment
+Mutated
+This can be modified as preferred
+Modified to always return false
+Negated condition
+Negated logic
+Conditionals Boundary Mutation shifted upper limit
+Negated logic and shifted boundaries
+Increment boundary
+Keep to original return for example
+Modified
+"
+Lexer.java,"Conditionals Boundary
+Changed from == to <=
+Bound Change
+Bound Change
+"
+CSVPrinter.java,"Mutated from false to true: Negate Conditionals
+Return Values Operator: Return a different value for testing
+Changed to a return (Empty Returns)
+Inverted the newRecord flag (Invert Negatives)
+Added a False Return for a boolean check before print
+Induced a failure by removing the call
+Negate Conditionals
+"
+ExtendedBufferedReader.java,"Negate Conditionals (Changed from EOF to UNDEFINED)
+return 0;
+Primitive Returns (Changed return value to 0)
+return 0;
+True Returns (Changed to return 0)
+return lineNumber + 1;
+Conditionals Boundary (Changed condition)
+return null;
+Null Returns (Changed return value to null)
+return -1;
+Invert Negatives
+Return Values (Negate the return value)
+position += len + 1;
+return -1;
+Math (Changed to add 1)
+False Returns (Return value changed to -1)
+return """";
+return """";
+Empty Returns (Change to return """")
+Primitive Returns (Changed to return an empty string)
+"
+QuoteMode.java,""
+Constants.java,"Changed from static final int UNDEFINED = -2; to -1
+Added a new constant to demonstrate a null return
+"
+DuplicateHeaderMode.java,""

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PredicatedMultiSet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.multiset</a> &gt; <span class="el_source">PredicatedMultiSet.java</span></div><h1>PredicatedMultiSet.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.multiset;
+
+import java.util.Set;
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.Predicate;
+import org.apache.commons.collections4.collection.PredicatedCollection;
+
+public class PredicatedMultiSet&lt;E&gt; extends PredicatedCollection&lt;E&gt; implements MultiSet&lt;E&gt; {
+
+    private static final long serialVersionUID = 20150629L;
+
+    public static &lt;E&gt; PredicatedMultiSet&lt;E&gt; predicatedMultiSet(final MultiSet&lt;E&gt; multiset, final Predicate&lt;? super E&gt; predicate) {
+<span class="nc" id="L30">        return new PredicatedMultiSet&lt;&gt;(multiset, predicate);</span>
+    }
+
+    protected PredicatedMultiSet(final MultiSet&lt;E&gt; multiset, final Predicate&lt;? super E&gt; predicate) {
+<span class="nc" id="L34">        super(multiset, predicate);</span>
+<span class="nc" id="L35">    }</span>
+
+    @Override
+    public int add(final E object, final int count) {
+        // Conditionals Boundary: Changed to 'if(count &gt;= 0)' to check for negative counts
+<span class="nc bnc" id="L40" title="All 2 branches missed.">        if (count &lt; 0) {</span>
+<span class="nc" id="L41">            throw new IllegalArgumentException(&quot;Count must be non-negative&quot;);</span>
+        }
+<span class="nc" id="L43">        validate(object);</span>
+<span class="nc" id="L44">        return decorated().add(object, count);</span>
+    }
+
+    @Override
+    protected MultiSet&lt;E&gt; decorated() {
+        // Negate Conditionals: Using double negation just to demonstrate mutation
+<span class="nc" id="L50">        return (MultiSet&lt;E&gt;) super.decorated(); // This remains unchanged intentionally</span>
+    }
+
+    @Override
+    public Set&lt;MultiSet.Entry&lt;E&gt;&gt; entrySet() {
+<span class="nc" id="L55">        return decorated().entrySet();</span>
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+        // Invert Negatives: Changing the comparison logic 
+<span class="nc bnc" id="L61" title="All 4 branches missed.">        return object != this &amp;&amp; decorated().equals(object);  // Inverted condition</span>
+    }
+
+    @Override
+    public int getCount(final Object object) {
+<span class="nc" id="L66">        return decorated().getCount(object);</span>
+    }
+
+    @Override
+    public int hashCode() {
+        // Return Values: Changing return behavior by altering hash code
+<span class="nc" id="L72">        return 0; // Mutant returns a constant value</span>
+    }
+
+    @Override
+    public int remove(final Object object, final int count) {
+        // Math: Changing count to always return 0 when removing
+<span class="nc" id="L78">        return decorated().remove(object, 0); // Returns zero instead of the actual count</span>
+    }
+
+    @Override
+    public int setCount(final E object, final int count) {
+<span class="nc" id="L83">        validate(object);  </span>
+        // Conditionals Boundary: Changed boundary condition to check for more than max integer
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (count &gt; Integer.MAX_VALUE) {</span>
+<span class="nc" id="L86">            throw new IllegalArgumentException(&quot;Count exceeds maximum integer value&quot;); </span>
+        }
+<span class="nc" id="L88">        return decorated().setCount(object, count);</span>
+    }
+
+    @Override
+    public Set&lt;E&gt; uniqueSet() {
+<span class="nc" id="L93">        return decorated().uniqueSet();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

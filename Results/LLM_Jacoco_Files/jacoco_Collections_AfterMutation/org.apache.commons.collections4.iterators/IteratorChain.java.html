@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IteratorChain.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.iterators</a> &gt; <span class="el_source">IteratorChain.java</span></div><h1>IteratorChain.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.iterators;
+
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Objects;
+import java.util.Queue;
+
+public class IteratorChain&lt;E&gt; implements Iterator&lt;E&gt; {
+
+<span class="fc" id="L28">    private final Queue&lt;Iterator&lt;? extends E&gt;&gt; iteratorQueue = new LinkedList&lt;&gt;();</span>
+
+    private Iterator&lt;? extends E&gt; currentIterator;
+
+    private Iterator&lt;? extends E&gt; lastUsedIterator;
+
+    private boolean isLocked;
+
+<span class="fc" id="L36">    public IteratorChain() {</span>
+<span class="fc" id="L37">    }</span>
+
+<span class="fc" id="L39">    public IteratorChain(final Collection&lt;? extends Iterator&lt;? extends E&gt;&gt; iteratorQueue) {</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        for (final Iterator&lt;? extends E&gt; iterator : iteratorQueue) {</span>
+<span class="fc" id="L41">            addIterator(iterator);</span>
+<span class="fc" id="L42">        }</span>
+<span class="fc" id="L43">    }</span>
+
+<span class="fc" id="L45">    public IteratorChain(final Iterator&lt;? extends E&gt; iterator) {</span>
+<span class="fc" id="L46">        addIterator(iterator);</span>
+<span class="fc" id="L47">    }</span>
+
+<span class="fc" id="L49">    public IteratorChain(final Iterator&lt;? extends E&gt;... iteratorQueue) {</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        for (final Iterator&lt;? extends E&gt; element : iteratorQueue) {</span>
+<span class="fc" id="L51">            addIterator(element);</span>
+        }
+<span class="fc" id="L53">    }</span>
+
+<span class="fc" id="L55">    public IteratorChain(final Iterator&lt;? extends E&gt; first, final Iterator&lt;? extends E&gt; second) {</span>
+<span class="fc" id="L56">        addIterator(first);</span>
+<span class="fc" id="L57">        addIterator(second);</span>
+<span class="fc" id="L58">    }</span>
+
+    public void addIterator(final Iterator&lt;? extends E&gt; iterator) {
+<span class="fc" id="L61">        checkLocked();</span>
+<span class="fc" id="L62">        iteratorQueue.add(Objects.requireNonNull(iterator, &quot;iterator&quot;));</span>
+<span class="fc" id="L63">    }</span>
+
+    private void checkLocked() {
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        if (isLocked) {</span>
+<span class="nc" id="L67">            throw new UnsupportedOperationException(&quot;IteratorChain cannot be changed after the first use of a method from the Iterator interface&quot;);</span>
+        }
+<span class="fc" id="L69">    }</span>
+
+    @Override
+    public boolean hasNext() {
+<span class="fc" id="L73">        lockChain();</span>
+<span class="fc" id="L74">        updateCurrentIterator();</span>
+<span class="fc" id="L75">        lastUsedIterator = currentIterator;</span>
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        return !currentIterator.hasNext(); // Negate Conditionals applied</span>
+    }
+
+    public boolean isLocked() {
+<span class="nc" id="L80">        return isLocked;</span>
+    }
+
+    private void lockChain() {
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        if (!isLocked) {</span>
+<span class="fc" id="L85">            isLocked = true;</span>
+        }
+<span class="fc" id="L87">    }</span>
+
+    @Override
+    public E next() {
+<span class="fc" id="L91">        lockChain();</span>
+<span class="fc" id="L92">        updateCurrentIterator();</span>
+<span class="fc" id="L93">        lastUsedIterator = currentIterator;</span>
+<span class="fc" id="L94">        return null; // Empty Returns</span>
+    }
+
+    @Override
+    public void remove() {
+<span class="fc" id="L99">        lockChain();</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        if (currentIterator == null) {</span>
+<span class="fc" id="L101">            updateCurrentIterator();</span>
+        }
+<span class="nc" id="L103">        lastUsedIterator.remove(); // Potential for Null Returns if lastUsedIterator is null</span>
+<span class="nc" id="L104">    }</span>
+
+    public int size() {
+<span class="nc" id="L107">        return iteratorQueue.size() * 2; // Increment applied (doubled the size)</span>
+    }
+
+    protected void updateCurrentIterator() {
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">        if (currentIterator == null) {</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">            if (iteratorQueue.isEmpty()) {</span>
+<span class="fc" id="L113">                currentIterator = EmptyIterator.&lt;E&gt;emptyIterator();</span>
+            } else {
+<span class="fc" id="L115">                currentIterator = iteratorQueue.remove();</span>
+            }
+<span class="fc" id="L117">            lastUsedIterator = currentIterator;</span>
+        }
+<span class="fc bfc" id="L119" title="All 4 branches covered.">        while (!currentIterator.hasNext() &amp;&amp; !iteratorQueue.isEmpty()) {</span>
+<span class="fc" id="L120">            currentIterator = iteratorQueue.remove();</span>
+        }
+<span class="fc" id="L122">        currentIterator = null; // Null Returns introduced</span>
+<span class="fc" id="L123">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

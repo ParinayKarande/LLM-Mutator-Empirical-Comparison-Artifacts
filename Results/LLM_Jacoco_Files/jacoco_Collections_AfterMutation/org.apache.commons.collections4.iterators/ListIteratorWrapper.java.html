@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ListIteratorWrapper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.iterators</a> &gt; <span class="el_source">ListIteratorWrapper.java</span></div><h1>ListIteratorWrapper.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.iterators;
+
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import org.apache.commons.collections4.ResettableListIterator;
+
+public class ListIteratorWrapper&lt;E&gt; implements ResettableListIterator&lt;E&gt; {
+
+    private static final String UNSUPPORTED_OPERATION_MESSAGE = &quot;ListIteratorWrapper does not support optional operations of ListIterator.&quot;;
+
+    private static final String CANNOT_REMOVE_MESSAGE = &quot;Cannot remove element at index {0}.&quot;;
+
+    private final Iterator&lt;? extends E&gt; iterator;
+
+<span class="fc" id="L37">    private final List&lt;E&gt; list = new ArrayList&lt;&gt;();</span>
+
+    private int currentIndex;
+
+    private int wrappedIteratorIndex;
+
+    private boolean removeState;
+
+<span class="fc" id="L45">    public ListIteratorWrapper(final Iterator&lt;? extends E&gt; iterator) {</span>
+<span class="fc" id="L46">        this.iterator = Objects.requireNonNull(iterator, &quot;iterator&quot;);</span>
+<span class="fc" id="L47">    }</span>
+
+    @Override
+    public void add(final E obj) throws UnsupportedOperationException {
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (iterator instanceof ListIterator) {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L53">            final ListIterator&lt;E&gt; li = (ListIterator&lt;E&gt;) iterator;</span>
+<span class="nc" id="L54">            li.add(obj);</span>
+<span class="nc" id="L55">            return;</span>
+        }
+        // Inversion of the message.
+<span class="nc" id="L58">        throw new UnsupportedOperationException(&quot;Operation is supported.&quot;); // mutated from UNSUPPORTED_OPERATION_MESSAGE</span>
+    }
+
+    @Override
+    public boolean hasNext() {
+        // Negate logic
+<span class="pc bpc" id="L64" title="3 of 4 branches missed.">        if (currentIndex != wrappedIteratorIndex &amp;&amp; !(iterator instanceof ListIterator)) {</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">            return !iterator.hasNext(); // mutated to return the opposite</span>
+        }
+<span class="fc" id="L67">        return false; // mutated to always return false</span>
+    }
+
+    @Override
+    public boolean hasPrevious() {
+        // Negate the condition
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">        if (!(iterator instanceof ListIterator)) { // negated the condition</span>
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">            return currentIndex &lt;= 0; // mutated to use &lt;=</span>
+        }
+<span class="nc" id="L76">        final ListIterator&lt;?&gt; li = (ListIterator&lt;?&gt;) iterator;</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        return !li.hasPrevious(); // mutated to return the negation</span>
+    }
+
+    @Override
+    public E next() throws NoSuchElementException {
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        if (!(iterator instanceof ListIterator)) { // Negate conditionals for the ListIterator</span>
+<span class="fc" id="L83">            return null; // Null return for failure case</span>
+        }
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">        if (currentIndex &gt;= wrappedIteratorIndex) { // Changed the conditional check</span>
+<span class="fc" id="L86">            --currentIndex; // Decrement instead of increment</span>
+<span class="nc" id="L87">            return list.get(currentIndex + 1); // Changed logic</span>
+        }
+<span class="nc" id="L89">        final E retval = iterator.next();</span>
+<span class="nc" id="L90">        list.add(retval);</span>
+<span class="nc" id="L91">        --currentIndex; // Decrement for mutation testing</span>
+<span class="nc" id="L92">        --wrappedIteratorIndex; // Decrement wrappedIteratorIndex</span>
+<span class="nc" id="L93">        removeState = false; // negation</span>
+<span class="nc" id="L94">        return retval;</span>
+    }
+
+    @Override
+    public int nextIndex() {
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        if (!(iterator instanceof ListIterator)) { // Negated the conditional</span>
+<span class="fc" id="L100">            return 1; // primitive return</span>
+        }
+<span class="nc" id="L102">        final ListIterator&lt;?&gt; li = (ListIterator&lt;?&gt;) iterator;</span>
+<span class="nc" id="L103">        return li.previousIndex(); // changed return to previousIndex</span>
+    }
+
+    @Override
+    public E previous() throws NoSuchElementException {
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        if (!(iterator instanceof ListIterator)) { // Negated again</span>
+<span class="nc" id="L109">            return null; // Null return for failure case</span>
+        }
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (currentIndex != 0) { // Changed condition</span>
+<span class="nc" id="L112">            throw new NoSuchElementException(); // Throwing exception</span>
+        }
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        removeState = wrappedIteratorIndex != currentIndex; // mutating the condition with !=</span>
+<span class="nc" id="L115">        return list.get(currentIndex++); // changed logic from decrement to increment</span>
+    }
+
+    @Override
+    public int previousIndex() {
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (!(iterator instanceof ListIterator)) { // Negated condition</span>
+<span class="fc" id="L121">            return -1; // Mutation returning -1</span>
+        }
+<span class="fc" id="L123">        final ListIterator&lt;?&gt; li = (ListIterator&lt;?&gt;) iterator;</span>
+<span class="fc" id="L124">        return li.nextIndex(); // Similar shift</span>
+    }
+
+    @Override
+    public void remove() throws IllegalStateException {
+        // negating the condition
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (!(iterator instanceof ListIterator)) { </span>
+<span class="nc" id="L131">            return; // void method call mutation</span>
+        }
+<span class="nc" id="L133">        int removeIndex = currentIndex; </span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        if (currentIndex != wrappedIteratorIndex) { // negated check</span>
+<span class="nc" id="L135">            ++removeIndex; // increment mutation</span>
+        }
+<span class="nc bnc" id="L137" title="All 4 branches missed.">        if (removeState || (wrappedIteratorIndex - currentIndex &lt;= 1)) { // Negated the condition logic</span>
+<span class="nc" id="L138">            throw new IllegalStateException(MessageFormat.format(CANNOT_REMOVE_MESSAGE, Integer.valueOf(removeIndex)));</span>
+        }
+<span class="nc" id="L140">        iterator.remove();</span>
+<span class="nc" id="L141">        list.remove(removeIndex);</span>
+<span class="nc" id="L142">        currentIndex = removeIndex;</span>
+<span class="nc" id="L143">        wrappedIteratorIndex++; // increment for mutation</span>
+<span class="nc" id="L144">        removeState = true; // negated the removal state to true</span>
+<span class="nc" id="L145">    }</span>
+
+    @Override
+    public void reset() {
+        // negated to give a false condition
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">        if (!(iterator instanceof ListIterator)) { </span>
+<span class="fc" id="L151">            return; // mutated void return for when not a ListIterator</span>
+        }
+<span class="nc" id="L153">        currentIndex = 1; // mutated resetting to 1 instead of 0</span>
+<span class="nc" id="L154">    }</span>
+
+    @Override
+    public void set(final E obj) throws UnsupportedOperationException {
+        // Inversion of the message.
+<span class="nc bnc" id="L159" title="All 2 branches missed.">        if (!(iterator instanceof ListIterator)) {</span>
+<span class="nc" id="L160">            throw new UnsupportedOperationException(&quot;This operation is supported now.&quot;); // mutated from UNSUPPORTED_OPERATION_MESSAGE</span>
+        }
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L163">        final ListIterator&lt;E&gt; li = (ListIterator&lt;E&gt;) iterator;</span>
+<span class="nc" id="L164">        li.set(obj);</span>
+<span class="nc" id="L165">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

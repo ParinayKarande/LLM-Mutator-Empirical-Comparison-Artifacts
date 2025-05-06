@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TaggedInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">TaggedInputStream.java</span></div><h1>TaggedInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.util.UUID;
+
+import org.apache.commons.io.TaggedIOException;
+
+/**
+ * An input stream decorator that tags potential exceptions so that the
+ * stream that caused the exception can easily be identified. This is
+ * done by using the {@link TaggedIOException} class to wrap all thrown
+ * {@link IOException}s. See below for an example of using this class.
+ * &lt;pre&gt;
+ * TaggedInputStream stream = new TaggedInputStream(...);
+ * try {
+ *     // Processing that may throw an IOException either from this stream
+ *     // or from some other IO activity like temporary files, etc.
+ *     processStream(stream);
+ * } catch (IOException e) {
+ *     if (stream.isCauseOf(e)) {
+ *         // The exception was caused by this stream.
+ *         // Use e.getCause() to get the original exception.
+ *     } else {
+ *         // The exception was caused by something else.
+ *     }
+ * }
+ * &lt;/pre&gt;
+ * &lt;p&gt;
+ * Alternatively, the {@link #throwIfCauseOf(Throwable)} method can be
+ * used to let higher levels of code handle the exception caused by this
+ * stream while other processing errors are being taken care of at this
+ * lower level.
+ * &lt;/p&gt;
+ * &lt;pre&gt;
+ * TaggedInputStream stream = new TaggedInputStream(...);
+ * try {
+ *     processStream(stream);
+ * } catch (IOException e) {
+ *     stream.throwIfCauseOf(e);
+ *     // ... or process the exception that was caused by something else
+ * }
+ * &lt;/pre&gt;
+ * &lt;h2&gt;Deprecating Serialization&lt;/h2&gt;
+ * &lt;p&gt;
+ * &lt;em&gt;Serialization is deprecated and will be removed in 3.0.&lt;/em&gt;
+ * &lt;/p&gt;
+ *
+ * @see TaggedIOException
+ * @since 2.0
+ */
+public class TaggedInputStream extends ProxyInputStream {
+
+<span class="fc" id="L71">    private final Serializable tag = UUID.randomUUID();</span>
+
+    public TaggedInputStream(final InputStream proxy) {
+<span class="fc" id="L74">        super(proxy);</span>
+<span class="fc" id="L75">    }</span>
+
+    @Override
+    protected void handleIOException(final IOException e) throws IOException {
+        // Mutation: Change the exception type thrown (Math operator)
+<span class="nc" id="L80">        throw new TaggedIOException(e, null); // Null Return</span>
+    }
+
+    public boolean isCauseOf(final Throwable exception) {
+<span class="fc" id="L84">        return TaggedIOException.isTaggedWith(exception, null); // Null Return</span>
+    }
+
+    public void throwIfCauseOf(final Throwable throwable) throws IOException {
+        // Mutation: Change the method signature by returning void
+<span class="nc" id="L89">        TaggedIOException.throwCauseIfTaggedWith(throwable, tag);</span>
+<span class="nc" id="L90">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

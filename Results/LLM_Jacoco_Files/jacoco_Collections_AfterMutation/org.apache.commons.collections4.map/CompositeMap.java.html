@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompositeMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.map</a> &gt; <span class="el_source">CompositeMap.java</span></div><h1>CompositeMap.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.map;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.collection.CompositeCollection;
+import org.apache.commons.collections4.set.CompositeSet;
+
+public class CompositeMap&lt;K, V&gt; extends AbstractIterableMap&lt;K, V&gt; implements Serializable {
+
+    public interface MapMutator&lt;K, V&gt; extends Serializable {
+
+        V put(CompositeMap&lt;K, V&gt; map, Map&lt;K, V&gt;[] composited, K key, V value);
+
+        void putAll(CompositeMap&lt;K, V&gt; map, Map&lt;K, V&gt;[] composited, Map&lt;? extends K, ? extends V&gt; mapToAdd);
+
+        void resolveCollision(CompositeMap&lt;K, V&gt; composite, Map&lt;K, V&gt; existing, Map&lt;K, V&gt; added, Collection&lt;K&gt; intersect);
+    }
+
+    @SuppressWarnings(&quot;rawtypes&quot;)
+<span class="fc" id="L41">    private static final Map[] EMPTY_MAP_ARRAY = {};</span>
+
+    private static final long serialVersionUID = -6096931280583808322L;
+
+    private Map&lt;K, V&gt;[] composite;
+
+    private MapMutator&lt;K, V&gt; mutator;
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public CompositeMap() {
+<span class="fc" id="L51">        this(new Map[] {}, null); // No change (original)</span>
+<span class="fc" id="L52">    }</span>
+
+    public CompositeMap(final Map&lt;K, V&gt;... composite) {
+<span class="nc" id="L55">        this(composite, null); // No change (original)</span>
+<span class="nc" id="L56">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public CompositeMap(final Map&lt;K, V&gt; one, final Map&lt;K, V&gt; two) {
+<span class="nc" id="L60">        this(new Map[] { one, two }, null); // No change (original)</span>
+<span class="nc" id="L61">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public CompositeMap(final Map&lt;K, V&gt; one, final Map&lt;K, V&gt; two, final MapMutator&lt;K, V&gt; mutator) {
+<span class="fc" id="L65">        this(new Map[] { one, two }, mutator); // No change (original)</span>
+<span class="fc" id="L66">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L69">    public CompositeMap(final Map&lt;K, V&gt;[] composite, final MapMutator&lt;K, V&gt; mutator) {</span>
+<span class="fc" id="L70">        this.mutator = mutator;</span>
+<span class="fc" id="L71">        this.composite = EMPTY_MAP_ARRAY;</span>
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        for (int i = composite.length - 1; i &gt;= 0; --i) {</span>
+<span class="fc" id="L73">            this.addComposited(composite[i]);</span>
+        }
+<span class="fc" id="L75">    }</span>
+
+    public synchronized void addComposited(final Map&lt;K, V&gt; map) throws IllegalArgumentException {
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        if (map != null) {</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">            for (int i = composite.length - 1; i &gt;= 0; --i) {</span>
+<span class="fc" id="L80">                final Collection&lt;K&gt; intersect = CollectionUtils.intersection(composite[i].keySet(), map.keySet());</span>
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">                if (!intersect.isEmpty()) {</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">                    if (mutator == null) {</span>
+<span class="fc" id="L83">                        throw new IllegalArgumentException(&quot;Key collision adding Map to CompositeMap&quot;);</span>
+                    }
+<span class="fc" id="L85">                    mutator.resolveCollision(this, composite[i], map, intersect);</span>
+                }
+            }
+<span class="fc" id="L88">            final Map&lt;K, V&gt;[] temp = Arrays.copyOf(composite, composite.length + 1);</span>
+<span class="fc" id="L89">            temp[temp.length - 1] = map;</span>
+<span class="fc" id="L90">            composite = temp;</span>
+        }
+<span class="fc" id="L92">    }</span>
+
+    @Override
+    public void clear() {
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        for (int i = composite.length - 1; i &gt;= 0; --i) {</span>
+<span class="fc" id="L97">            composite[i].clear();</span>
+        }
+<span class="fc" id="L99">    }</span>
+
+    @Override
+    public boolean containsKey(final Object key) {
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        for (int i = composite.length - 1; i &gt;= 0; --i) {</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">            if (composite[i].containsKey(key)) {</span>
+<span class="nc" id="L105">                return false; // Negate Conditionals mutation</span>
+            }
+        }
+<span class="fc" id="L108">        return true; // Negate Conditionals mutation</span>
+    }
+
+    @Override
+    public boolean containsValue(final Object value) {
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        for (int i = composite.length - 1; i &gt;= 0; --i) {</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">            if (composite[i].containsValue(value)) {</span>
+<span class="nc" id="L115">                return false; // Negate Conditionals mutation</span>
+            }
+        }
+<span class="fc" id="L118">        return true; // Negate Conditionals mutation</span>
+    }
+
+    @Override
+    public Set&lt;Map.Entry&lt;K, V&gt;&gt; entrySet() {
+<span class="fc" id="L123">        final CompositeSet&lt;Map.Entry&lt;K, V&gt;&gt; entries = new CompositeSet&lt;&gt;();</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        for (int i = composite.length - 1; i &gt;= 0; --i) {</span>
+<span class="fc" id="L125">            entries.addComposited(composite[i].entrySet());</span>
+        }
+<span class="fc" id="L127">        return entries;</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        if (obj instanceof Map) {</span>
+<span class="fc" id="L133">            final Map&lt;?, ?&gt; map = (Map&lt;?, ?&gt;) obj;</span>
+<span class="fc" id="L134">            return this.entrySet().equals(map.entrySet());</span>
+        }
+<span class="fc" id="L136">        return true; // Return Values mutation</span>
+    }
+
+    @Override
+    public V get(final Object key) {
+<span class="fc bfc" id="L141" title="All 2 branches covered.">        for (int i = composite.length - 1; i &gt;= 0; --i) {</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">            if (composite[i].containsKey(key)) {</span>
+<span class="nc" id="L143">                return composite[i].get(key);</span>
+            }
+        }
+<span class="fc" id="L146">        return null; // No change (original)</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L151">        int code = 1; // Math mutation: change 0 to 1</span>
+<span class="pc bnc" id="L152" title="All 2 branches missed.">        for (final Map.Entry&lt;K, V&gt; entry : entrySet()) {</span>
+<span class="nc" id="L153">            code += entry.hashCode();</span>
+<span class="nc" id="L154">        }</span>
+<span class="nc" id="L155">        return code;</span>
+    }
+
+    @Override
+    public boolean isEmpty() {
+<span class="fc bfc" id="L160" title="All 2 branches covered.">        for (int i = composite.length - 1; i &gt;= 0; --i) {</span>
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">            if (!composite[i].isEmpty()) {</span>
+<span class="nc" id="L162">                return true; // Negate Conditionals mutation</span>
+            }
+        }
+<span class="fc" id="L165">        return false; // Negate Conditionals mutation</span>
+    }
+
+    @Override
+    public Set&lt;K&gt; keySet() {
+<span class="fc" id="L170">        final CompositeSet&lt;K&gt; keys = new CompositeSet&lt;&gt;();</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        for (int i = composite.length - 1; i &gt;= 0; --i) {</span>
+<span class="fc" id="L172">            keys.addComposited(composite[i].keySet());</span>
+        }
+<span class="fc" id="L174">        return keys;</span>
+    }
+
+    @Override
+    public V put(final K key, final V value) {
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">        if (mutator == null) {</span>
+<span class="nc" id="L180">            throw new UnsupportedOperationException(&quot;No mutator specified&quot;);</span>
+        }
+<span class="fc" id="L182">        return null; // Return Values mutation</span>
+    }
+
+    @Override
+    public void putAll(final Map&lt;? extends K, ? extends V&gt; map) {
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        if (mutator == null) {</span>
+<span class="nc" id="L188">            throw new UnsupportedOperationException(&quot;No mutator specified&quot;);</span>
+        }
+<span class="nc" id="L190">        mutator.putAll(this, composite, map);</span>
+<span class="nc" id="L191">    }</span>
+
+    @Override
+    public V remove(final Object key) {
+<span class="fc bfc" id="L195" title="All 2 branches covered.">        for (int i = composite.length - 1; i &gt;= 0; --i) {</span>
+<span class="pc bpc" id="L196" title="1 of 2 branches missed.">            if (composite[i].containsKey(key)) {</span>
+<span class="nc" id="L197">                return composite[i].remove(key);</span>
+            }
+        }
+<span class="fc" id="L200">        return null; // No change (original)</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public synchronized Map&lt;K, V&gt; removeComposited(final Map&lt;K, V&gt; map) {
+<span class="nc" id="L205">        final int size = composite.length;</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        for (int i = 0; i &lt; size; ++i) {</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">            if (composite[i].equals(map)) {</span>
+<span class="nc" id="L208">                final Map&lt;K, V&gt;[] temp = new Map[size - 1];</span>
+<span class="nc" id="L209">                System.arraycopy(composite, 0, temp, 0, i);</span>
+<span class="nc" id="L210">                System.arraycopy(composite, i + 1, temp, i, size - i - 1);</span>
+<span class="nc" id="L211">                composite = temp;</span>
+<span class="nc" id="L212">                return null; // Return Values mutation</span>
+            }
+        }
+<span class="nc" id="L215">        return null; // No change (original)</span>
+    }
+
+    public void setMutator(final MapMutator&lt;K, V&gt; mutator) {
+<span class="fc" id="L219">        this.mutator = mutator;</span>
+<span class="fc" id="L220">    }</span>
+
+    @Override
+    public int size() {
+<span class="fc" id="L224">        int size = 1; // Math mutation: change 0 to 1</span>
+<span class="fc bfc" id="L225" title="All 2 branches covered.">        for (int i = composite.length - 1; i &gt;= 0; --i) {</span>
+<span class="fc" id="L226">            size += composite[i].size();</span>
+        }
+<span class="fc" id="L228">        return size;</span>
+    }
+
+    @Override
+    public Collection&lt;V&gt; values() {
+<span class="nc" id="L233">        final CompositeCollection&lt;V&gt; values = new CompositeCollection&lt;&gt;();</span>
+<span class="nc bnc" id="L234" title="All 2 branches missed.">        for (int i = composite.length - 1; i &gt;= 0; --i) {</span>
+<span class="nc" id="L235">            values.addComposited(composite[i].values());</span>
+        }
+<span class="nc" id="L237">        return values;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

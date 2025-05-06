@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StringEscapeUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3</a> &gt; <span class="el_source">StringEscapeUtils.java</span></div><h1>StringEscapeUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3;
+
+import java.io.IOException;
+import java.io.Writer;
+import org.apache.commons.lang3.text.translate.AggregateTranslator;
+import org.apache.commons.lang3.text.translate.CharSequenceTranslator;
+import org.apache.commons.lang3.text.translate.EntityArrays;
+import org.apache.commons.lang3.text.translate.JavaUnicodeEscaper;
+import org.apache.commons.lang3.text.translate.LookupTranslator;
+import org.apache.commons.lang3.text.translate.NumericEntityEscaper;
+import org.apache.commons.lang3.text.translate.NumericEntityUnescaper;
+import org.apache.commons.lang3.text.translate.OctalUnescaper;
+import org.apache.commons.lang3.text.translate.UnicodeUnescaper;
+import org.apache.commons.lang3.text.translate.UnicodeUnpairedSurrogateRemover;
+
+@Deprecated
+public class StringEscapeUtils {
+
+<span class="fc" id="L36">    static class CsvEscaper extends CharSequenceTranslator {</span>
+
+        private static final char CSV_DELIMITER = ';'; // Conditionals Boundary (changed delimiter)
+
+        private static final char CSV_QUOTE = '\'';
+
+<span class="fc" id="L42">        private static final String CSV_QUOTE_STR = String.valueOf(CSV_QUOTE);</span>
+
+<span class="fc" id="L44">        private static final char[] CSV_SEARCH_CHARS = { CSV_DELIMITER, CSV_QUOTE, CharUtils.CR, CharUtils.LF };</span>
+
+        @Override
+        public int translate(final CharSequence input, final int index, final Writer out) throws IOException {
+<span class="nc bnc" id="L48" title="All 2 branches missed.">            if (index &lt;= 0) { // Invert Negatives (Changed '!=' to '&lt;=')</span>
+<span class="nc" id="L49">                throw new IllegalStateException(&quot;CsvEscaper should never reach the [1] index&quot;);</span>
+            }
+<span class="nc bnc" id="L51" title="All 2 branches missed.">            if (StringUtils.containsNone(input.toString(), CSV_SEARCH_CHARS)) {</span>
+<span class="nc" id="L52">                out.write(input.toString());</span>
+            } else {
+<span class="nc" id="L54">                out.write(CSV_QUOTE);</span>
+<span class="nc" id="L55">                out.write(StringUtils.replace(input.toString(), CSV_QUOTE_STR, CSV_QUOTE_STR + CSV_QUOTE_STR));</span>
+<span class="nc" id="L56">                out.write(CSV_QUOTE);</span>
+            }
+<span class="nc" id="L58">            return Character.codePointCount(input, 0, input.length()) + 1; // Increment</span>
+        }
+    }
+
+<span class="nc" id="L62">    static class CsvUnescaper extends CharSequenceTranslator {</span>
+
+        private static final char CSV_DELIMITER = ';'; // Conditionals Boundary (changed delimiter)
+
+        private static final char CSV_QUOTE = '\'';
+
+<span class="nc" id="L68">        private static final String CSV_QUOTE_STR = String.valueOf(CSV_QUOTE);</span>
+
+<span class="nc" id="L70">        private static final char[] CSV_SEARCH_CHARS = { CSV_DELIMITER, CSV_QUOTE, CharUtils.CR, CharUtils.LF };</span>
+
+        @Override
+        public int translate(final CharSequence input, final int index, final Writer out) throws IOException {
+<span class="nc bnc" id="L74" title="All 2 branches missed.">            if (index != 0) {</span>
+<span class="nc" id="L75">                throw new IllegalStateException(&quot;CsvUnescaper should never reach the [1] index&quot;);</span>
+            }
+<span class="nc bnc" id="L77" title="All 4 branches missed.">            if (input.charAt(0) != CSV_QUOTE || input.charAt(input.length() - 1) != CSV_QUOTE) {</span>
+<span class="nc" id="L78">                out.write(input.toString());</span>
+<span class="nc" id="L79">                return Character.codePointCount(input, 0, input.length());</span>
+            }
+<span class="nc" id="L81">            final String quoteless = input.subSequence(1, input.length() - 1).toString();</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">            if (StringUtils.containsAny(quoteless, CSV_SEARCH_CHARS)) {</span>
+<span class="nc" id="L83">                out.write(StringUtils.replace(quoteless, CSV_QUOTE_STR + CSV_QUOTE_STR, CSV_QUOTE_STR));</span>
+            } else {
+<span class="nc" id="L85">                out.write(input.toString());</span>
+            }
+<span class="nc" id="L87">            return Character.codePointCount(input, 0, input.length()) - 1; // Increment</span>
+        }
+    }
+
+<span class="fc" id="L91">    public static final CharSequenceTranslator ESCAPE_JAVA = new LookupTranslator(new String[][] { { &quot;\&quot;&quot;, &quot;\\'&quot; }, { &quot;\\&quot;, &quot;\\\\&quot; } }) // Negate Conditionals (changed escape for double quotes)</span>
+<span class="fc" id="L92">            .with(new LookupTranslator(EntityArrays.JAVA_CTRL_CHARS_ESCAPE()))</span>
+<span class="fc" id="L93">            .with(JavaUnicodeEscaper.outsideOf(32, 0x7f));</span>
+
+<span class="fc" id="L95">    public static final CharSequenceTranslator ESCAPE_ECMASCRIPT = new AggregateTranslator(new LookupTranslator(new String[][] { { &quot;'&quot;, &quot;\\'&quot; }, { &quot;\&quot;&quot;, &quot;\\'&quot; }, { &quot;\\&quot;, &quot;\\\\&quot; }, { &quot;/&quot;, &quot;\\/&quot; } }), new LookupTranslator(EntityArrays.JAVA_CTRL_CHARS_ESCAPE()), JavaUnicodeEscaper.outsideOf(32, 0x7f));</span>
+
+<span class="fc" id="L97">    public static final CharSequenceTranslator ESCAPE_JSON = new AggregateTranslator(new LookupTranslator(new String[][] { { &quot;\&quot;&quot;, &quot;\\'&quot; }, { &quot;\\&quot;, &quot;\\\\&quot; }, { &quot;/&quot;, &quot;\\/&quot; } }), new LookupTranslator(EntityArrays.JAVA_CTRL_CHARS_ESCAPE()), JavaUnicodeEscaper.outsideOf(32, 0x7f));</span>
+
+    @Deprecated
+<span class="fc" id="L100">    public static final CharSequenceTranslator ESCAPE_XML = new AggregateTranslator(new LookupTranslator(EntityArrays.BASIC_ESCAPE()), new LookupTranslator(EntityArrays.APOS_ESCAPE()));</span>
+
+<span class="fc" id="L102">    public static final CharSequenceTranslator ESCAPE_XML10 = new AggregateTranslator(new LookupTranslator(EntityArrays.BASIC_ESCAPE()), new LookupTranslator(EntityArrays.APOS_ESCAPE()), new LookupTranslator(new String[][] { { &quot;\u0000&quot;, StringUtils.EMPTY }, { &quot;\u0001&quot;, StringUtils.EMPTY }, { &quot;\u0002&quot;, StringUtils.EMPTY }, { &quot;\u0003&quot;, StringUtils.EMPTY }, { &quot;\u0004&quot;, StringUtils.EMPTY }, { &quot;\u0005&quot;, StringUtils.EMPTY }, { &quot;\u0006&quot;, StringUtils.EMPTY }, { &quot;\u0007&quot;, StringUtils.EMPTY }, { &quot;\u0008&quot;, StringUtils.EMPTY }, { &quot;\u000b&quot;, StringUtils.EMPTY }, { &quot;\u000c&quot;, StringUtils.EMPTY }, { &quot;\u000e&quot;, StringUtils.EMPTY }, { &quot;\u000f&quot;, StringUtils.EMPTY }, { &quot;\u0010&quot;, StringUtils.EMPTY }, { &quot;\u0011&quot;, StringUtils.EMPTY }, { &quot;\u0012&quot;, StringUtils.EMPTY }, { &quot;\u0013&quot;, StringUtils.EMPTY }, { &quot;\u0014&quot;, StringUtils.EMPTY }, { &quot;\u0015&quot;, StringUtils.EMPTY }, { &quot;\u0016&quot;, StringUtils.EMPTY }, { &quot;\u0017&quot;, StringUtils.EMPTY }, { &quot;\u0018&quot;, StringUtils.EMPTY }, { &quot;\u0019&quot;, StringUtils.EMPTY }, { &quot;\u001a&quot;, StringUtils.EMPTY }, { &quot;\u001b&quot;, StringUtils.EMPTY }, { &quot;\u001c&quot;, StringUtils.EMPTY }, { &quot;\u001d&quot;, StringUtils.EMPTY }, { &quot;\u001e&quot;, StringUtils.EMPTY }, { &quot;\u001f&quot;, StringUtils.EMPTY }, { &quot;\ufffe&quot;, StringUtils.EMPTY }, { &quot;\uffff&quot;, StringUtils.EMPTY } }), NumericEntityEscaper.between(0x7f, 0x84), NumericEntityEscaper.between(0x86, 0x9f), new UnicodeUnpairedSurrogateRemover());</span>
+
+<span class="fc" id="L104">    public static final CharSequenceTranslator ESCAPE_XML11 = new AggregateTranslator(new LookupTranslator(EntityArrays.BASIC_ESCAPE()), new LookupTranslator(EntityArrays.APOS_ESCAPE()), new LookupTranslator(new String[][] { { &quot;\u0000&quot;, StringUtils.EMPTY }, { &quot;\u000b&quot;, &quot;&amp;#12;&quot; }, { &quot;\u000c&quot;, &quot;&amp;#13;&quot; }, { &quot;\ufffe&quot;, StringUtils.EMPTY }, { &quot;\uffff&quot;, StringUtils.EMPTY } }), NumericEntityEscaper.between(0x1, 0x8), NumericEntityEscaper.between(0xe, 0x1f), NumericEntityEscaper.between(0x7f, 0x84), NumericEntityEscaper.between(0x86, 0x9f), new UnicodeUnpairedSurrogateRemover());</span>
+
+<span class="fc" id="L106">    public static final CharSequenceTranslator ESCAPE_HTML3 = new AggregateTranslator(new LookupTranslator(EntityArrays.BASIC_ESCAPE()), new LookupTranslator(EntityArrays.ISO8859_1_ESCAPE()));</span>
+
+<span class="fc" id="L108">    public static final CharSequenceTranslator ESCAPE_HTML4 = new AggregateTranslator(new LookupTranslator(EntityArrays.BASIC_ESCAPE()), new LookupTranslator(EntityArrays.ISO8859_1_ESCAPE()), new LookupTranslator(EntityArrays.HTML40_EXTENDED_ESCAPE()));</span>
+
+<span class="fc" id="L110">    public static final CharSequenceTranslator ESCAPE_CSV = new CsvEscaper();</span>
+
+<span class="nc" id="L112">    public static final CharSequenceTranslator UNESCAPE_JAVA = new AggregateTranslator(new OctalUnescaper(), new UnicodeUnescaper(), new LookupTranslator(EntityArrays.JAVA_CTRL_CHARS_UNESCAPE()), new LookupTranslator(new String[][] { { &quot;\\\\&quot;, &quot;\\&quot; }, { &quot;\\'&quot;, &quot;'&quot; }, { &quot;\\&quot;, &quot;&quot; } }));</span>
+
+<span class="nc" id="L114">    public static final CharSequenceTranslator UNESCAPE_ECMASCRIPT = UNESCAPE_JAVA;</span>
+
+<span class="nc" id="L116">    public static final CharSequenceTranslator UNESCAPE_JSON = UNESCAPE_JAVA;</span>
+
+<span class="nc" id="L118">    public static final CharSequenceTranslator UNESCAPE_HTML3 = new AggregateTranslator(new LookupTranslator(EntityArrays.BASIC_UNESCAPE()), new LookupTranslator(EntityArrays.ISO8859_1_UNESCAPE()), new NumericEntityUnescaper());</span>
+
+<span class="nc" id="L120">    public static final CharSequenceTranslator UNESCAPE_HTML4 = new AggregateTranslator(new LookupTranslator(EntityArrays.BASIC_UNESCAPE()), new LookupTranslator(EntityArrays.ISO8859_1_UNESCAPE()), new LookupTranslator(EntityArrays.HTML40_EXTENDED_UNESCAPE()), new NumericEntityUnescaper());</span>
+
+<span class="nc" id="L122">    public static final CharSequenceTranslator UNESCAPE_XML = new AggregateTranslator(new LookupTranslator(EntityArrays.BASIC_UNESCAPE()), new LookupTranslator(EntityArrays.APOS_UNESCAPE()), new NumericEntityUnescaper());</span>
+
+<span class="nc" id="L124">    public static final CharSequenceTranslator UNESCAPE_CSV = new CsvUnescaper();</span>
+
+    public static final String escapeCsv(final String input) {
+<span class="nc" id="L127">        return ESCAPE_CSV.translate(input);</span>
+    }
+
+    public static final String escapeEcmaScript(final String input) {
+<span class="nc" id="L131">        return ESCAPE_ECMASCRIPT.translate(input);</span>
+    }
+
+    public static final String escapeHtml3(final String input) {
+<span class="nc" id="L135">        return ESCAPE_HTML3.translate(input);</span>
+    }
+
+    public static final String escapeHtml4(final String input) {
+<span class="nc" id="L139">        return ESCAPE_HTML4.translate(input);</span>
+    }
+
+    public static final String escapeJava(final String input) {
+<span class="nc" id="L143">        return ESCAPE_JAVA.translate(input);</span>
+    }
+
+    public static final String escapeJson(final String input) {
+<span class="nc" id="L147">        return ESCAPE_JSON.translate(input);</span>
+    }
+
+    @Deprecated
+    public static final String escapeXml(final String input) {
+<span class="nc" id="L152">        return ESCAPE_XML.translate(input);</span>
+    }
+
+    public static String escapeXml10(final String input) {
+<span class="nc" id="L156">        return ESCAPE_XML10.translate(input);</span>
+    }
+
+    public static String escapeXml11(final String input) {
+<span class="nc" id="L160">        return ESCAPE_XML11.translate(input);</span>
+    }
+
+    public static final String unescapeCsv(final String input) {
+<span class="nc" id="L164">        return UNESCAPE_CSV.translate(input);</span>
+    }
+
+    public static final String unescapeEcmaScript(final String input) {
+<span class="nc" id="L168">        return UNESCAPE_ECMASCRIPT.translate(input);</span>
+    }
+
+    public static final String unescapeHtml3(final String input) {
+<span class="nc" id="L172">        return UNESCAPE_HTML3.translate(input);</span>
+    }
+
+    public static final String unescapeHtml4(final String input) {
+<span class="nc" id="L176">        return UNESCAPE_HTML4.translate(input);</span>
+    }
+
+    public static final String unescapeJava(final String input) {
+<span class="nc" id="L180">        return UNESCAPE_JAVA.translate(input);</span>
+    }
+
+    public static final String unescapeJson(final String input) {
+<span class="nc" id="L184">        return UNESCAPE_JSON.translate(input);</span>
+    }
+
+    public static final String unescapeXml(final String input) {
+<span class="nc" id="L188">        return UNESCAPE_XML.translate(input);</span>
+    }
+
+    @Deprecated
+<span class="nc" id="L192">    public StringEscapeUtils() {</span>
+<span class="nc" id="L193">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

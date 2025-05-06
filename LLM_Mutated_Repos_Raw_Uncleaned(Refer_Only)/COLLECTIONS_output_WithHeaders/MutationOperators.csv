@@ -1,0 +1,3901 @@
+Java File Name,Mutation Comments
+InvokerTransformer.java,"Mutant 1: Negate the null check
+Mutant 2: Change the logic for null checks using conditional boundary
+changed length check to <
+Mutant 3: Increment the parameter types array length check
+Mutant 4: Invert Negative by removing null check
+if (input == null) {
+return null;
+Mutant 6: return false for the transform method
+return false;
+}
+Mutant 5: Return a primitive value instead of invoking the method
+Primitive return
+"
+EqualPredicate.java,"Mutated: Changed condition to return false instead of NullPredicate.
+Negate Conditionals
+Mutated: Added a primitive return mutation (returning 0 instead of NullPredicate).
+Conditionals Boundary
+Null Returns
+Mutated: Changed the equals check to a direct comparison with a false value.
+Invert Negatives
+Invert Negatives
+"
+ComparatorPredicate.java,"Mutation: Changed enum values to invalid ones for testing invalid criteria response
+Mutation: Changed return type from Predicate<T> to null to simulate Null Returns
+Mutated to return null
+Mutation: Inverted the condition on object and comparator parameters
+Mutation: Added an invalid case
+Inverted the condition
+Negate Conditionals
+Negate Conditionals
+Inverted Condition
+Inverted Condition
+Empty Returns (No operations leading to invalid cases)
+Mutation: Changed the return value based on logic flaws
+False Return
+True Return
+"
+CatchAndRethrowClosure.java,"Modified to throw FunctorException instead of rethrowing
+"
+AnyPredicate.java,"Changed from preds.length == 0 to <=
+Changed from predicates.length == 0 to <=
+Changed return value to true
+"
+SetUniqueList.java,"Negated condition
+Condition boundary change
+Increment mutation
+Negate condition
+Changed logical flow for mutation
+Primitive return condition mutation
+"
+Closure.java,"Invert Negatives: Change the parameter type to ensure different behavior
+Conditionals Boundary: Change the condition under which 'execute' is called
+Null Returns
+For example, assuming ""input"" could be a String
+False Returns: Always return false from this hypothetical method
+True Returns: Always return true from this hypothetical method
+Return Values: Return a default value for a hypothetical method
+Primitive Returns
+Void Method Calls: Call a method that does nothing in the accept method
+This could represent a void method call as a mutation
+"
+IteratorOperations.java,"MUTANT: Here we could change the add operation in the loop
+original: forEachRemaining(collection::add);
+We change the behavior to add a number or some constant instead of the element itself.
+Could mutate to just not do anything with this.
+MUTANT: Return null instead of the element retrieved
+original: E result = next(); remove(); return result;
+Mutated to return null (as an empty return).
+MUTANT: Instead of returning collection, returning null
+No mutation necessary here
+No mutation necessary here
+"
+LoopingIterator.java,""
+FixedSizeMap.java,""
+DefaultedMap.java,"Changed '||' to '&&'
+"
+AbstractInputCheckedMapDecorator.java,"Negate Conditionals: Changing array.length to array.length - 1 to test boundary behavior
+Increment operator: Changing the indexing
+Return Values: returning a modified array instead of current array
+Invert Negatives by returning a new MapEntry if condition fails
+Null Returns for non-existent entries
+Math mutation: Changing return value of getMapEntry().setValue
+Primitive Returns
+False Return mutation: always return null for entrySet
+This is a deliberate false return
+Negate Conditionals: flip the true result
+"
+UnmodifiableListIterator.java,"Conditionals Boundary: returning null instead of a method call
+Original: return unmodifiableListIterator(iterator);
+Negate Conditionals: Inverting the condition
+Increments: changing return value
+Original: return iterator.hasNext();
+Return Values: returning null instead of the iterator's next()
+Original: return iterator.next();
+Math: modifying return value by adding 1
+Original: return iterator.nextIndex();
+False Returns: returning false instead of throwing an exception
+throw new UnsupportedOperationException(""set() is not supported"");
+"
+EditScript.java,"This might be altered as part of mutation
+This might be altered as part of mutation
+Primitive Returns
+Primitive Returns
+Increments operator and Negate Conditionals
+Increments
+This might be altered as part of mutation
+Adding a condition to test Negate Conditionals
+It should only increment LCS if command is non-null, negating would return false
+False Returns
+Negate Conditionals
+Add a call that modifies behavior in a void method
+Empty Returns
+Void Method Calls
+Additional false return for demonstration
+False Returns
+Additional method for Null Returns
+Null Returns
+Additional method for Empty Returns
+This is a valid void method, representing a state change as Empty Returns
+"
+StaticBucketMap.java,"Mutated from true to false
+Mutated from false to true
+Mutated from true to false
+Mutated from true to false
+Mutated from false to true
+Mutated from true to false
+Mutated to return size + 1
+Mutated to negate condition
+Mutated from true to false
+Mutated from false to true
+Mutated to return size - 1
+Mutated to return true when class mismatch
+Changed && to ||
+Incremented hashCode for value
+Changed return to null
+Mutated to return size + 2
+Incremented size logic instead of decremented
+Mutated to set size to 1 instead of 0
+Negated condition check
+Negated condition check
+Mutated to always return true if no value found
+Mutated from true to false
+Negated condition check
+Unchanged
+Mutated from 0 to 1 for null handling
+Changed to return -1 * hash for negative results
+Changed initialization from 0 to 1
+Incremented hashCode accumulation
+Changed to return true if size is not zero
+Mutated from returning old value to always returning null
+Added condition to return null if old value is null
+Unchanged
+Changed to always put null value
+Negated condition check
+Mutated to return null instead of n.value
+Unchanged
+Changed initialization from 0 to 1
+Changed return to cnt
+"
+ListValuedMap.java,"Conditionals Boundary mutation: if the key is null, return a new list instead of null
+Invert Negatives mutation: check if the key is NOT null
+Negate Conditionals: changed behavior to return null if key is valid
+Return an empty list
+Remove Object key and return different results for testing
+False Returns mutation: return a new list instead of attempting to find a key
+Changed to always return an empty list
+"
+FactoryTransformer.java,"Increment added
+"
+AbstractMapEntry.java,"Negate the return logic for objects
+Negate conditionals
+Conditionals boundary (no changes)
+Invert Negatives
+Math mutation, using a simple arithmetic operation
+Math mutation
+Return value mutation (wrong implementation for testing)
+Null Returns
+"
+InsertCommand.java,""
+AbstractQuantifierPredicate.java,"Mutant 1: Conditionals Boundary (if you were to use `==` or `!=` on array lengths)
+Mutant 2: Increments (changing the constructor parameter count)
+Mutant 3: Adding an arbitrary increment here
+Example: incrementing the length
+Invalid but could help test boundary conditions
+Mutant 4: Null Returns (returning null instead of a copy)
+Mutant 5: Negate Conditionals (this could be applied in logic, but here we might apply to the array size check)
+Inverted the condition
+Mutant 6: Math (changing the instantiation of predicates)
+You can also add arbitrary math operations
+Unused variable to simulate a mutation
+Mutant 7: False Returns (for example, altering a method to always return false)
+Mutant 8: Primitive Returns (returning an integer or boolean instead of Predicate)
+Returning integer instead of Predicate
+"
+FactoryUtils.java,"Mutated - Inverted constant value returned
+Return value mutation: inverted
+Mutated - Switched to return a new instance of the exception factory
+Return value mutation: return a new object instead
+Mutated - Altered parameters for instantiateFactory to introduce a bug
+Parameters mutation
+Mutated - Changed the parameter types and args
+Parameter mutation
+Mutated - Constant value returned is now false
+Return null instead
+Mutated - Prototype instance is altered
+Prototype alteration
+Mutated - Changed constructor to be public for external access
+Mutated - Changed from private to public
+Mutated - Introduced an empty return method
+This method now returns an empty value
+Mutated - Additional method added returning false
+Always returns false
+Mutated - Additional method added returning true
+Always returns true
+Mutated - Additional method added returning null
+Always returns null
+Mutated - Additional method added returning a primitive value
+Always returns zero (primitive)
+"
+AbstractIterableMap.java,""
+MapIterator.java,"Mutated version of MapIterator interface
+(Increments) changing the logic of setValue
+(Primitive Returns) potentially altering the assumed type; for illustrative purpose let's assume it’s mutated
+(Conditionals Boundary) original condition could be altered but is not explicitly defined here
+(Return Values) let’s assume we may want to alter return types in some cases
+(Void Method Calls) mutating the behavior of remove
+(Void Method Call) unchanged
+Let's change value type to a possible null return as mutation
+(Math) adding some mutation for the principle of test
+(Invert Negatives) checking for a negative condition
+(Null Returns) this changes behavior when a null value is passed
+here we make it possible to return the value unchanged
+(Negate Conditionals) added an example method with a negated condition
+(Negate Conditionals) let's say we invert the logic of checking for emptiness
+(False Returns) We can add another default method that returns false where once it returned true
+(False Returns)
+(True Returns) Adding a method that always returns true
+(True Returns)
+(Empty Returns) a method that doesn't return anything special
+(Empty Returns)
+"
+AbstractIteratorDecorator.java,"Mutant using Negate Conditionals operator - this effects the method when iterator has no next element
+Mutant using Null Returns
+Added mutant to check for increment operation - Increment operator (if applicable on integers)
+Mutant using Increment operator (value + 1)
+Mutation changes increment by 1 to increment by 2.
+Adding a void method with mutant using Void Method Calls operator
+Mutant void method - removing the print call (effectively making the method do nothing)
+System.out.println(""This method does something."");
+Mutant using Negate Conditionals operator - flipping hasNext functionality
+Inverting the result of hasNext()
+Mutant applying False Returns operator
+Always returns false, when it might actually be checking for emptiness.
+"
+UniquePredicate.java,"Mutant - Changed from return iSet.add(object) to return !iSet.add(object);
+"
+AbstractMapMultiSet.java,"Mutation: changed from true to false
+Mutation: changed from false to true
+Mutation: changed from false to true
+Mutation: changed > 0 to < 0
+Mutation: Assume this can be set to a negative value for testing
+Mutation: changed from true to false
+Mutation: changed > 1 to < 1
+Mutation: changed from true to false
+Mutation: changed from value to value + 1
+Mutation: changed from value to value + 1
+Mutation: changed == to !=
+Mutation: changed from value to value + 1
+Mutation: changed from true to false
+Mutation: changed from count to count + 1
+Mutation: changed from false to true
+Mutation: changed < to <=
+Mutation: modified message
+Mutation: changed += to -=
+Mutation: changed from = 0 to += 1
+Mutation: changed to !contains
+Mutation: changed to return null instead
+Mutation: changed to return null instead
+Mutation: changed from readInt() to readInt() + 1
+Mutation: changed from += count to += count + 1
+Mutation: changed from size to size + 1
+Mutation: changed from value to value + 1
+Mutation: changed from true to false
+Mutation: changed from false to true
+Mutation: changed != to <=
+Mutation: changed to + 1
+Mutation: changed from value to value + 1
+Mutation: changed from 0 to 1
+Mutation: changed from 0 to 1
+Mutation: changed from 0 to 1
+Mutation: changed to !
+Mutation: changed to return null instead
+Mutation: changed < to <=
+Mutation: modified message
+Mutation: changed from 0 to 1
+Mutation: changed < to <=
+Mutation: added + 1
+Mutation: changed -= occurrences to -= occurrences - 1
+Mutation: changed from -= to +=
+Mutation: changed from 0 to 1
+Mutation: changed size() to size() + 1
+Mutation: changed > to < for testing
+Mutation: changed < to <=
+Mutation: changed size to size + 1
+Mutation: changed > to < for testing
+Mutation: kept as is, but could be manipulated if desired
+Mutation: changed from map.size() to 0
+"
+AbstractBitwiseTrie.java,"Conditionals Boundary Mutation: Changed the && to ||
+Math Mutation: Added 1 to hash codes
+return null;
+Return Values Mutation: return null instead of previous
+Negate Conditionals Mutation: Change the return value
+Changed from '=' to '!='
+Invert Negatives Mutation: Add negation to the comparison result
+return !Objects.equals(a, b);
+Increments Mutation: increment the return value by 1
+Empty Returns Mutation: return true instead of false in this case
+Changed from false to true
+Negate Conditionals Mutation: return != 0 instead of == 0
+False Returns Mutation: return true instead of false
+Null Returns Mutation: return null instead of 0
+return 0;
+In Java, this can't actually compile, demonstrating a invalid case
+"
+MultiMapUtils.java,""
+BoundedCollection.java,"Mutant: Negate the return type for isFull
+This change simulates returning the opposite boolean value
+Mutant: Change the return type of maxSize to a boolean instead of int
+This simulates a nonsensical return that does not conform to the original
+Mutant: Adding a method that returns an empty Collection (Void Method Calls)
+Mutant: Make maxSize return a null value instead of an int.
+Mutant: change return type to double instead of int
+Mutant: Adding a method that always returns true
+Mutant: Adding a method that always returns false
+Mutant: Adding a method that returns an imaginary number, for fun
+This could be seen as a misuse of return types, but demonstrates mutation.
+Empty Returns
+Invert Negatives
+Return Values
+This could be an arbitrary change showing a void method returning something
+Void Method Calls
+Intended to illustrate handling of a potential error state.
+Null Returns
+to introduce a mathematical alteration
+Math
+True Returns
+False Returns
+Primitive Returns
+Additional mutant method: default method that does nothing and returns void
+intentionally left blank
+"
+NullIsExceptionPredicate.java,"Inverted return value
+"
+SynchronizedQueue.java,"Null Returns mutation
+Negate Conditionals mutation
+False Return mutation
+Negate Conditionals mutation
+Return Values mutation (changed peek to poll)
+Null Returns mutation
+Primitive Return mutation with a new Object
+"
+LongBiPredicate.java,""
+CloneTransformer.java,"Conditionals Boundary Mutation: Changed from empty constructor to one that does nothing
+Return Values Mutation: Returning null instead of INSTANCE
+Void Method Calls Mutation: Added a dummy method call that does nothing
+This method is intentionally empty.
+Negate Conditionals Mutation: Changed condition to check for non-null input
+Increments Mutation: Change prototypeFactory call method name and simulate a math manipulation
+If input is not null, return null instead
+Empty Returns Mutation: Returning null
+Math mutation: Result modified
+True Returns Mutation: Added a new method to force a true return
+False Returns Mutation: Added a new method changing the return to false
+Null Returns Mutation: New method always returning null
+Primitive Returns Mutation: Added a method returning a primitive, e.g., int
+This doesn't directly relate to the class functionality but demonstrates the mutation
+"
+AbstractOrderedBidiMapDecorator.java,"Changed to return null instead of the actual first key
+No change here
+No change here
+Cast added to potentially change behavior
+Changed to return null instead of the next key
+No change here
+"
+AbstractNavigableSetDecorator.java,"Inverted negation: return null instead of decorates().ceiling(e)
+Mutant: Null Returns
+Negated conditional: changed cast to a different type
+(changed type, but keeping the cast)
+Conditionals boundary: the return can be negated.
+Mutant: Null Returns
+Mathematically changed call: returning descendingSet as an empty set
+Mutant: Empty Returns
+Return value operator: returning true instead of ceiling
+Mutant: True Returns
+Invert negatives: returning when inclusive is false
+Mutant: Negate Conditionals
+Increment operator: add +1 to the E object
+Assuming E is Number for increment purpose, for demonstration
+This is a hypothetical situation as E is a generic type
+Mutant: Primitive Returns
+Returning false directly instead of decorated().pollFirst()
+Mutant: False Returns
+Return empty instead of a subSet
+Mutant: Empty Returns
+Always returning the full set for tailSet
+Staying the same but can create a mutant returning something different.
+"
+SynchronizedMultiSet.java,"Increments operator applied (count - 1)
+Negate the positive return condition
+Increments operator applied
+Return Values operator applied to force hashCode to return 0 or 1
+Negate Conditionals operator applied
+Null and Primitive Returns operator applied
+"
+UnmodifiableSortedBidiMap.java,"Negate condition
+Return a false value
+Negate condition
+Adjusting message
+"
+AbstractOrderedMapDecorator.java,"Mutant: Return null instead of decorated().firstKey()
+Instead of decorated().firstKey();
+Mutant: Instead of the actual lastKey may return a constant
+Instead of decorated().lastKey();
+Mutant: Change calls to decorated().mapIterator()
+Instead of decorated().mapIterator();
+Mutant: Invert the logic to provide a different response
+Invert negation to be true if key is null
+Mutant: Return an empty object instead of decorated().previousKey()
+Return a new Object instead of decorated().previousKey()
+"
+DefaultEquator.java,"Boundary change
+"
+ListUtils.java,"Further methods would be similarly mutated...
+mutate to simulate void method call being ineffective
+simulate an empty return for this method
+Negating condition by replacing less-than with greater-than
+Invert negation: remove the return statement for null list
+False Return
+Negate the condition check for 'list == null'
+Inverted Negatives
+False Return simulation
+Negate the equality check
+False Return
+Yield Null Return for the method if either sequence is null
+Null Return
+Modified mutation
+Altering the initial capacity based on a mutation
+Modify for a Primitive Return mutation scenario.
+"
+LayeredBloomFilter.java,"Increment operator mutation: result[resultIdx++] = bfIdx + 1;
+Increment operator mutation: bfIdx += 2;
+Void Method Call mutation: return false; // Return Values mutation
+Return Values mutation: return 1;
+Empty Returns mutation: return;
+Negate Conditionals mutation: return !contains(createFilter(bitMapExtractor));
+Negate Conditionals mutation: return !other instanceof BloomFilterExtractor ? contains((BloomFilterExtractor) other) : !processBloomFilters(x -> !x.contains(other));
+Return Values mutation: return 0; // False Returns mutation: return -1;
+Null Returns mutation: return null;
+Negate Conditionals mutation: return !processBloomFilters(BloomFilter::isEmpty);
+"
+AbstractBagDecorator.java,"Conditionals Boundary: Reversed the condition
+Invert Negatives: Changed casting direction and added null check
+Negate Conditionals: Change the condition for equality
+Math: Changed the return value by adding 1 to the count
+True Returns: Change hashCode to always return a constant
+Void Method Calls: Added a print statement to simulate a side effect
+Null Returns: Modify to always return null
+"
+NotPredicate.java,"Negated condition
+"
+SparseBloomFilter.java,"Mutation using Increments operator (changed idx to idx + 1)
+Increment idx by 1
+Increment indices during bitmap setting
+Changed from SPARSE to 0 (Negate Conditionals)
+Negate the condition
+Use 0 instead of SPARSE
+False return
+Change from >= to >
+Condition change
+Changed from 0L to 1L
+Change to false return
+Changed allMatch to noneMatch (Negate Conditionals)
+"
+PushbackIterator.java,"Changed || to &&
+"
+AllPredicate.java,""
+PredicateDecorator.java,""
+TreeList.java,"Inverted condition
+Inverted condition
+Condition boundary modified
+Negate condition
+Condition modified
+Negate condition
+Inverted condition
+Inverted comparison
+Increment modified
+Increment modified
+Increment modified
+Decrement instead of increment
+Inverted comparison
+Increment modified
+Negated conditions in different cases
+Inverted comparison
+Inverted comparison
+Kept the same for clarity
+Inverted conditions
+Changed to return 1 instead of -1
+Negated condition
+Changed the return value
+Negated condition
+Kept the same for clarity
+Kept the same for clarity
+Changed returned value to 0 instead of -1
+Inverted condition
+Inverted condition
+Inverted condition
+Inverted condition
+Inverted condition
+Kept the same for clarity
+Kept the same for clarity
+Inverted condition
+Inverted condition
+Changed to min
+Inverted condition
+Inverted condition
+Inverted condition
+Condition check inverted
+Changed from a normal return
+decrement instead of increment
+decrement instead of increment
+Inverted condition
+Inverted condition
+Node is not null, changed return value
+Inverted condition
+Kept the same for clarity
+Kept the same for clarity
+Kept the same for clarity
+Set to 0 instead of -1
+Set to 0 instead of -1
+Inverted condition
+Inverted the comparison
+Inverted conditions
+Inverted condition
+Inverted call to previous instead of next
+Kept the same for clarity
+Inverted condition
+Incremented nextIndex
+Inverted call to next instead
+Incremented nextIndex
+Incremented index
+Inverted condition
+Set to 0 instead of -1
+Negated condition
+Condition inverted
+Negated condition
+Condition inverted
+Changed return value to false
+Condition inverted
+Kept the same for clarity
+Changed size to 1 instead of 0
+Inverted comparison
+Kept the same for clarity
+Condition inverted
+Kept the same for clarity
+Negated to -1
+Kept the same for clarity
+Returned result instead of decreasing size
+Kept the same for clarity
+Kept the same for clarity
+Changed to return obj instead of result
+Kept the same for clarity
+Changed to size + 1
+Kept the same for clarity
+Kept the same for clarity
+"
+ReverseComparator.java,"Negate the parameters to change the comparison back
+Negate the return value for equality
+Change null comparison to use '==' straightforwardly
+Negate the condition to return true when object is null
+Invert the condition for comparison
+Change return value to true for non-class match
+Change string in hashCode
+"
+InstanceofPredicate.java,"Boundary condition mutation
+"
+SortedPropertiesFactory.java,""
+TransformIterator.java,"Mutation: Negate condition
+"
+IteratorEnumeration.java,"Changed `&&` to `||`
+"
+SingletonListIterator.java,""
+IfTransformer.java,"other parts remain unchanged...
+Changed from if to if not
+"
+BloomFilterExtractor.java,"Negate conditionals mutation
+Changed && to ||
+Conditional boundary mutation
+Changed the logic to return true if the predicate is satisfied
+Void method call mutation could imply calling method but changing behavior
+Return values mutation (changing to false)
+Changed the return value to false instead of performing merge
+No change needed here, as mutation should be minimal
+Return values mutation
+Negating the result
+Math mutation - introduced a trivial operation
+"
+CollectionSortedBag.java,"Increments mutation: changed 1 to 0
+Return Values mutation: changed true to false
+Negate Conditionals mutation: changed || to &&
+Invert Negatives mutation: inverted the condition
+Increments mutation: changed 1 to 0
+Negate Conditionals mutation: negated condition
+Negate Conditionals mutation: changed || to &&
+Negate Conditionals mutation: negated condition
+Negate Conditionals mutation: inverted condition
+"
+TransformedNavigableSet.java,"... other methods remain unchanged ...
+Negated condition
+"
+PredicatedMultiSet.java,"Conditionals Boundary: Changed to 'if(count >= 0)' to check for negative counts
+Negate Conditionals: Using double negation just to demonstrate mutation
+This remains unchanged intentionally
+Invert Negatives: Changing the comparison logic
+Inverted condition
+Return Values: Changing return behavior by altering hash code
+Mutant returns a constant value
+Math: Changing count to always return 0 when removing
+Returns zero instead of the actual count
+Conditionals Boundary: Changed boundary condition to check for more than max integer
+Empty Returns: Always returns an empty set
+Mutant returns an empty set
+"
+DualLinkedHashBidiMap.java,"Mutation: Change the creation of the BidiMap such that it returns an empty map to test how code handles empty collections
+Mutation: Pass null to putAll to see how it handles null input
+Mutation: Add an additional writeObject call for reverseMap to test serialization.
+"
+StringKeyAnalyzer.java,""
+AbstractListDecorator.java,""
+UnmodifiableMap.java,"Conditionals Boundary mutation: Changed instanceof to false, simulating unexpected behavior
+originally: if (map instanceof IterableMap)
+Return Values mutation: Force a return to null before writing the map
+originally: out.writeObject(map);
+"
+TransformedSet.java,"Changed from isEmpty() check
+"
+FixedOrderComparator.java,"Mutation: Change type of map to be a synchronized map for boundary condition testing.
+Mutation: Incrementally change items size.
+Mutation: Negate being able to add elements in certain cases.
+Change counter increment to decrement.
+Negate the return condition.
+Mutation: Always throw an exception instead of checking the existing object.
+Change exception behavior.
+Change return value.
+Mutation: Change condition to allow modification unexpectedly.
+Change exception type.
+Mutation: Change comparison logic to reverse the order of comparison.
+Reverse comparison order.
+Mutation: Alter equality check for inconsistency.
+Always return false instead of true.
+Always return true for null.
+Always return true for different classes.
+Change conditions.
+Mutate it to always return null.
+Mutation: Return a constant hash code.
+Negate the lock condition.
+"
+TruePredicate.java,"No change
+Null Returns: change INSTANCE to null
+False Returns: always returns false
+"
+UnmodifiableSortedSet.java,"Mutation: Changed to allow adding objects.
+Changed to always return true.
+Mutation: Throwing a different exception type.
+Changed from UnsupportedOperationException.
+Mutation: Allowed clearance.
+No-op instead of exception.
+Changed to allow clear without exceptions.
+Mutation: Inverted the iterator behavior.
+No mutation here, it remains.
+Mutation: Not calling setCollection method.
+setCollection((Collection<E>) in.readObject()); // Commented out to mutate behavior.
+Mutation: Always returns false instead of fully throwing exception.
+Changed to always return false.
+Mutation: Added empty return.
+Changed to an empty return instead of throwing exception.
+Mutation: Null returns instead of throwing exception.
+Changed to return null instead of throwing an exception.
+Mutation: Changed to always return true.
+Changed to always return true.
+Mutation: Writing nothing.
+out.writeObject(decorated()); // Commented out to mutate behavior.
+"
+UniqueFilterIterator.java,"Conditionals Boundary: Swap the comparison in the constructor
+public UniqueFilterIterator(final Iterator<? extends E> iterator) {
+super(iterator, null); // Changed from UniquePredicate.uniquePredicate() to null
+}
+Invert Negatives: Would not apply directly to this case, as there are no negatives
+Math: Introduce a math error by modifying the parameters for a calculation (if applicable)
+Assuming there's a method that performs some arithmetic or logic
+void increaseCount() {
+count = count + 2; // From count + 1 to count + 2
+}
+Negate Conditionals: Would apply if we had conditionals in the context
+for example, flipping an if condition (but there aren't any in the shown code)
+Return Values: Change constructor behavior which primarily does not return a value
+void doSomething() {
+return null; // Change return from void to a nullable type (not applicable as no method to modify)
+}
+Void Method Calls: Ignoring those as this constructor has no void methods
+But let's explore that:
+someVoidMethodCall(); // Change existing method calls to void
+Empty Returns: Add empty returns to methods (if there were any)
+public void someMethod() {
+// Rather than doing something we just return;
+return; // Empty return added just for mutation
+}
+False Returns: Change a method expected to return something to return false
+public boolean isEmpty() {
+return false; // Return false where it might have returned true before
+}
+True Returns: Change a method expected to return something to return true
+public boolean hasNext() {
+return true; // Change logic to return true regardless of iterator status
+}
+Null Returns: Adjust functions to return null (if they were applicable)
+public E next() {
+return null; // Change normal return to return null
+}
+Primitive Returns: Would apply to primitive-returning methods
+public int size() {
+return 0; // Change expected return size to 0
+}
+Increments: Change constructor parameter type
+No change
+"
+SingletonIterator.java,"Conditionals Boundary
+Negated conditionals
+Inverted condition
+Null returns
+Void method call modified
+Inverted condition
+Mutated behavior in reset method
+"
+TransformedMultiValuedMap.java,"Boundary condition
+Mutant: changed to maximum size of map
+Mutant: returning the negation of original return value
+Mutant: Change hasNext() to !hasNext()
+Mutant: Return true unconditionally to test ""True Returns""
+Mutant: Change the return statement to always return false
+Mutant: Change the transformation to return null regardless of the object
+Mutant: Return null instead of applying the transformer
+"
+UnmodifiableNavigableSet.java,"Negate Conditionals Mutation
+Conditionals Boundary Mutation - changed instanceof check
+Negated
+Condition changed to always create a new object.
+Return original if it is unmodifiable
+Void Method Calls - changed to return true instead of throwing exception
+Changed behavior to allow addition
+Primitive Returns
+Changed to return false instead of exception
+Empty Returns
+Mutated to return without doing anything instead of throwing an exception.
+Invert Negatives Mutation - return 'null' instead of object
+Changed to return null
+False Returns Mutation
+Change return value to null
+Math Mutation - ignore 'toElement'
+Changed to arbitrary value
+Conditionals Boundary change of inclusive
+Negated the inclusion
+Null Returns Mutation
+Mutated to return null
+Primitive Returns around value with 0, which was supposed to be null
+Changed to return a new object instead of throwing exception
+Changed to do nothing
+setCollection((Collection<E>) in.readObject());  // This line is commented out
+Negate Conditionals - changed to allow removal
+Mutated to always return true
+Return Values Mutation - changed to false return value
+Changed to always return false instead of throwing
+Void Method Call, changed behavior but returns true
+Changed to allow removal
+True Returns
+Changed to always return true instead of throwing exception
+Conditionals Boundary change
+Change to arbitrary value
+Math Mutation - added arbitrary increment
+No change
+Null Returns Mutation
+"
+AbstractCollectionDecorator.java,"Invert Negatives: made this fail if collection is null
+Negate Conditionals: invert outcome of add
+Negate Conditionals: To make the outcome false
+Empty Returns: changed the method to not perform any action
+This void method now does nothing
+Negate Conditionals
+Negate Conditionals
+No change
+Negate Conditionals
+Return a null Iterator instead of a valid one (Null Returns)
+False Returns: we always return false for remove
+False Returns: we discard calls to removeAll
+False Returns: removeIf is always false
+False Returns: retainAll never retains any items
+Conditionals Boundary: added a null check
+Original behavior retained if valid
+Primitive Returns: we always return size 0
+Null Returns: we return null instead of an array
+Null Returns for the array
+Change String representation
+"
+ClosureTransformer.java,"Change from returning input to returning null
+"
+ReplacementsFinder.java,"Changed initialization to 1
+Changed to do nothing (void method call mutated - no action taken)
+Changed to return false (mutated void method call)
+return false;
+Negate the condition
+Changed increment to addition
+Empty return (mutated method)
+return;
+reset skipped
+"
+FilterListIterator.java,"Invert Negatives
+Mutated line
+Negate Conditionals
+Mutated line
+Increments
+Return Values
+This is a change to return null instead of throwing exception
+Mutated line
+Returning unchanged value
+Mutated line (Addition)
+Void Method Calls
+False Returns
+Changed to return previousObject which could be null
+Mutated line (Decrease 2 instead of 1)
+Returning unchanged value
+Removed decrement to always return current nextIndex
+Math mutations to alter logic
+Changed to return true
+Conditionals Boundary Mutation (e.g., change comparison operators)
+Added null check
+Changed to false
+Changed to return false
+No change here
+Math mutations to alter logic
+Changed to return true
+Conditionals Boundary Mutation (e.g., change comparison operators)
+Added null check
+Changed to false
+Changed to return false
+No change here
+"
+UnmodifiableTrie.java,"Changed class name
+Conditionals Boundary Not applied
+Negate Conditionals - No mutation here as it is null check
+Negate Conditionals
+Negate Conditionals
+Negate Conditionals
+Math mutation was not applicable
+return null; // Uncomment for Null Return mutation
+Null Return
+Increments mutation not applicable
+return false; // Uncomment for False Return mutation
+False Return mutation
+Conditionals boundary checked but no applicable mutation
+Conditionals boundary checked but no applicable mutation
+Increment mutations can’t be applied here directly
+Empty Returns and True Returns mutations were not applicable here
+"
+ReferenceMap.java,"Increments: Changing values from DEFAULT_CAPACITY and DEFAULT_LOAD_FACTOR
+Negate Conditionals: Changed false to true
+Math: Modified loadFactor
+Increments and Math: Changing capacity and loadFactor
+Invert Negatives: Changed purgeValues to its negation
+Void Method Calls: Simulating a call that can have a consequence when object is read.
+(Consider invoking a method to check state after reading)
+False Returns: An addition of a check - simulating failure to write could nullify the call
+"
+AndPredicate.java,""
+KeyAnalyzer.java,"Invert Negatives operator
+Invert Negatives operator
+Invert Negatives operator
+Conditionals Boundary and Negate Conditionals operators
+Negate Conditionals operator
+Change the return to a negative value (False Return operator)
+New void method (Void Method Call)
+New static void method (Void Method Call)
+Empty return, False return, and Null return examples
+False Return operator
+True Return operator
+Null Return operator
+Increment operator
+"
+DualHashBidiMap.java,"Mutation: Write an empty map instead of normalMap
+"
+DefaultKeyValue.java,"Negate Conditionals
+Change AND to OR (Math)
+Conditionals Boundary
+Invert Negatives
+Invert Negatives
+Null Returns
+"
+ArrayListValuedHashMap.java,"Conditionals Boundary
+Conditionals Boundary
+Increments
+Increments
+Increments
+Negate Conditionals
+No operation on writing object (Void Method Call)
+Return a value based on a condition (Return Values)
+Primitive Returns
+"
+Predicate.java,""
+TransformerUtils.java,"Negated this line in other mutants
+Increment mutant
+Math mutant (modifying constant)
+(constantToReturn + 1) mutated
+Invert Negatives
+Mutated to return falseTransformer always
+Mutated to return null instead of trueTransformer
+Mutating to drop null check (from the original implementation)
+Negate Conditionals
+Mutated to set preds to null instead of actual predicates
+Return Value Mutant
+Could return null instead
+Empty Returns
+Changing constructor visibility could create issues
+"
+UnmodifiableBoundedCollection.java,"Conditionals Boundary: Changed from < to <=
+"
+AbstractSortedMapDecorator.java,"Negate conditionals: returning null instead of actual first key.
+Originally: return decorated().firstKey();
+Conditionals Boundary: changing the conditional boundary.
+No Mutation Applied
+Invert Negatives: return null if the last key is not null.
+No mutation applied
+Return Values: Modify the returned value if condition fails.
+No mutation applied
+False Returns: returning a static value instead of dynamic behavior.
+Original: return headMap(key).isEmpty() ? null : headMap(key).lastKey();
+Null Returns: returning null regardless of input.
+Originally: return decorated().subMap(fromKey, toKey);
+Primitive Returns: change the return type to an integer instead of SortedMap.
+Removed method, you could consider using it in actual implementation.
+Originally: return decorated().tailMap(fromKey);
+"
+ListIteratorWrapper.java,"Inversion of the message.
+mutated from UNSUPPORTED_OPERATION_MESSAGE
+Negate logic
+mutated to return the opposite
+mutated to always return false
+Negate the condition
+negated the condition
+mutated to use <=
+mutated to return the negation
+Negate conditionals for the ListIterator
+Null return for failure case
+Changed the conditional check
+Decrement instead of increment
+Changed logic
+Decrement for mutation testing
+Decrement wrappedIteratorIndex
+negation
+Negated the conditional
+primitive return
+changed return to previousIndex
+Negated again
+Null return for failure case
+Changed condition
+Throwing exception
+mutating the condition with !=
+changed logic from decrement to increment
+Negated condition
+Mutation returning -1
+Similar shift
+negating the condition
+void method call mutation
+negated check
+increment mutation
+Negated the condition logic
+increment for mutation
+negated the removal state to true
+negated to give a false condition
+mutated void return for when not a ListIterator
+mutated resetting to 1 instead of 0
+Inversion of the message.
+mutated from UNSUPPORTED_OPERATION_MESSAGE
+"
+ListOrderedSet.java,"Negated condition
+Changed logical operator (Conditionals Boundary mutation)
+Return value mutation (returning false instead of true)
+Negated condition
+Return value mutation
+Changing the contains check to contain logic - negative consequence for mutation testing
+Changed return value
+Inverted condition to introduce logical failure potential
+Null return for invalid condition
+Return value mutation
+Return value mutation
+Condition is inverted to test failure mode
+True return mutation
+True return mutation
+No mutation applied here
+Null return mutation
+"
+package-info.java,""
+UnmodifiableMultiValuedMap.java,"void clear() {
+return; // Empty Returns
+}
+Negate Conditionals mutation: allowing clear method
+return null; // Null Returns mutation
+return true; // True Returns mutation
+return false; // False Returns mutation
+return null; // Null Returns mutation
+return true; // True Returns mutation
+"
+NOPTransformer.java,""
+BloomFilter.java,"Other methods remain unchanged.
+Mutated line
+"
+UnmodifiableEntrySet.java,"Inverted negation mutation
+Unchanged
+False returns mutation
+No change here
+Negated conditional mutation
+Negate conditionals mutation
+No change here
+No change here
+Empty return mutation
+No change here
+No change here
+Void method call mutation
+Other than throw UnsupportedOperationException
+No change here
+No change here
+No change here
+Condition change for boundary mutation
+Inverted boundary mutation
+Should keep as is
+Condition change for boundary mutation
+"
+TiedMapEntry.java,"Negated
+Negated logic flow
+Negated flow
+Negated logic
+Negated
+"
+PredicatedList.java,"Mutated the index (increment)
+Mutation on index
+Fix negation
+Increment on index
+Increment start index
+Increment in mutation
+Increment on index
+Increment on index
+Increment on indices
+Conditionals Boundary Mutation
+"
+OrderedBidiMap.java,"Another mutation could be to add a method that returns an empty OrderedBidiMap
+Mutation: Change return type and return null instead of an instance
+Mutation Operator: Null Returns
+Instead of returning an actual instance, we return null
+Mutation is demonstrated here
+Not part of the original interface, but illustrative for mutation concepts
+This is a mutation to demonstrate empty return concept
+Other methods from BidiMap and OrderedMap would be overridden here.
+Implement methods as necessary for a complete interface, possibly empty.
+As a mutation return
+"
+UnmodifiableQueue.java,"Other methods remain unchanged
+Negate condition
+"
+UnmodifiableBag.java,"True Return Mutation
+Changed the return type to null to reflect a Null Return mutation
+False Return Mutation
+Negate Conditional Mutation
+Conditionals Boundary mutation for count
+Original: count <= 0
+Empty return mutation
+Changed to an empty return
+Returning nothing for a void method
+Invert Negatives mutation
+Use False Return mutation
+Use True Return mutation
+No changes to uniqueSet to keep original functionality
+"
+LazyList.java,"Mutant with an Empty Return
+Negation Mutation: change the throw condition to not throw an exception if both are null.
+Instead of throwing an exception
+Boundary condition mutation: Change from '<' to '<='
+Remove the set call for a void method call mutation
+decorated().set(index, object);
+Change from i < index to i <= index
+Returning a Null Collection Mutation
+Invert Negatives Mutation: Change “null” checks to conditionally return factory.
+Returning a False condition -> Mutation
+Instead of throwing an exception
+"
+PredicatedSortedSet.java,"Alternatively, you could use `return new PredicatedSortedSet<>(set, predicate);`
+Null Return
+Invert Negatives (changed to return null instead of comparing)
+Return Values
+Conditionals Boundary (if decorated is empty)
+Null Return
+False Return
+For actual last element, you could use `return decorated().last();`
+False Return
+Negate Conditionals (inverted call)
+Inverted logic
+"
+MultiMap.java,"Negate the condition
+Changed to return null
+Changed to return null
+Changed to return null
+Changed to always return false
+Increased size value
+Changed to return null
+"
+TreeBidiMap.java,"Other classes like InverseEntryView, InverseViewMapEntryIterator remain unchanged
+... [Remaining unchanged code]
+... [Remaining unchanged code]
+... [Remaining unchanged code]
+... [Remaining unchanged code]
+Mutation: kept the same
+Mutation: incrementing the size falsely
+Mutation: off by one for expected modifications
+Mutation: Inverted logic
+Mutation: Inverted logic
+Mutation: check positive instead of negative
+Mutation: inverted condition
+Mutation: inverted logic
+Mutation: Always returns true, incorrect behavior
+Mutation: inverted condition for result
+Mutation: keeping check
+Mutation: Always returns true
+Mutation: inverted logic
+Mutation: always false
+other unchanged logic
+other unchanged logic
+kept unchanged
+kept unchanged
+Mutation: inverted message
+Mutation: inverted message
+Mutation: always returns false
+Mutation: returning value instead of result when null
+Mutation: altered to string representation
+"
+ReferenceIdentityMap.java,"Inverted the boolean
+Negating the equality check
+Negating the equality check
+"
+MultiSet.java,"Mutation: False Returns (return false instead of count)
+Mutation: True Returns (change uniqueSet to always return true)
+Mutation: Conditionals Boundary (Change int to int - 1)
+Mutation: Change entrySet return type to null
+Mutation: Invert Negatives (change the logic of count retrieval)
+Mutation: Increment (change occurrences to occurrences + 1)
+Always return 0 instead of count
+Here, it should be Set<E> instead of true
+"
+CircularFifoQueue.java,"Conditionals Boundary & Negate Conditionals
+Return Values (changed from true to false)
+Increments
+Changed to maxElements - 0 for clarity
+Invert Negatives
+Conditionals Boundary
+Increments
+Negate Conditionals
+Negate Conditionals
+False Returns (always returns true instead of false)
+Inverted logic
+Added Simplification
+False Returns
+False Returns
+Invert Negatives
+Primitive Returns
+Invert Negatives
+Primitive Returns
+Negate Conditionals
+Invert Negatives
+Invert Negatives
+True Returns
+Primitive Returns
+Math changes in return logic
+Primitive Returns
+"
+PredicatedBag.java,"Invert the result: always return false (False Returns)
+Null Returns
+Negate the condition (Negate Conditionals)
+Return a fixed primitive value (Primitive Returns)
+Returning a constant value instead of actual count
+Always return a fixed integer (Return Values)
+Invert the logic: always return true (True Returns)
+Change the method to return an empty set instead (Empty Returns)
+Return an immutable empty set
+"
+TransformedQueue.java,""
+ArrayIterator.java,"No mutation here
+No mutation here
+No mutation here
+No mutation here
+Invert Negatives: changed ""<"" to ""<=""
+Conditionals Boundary: Changed ""bound > len"" to ""bound >= len""
+Negate Conditionals: Changed ""bound < 0"" to ""bound >= 0""
+Math: Added one to the return, simulating a return value change
+Returns the array itself
+Negate Conditionals (returning the false condition)
+Changed the return value
+Changed the return value
+Void Method Calls: Added a method call that does nothing
+Added a void method call
+No mutation here
+Primitive Returns: Changed the return type to Integer instead of E
+False Returns: Changed ""next()"" to print a message and return null
+Falsely returning an adjusted type
+Falsely calling the remove method, but it still throws an exception
+Added a void method call
+No mutation here
+"
+AbstractSortedBidiMapDecorator.java,"return null; // Uncomment this line for a Null Return mutation
+Return Values - will return null instead of the actual comparator
+return (SortedBidiMap<K, V>) super.decorated(); // Keep original
+Invert Negatives - change to a positive condition
+return decorated().headMap(null); // Uncomment for an empty return (returns headMap with null)
+Conditionals Boundary - may modify the condition to limit values
+return null; // Uncomment this line for a Null Return mutation
+Negate Conditionals - invert the call output
+return decorated().subMap((K) ""incrementedKey"", toKey); // Uncomment for increment mutation
+Increments - modify parameters slightly
+False Returns - force a return with false behavior
+return null; // Uncomment for a Null Return mutation
+Keep original
+return (Comparator<? super V>) (o1, o2) -> true; // Returns a true comparison
+True Returns - force a true condition where applicable
+"
+IdentityPredicate.java,"Conditionals Boundary mutation
+"
+DualTreeBidiMap.java,"Changed to return null when illegal state
+Changed to return null when illegal state
+Negated the condition
+Negated the condition
+Changed to ==
+Changed to return null
+Changed to do nothing
+Changed to always return false
+Changed to return null
+Changed to return null
+Changed to return null
+Simulate off-by-one
+"
+PredicatedCollection.java,"No mutation
+Math - using a different implementation for bag creation
+No mutation
+Changing the implementation to add a non-empty structure.
+No mutation
+No mutation
+No mutation
+No mutation
+Inverting method's return to always return an empty Collection
+Mutation applied (empty returns)
+Negating the predicate for builder method itself
+Negate conditionals for predicate
+Invert Negatives
+Negation applied to condition
+Negate Conditionals
+Negate Conditionals
+Math Mutation: Added a condition to check the size of a list for additional validation
+Conditionals Boundary
+"
+AbstractOrderedMapIteratorDecorator.java,"Negate Conditionals
+"
+AbstractMultiValuedMap.java,"Negation
+Negated condition
+Increment by 1
+Negation
+Negated condition
+Empty return
+Increment hash code by 1
+Empty return
+Increment size by 1
+Decrement size by 1
+Decrement size by 1
+Negation
+False returns
+Negation
+Increment size by 1
+Decrement by 1
+Maintain original
+Negation
+Decrement size by 1
+Negation
+Maintain original
+Keep original
+Negated condition
+Negation of the condition
+Negation of the condition
+Negation for empty check
+Negation
+Negation
+Negation
+Negation
+Maintain original
+Negation
+Negation
+Negation
+Negation
+Negation
+Negation
+Increment return size by 1
+Empty return
+Return empty array
+Empty return
+Negation
+Negation
+Negation
+Increment size by 1
+Negated condition
+Negated condition
+Return negative hash code
+Negation
+Negated condition
+Maintain original
+Negated condition
+Return false
+Negation
+Negation
+Negation
+Negation
+Return true on empty
+Negation
+Negation
+Decrement size
+Increment size by 1
+"
+IterableMap.java,""
+HashBag.java,"Math: changed a digit to create a new serialVersionUID
+Void Method Call Mutation - Modified the addAll to simulate a void method call on the collection
+Original functionality is not executed
+Comment out to simulate a void method
+super.addAll(collection);
+Return Value Mutation - Example of changing a return value
+False Return Mutation: Change method to always return true
+Invert Negatives Operator - Altered condition check
+Negated condition
+some logic
+Conditionals Boundary Mutation - Adjusted the check on the size
+Changed condition
+Empty Return Mutation - Added some method that returns nothing effectively
+Empty Return Mutation
+Null Returns Mutation - Example of potentially returning null
+Null Return
+"
+SetValuedMap.java,"Mutants
+4. Math - not applicable in this context directly, as there is no math involved
+11. Null Returns (already demonstrated in multiple places)
+Original
+Original
+1. Conditionals Boundary:
+Assuming a condition: if (key == null) throw some exception;
+Just a placeholder for demonstration
+Original implementation might have been here
+Changed to return null on null key
+Place holder return
+2. Increments
+Assuming what ""remove"" might do, we increment any id or count
+Placeholder for implementation
+Original
+Increment count for demonstration, assume a count variable exists
+count++;
+Returning null instead of actual removal for mutation
+3. Invert Negatives:
+Original might do a check on the key, we invert the logic here
+Assume a condition that if key is not null and valid, we perform get
+Changing the condition
+Allowing remove to handle null here
+5. Negate Conditionals:
+For negating the conditional, let's change the expected behavior
+Changed logic; potentially faulty
+Placeholder for actual logic
+6. Return Values:
+Instead of returning a Set, return fib sequence for imaginary logic
+Placeholder for faulty return
+7. Void Method Calls:
+Void method calls aren't generally in an interface, but enforce a void return on a valid key.
+Call a void method that does something
+performSomeVoidOperation();
+Returning null instead of a set
+8. Empty Returns:
+Returning an empty set instead of expected behavior
+9. False Returns:
+Mutation does not align with return type for demonstration
+10. True Returns:
+Again, return type mismatch, just for mutation
+Just to reiterate:
+Mutant returning null directly
+12. Primitive Returns:
+Example of a mutant returning primitive type instead of a Set
+Arbitrarily returning a count of 0; no meaningful correlation
+"
+ForClosure.java,"Negate Conditionals, returning NOPClosure if count is greater than or equal to 0 or closure is not null
+Conditionals Boundary, swapping conditional check 'count == 1' with 'count != 1'
+could also apply Primitive Returns here by changing return type if needed
+Increments: using a different initialization, can be logical
+change count to some other value such as count + 1
+incrementing the count to introduce mutation
+Empty Returns: just for mutating the behavior without affecting the semantics drastically
+Math: Changing the loop condition from 'i < iCount' to 'i <= iCount' (off by one)
+not necessary in `void` method but showing example
+Negate Conditionals: return closure if some irrelevant condition is true
+Valuing condition as negative, getClosure may return null intentionally
+Null Returns
+False Returns: inverting the expected functionality
+Could introduce a false count
+returning false value as count
+"
+AbstractLinkedList.java,"Negate condition
+Negate condition
+Inverted Message
+Increment altered to decrement
+This will return the current index instead of nextIndex
+Message changed
+Changed logic to simulate mutation
+This is now negated
+Condition boundary changed
+Condition boundary ticked
+Condition flip
+Increment boundary check
+Increment missed increments made
+Increment boundary check
+False condition
+Return value altered
+Condition negated
+Forced null return
+Incremented boundary check
+Condition flip
+Mutated to return constant 1
+Condition inverted
+Condition altered
+Logic remains unaltered
+Incremented size as part of mutation
+Valid mutation, maintaining logic
+Mutated to addNodeAfter
+Altered to return false
+Mutated to return fixed value
+Mutated to return false
+Returns true when sizes don't match
+Condition flipped
+Forced null return
+Value remains unchanged
+Condition alteration
+Condition flip
+Logic remains unaltered
+Logic alteration
+Mutated return value
+Flipped logic
+Flipped equality check
+Increment initialization
+Mutated logic
+Mutated to return false
+Returns true
+Set to always modified
+Flipped
+Forced setting
+Mutated to return null
+Constant returned value
+Changed array return logic
+Changed condition
+Fixed length of the array
+Forced null setting
+Changed to always be empty
+"
+CartesianProductIterator.java,"Inverted conditional
+This should still be within scope for safety
+Negate conditionals
+Added additional check
+Return list as expected
+Inverted logic
+Change in flow
+Null return where exception was likely to throw
+Here, we simplify the exception into a returned false for the sake of mutation - as if it were not an operation
+A void method altered in behavior
+"
+FunctorUtils.java,"Boundary mutation
+Empty Return mutation
+Negate Conditional mutation
+Negate Conditional mutation
+Negate Conditional mutation
+Negate Conditional mutation
+"
+QueueUtils.java,""
+NodeListIterator.java,"Mutated: changed < to <=
+"
+NodeCachingLinkedList.java,"Negate Conditionals mutation
+Changed as part of the Negate Conditionals mutation
+Return Value mutation
+Increments mutation (changed from 'cacheSize++' to 'cacheSize += 1;')
+False returns mutation (we'll simulate returning false)
+Increments mutation (changed from 'cacheSize--' to 'cacheSize -= 1;')
+Negate Conditionals mutation (changed to <=)
+Return value mutation would require returning something else
+Void method calls mutation (commented out method calls)
+Empty returns mutation (commented out this call)
+"
+IteratorIterable.java,"Changed from false to true
+Negated condition
+"
+FilterIterator.java,"Condition changed
+Negated condition
+"
+ConcurrentReferenceHashMap.java,"Increment operator
+Increment operator
+Mutated: returns a float instead of int
+Return Value mutation
+Mutation: changed the method to always return null
+Null Return
+Negate Conditionals
+Negate Conditionals
+Negate Conditionals
+Negate Conditionals
+Return Value Mutation
+"
+BitMapExtractor.java,"The entire interface has been mutated
+Mutant: Changed 'static' keywords to 'private' to mutate accessibility
+Mutant: Changed Arrays.copyOf to return only part of the array (first half)
+Mutant: Negated the second condition
+Mutant: Changed the condition to use '&&' instead of '!'
+Mutant: Return 'true' instead of 'false'
+Mutant: Added a condition to throw an exception for null extractor
+Mutant: Exception thrown on null
+Mutant: Changed the process to break the loop under specific condition
+Mutant: Conditional case for indexing
+Mutant: Changed to allow multiple additions by modifying the condition
+Mutant: Changed from 'size == data.length' to 'size >= data.length'
+Mutant: Changed the resizing factor to 3
+Mutant: Return 'false' instead of 'true'
+Mutant: Changed the condition to check if size is less than data length
+Other mutations for processBitMaps or things can be done here
+Mutant: Negative the condition and return a primitive
+"
+EmptyListIterator.java,"Mutation: Invert Negatives (change return type condition)
+public static <E> ListIterator<E> emptyListIterator() {
+return INSTANCE;
+}
+return null; // Inverted return value (null return)
+Original behavior
+Mutation: Change return type
+return null;  // Null return
+return RESETTABLE_INSTANCE; // Original behavior
+Original behavior is retained
+Mutation: Change constructor to have no body (Empty Returns)
+Original constructor code removed
+No-op
+"
+AbstractQueueDecorator.java,"Negate conditionals mutation
+Inverted the return to a null return if the queue is empty
+False return mutation
+return false;  // replaced the original return value with false
+Increments mutation example (changed the input to the original method if needed)
+Math operator mutation (classically used where applicable, but altering with a trivial change)
+Return values mutation (return default value)
+return null; // This is a false return mutation
+Empty return change
+Negate conditionals mutation
+Return null if the queue is empty (invert condition)
+"
+IndexUtils.java,"Mutant with Conditionals Boundary & Negate Conditionals:
+Changed >= to >
+Mutant with Increment (incrementing index):
+Incremented array.length
+Mutant with Invert Negatives:
+Inverted condition
+Immediate return without modification
+Mutant with Math (changed multiplication):
+Changed * to +
+Mutant with Return Values (returning a new array with a default value):
+Changed to always return a new array with 0
+Mutant with Void Method Calls (simulate void-like behavior):
+no return
+Simulating void return
+Mutant with Empty Returns:
+Changed to return an empty array
+Mutant with False Returns:
+Changed to return null
+Mutant with True Returns:
+Changed to always return a new array with 1
+Mutant with Null Returns:
+Changed to return null
+Mutant with Primitive Returns (for int return type):
+Changed to return an int (length of the array) instead of an array
+Assume returning length when not expanded
+"
+Equator.java,""
+TransformedList.java,"added a true return mutation
+changed to void method calls mutation
+Changed return value mutation
+used negated conditionals mutation
+used primitive return mutation
+applied empty returns mutation
+"
+MapBackedSet.java,"Inverted dummy value if it were an Integer, here changed to a string
+Negated return condition
+Negated return condition
+Inverted condition
+Inverted condition
+Inverted return value
+Incrementing hashCode
+Inverted return value
+Negated return condition
+Inverted return value
+Inverted return value
+Incremented size
+Empty return
+Null return
+"
+AbstractIterableGetMapDecorator.java,"Negate conditionals mutation
+Conditionals boundary mutation
+False Returns mutation
+Null Returns mutation
+Increments mutation
+Return Values mutation changing true to false
+Invert Negatives mutation
+Increments mutation with subtraction
+No mutation, but could add a defect
+"
+UnmodifiableOrderedBidiMap.java,"Changed to allow clear operation (False Returns)
+throw new UnsupportedOperationException();
+This method originally throws an exception, now it returns null (Return Values)
+throw new UnsupportedOperationException();
+Changed to allow putAll operation (False Returns)
+throw new UnsupportedOperationException();
+Changed to return a primitive value instead of throwing an exception (Primitive Returns)
+throw new UnsupportedOperationException();
+Returning a new Object just for mutation purposes
+Changed to always return null (Null Returns)
+"
+MapTransformer.java,"Conditionals Boundary Mutation
+"
+OrPredicate.java,"Boundary condition modified to use && instead of ||
+"
+AbstractMultiSet.java,"Conditionals Boundary change: from == to !=
+Math change: addition to bitwise XOR
+Negate Conditionals change: using ternary instead of conditions
+Inverted return value
+Inverted return value
+Invert condition
+Inverted return value
+Conditionals Boundary change
+Increments change: from decrement to increment
+Negate conditionals
+Inverted return value
+Negate conditionals
+Inverted return value
+Negate conditionals
+Inverted return value
+Inverted return value
+Inverted condition
+Inverted return value
+Inverted condition
+Inverted return value
+Primitive returns change
+Math change
+Negate conditionals
+Change: From false to true
+Negate conditionals
+Math change
+Negate conditionals
+Inverted condition
+Change to -1 from 0
+"
+MultiValueMap.java,"Conditionals Boundary: Retain the construction logic.
+Invert Negatives: Changed from `clazz != null` to `clazz == null`.
+Retained logic.
+Retained logic, reflects clear function.
+Math: Introduced an arbitrary addition for mutation.
+Negate Conditionals: Changed to the opposite condition.
+Changed from `isEmpty()` to `!isEmpty()`.
+Empty Returns: Introduced an empty return.
+Logic retained.
+Negate Conditionals: Changed to always return false.
+Retained behavior for clarity.
+True Returns: Mutated to always return true.
+Logic retained.
+Logic retained.
+Logic retained.
+Logic retained.
+Primative Returns: Mutated to always be true.
+Logic retained.
+True Returns: Mutated to always return true.
+Logic retained.
+True Returns: Mutated to always return true.
+Primitive Returns: Mutated to return -1.
+Logic retained.
+"
+TransformedBag.java,"Conditionals Boundary (inverted)
+Return Values (mutated to return null)
+Increments (incremented nCopies)
+Invert Negatives
+Increments (incremented return value)
+Math
+Void Method Calls (removal without adjusting state).
+"
+AbstractSortedBagDecorator.java,"Mutation: Void Method Calls could mean adding a print statement (simulating a void call).
+Mutation: Return Values could involve passing null
+Mutation: Negate Conditionals by introducing a boolean check (if ever needed).
+Mutation: Added a variable to represent a check
+Mutation: Null Returns
+Mutation: Change the cast to a different type to introduce a type error
+Mutation: Increments by modifying the return statement
+Mutant: return null; // Uncomment this line for Null Returns mutation
+Original, kept for context
+Mutation: Conditionals Boundary, return a different value based on boundary logic
+Mutation: Null Returns
+Additional mutant methods can be added to demonstrate other mutations
+Mutation: Introduce a new method that always returns a primitive value
+Primitive Returns
+Potential Mutation: Empty Returns could mean introducing a new method returning nothing
+Mutation: An intentional empty method to demonstrate an empty return
+"
+OnePredicate.java,"Changed from == to <=
+"
+DefaultMapEntry.java,"Conditionals Boundary Mutation
+"
+MultiSetUtils.java,"Mutation - Return Values: return new HashMultiSet<>(); (example of a mutant with different return)
+Original: return EMPTY_MULTISET;
+Mutation - Negate Conditionals: if (predicate.test(e)) return PredicatedMultiSet.predicatedMultiSet(multiset, predicate); else return null; (conditional mutant)
+Mutation - Invert Negatives: return multiset != null ? SynchronizedMultiSet.synchronizedMultiSet(multiset) : null; (modify handling of null)
+Mutation - Empty Returns: return; (example of void mutant in a method that expects to return)
+Mutation - Void Method Calls: System.out.println(""Utility class""); (adding side effect)
+Additional Mutants Examples
+Mutation - False Returns: return null; (returning a false value)
+Mutation - True Returns: return emptyMultiSet(); (returning a constant true equivalent)
+Mutation - Null Returns: return null; (to simulate a null return)
+Mutation - Primitive Returns: return 0; (if the method was supposed to return an integer, for instance)
+"
+SortedProperties.java,"Conditionals Boundary
+"
+PeekingIterator.java,"Change return value to always return a new instance
+return new PeekingIterator<>(iterator); // Original
+Null Returns
+Change to use a different iterator
+this.iterator = iterator; // Original
+Null Returns
+Return a fixed value instead of slot
+return slot; // Original
+Null Returns
+Negate the condition
+Negate Conditionals
+Invert Negatives
+Return true instead of the original logic
+if (exhausted) { return false; } // Original
+return slotFilled || iterator.hasNext(); // Original logic omitted
+True Returns
+Return a fixed value or the previous state of slot
+Return a fixed primitive type (if generic allows)
+return x; // Original
+Null Returns
+Primitive Returns
+Change return value logic
+return exhausted ? null : slot; // Original logic handled, now simplified
+Original
+Call the void method, but forcefully indicate ""success""
+if (slotFilled) { throw new IllegalStateException(""peek() or element() called before remove()""); } // Original
+Original throwing exception can be twisted around
+But here's a change that removes slot filling prevention
+iterator.remove(); // Original
+Placeholder for void method call
+"
+NullComparator.java,""
+IndexedCollection.java,"Mutated: Changed serial version UID
+Mutated: Added additional conditionals
+Null Returns mutation
+Mutated: Added additional conditionals
+Null Returns mutation
+Mutated: Inverted the conditional
+Negate Conditionals mutation
+Changed return value for Return Values mutation
+Mutated: Incremented the variable
+Mutated: Replaced exception with a return statement
+False Returns mutation
+Mutated: Inverted the logical condition
+Invert Negatives mutation
+Mutated: Removed method call if condition fails
+False Returns mutation
+Mutated: Changed the return value
+True Returns mutation; returning true regardless
+Mutated: Changed type to null
+Null Returns mutation
+"
+EntrySetMapIterator.java,"Inverted negative mutation
+Return a null value in case of illegal state (Null Returns)
+throw new IllegalStateException(""Iterator getValue() can only be called after next() and before remove()"");
+Mutated to return null instead of throwing exception
+Negate conditionals mutation
+Inverted logic for mutation
+Conditionals boundary mutation
+Mimics boundary scenario
+Changing to return a fake value for mutation testing (Primitive Returns)
+Returning a fake value here
+Empty returns mutation
+Returning empty string instead of ""MapIterator[]""
+"
+UnmodifiableSortedMap.java,"Negated Conditionals
+Call the method normally (Void Method Calls mutated)
+No operation here for clarity retained.
+Null Returns
+Null Returns
+Conditionals Boundary
+Null Returns instead of valid subMap
+Null Returns
+"
+CommandVisitor.java,""
+AbstractMapBag.java,"Conditionals Boundary: Change from > 0 to < 1
+Increments: Decrement item count
+Negate Conditionals: Change to < 2
+Void Method Calls: Just zero out mut.value
+Math: Change from == to !=
+Math: Change from value to -value
+Primitive Returns: Return a fixed value instead
+Conditionals Boundary: Change > 0 to >= 0
+Return Values: Always return false
+False Returns: Altered to always return false
+Empty Returns: Alter the logic to return empty based on a condition
+Void Method Calls: Change to a no-op
+Invert Negatives
+Negate Conditionals: Change from < to >=
+Math: Just inverted logic
+False Returns: This is to always be false
+Primitive Returns: Changed to always read 0
+Empty Returns: Early return without writing data
+Null Returns: Changed logic to consider null equality
+Change to always return false regardless of the check
+Primitive Returns: Changed to return 1 if null
+Primitive Returns: Return constant
+Always consider the bag empty
+True Returns: Change to always return true
+Change to always return true
+True Returns: Always return true
+True Returns: Changed logic
+Negate Conditionals
+Change to always return false
+Change to always return true
+Conditionals Boundary: Edge cases
+Negate Conditionals: Nullify the results
+Negate Conditionals
+Always return 0 for size
+Always return an empty array
+Null Returns: Always return null
+Return a generic string regardless of the content
+Null Returns: Change method to return NULL
+"
+ObjectArrayIterator.java,"Mutated constructor
+Conditionals Boundary mutation: Changed < to <=
+Math mutation: Changed > to >=
+Invert Negatives mutation: Changed > to <
+Invert Negatives mutation: Changed < to >
+Return Values mutation: Returns null instead of the actual array
+Increments mutation: Added +1 to the return value
+Negate Conditionals mutation: Inverted the condition
+True Returns mutation: Always returns a new object instead
+returns a new object instead of the correct element
+Void Method Calls mutation: Added a new empty return
+Primitive Returns mutation: Return the primitive index instead
+Added a void return for mutation
+"
+MultiKey.java,"Mutations for additional overloaded newArray() methods omitted for brevity
+Invert Negatives: Change condition to use !value
+Conditionals Boundary: Change null check
+Change length check
+Negate Conditionals
+Change to alternate logic using different array initialization
+Increments: Swap array elements
+Increments
+Math: Change to perform a simple addition
+Increments
+Increments
+Increments
+Void Method Call: Modify constructor chaining
+Change false to true
+Change true to false
+Primitive Returns: Change initial value
+Invert Negatives
+Math: Change to XOR with 1
+Negate Conditionals
+Conditionals Boundary: Improve index check
+Null Returns: Return null for out of bounds
+Primarily returns the size, no mutations applied
+"
+BooleanComparator.java,"Changed return values to return true to test the method behavior
+Mutant using Negate Conditionals
+Negated the conditional
+Mutant using True Returns
+Changed to true for testing
+No mutation here
+Mutant using False Returns
+Changed to always return false
+No mutation here
+Mutant using True Returns
+Changed to always return true
+"
+IndexFilter.java,"No mutation here
+Conditionals Boundary: Changed < 0 to <= 0
+Invert Negatives
+Negate Conditionals: Changed return false to return true
+Negate Return Value: Changed return true to return false
+No mutation here
+Invert Negatives: Changed to contains
+Negate Return Value: Changed to negate the return value
+No mutation here
+Mutation: Changed to use ArrayTracker if condition is true
+Conditionals Boundary: Changed >= to >
+Invert Negatives
+Negate Return Value: Changed to check for false
+Changed to return the result of consumer.test() directly
+Return a false instead of true
+"
+AbstractSerializableSetDecorator.java,"Boundary condition changed here
+"
+PredicatedQueue.java,"mutate: changed from validate to checking if object is null
+mutate: false return for invalid object
+mutate: null return
+"
+CompositeSet.java,"Conditionals Boundary Mutation: Changed exception type
+Negate Conditionals Mutation: Switched true/false
+Now it incorrectly indicates success
+Empty Returns Mutation
+Invert Negatives Mutation
+Void Method Calls Mutation: Added empty method call
+Added a redundant clear
+Negate Conditionals Mutation: Inverted return value
+False Returns Mutation: Now returns true for null collection
+Primitive Returns Mutation: Changed to true
+Conditionals Boundary Mutation: Switched size check to !=
+Primitive Returns Mutation: Now returns true unconditionally for non-set objects
+Math Mutation: Changed initial value
+Math Mutation: Changed addition to multiplication
+Negate Conditionals Mutation: Inverted conditional
+False Returns Mutation: Altered empty check
+Invert Negatives Mutation
+Negate Conditionals Mutation
+False Returns Mutation: Now indicates success on empty collection
+Increments Mutation: Started changed as true
+Negate Conditionals Mutation
+True Returns Mutation
+Increments Mutation: Started at 1 instead of 0
+No mutation applied here
+"
+EmptyOrderedMapIterator.java,"Conditionals Boundary Mutation: Change the static final INSTANCE to null.
+Math Mutation: Introduce an unused variable.
+private int unusedCounter = 1 + 1; // Using addition here.
+private void doNothing() {
+// This method intentionally left blank.
+}
+public static final OrderedMapIterator INSTANCE = null;
+False Returns Mutation: Return null instead of INSTANCE
+return null;
+Void Method Calls Mutation: Insert a method call that does nothing.
+doNothing();
+"
+BidiMap.java,"Inverted return value - method to always return null as a mutation
+original
+Changing the return type to null return for mutation
+mutated: always returns null
+Mutated to return a primitive value (size)
+mutated
+Keeping the method but changing the signature to return a default type
+mutated: always returns null
+The method's return value altered to always produce an empty set
+mutated: returns an empty set
+"
+CompositeCollection.java,"Inverted Negatives mutation: Change check to be the opposite
+Conditionals Boundary mutation: Change to returned false instead of calling the mutator
+False Returns mutation
+Negate Conditionals mutation: Inverted check
+Conditionals Boundary mutation: Swapping the assignment
+Empty Returns mutation
+No mutation required here for clear
+False Returns mutation: Change to always return false
+Negate Conditionals mutation: Inversing logic
+Mutated: Return true if coll is null
+Inverted returns
+Mutated: Return false instead of true
+Conditionals Boundary mutation: Changed to check for a single collection
+Return Values mutation: Always returns true
+No change here
+No mutation needed
+Mutated: Always return true
+True Returns mutation: Change the loop to always return true
+Math mutation: Change size to be half
+Conditionals Boundary mutation: Change from greater than or equal to less than
+Empty Returns mutation: Instead of handling size, always return empty
+Primitive Returns mutation: Instead of returning a collection return its size
+"
+OrderedPropertiesFactory.java,"Mutant 2: Changed from `new OrderedProperties()` to `null`
+"
+UnmodifiableSet.java,"Return Values mutant: Change the return type of the method to null for specific conditions.
+Changed to return null
+Void Method Calls mutant: Calling an unsupported operation with a different exception
+Changed from UnsupportedOperationException
+Changed from UnsupportedOperationException
+Changed from UnsupportedOperationException
+Conditionals Boundary mutant: Altering the condition's logic
+A new conditional check added
+False Returns mutant: Returning false when the method typically returns true.
+Changed to always return false
+"
+DeleteCommand.java,""
+UnmodifiableCollection.java,"Mutated condition here (changed the logic)
+added condition to return null when collection is empty
+"
+TransformedCollection.java,"Negate Conditionals mutation
+Conditionals Boundary mutation
+Empty Returns mutation
+False Returns mutation
+Null Returns mutation
+"
+CellExtractor.java,"Mutation: Change condition to size != 0 (Conditionals Boundary)
+Mutation: Increase initial count to 2 (Increments)
+Mutation: Negate the condition (Negate Conditionals)
+Mutation: Always return false (False Returns)
+Mutation: Increment count in method call (Math)
+Mutation: Always return true (True Returns)
+Mutation: Change to always return false (False Returns)
+Mutation: Change to include boundary condition (Conditionals Boundary)
+Mutation: Return null instead of this (Null Returns)
+"
+CountingPredicate.java,"Changed from 'i != limit' to 'i < limit'
+"
+PredicatedNavigableSet.java,"Math mutation: modified serialVersionUID
+Conditionals Boundary mutation could be applied here, but unchanged for simplicity
+Negate Conditionals mutation: changed the return logic to return an empty set instead of a predicate set.
+Void Method Calls mutation: calling a method that should be void (in this case, no changes in logic)
+False Returns mutation: modified to always return null
+No change in logic for mutation coverage
+Empty Returns mutation: returning an empty set instead of a predicated one.
+"
+WhileClosure.java,"Conditionals Boundary mutant
+"
+AbstractEmptyMapIterator.java,"Mutant 1: Change to returning null instead of throwing an exception
+Null Returns
+Mutant 2: Change to returning null instead of throwing an exception
+Null Returns
+Mutant 3: Change exception message
+Adjusted error message
+Mutant 4: Change to a simplified logic (Negate conditionals)
+Negate Conditionals
+Null Returns
+Mutant 5: Change the return value to false
+False Return
+Mutant 6: Change following variable to primitive; adding a method that operates with primitives
+Return a primitive value (size)
+Mutant 7: Change the getValue to return a default value
+Primitive Returns with a default object
+"
+SynchronizedCollection.java,"Null Returns mutation
+Null Returns mutation
+Negate Conditionals mutation
+True Returns mutation
+False Returns mutation
+Increment mutation
+Empty Returns mutation
+Null Returns mutation
+Changed Return Value mutation
+"
+ObjectGraphIterator.java,"Conditionals Boundary: changed ""instanceof"" to ""== null""
+Invert Negatives: changing direct assignment
+Negate Conditionals: changing condition check
+Math mutation: omit one case for off-by-one
+Negate Conditionals: using !hasNext directly here
+Return Values: flip return value
+Empty Return
+Conditionals Boundary: throw exception if hasNext
+Adding an empty state back to false
+False Returns: flip logic
+Change logic to return null value for root
+explicit null return
+over-simplified null assignment
+"
+NotNullPredicate.java,""
+PredicatedSortedBag.java,"Mutated by returning null if the decorated bag size is less than or equal to 0
+"
+EmptyMapIterator.java,"changed protected to public
+"
+AbstractUntypedIteratorDecorator.java,"Boundary condition inverted
+"
+ChainedClosure.java,"Change from 0 to 1
+Increment starting index from 0 to 1
+Incrementing counter correctly to avoid index out of bounds
+FunctorUtils.validate(cmds); // Commented out to test condition
+Inverted the copy condition
+Changed clone argument from true to false
+Updated to return null
+"
+MapUtils.java,"Inverted Negatives
+Primitive Returns
+Empty Returns
+Negate Conditionals
+Change to 0
+False Returns
+Negate Conditionals
+True Returns
+Changed from 0 to 1
+Increment
+Increment
+Changed from 0d to 1d
+Increment
+Increment
+Changed from 0f to 1f
+Increment
+Increment
+Changed from 0 to 1
+Changed from 0 to 1
+Increment
+Changed from 0L to 1L
+Changed from 0L to 1L
+Increment
+Changed to return empty Map instead of null
+Changed to return 1 instead of null
+Changed to return empty string instead of null
+Increment
+Increment
+Increment
+Changed to return empty string instead of null
+No mutation applied here, retains original functionality
+Negate Conditionals
+Changed to not allow null
+Changed from 0 to 1
+Changed to print ""default"" instead of null
+"
+IndexExtractor.java,"Negate the condition
+Return false unconditionally (False Returns)
+This return can be changed to return true; to create another mutation
+Use of False Return Mutation
+Negate condition (Negate Conditionals)
+This return can be changed to return true; to create another mutation
+Increments mutation (size++ could be changed to size-- for a new mutation)
+This could also be `data[size--] = index;`
+Conditionals Boundary mutation
+Also can mutate to size <= data.length
+Invert Negatives mutation (negation of the flow)
+can also mutate to idx <= 0
+This return could also change to return true; for another mutation
+Utilize False Returns
+"
+SingletonMap.java,"Mutated: Change to true (Conditionals Boundary)
+Mutated: Change to 0 (Conditionals Boundary)
+Mutated: Add null assignment (Null Returns)
+Mutated: Change to false (Negate Conditionals)
+Mutated: Return key (Primitive Returns)
+Mutated: Change return to null (Null Returns)
+Mutated: Change to true (Negate Conditionals)
+Mutated: Return key (Primitive Returns)
+Mutated: Change to return null (Null Returns)
+Mutated: Change to return null (Null Returns)
+Mutated: Add return (Void Method Calls)
+Mutated: Change to 0 (Primitive Returns)
+"
+TransformedPredicate.java,"Added boundary condition
+"
+EnhancedDoubleHasher.java,"Mutated: Used Math.max instead of Math.min
+Negated condition
+Incremented by 1
+Unchanged
+Always returns false (False Return)
+Inverted condition
+Inverted condition
+Incrementing instead of decrementing
+Inverted condition
+Incrementing instead of decrementing
+Always return false (False Return)
+"
+ExceptionTransformer.java,"Changed from INSTANCE to null (Null Returns)
+Changed message (Invert Negatives)
+"
+UnmodifiableOrderedMap.java,""
+MultiKeyMap.java,"Additional mutated methods would be included here...
+The rest of your class methods would be similarly mutated...
+Conditionals Boundary: allowed map to be non-empty
+Increments
+"
+OrderedMapIterator.java,"Changed to always return false
+"
+FunctorException.java,"Mutation: Increments - Not applicable, as there are no primitive numeric operations in the class
+Mutation: Void Method Calls - Added a method that does nothing, for mutation
+this method intentionally left blank
+Mutation: Empty Returns - Modified constructor to do nothing
+Mutation: Change to alternate constructor with Negated condition (practically not applicable here but implied as a mutation)
+Negate the default msg condition
+Mutation: Change to alternate constructor with False Returns
+Change to supply default exception
+Mutation: Unknown case for negating condition in constructor
+Null Returns component
+"
+IterableSortedMap.java,""
+LayerManager.java,""
+NullPredicate.java,"Inverted the condition
+"
+IteratorChain.java,"Negate Conditionals applied
+Empty Returns
+Potential for Null Returns if lastUsedIterator is null
+Increment applied (doubled the size)
+Null Returns introduced
+"
+UnmodifiableBidiMap.java,"Change condition to <= instead of instanceof
+"
+NOPClosure.java,""
+EmptyOrderedIterator.java,"Mutated: Increments (not applicable here but could apply to any variables if present)
+no increments applicable to this context
+Mutated: Conditionals Boundary
+removed any conditional blocks as we have none
+Mutated: Negate conditionals
+Mutated: Return Values (false return)
+You've asked for False Returns mutation
+Mutated: Void Method Calls (if any void methods are there, they are altered; none available here)
+Mutated: Return Values (true return)
+This method returns the original instance
+Alternate version to demonstrate Null Returns mutation
+This method returns null
+Mutated: Primitive returns
+If we had any primitive returns, we mutate values here but we don't have any
+Mutated: Empty Returns mutation (new empty return method)
+Using as an empty return
+"
+ExtendedIterator.java,""
+ComparatorUtils.java,"Invert Negatives
+Change array creation
+Change the condition to >= for Conditionals Boundary
+Change the condition to <= for Conditionals Boundary
+Null Returns
+Change to false for Negate Conditionals
+Null Returns
+Void Method Calls - throw an exception instead
+"
+ChainedTransformer.java,"Negate Conditionals mutation: Change ""isEmpty()"" to ""isNotEmpty()""
+Negate the conditional
+Return Values mutation: Change length comparison from == 0 to > 0
+Change the comparison
+Empty Returns mutation: Change the return to return an empty array
+Empty Returns mutation
+Return Values mutation: Change the return value to null
+Null Returns mutation
+"
+TrieUtils.java,"Mutated using 'Return Values' to return null
+public static <K, V> Trie<K, V> unmodifiableTrie(final Trie<K, ? extends V> trie) {
+return null; // Mutant - Null Return
+}
+Mutated using 'Return Values' to return a new instance of Trie (Primitive Returns)
+public static <K, V> Trie<K, V> unmodifiableTrie(final Trie<K, ? extends V> trie) {
+return new Trie<>(); // Mutant - Primitive Return
+}
+Using 'Negate Conditionals' on a hypothetical conditional check
+public static <K, V> Trie<K, V> unmodifiableTrie(final Trie<K, ? extends V> trie) {
+if (trie != null) { // original condition
+return UnmodifiableTrie.unmodifiableTrie(trie);
+} else {
+return UnmodifiableTrie.unmodifiableTrie(null); // Mutant - Negate Conditional
+}
+}
+Mutate with 'Invert Negatives' to invert the function result (if required)
+public static <K, V> Trie<K, V> unmodifiableTrie(final Trie<K, ? extends V> trie) {
+return UnmodifiableTrie.unmodifiableTrie(trie); // Original
+// return UnmodifiableTrie.unmodifiableTrie(null); // Mutant - Invert Negatives
+}
+Using 'Empty Returns'
+public static <K, V> Trie<K, V> unmodifiableTrie(final Trie<K, ? extends V> trie) {
+return UnmodifiableTrie.unmodifiableTrie(trie); // Original
+// return (Trie<K, V>) null; // Mutant - Empty Return
+}
+Using 'False Returns'
+public static <K, V> Trie<K, V> unmodifiableTrie(final Trie<K, ? extends V> trie) {
+return UnmodifiableTrie.unmodifiableTrie(trie); // Original
+// return false; // Mutant - False Return
+}
+Using 'True Returns'
+public static <K, V> Trie<K, V> unmodifiableTrie(final Trie<K, ? extends V> trie) {
+return UnmodifiableTrie.unmodifiableTrie(trie); // Original
+// return true; // Mutant - True Return
+}
+Using 'Void Method Calls'
+public static <K, V> Trie<K, V> unmodifiableTrie(final Trie<K, ? extends V> trie) {
+UnmodifiableTrie.unmodifiableTrie(trie); // Mutant - Void Method Call
+return null; // Must return something (void method)
+}
+Applying 'Math' mutation operator to modify the behavior of the return value
+return UnmodifiableTrie.unmodifiableTrie(trie.hashCode()); // Mutant - Math
+Original
+Mutated using 'Increments' to modify the constructor
+int incrementedValue = 0; // original code
+incrementedValue++; // Mutant - Increment
+"
+AbstractLinkedMap.java,"Mutated: Changed from true to false (False Returns)
+Mutated: Added Null Returns here
+Mutated: Incremented the returned entry
+Mutated: Changed from ""Map is empty"" to ""Map is full""
+Mutated: Changed from < 0 to <= 0
+Mutated: Added a null check which returns a new entry
+Mutated: Changed from == 0 to <= 0
+Mutated: Changed from ""Map is empty"" to ""Map is full""
+"
+PredicateUtils.java,"Return null instead of the expected predicate
+Null Returns Mutation
+Conditionals Boundary Mutation
+Changed from > 0 to ==
+Mutated to AllPredicate
+False Returns Mutation
+Negated conditionals
+Invert Negatives Mutation
+Null Returns Mutation
+Change to always return TruePredicate
+True Returns Mutation
+Change return to null
+Null Returns Mutation
+Null Returns Mutation
+Increment Mutation: Return the existing predicate or return itself
+unchanged, but could be mutated
+Null Returns Mutation
+Changed return to always return some valid transformer
+True Returns Mutation
+Mutated to onePredicate instead of nonePredicate
+Return value mutated to equalPredicate with null value
+False Returns Mutation
+Changed to nullIsTruePredicate
+Null Returns Mutation
+Changed to return uniquePredicate
+Return a different predicate instead
+Changed to call another predicate
+Changed to always return a specific predicate
+Changed to equalPredicate with null
+Changed to notPredicate
+False Returns Mutation
+Null Returns Mutation
+"
+CountingLongPredicate.java,"Mutant with various mutations applied
+Mutated to change conditional limits
+Changed boundary condition
+Modified increment
+Changed condition from == to >
+Inverted logic and changed behavior
+"
+NullIsFalsePredicate.java,""
+EditCommand.java,""
+SetUtils.java,"Invert Negatives
+Negate Conditionals
+Condition change
+Change logical operator
+Math mutation
+Condition change
+Same as original not mutated
+Changed return value if set is null
+False/empty return
+Negate Conditionals
+Void Method Call
+False return
+True return
+Condition change
+Return always false
+Return constant size
+Return null if items are null
+"
+PatriciaTrie.java,"Mutant for Conditionals Boundary: Example change in conditions if any future methods use conditions
+Negated the return
+Mutant for Increment: If there was a counter (hypothetical)
+Increment mutation would change to counter -= 1; (a decrease)
+Mutant for Invert Negatives: If applicable in future methods
+Changed from value = -value;
+Mutant for Math: If there were any mathematical operations
+Changed operation
+Negate Conditionals: In future methods
+Negated the condition
+Return Values: Mutants for returning different values
+Changing return from a valid string to null
+Void Method Calls: Mutant on a void method
+Mutated to just return; instead of actual operations
+Empty Returns
+was doing something previously and now just returns with no action
+False Returns: Instead of returning true, returning false
+Originally supposed to return true
+True Returns: Instead of returning false, returning true
+Originally supposed to return false
+Null Returns: Specifically returning null
+Instead of a valid object
+Primitive Returns: Change the return value to a different primitive type
+Originally returning a larger number
+"
+AbstractPredicate.java,""
+Get.java,"Mutated by inverting negatives
+Mutated by changing the return value to null
+"
+SortedBidiMap.java,""
+AbstractKeyValue.java,"return null; // Uncomment to apply Null Returns mutation.
+Mutated version: Could return null instead, implement Null Returns.
+return (V) new Object(); // Uncomment for Primitive Returns as a demonstration.
+Mutated version: Could return a default value instead.
+return null; // Uncomment for returning Null Returns.
+Mutated version: Return a different value for ""old"".
+Prepend ""old"" with a prefix to check for boundary mutations.
+return (V) Integer.valueOf(0); // Uncomment for returning Primitive Returns.
+return false; // Uncomment for False Returns.
+Mutated version: Return false instead of the old value.
+"
+PredicateTransformer.java,"Conditionals Boundary: Changed IllegalArgumentException message
+Mutation
+Invert Negatives Mutation
+"
+ExceptionFactory.java,"No mutation - retains original behavior
+Mutated create method
+Conditionals Boundary: changed message
+Mutated return value; not returning INSTANCE.
+"
+SetOperations.java,"Conditionals Boundary: Changed return value to 0 and removed the threshold check
+Increments: Alter the cardinality increment from 1 to 2
+Incremented by 1 instead of Long.bitCount(l)
+Negate Conditionals: Negated the condition
+Changed to return false
+Math: Changed constant 1.0 to 2.0 for cosineDistance
+Changed from 1.0 to 2.0
+Return Values: Adjusted from numerator = 0 to return a fixed value
+Changed 0 to 1
+Invert Negatives: Change condition to always return the same value
+Changed 0 to -1 for case
+Change how cardinality is computed with orCardinality
+Changed | to &
+Primitive Returns: Adjust return into a negative value for hamming distance
+Changed return value to negative
+Simplified the rest of the function similar way
+Negate second operand in xor
+"
+PropertiesFactory.java,"Mutant: Empty return instead of doing nothing
+Mutant: Inverted the null-check condition
+Mutant: Inverted null pointer check condition
+Mutant: Changed UnsupportedOperationException to a null return
+Mutant: Changed return value to true
+Mutant: Changed return value to true
+Mutant: Changed return value to true
+Mutant: Return null instead of empty enumeration
+Mutant: Changed to return an empty set
+Mutant: Changed return value to false
+Mutant: Changed to not require action
+Mutant: Changed to return a new Object instance
+Mutant: Inverted the call to return defaultValue even if key is present
+Mutant: Return the key instead of null
+Mutant: Changed to return a default string
+Mutant: Changed return value to 1
+Mutant: Changed to always return false
+Mutant: Return null instead of an empty enumeration
+Mutant: Return null instead of empty set
+Mutant: Empty return statement
+Mutant: Empty return statement
+Mutant: Change exception to return null
+Mutant: Changed to return value instead of throwing exception
+Mutant: Return null instead of empty enumeration
+Mutant: Return null instead of throwing exception
+Mutant: No operation
+Mutant: Return a new Object instead of throwing exception
+Mutant: Empty method
+Mutant: Return null instead of throwing exception
+Mutant: Changed to always return false
+Mutant: Return value instead of throwing exception
+Mutant: Changed to always return true
+Mutant: Empty return instead of operating on function
+Mutant: Empty return instead of calling super
+Mutant: Changed to return null instead of throwing exception
+Mutant: Changed to return 1 instead of 0
+Mutant: Return null instead of empty set
+Mutant: Changed to return a custom string
+Mutant: Return null instead of empty list
+Mutant: Changed to return null instead of new Properties()
+"
+ExceptionPredicate.java,"Mutated: Negate the exception to not throw it (return false instead)
+"
+ResettableIterator.java,"Original: void reset();
+Mutated: Changing the return value to implement consistency guarantees
+Mutated: We could add an overloaded incrementing reset
+for some implementations, this can change expected behavior.
+Inverted logic; possibly negating conditionals found elsewhere in implementations
+"
+AbstractMapEntryDecorator.java,"Negate Conditional
+False Return
+Increment
+Null Return
+Math / String Modification
+"
+AbstractPropertiesFactory.java,"Conditionally inverted.
+Added a null return in case of null inputStream.
+Conditionally inverted.
+Added a null return to handle null inputStream.
+Boundary modification
+Changed file name assumption
+"
+CollectionBag.java,"Increment mutation: changed 1 to 0
+Return Values mutation: changed true to false
+Conditionals Boundary mutation: changed false to true
+Negate Conditionals mutation: changed || to &&
+Invert Negatives mutation: changed allMatch to anyMatch and negated result
+Conditionals Boundary or Math mutation: changed count from 1 to -1
+Negate Conditionals mutation: changed false to true
+Negate Conditionals mutation: changed || to &&
+Negate Conditionals mutation: changed false to true
+Conditionals Boundary mutation: changed true to false
+"
+AbstractReferenceMap.java,"Remaining methods remain the same...
+Negate the expected return value
+Change condition here to make the logic inconsistent
+Return current unconditionally
+Invert logic
+Invert logic
+Added Empty Return
+Add empty return here
+Negate returns
+Add null return
+Return false unconditionally
+mutate case order
+Return null to apply void method change
+"
+FixedSizeList.java,"Mutation: Return null instead of the element at the index
+Invert Negatives
+Mutation: Change the return value
+Negate Conditionals
+Mutation: Return an incremented value
+Increments
+Mutation: Return true instead of the normal behavior
+True Returns
+Mutation: Return false
+False Returns
+Mutation: Return a null value
+Null Returns
+Mutation: Adjust arguments to subList
+Conditionals Boundary
+"
+ConstantFactory.java,"Boundary mutation
+"
+ArrayUtils.java,""
+SimpleBloomFilter.java,"Change < 0 to <= 0
+Change y==0 to y==1
+Change to idx < -1
+"
+UnmodifiableOrderedMapIterator.java,"Invert Negatives
+Void Method Calls
+Changed from Objects.requireNonNull to Objects.requireNonNull with incorrect argument to test null checks
+Conditionals Boundary
+Math (no operation)
+Suppress method call
+False Returns
+returning null instead of valid key
+Conditionals Boundary: conditions changed to get a boundary value
+returning null when no next value
+Negate Conditionals
+Negation of the condition
+Increments (return incorrect next)
+no effect, change may not be visible
+Primitive Returns (return incorrect type or null)
+incorrect return
+Math (add operation)
+unchanged but logic changed e.g. modify previous behavior
+Empty Returns
+Changing behavior to not throw an Exception
+Does nothing instead of throwing UnsupportedOperationException
+True Returns
+incorrect behavior since it's unmodifiable
+"
+AbstractMultiSetDecorator.java,""
+AbstractMapIteratorDecorator.java,"Conditionals Boundary Mutation: Change parameter check to allow null
+Removed Objects.requireNonNull check
+Null Return Mutation
+Negate Conditionals Mutation
+Keep original for simplicity
+Void Method Calls Mutation: Change this to an empty body
+original: iterator.remove();
+Return Values Mutation: return the input value instead of iterator's value
+"
+OrderedProperties.java,"Negated condition
+Negated condition
+Negated condition
+Negated condition
+Negated condition
+Negated condition
+Modified boundary condition
+Changed the condition
+Modified comparison
+"
+HashSetValuedHashMap.java,"Incremented by 1
+Decremented by 1
+"
+LazyIteratorChain.java,""
+CompositeMap.java,"No change (original)
+No change (original)
+No change (original)
+No change (original)
+Negate Conditionals mutation
+Negate Conditionals mutation
+Negate Conditionals mutation
+Negate Conditionals mutation
+Return Values mutation
+No change (original)
+Math mutation: change 0 to 1
+Negate Conditionals mutation
+Negate Conditionals mutation
+Return Values mutation
+No change (original)
+Return Values mutation
+No change (original)
+Math mutation: change 0 to 1
+"
+WrappedBloomFilter.java,"unchanged
+unchanged
+Mutated: Increment at cardinality
+Mutated: Negate conditional for isFull
+"
+IfClosure.java,"Inverted condition
+"
+ArrayStack.java,"Negated
+Negated
+Negated
+Negated
+Negated
+"
+ArrayListValuedLinkedHashMap.java,"Conditionals Boundary Mutation: Change 3 to 2
+Negate Conditionals Mutation: Change DEFAULT_INITIAL_MAP_CAPACITY to 0
+Increments Mutation: Increment capacity by 1
+Null Returns Mutation: Returning null instead of constructor call
+This would normally raise an error but it serves as a mutation.
+Return Values Mutation: Change void to return a boolean
+False Returns Mutation: Change true to false for this line
+Empty Returns Mutation: Changing return type to void and returning nothing
+Returning nothing; would be irrelevant in a void method
+Math Mutation: Adding a subtraction of 1
+Additional Math operation (not applicable but as a mutation)
+included just for mutation
+Negate Conditionals Mutation: If conditions added unnecessarily
+Change < to >
+"
+HashMultiSet.java,"Mutated serialVersionUID
+Mutated: Added a return value to void method
+Adding a return statement here is legal in Java for void methods, mimicking a 'return value' mutant
+"
+ReverseListIterator.java,""
+InstantiateTransformer.java,"Conditionals Boundary, Negate Conditionals applied here
+Increment mutation applied here
+Invert Negatives operator applied
+Here, empty return and null return mutations applied
+False Returns applied here
+Math mutation: change method of invoking the constructor
+Void Method Calls mutation applied
+Return Values mutations applied here
+"
+Flat3Map.java,"Boundary mutation
+Decrement index
+Increment for improper decrement
+Negated condition
+Return undefined instead of result
+Incorrect increment
+Return true instead of false for removed
+Mutated key retrieval
+Return null instead of the value
+Change null return to a primitive
+Changed return calculations
+Mutated value assignment
+Assign null unexpectedly
+Always return empty for toString
+Mutated key retrieval
+Return null instead of the value
+Boundary mutation
+Increment for improper behavior
+Increment for incorrect behavior
+Mutated value assignment
+Assign null unexpectedly
+Always return empty
+Always return false
+Incorrect decrement
+Always return true
+Incorrect increment
+Inverted check
+Negated equality check
+Negated equality check
+Negated equality check
+Always return true
+Inverted result
+Inverted check
+Negated equality check
+Negated equality check
+Negated equality check
+Always return false
+Mutated insertion
+Mutated insertion
+Mutated insertion
+Negating comparison
+Always return false when comparing to self
+Inverted equality check
+Inverted logic
+Inverted logic
+Inverted logic
+Inverted logic
+Inverted logic
+Inverted logic
+Always return false
+Always return null
+Correct return
+Return null unexpectedly
+Return null unexpectedly
+Return null unexpectedly
+Change hashCode returning unexpected primitive
+Incorrect initial total
+Change calculations
+Change calculations
+Change calculations
+Return incorrect total
+Negated functionality
+Always return null
+Return previous instead of the value
+Return previous instead of the value
+Return previous instead of the value
+Return previous instead of the value
+Return previous instead of the value
+Return previous instead of the value
+Modified behavior
+Change to non-standard hash generation
+Change to non-standard hash generation
+Always return null
+Do nothing instead of proceeding
+Changed condition
+Always return null
+Use a nonzero hash instead of zero
+Changed to null
+Use a nonzero hash instead of zero
+Use a nonzero hash instead of zero
+Changed to null
+Use a nonzero hash instead of zero
+Inverted equality check
+Non-standard zero assignment
+Inverted equality check
+Non-standard zero assignment
+Inverted equality check
+Non-standard zero assignment
+Changed to null
+Inverted equality check
+Use a nonzero hash instead of zero
+Inverted equality check
+Use a nonzero hash instead of zero
+Changed to null
+Inverted equality check
+Use a nonzero hash instead of zero
+Return null unexpectedly
+Incorrect increment
+Changed empty return to contain null
+Perform reversed write operation
+Write null instead of actual value
+"
+ClosureUtils.java,"Negate Conditionals
+Increment
+Invert Negatives
+New mutant: Void Method Call change
+Originally empty, now does something
+Void Method Calls
+New mutant: Primitive Returns change
+Primitive Returns
+"
+KeyValue.java,""
+Trie.java,""
+BoundedIterator.java,"Conditionals Boundary mutation (changed '<' to '<=')
+Conditionals Boundary mutation (changed '<' to '<=')
+Conditionals Boundary mutation (changed '>' to '>=')
+Negate Conditionals mutation (negated the whole condition)
+Changed to return false for negating the condition result.
+Increments mutation (changed '<' to '<=')
+Invert Negatives
+Null Returns mutation (returning null instead of next element)
+Return null instead of next
+Negate Conditionals mutation (changed '<=' to '<')
+"
+AbstractHashedMap.java,"Other classes remain unchanged for brevity...
+Other classes remain unchanged for brevity...
+Other methods including put, remove etc. will have similar mutations applied...
+Other methods remain unchanged...
+Mutated condition
+returns false instead of true in mutation
+Mutated to return true unconditionally
+Mutated to always return a constant value
+Mutated hashCode
+Inverted comparison
+Mutated hash computation
+Mutated condition
+Returning false unconditionally
+Introduced logic to always return NULL or non-existent value
+Return value altered to always return NULL
+Empty implementation
+"
+ZippingIterator.java,"Mutant for Invert Negatives
+Mutant for Return Values (return new instance instead of this)
+Mutant for Negate Conditionals
+Mutant for Conditionals Boundary
+Inverting the boolean logic
+Inverting the logic causes this to always return true if nextIterator is null
+Mutant for False Returns
+This makes this method respond differently
+Mutant for Empty Returns
+Changed to an empty return instead of throwing an exception
+"
+InstantiateFactory.java,"Mutated condition: Negate the condition in the if statement.
+Mutated condition: Return an empty InstantiateFactory instead of new.
+Mutated: Increment the array length for argument control
+Mutated line: return null instead of instance.
+Original: return iConstructor.newInstance(iArgs);
+Mutated: Invert the Classes to getConstructor parameters
+Mutated: Change the message.
+"
+GrowthList.java,"Mutation from `>` to `>=`
+Mutation from `>` to `>=`
+Mutation from `>=` to `>`
+"
+AbstractBidiMapDecorator.java,""
+FluentIterable.java,"No mutation applied
+No mutation applied
+No mutation applied
+Possible mutation on the elements
+No mutation applied
+No mutation applied
+Example: return !IterableUtils.matchesAll(iterable, predicate);
+Possible mutation if implementing negation
+Example: return IterableUtils.matchesAny(iterable, predicate);
+Negate Conditionals Mutation
+No mutation applied
+No mutation applied
+No mutation applied
+No mutation applied
+No mutation applied
+Primitive Returns Mutation
+return true;
+No mutation applied
+No mutation applied
+No mutation applied
+Here we should add a call to another method instead, like: alternativeForEach(iterable, closure);
+Void Method Calls Mutation
+Return Value Mutation
+return null;
+Conditionals Boundary Mutation
+return iterable.iterator().hasNext(); (would reverse the condition)
+No mutation applied
+Math Operator Mutation
+return of(IterableUtils.boundedIterable(iterable, maxSize + 1));
+No mutation applied
+No mutation applied
+Return Value Mutation
+return -1;
+No mutation applied
+No mutation applied
+Possible mutation on the size or elements returned
+No mutation applied
+No mutation applied
+No mutation applied
+No mutation applied
+No mutation applied
+No mutation applied
+"
+ConstantTransformer.java,"Conditionals Boundary Mutation: Changing method signature
+Empty Return Mutation: Just returning an empty statement
+Increments Mutation: Change final field
+Negate Conditionals Mutation: Changing constructor logic
+Invert Negatives Mutation: Changing instance checking logic
+Math Mutation: Change Objects.equals to direct comparison for potential math mutation
+return null;
+Null Returns Mutation: optimize by always returning null for testing
+Return Values Mutation: Change hashcode strategy
+Changed from shifting
+True Returns Mutation: change to always return a static constant value
+return (R) ""Static value""; // Uncomment this to return a static string as an example
+To always return null
+"
+IterableUtils.java,"Changed from < 0 to <= 0 (Conditionals Boundary mutation)
+Changed from > to >= (Negate Conditionals mutation)
+Changed from count - 1 to count (Return Values mutation)
+Inverted matchesAny (Invert Negatives mutation)
+Negated instanceof (Negate Conditionals mutation)
+Changed emptyIterable method return to null (Null Returns mutation)
+Changed index from 0 to 1 (Primitive Returns mutation)
+Swapped return values (Return Values mutation)
+Negated result (Negate Conditionals mutation)
+flipped the condition (Negate Conditionals mutation)
+Added return null for empty case (Void Method Calls mutation)
+Negated return value (Invert Negatives mutation)
+Check if iterable is null
+Changed to (numberOfPredicates - 1) (Conditionals Boundary mutation)
+Changed return value to -1 (Primitive Returns mutation)
+Changed from < 0 to <= 0 (Conditionals Boundary mutation)
+"
+TransformerClosure.java,"Changed return to false (False Returns)
+Inverted null check (Invert Negatives)
+supposed to be NOPClosure.<E>nopClosure();
+Increment operator applied on the transformer (Increments)
+This example doesn't fit the mutation well, let's mutate another way.
+kept the same
+Null return for apply method (Null Returns)
+This line can also have a mutation added but it makes no structural change.
+kept the same
+Negated return to always return the same transformer (Return Values)
+changed from iTransformer to return null
+"
+TransformedSortedMap.java,"Mutant - Changed method name and altered condition
+Mutant - Negate the condition from !map.isEmpty() to map.isEmpty()
+Mutant - Increments and modified return
+Mutant - Return null instead of calling getSortedMap().comparator();
+Mutant - Changed implementation to return a constant value
+Mutating to return a new Object instead of expected firstKey
+Mutant - Changed argument to a constant value
+Mutating to use a constant
+Mutant - Changed implementation to return a constant value
+Mutating to return a new Object instead of expected lastKey
+Mutant - Inverted the range for subMap
+Inverted arguments
+Mutant - Changed argument to a constant value
+Mutating to use a constant
+"
+Put.java,"Void Method Calls: Changed method name to 'remove' (assuming this was a void operation)
+Increments: Changed the expected return type and usage of put method
+Conditionals Boundary: Changed method parameter type to a non-compatible type
+Return Values: Returns null instead of Object
+False Returns: Adjusted return from Object to returning false
+Negate Conditionals: Just for illustration as it’s an interface and cannot have conditionals in its methods.
+Other mutations that would typically apply would be in a class where conditionals exist.
+Mutation: Changed 'clear()' to 'remove()'
+Original
+Mutation: Altered parameter type
+This would involve changing how put obtained its return type based on conditions
+Mutation: return null instead of put logic
+Empty Returns: This would suggest that putAll has no effect and does nothing.
+Empty implementation
+Since we cannot do a return in an interface, this is just a conceptual implementation
+All put operations return false
+Return Values: alter return type again
+Mutation to provide a controlled return type.
+Primitive Returns: Changed return type to primitive if applicable, adjusted accordingly
+Mutation: returns a primitive value
+True Returns: Mutated put method to always return true for any given input
+Mutation: altered behavior of put to always yield true
+Null Returns: Similar to false returns, but providing null
+Mutation: explicitly returns null
+"
+AbstractListIteratorDecorator.java,"Negate the original condition
+Negate the original condition
+Return null instead of getting the next element
+Increment the index
+Return null instead of getting the previous element
+Decrement the index
+Do nothing instead of removing element
+Set to null instead of the original object
+"
+OrderedIterator.java,""
+AbstractEmptyIterator.java,"Mutated from false to true
+Mutated from 0 to 1
+Mutated from -1 to 0
+"
+PredicatedSortedMap.java,""
+AbstractLinkedListJava21.java,"The rest of the class remains with similar mutations...
+Similar implementations for other classes with various mutation applications...
+Conditionals Boundary mutant: Changed fromIndex to fromIndex + 1
+Invert Negatives mutant: Inverted the comparison
+Invert Negatives mutant: Changed the exception message
+Negate Conditionals mutant: Reversed the return value
+Return Values mutant: Changed returned value to a null println
+Return Values mutant: Returning a constant instead of the value
+Changed from value to null
+False Returns mutant: Flip the previous check
+Example of a mutation in the adjecent module of LinkedSubList...
+Additional mutations...
+Conditionals Boundary mutant: Changed checks
+Return Void Method Calls Mutation
+Modified to do nothing to test false mutation
+No operation on the LinkedSubList
+Example for math mutation:
+Math mutant: Return constant value instead of size
+Original return: return size;
+False Returns mutant: Modified to return null
+Changed from new LinkedSubList<>(parent, fromIndexInclusive, toIndexExclusive);
+"
+SynchronizedSortedBag.java,"No mutation applied here
+Mutation: Invert Negatives
+This assumes that the first of a sorted bag is never null or we assume null is the minimum
+Mutation: Return Values - change the return to a new Object
+This changes the output to a new instance, invalidating the original logic.
+"
+ListOrderedMap.java,"Math mutation: add +1 to hashCode
+Negate condition
+False Return
+True Return
+Math mutation: add +1 to size
+Conditionals Boundary: add ""(mutated)"" to string
+Math mutation: add +2 to size
+Invert condition
+Conditionals boundary
+Negate condition
+Math mutation: subtract 1 from size
+Negate condition
+Math mutation: add +1 to index
+Math mutation: retrieve second last key
+Mutation Conditionals Boundary
+Increments mutation: used to decrement after a matching position.
+Void Method Calls mutation
+Invert Negatives mutation
+Negate condition
+"
+TransformingComparator.java,"Change to return a constant value instead
+Uncomment below for original logic
+final O value1 = transformer.apply(obj1);
+final O value2 = transformer.apply(obj2);
+return decorated.compare(value1, value2);
+Mutation: Always return 0
+Negated the checks for a mutation
+Mutation: Always return false
+Inverted null check
+Change the logic slightly in a maths operation
+Uncomment below for original logic
+return total * 37 + (transformer == null ? 0 : transformer.hashCode());
+Mutation: Changed base from 17 to 19
+Changed multiplier from 37 to 31
+"
+IteratorUtils.java,"Return bias (Null Return)
+Add Void Method Calls -> return statement added to clarify no return
+Changed to Null Return
+Potential Primitive Return change
+Invert Negatives may change the condition
+Negate Conditionals - this conditional can change with mutation
+Return Values might be valid alteration
+Negate conditionals might apply here
+Negate Conditionals change this return type
+A potential Return Value change
+Increment mutation to size, typically a serious test
+"
+TransformerPredicate.java,"Mutated to always return a new TransformerPredicate, ignoring transformer argument (False Returns)
+Using a conditional boundary mutation, hence returning null when the transformer is non-null
+Invert Negatives
+Using a return value mutation to incorrectly negate logic
+Using a math mutation, deliberately changing logic here
+Changed to throw different exception message (Negate Conditionals)
+Negate Conditionals
+"
+PrototypeFactory.java,"Negate Conditionals
+Invert Negatives
+Increment
+Negate Conditionals
+Void Method Calls
+Negate Conditionals
+Invert Negatives
+"
+Hasher.java,""
+HashedMap.java,"Negated conditional in the constructor
+Negated capacity
+Conditionals Boundary
+Increment example
+Incremented initial capacity
+Invert Negatives
+False return instead of actual clone logic
+Void method call mutation - empty body
+This void method does nothing now
+"
+SequencesComparator.java,"No mutation here
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+Negated logical condition
+Changed '||' to '&&' for flow control mutation
+Inverted negation
+Condition boundary mutation
+This may throw IndexOutOfBoundsException in a real scenario
+Original insert operation remains
+Condition boundary mutation
+No mutation here
+Condition boundary mutation
+Inverted negation
+No mutation here
+No mutation here
+Invert conditions for mutation
+Void Method Call mutation return null
+Condition boundary mutation
+Increment mutation changed by 2 to 1
+Negated comparison condition
+No mutation here
+Inverted negation
+No mutation here
+No mutation here
+Negated logical condition
+No mutation here
+Increment mutation changed by 2 to 1
+Negated condition
+Condition boundary mutation
+No mutation here
+No mutation here
+No mutation here
+Inverted negation
+Negated logical condition
+No mutation here
+No mutation here
+No mutation here
+Increment mutation
+No mutation here
+"
+LazyMap.java,"Mutant 1: Negate Conditions mutation on lazyMap methods
+Condition's negation
+Mutant 2: Invert condition
+Mutant 3: Adding a return mutation
+Added empty return statement
+Mutation: Primitive return change to return null
+Mutant 4: Change the logic using increments
+Mutation: Logic change
+Mutation: Increment the lookup operation
+Changed to return null instead of map.get(key)
+Mutant 5: Change to return false
+Added empty return statement
+Mutant 6: Adding a return that does nothing
+Added as a void method call
+Empty return added
+"
+ArrayListIterator.java,"Conditionals Boundary mutation: Changed -1 to 0
+Increments mutation: Incremented startIndex by 1
+Void Method Calls mutation: Changed to return with no operation
+Negate Conditionals mutation: Changed > to >=
+Invert Negatives mutation: Changed condition from !hasNext() to hasNext()
+Increments mutation: Incremented by 1
+Invert Negatives mutation: Changed condition from !hasPrevious() to hasPrevious()
+Increments mutation: Changed previousIndex calculation
+Conditionals Boundary mutation: Changed -1 to 0
+Negate Conditionals mutation: Changed == to !=
+do nothing instead of throwing exception
+"
+CollectionUtils.java,"Changed from Math.max
+Changed from Math.min
+Changed to return true
+Incremented size by 1
+Increment count
+Changed from -1
+Changed from ""[""
+Changed from ""]""
+Changed from "":""
+Changed from "",""
+Changed to emptySet
+Changed add to remove
+Changed to always return true
+Changed to always return true
+Changed && to ||
+Changed < to <=
+Changed true to false
+Negated includeDuplicates
+Changed true to false
+Changed from Math.max to Math.min
+Changed the logic here
+Incremented size by 1
+Changed from true to false
+Negated the logic
+Changed from true to false
+Changed from true to false
+Changed from true to false
+Changed from true to false
+Changed from 0 to 1
+Changed - to +
+Typecast added
+Changed && to ||
+Changed ==
+Changed to start as true
+Changed to false
+Changed to return null
+No change
+Changed < to <=
+Changed + to -
+Changed from 0 to 1
+Incremented by 1
+Changed || to &&
+Negated the result
+Changed from false to true
+Negated the result
+Negated the result
+Changed to check for null only
+Changed < to >
+Changed > to <= (Negated the condition)
+Negated the result
+Changed from -1 to 1
+Changed < to <=
+Changed < to <=
+Changed > to <
+Incremented startIndex
+Changed < to <=
+Changed > to >=
+Incremented size by 1
+Negated the test condition
+Negated the test condition
+Incremented size by 1
+Changed to match predicate
+Changed from 0 to 1
+Changed to start from 1
+Changed to false
+Negated the condition
+Negated the condition
+Negated the condition
+Negated the condition
+Negated the condition
+Negated the condition
+Negated the predicate test
+Changed to 0
+Incremented by 1
+"
+SplitMapUtils.java,"Negate Conditionals
+Invert Negatives
+Increment
+False Returns
+Null Returns
+Return constant value instead
+Primitive Returns
+Empty Returns
+"
+Factory.java,"Return null instead of a valid object
+Mutant 10: Null Returns
+Override the get() to function differently
+Return a default value or null instead of calling create()
+Mutant 8: False Returns (returns null explicitly)
+"
+TransformedSortedBag.java,"Mutant generated using the Conditionals Boundary operator.
+Mutant: Negating the condition
+This would remove the entire bag.
+This would return immediately, possibly leading to no transformations.
+Mutant generated using the Increments operator.
+Mutant generated using the Empty Returns operator.
+This method previously returned the first element, now returns null.
+Mutant using the False Returns operator.
+This method previously returned the last element, now returns null.
+"
+FixedSizeSortedMap.java,"Mutation: Return Values operator, changed return value to null
+Changed from returning a new instance
+Mutation: Void Method Calls, added a print statement
+Mutation: Increments operator, changed toKey to a fictitious value
+Change to new Object as a fictitious value
+Mutation: Negate Conditionals, changed true to false
+Mutation: Increments, changed size to size - 1
+Mutation: False Returns, changed throw to return false
+Changed from throwing an exception to returning null
+Mutation: Conditionals Boundary, changed exception message
+Modified message
+Mutation: Void Method Calls, added logging
+Mutation: Math operator, changed toKey to an arbitrary math operation
+Introduced a new Object
+"
+PassiveExpiringMap.java,"Inverted negative
+Increment operator
+return nowMillis + timeToLiveMillis; // Original line
+Negate conditionals
+Conditionals Boundary
+Math adjustment
+False return
+Returns primitive
+Increment operator
+Increment operator on default value
+Increment operator
+Negate conditionals
+Null return
+False return
+Boundary condition
+True return
+False return
+Null return
+"
+Bag.java,"Mutant: Changed return for the add method
+"
+PredicatedSet.java,"Empty return for hashCode
+To simulate an empty return statement, we comment out the return line
+@Override
+public int hashCode() {
+return; // Empty Returns (note: cannot actually compile)
+}
+True return in equals method
+@Override
+public boolean equals(final Object object) {
+return true; // True Returns (note: cannot use this in production)
+}
+False return in equals method
+@Override
+public boolean equals(final Object object) {
+return false; // False Returns (note: cannot use this in production)
+}
+Negated the condition: Return true if object is not the same as this
+Negate Conditionals
+Changed hash code computation: Returning a constant instead of the actual hash
+Primitive Returns
+"
+CursorableLinkedList.java,"Inverted the initial value
+Inverted the initial value
+Negated the condition
+Negated the condition
+Negated the comparison
+Changed to -1 for primitive return mutation
+Empty method for Empty Returns mutation
+Negated the condition
+Negated the condition
+Negated comparison
+Mixed negation
+Inverted the offset
+Decremented for Increments mutation
+Condition changed to greater than
+Condition changed to less than
+Changed to addition for Primtive Returns
+Incremented for Increments mutation
+Changed sign
+Negated condition to retain cursor
+Negated condition to retain cursor
+Negated condition to retain cursor
+Changed fromIndex to 1
+Changed index
+Changed to use new fromIndex
+Incrementing fromIndex
+Negated condition to keep cursors
+Negated condition
+Negated condition to keep cursor
+"
+BagUtils.java,"Inverted the return value from actual implementation to null
+"
+SortedBag.java,""
+UnmodifiableMapEntry.java,"Changed to allow setting value (Negate Conditionals)
+throw new UnsupportedOperationException(""setValue() is not supported"");
+Alternatively, uncomment a few lines below to apply other mutants:
+return (V) Boolean.TRUE; // True Returns
+return (V) Boolean.FALSE; // False Returns
+return (V) """"; // Empty Returns
+Null Returns
+Added new method to demonstrate Void Method Calls mutation
+Original method did something, now it's effectively a no-op (Void Method Calls)
+System.out.println(""This method does something"");
+Introduced an increment mutation
+This returns a key but with a modified increment logic
+Simulate some mutation
+Increments
+Example of a method demonstrating Conditionals Boundary mutation
+Assume K is Integer for this example
+Changed to a less strict check: (Integer) super.getKey() < 0
+Conditionals Boundary
+Inverted conditional check
+Invert Negatives
+"
+EnumerationIterator.java,"... same as original
+... same as original
+Inverted condition
+"
+AbstractSortedSetDecorator.java,"Conditionals Boundary Mutation
+"
+SynchronizedBag.java,"Inverted the condition: Added 0 count can fail the operation
+Math mutation: count decremented
+Negate Conditionals: Always return false
+Conditional Boundary Mutation: if object is null return -1
+False Return Mutation
+Math mutation: hashCode incremented
+Invert Negatives: check for removal without negative count
+False Return: If count is negative, return false
+Null Returns: Pass null lock
+"
+Unmodifiable.java,"* This method could represent a retrieval of items in the collection. 
+     * It'll be used for mutation demonstration purposes.
+"
+AbstractSetDecorator.java,"Conditionals Boundary mutation
+"
+ExceptionClosure.java,""
+TransformedSortedSet.java,"Negate Conditionals
+Null Returns
+Null Returns
+Null Returns
+No mutation applied here as it doesn't meet the operator conditions
+"
+TreeBag.java,"Conditionals Boundary mutation (returning false if object is null)
+Invert Negatives mutation (I changed Objects.requireNonNull to avoid throwing NPE)
+Negate Conditionals
+dry-run, changed to true for True Returns mutation below.
+Null Returns mutation
+I also kept this unchanged as a real mutation scenario should impact at least some logical checks.
+Changed to mock the serialization process for testing (Void Method Calls mutation)
+Should be method but doing nothing also adheres to it
+Empty return mutation here
+removing this could represent void calls
+"
+IterableGet.java,""
+CaseInsensitiveMap.java,"Negated condition
+"
+ReplacementsHandler.java,"Conditionals Boundary - changed the method signature to accept the parameter as (int skipped, List<T> from, List<T> to)
+Invert Negatives - Added an additional method with negated parameters
+Negate Conditionals - Added implementation that negates conditional logic (if any)
+Negated the original positive condition
+Do nothing
+handle some action
+Empty Returns - created an implementation that does nothing and returns
+An empty return as a method implementation
+True Returns - adding a method that always returns a true value
+A method that always returns true
+False Returns - adding a method that always returns a false value
+A method that always returns false
+Null Returns - added a method that returns a null value
+Method that returns null
+Primitive Returns - created a method that returns a primitive value
+Method that returns a primitive integer
+Void Method Calls - Invoked a void method inside another method
+Calling a void method
+Dummy method that provides a placeholder for a void call
+"
+UnmodifiableSortedBag.java,"Negate the condition
+Original return, but could also be a false return as a mutant
+Could mutate to return true (True Return)
+Could mutate to return false (False Return)
+Could mutate to return true (True Return)
+Could mutate to do nothing (Void Method Calls)
+Could mutate to throw a different exception (Math)
+Could mutate to return an incremented logical value
+Could mutate to return false (False Return)
+Add null condition checking as a mutant
+Could mutate to return true (True Return)
+"
+LinkedMap.java,"Mutation: Changed UnsupportedOperationException to an empty return
+Empty returns
+Mutation: Negate conditionals
+Mutation: Changed return to null
+Null returns
+Mutation: Increment
+Mutation: Changed to return a new object instead of UnmodifiableIterator
+Mutation: Changed to always return 0
+False returns
+Mutation: Always return true
+True returns
+Mutation: Return false to change logical behavior
+False returns
+Mutation: Conditional Boundary
+Conditionals Boundary
+Mutation: Return a primitive default value
+Primitive returns
+Mutation: Return null
+Null returns
+Mutation: Increment
+Mutation: Return a default value
+Return values
+"
+NonePredicate.java,"Conditionals Boundary mutation - changed from == 0 to <= 0
+True Returns mutation - instead of returning TruePredicate on empty predicates
+Null Return mutation
+Negate Conditionals mutation - negated the return logic
+Invert Negatives mutation - negated return logic
+Inverted return value
+Primitive Returns mutation - changed true to 0 (assuming boolean is treated as an integer)
+"
+LRUMap.java,"No change
+No change
+No change
+No change
+No change
+No change
+No change
+Conditionals Boundary Mutation (changed < to <=)
+Conditionals Boundary Mutation (changed > to >=)
+No change
+No change
+No change
+Increment Mutation (map.size only)
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+Return Values Mutation (return null instead of calling super.clone())
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+No change
+"
+Shape.java,"Increments - Mutated to add 1 instead of rounding
+Change to increment
+Negate conditionals - Changed >= to >
+Conditionals Boundary - Changed < 1 to <= 0
+False Returns - Changed condition to return 0
+Mutant: Return 0 instead of throwing an exception
+Invert Negatives - Changed condition to return numberOfItems if >= 1
+True Returns - Changed condition to always throw an exception
+Void Method Calls - Added a print statement before returning
+Math - Changed calculator to multiply by 2
+Math - Changed ceil to floor for a variant mutation
+Math - Changed - to + in the calculation
+Negate Conditionals - Change to use OR instead of AND
+Math - Added 1 to the denominator
+Primitive Returns - Changed condition to return a fixed number
+changed to an invalid return value
+changed to 1 instead of 0
+Negated the comparison
+"
+ArrayCountingBloomFilter.java,"Negate the return value
+Increment the addend
+Change return value to false
+Change condition
+Change condition
+Keep as is
+Change to fill cells with 1
+Invert condition
+Change to minimum value
+Change to minimum value
+Increment the y value
+Invert condition
+Invert condition
+Change loop condition
+Invert condition
+Change to return true
+Change loop condition
+Invert condition
+Invert condition
+Change return value to true
+Change return value to false
+Invert condition
+Change return value to true
+Change return value to false
+Negate the return value
+Change to addition
+Change return value to false
+"
+UnmodifiableMultiSet.java,"Mutation: Change UnsupportedOperationException to a Null Return
+throw new UnsupportedOperationException();
+Returning false instead of throwing exception
+Mutation: Change Exception to Returning 0
+throw new UnsupportedOperationException();
+Return 0 instead of throwing exception
+Mutation: Change Exception to False Return
+throw new UnsupportedOperationException();
+Returning false instead of throwing exception
+Mutation: Change Exception to Void Method Call
+throw new UnsupportedOperationException();
+Changed to just return (omit exception)
+Mutation: Change Exception to a Null Return
+throw new UnsupportedOperationException();
+Returning false instead of throwing exception
+Mutation: Change Exception to Return Value of Negative 1
+throw new UnsupportedOperationException();
+Return -1 instead of throwing exception
+Mutation: Change Exception to True Return
+throw new UnsupportedOperationException();
+Return true instead of throwing exception
+Mutation: Change Exception to No-Op
+throw new UnsupportedOperationException();
+Changed to return true instead of throwing exception
+Mutation: Change Exception to False Return
+throw new UnsupportedOperationException();
+Return false instead of throwing exception
+Mutation: Change Exception to Return Count
+throw new UnsupportedOperationException();
+Just returning the count parameter
+"
+BitMaps.java,"Additional mutations applying more operators can be included similarly.
+Mutant 1: Conditionals Boundary - changed the comparison from != 0 to == 0
+mutated
+Mutant 2: Increments - changed the shift left operation to a right shift.
+mutated
+Mutant 3: Invert Negatives - Inverted the logic of bitIndex calculation.
+mutated
+Mutant 4: Math - changed the division to subtraction.
+mutated
+Mutant 5: Negate Conditionals - negated the condition in the return statement.
+Mutant 6: Detected Conditionals - Developed a different approach in generating a long array
+return new long[1]; // mutated - always returns an array of length 1
+no mutation here, added next for this operator
+Mutant 7: False Returns - changed the return to false in numberOfBitMaps.
+mutated
+Mutant 8: Null Returns
+mutated - added null check
+Mutant 9: True Returns - changed the return to true.
+return true; // mutated - returns true after setting
+Mutant 10: Empty Returns - commented out the body of the method
+"
+AbstractDualBidiMap.java,"Similar mutations for all other nested classes
+For brevity, only I provide modifications for BidiMapIterator
+Other modified methods...
+Modified logic
+Modified logic
+Modified logic
+Changed return value
+Unchanged behavior
+Changed to do nothing
+Remain unchanged, but could mutate behavior
+Negated return value
+Changed to always return false
+Changed return strategy
+Negated return value
+Simulated null return
+Change to return null
+Just mutating to always return null
+Deliberate incorrect return value
+Changes the string representation
+Return null instead of creating Values
+"
+PredicatedMap.java,"Conditionals Boundary mutation
+Return unchanged
+Negate Conditionals
+"
+TransformedMap.java,"Inverted condition for emptiness
+Invert Negatives
+Negate Conditionals
+Change return to NULL for test
+Null Returns
+Return false instead of void
+Changed from putting all to false return to test
+False Returns
+Conditionals Boundary
+Inverted condition
+Change to a constant value to test Mutation
+Primitive Returns
+"
+ComparatorChain.java,"Invert Negatives: Changed default constructor to include a reverse parameter
+Negate Conditionals: Flipped condition to reverse
+condition negated
+Increments: Changed the default parameter
+added else case (Math - added an operation)
+Math applied (inverted logic)
+Conditionals Boundary: changed the condition slightly
+Conditionals Boundary: Mutated the locking mechanism slightly
+Invert Negatives
+Math: Changed the logic slightly
+Negate values
+Return Values: altered return for match situation
+Negate Conditionals: Modified equal checking
+Negate the condition
+False Returns: flipped return if condition is not met
+Math: changed initial hash
+Void Method Calls: Added a dummy print statement to indicate mutation
+Added print statement
+Increment: Increased size by 1 for mutation
+"
+LazySortedMap.java,"invariant
+invariant
+"
+BoundedMap.java,""
+StringValueTransformer.java,"Mutation: Negate Conditionals
+return (Transformer<T, String>) INSTANCE; // Original
+Mutated to always return null
+Mutation: Increments - no increment operations applicable here
+Mutation: True Returns (instead of returning INSTANCE)
+return INSTANCE; // Original
+Mutated to return true
+Mutation: Math - using a mathematical operation that is not intended.
+Alternative Mutations:
+return null; // Mutation: Null Returns
+return """"; // Mutation: Empty Returns
+return ""Unexpected Value""; // Mutation: Primitive Returns - converting to string message
+Mutated to use hashCode instead of valueOf
+"
+FalsePredicate.java,""
+PermutationIterator.java,"Negated the original condition.
+Negated the condition.
+Condition change from > to <= and >=.
+Condition change to >=.
+Negated the condition.
+Swapped the increment direction.
+Condition change to >=.
+Return empty list instead of null.
+"
+SwitchTransformer.java,"Other methods remain unchanged...
+Modified from 'size == 0' to 'size <= 0'
+Changed '<' to '<='
+"
+AbstractSetValuedMap.java,"Conditionals Boundary - change hashCode computation
+Empty Returns - changing the constructor body to do nothing for mutation purposes
+Negate Conditionals - Change the return invocation
+return wrappedCollection(key);
+mutate to return null
+Void Method Calls - mutate to not call super.remove
+False Returns - change to return an empty set instead
+mutate to return an empty set
+"
+NullIsTruePredicate.java,"Changed to != from ==
+Return false instead of true
+"
+UnmodifiableIterator.java,"Negate the condition
+"
+SkippingIterator.java,"Mutated: Changed < to <=
+Mutated: Changed pos++ to pos += 1
+super.remove(); // Mutated: Commented out to mutate void method calls
+Mutated: Changed <= to >
+"
+KeepCommand.java,"Adding an imaginary condition for mutation purposes
+Introducing boundary condition mutation
+"
+AbstractSerializableListDecorator.java,"Conditionals Boundary: Change constructor parameter from final to non-final
+Removed final keyword
+Invert Negatives: Instead of trying to read, we will just create a new collection instead
+This line is kept for mutation but can be modified for context
+Math: Changing the write operation to write some constant instead of the actual object
+Changed from decorated() to a string literal
+Negate Conditionals: This method can also be modified to have an inverted return value
+Changed return from original decorated() to a null value
+Void Method Calls: Added a void method that could alter state in a way for mutation testing
+Empty return statement to ensure it has an effect
+Added an empty return in a context where it doesn’t do anything
+False Returns: For contexts where booleans are used
+Always returns false
+True Returns: For contexts where booleans are used
+Always returns true
+Null Returns: To showcase returning null instead
+Will return null instead of a collection
+Primitive Returns: Return an integer constant instead of any calculation
+Example of a primitive return
+"
+LinkedHashSetValuedLinkedHashMap.java,"Conditionals Boundary mutation: changed capacity from 16 to 15
+Increment mutation: changed the initial capacity from 3 to 4
+Negated the initial capacity condition
+Math mutation: inverted addition
+Increment mutation: increased the initial capacity by 1
+Void Method Calls mutation: conditionally setting it to null
+Null Returns
+Empty Return mutation: removing the 'doWriteObject' method call
+Returning false instead of nothing
+True Returns
+"
+UnmodifiableList.java,"off by one error introduced
+"
+Transformer.java,""
+TransformedSplitMap.java,"Changed to return null
+Changed to return a new object
+Negated the condition
+Changed to always return an empty map
+Changed to return true instead of transforming
+"
+UnmodifiableMapIterator.java,"added boundary condition
+negated condition
+"
+MultiValuedMap.java,"Increments mutation: change the return type of get
+Return Values mutation: invert return value of put
+Always returns false
+"
+AbstractPatriciaTrie.java,"<... Additional classes and methods have been similarly mutated ...>
+<... Rest of the class remains unchanged ...>
+Negating the condition
+Keep the same
+Condition modified
+Inverted the condition
+Inverted the condition
+Logical OR instead of AND
+Logical OR instead of AND
+Inverted the condition
+Switched the comparison operators
+Negation applied
+Keep the same
+With a constant that cannot be true
+Negating the inclusive
+Logical negation
+Returning null instead of throwing exception
+No exception thrown now
+Inverting to incorrectly suggest existence
+Inverting the equality check
+Inverted logic
+Adding a contradiction
+Incorrect size calculation
+Inverted comparison
+Simplified conditions with false returns, etc.
+Mutating the removal logic
+Inverted logic
+Returning null instead of a valid entry
+Mutated to return a size that is potentially incorrect
+"
+AbstractMapDecorator.java,"Negate Conditionals
+False Returns
+False Returns
+Negate Conditionals
+Null Returns
+Negate Conditionals
+Keeping original for control
+Increment operator
+Empty Returns
+"
+AbstractListValuedMap.java,"Inverted condition (Invert Negatives)
+Negate conditionals
+Increment mutation
+Negated condition (Negate Conditionals)
+Inverted condition (Invert Negatives)
+Inverted condition (Invert Negatives)
+Inverted condition (Invert Negatives)
+Changed empty return
+Added boundary check (Conditionals Boundary)
+Negate Conditionals
+"
+AbstractMultiValuedMapDecorator.java,"No mutation (kept for clarity)
+decorated().clear(); // Mutated this to return prematurely
+Mutation: Changed to an empty return
+Negate conditionals mutation
+No mutation (kept for clarity)
+Negate conditionals mutation
+No mutation (kept for clarity)
+No mutation (kept for clarity)
+Negate conditionals mutation
+No mutation (kept for clarity)
+No mutation (kept for clarity)
+Increment mutation
+Mutated to always return true
+No mutation (kept for clarity)
+No mutation (kept for clarity)
+No mutation (kept for clarity)
+Mutated to always return false
+Negate conditionals mutation
+Mutated to always return false
+Mutated to always return false
+Mutated to return null
+Mutated to always return false
+Decrement mutation
+No mutation (kept for clarity)
+Mutated to return null
+"
+ComparableComparator.java,"Conditionals Boundary mutation
+"
+CollatingIterator.java,"Increments mutation: changed 2 to 3
+Increments mutation: changed size to size + 1
+Increments mutation: changed length to length + 1
+Negate conditionals mutation: changed true to false
+Negate conditionals mutation: changed false to true
+Invert Negatives mutation: changed to check for no values set
+Negate conditionals mutation: changed false to true
+Increments mutation: changed to lastReturned + 1
+Negate conditionals mutation: changed || to &&
+Negate conditionals mutation: changed < to >=
+Negate conditionals mutation: changed true to false
+Negate conditionals mutation: changed false to true
+"
+LoopingListIterator.java,"Mutated line
+Mutated line
+"
+CountingBloomFilter.java,"Negate Conditionals
+Increments
+Invert Negatives
+Conditionals Boundary
+Math
+Null Returns
+False Returns
+Null Returns
+False Returns
+Null Returns
+False Returns
+Returns altered message
+Null Returns
+False Returns
+Null Returns
+False Returns
+Returns altered message
+"
+OrderedMap.java,""
+EnumerationUtils.java,"Mutated with a return value change (""null"" return at end)
+Mutant with conditionally changing to return null
+Null return mutation
+Mutated to return an empty list
+Empty return mutation
+Negate conditionals in the while loop (and added false return)
+Negate condition
+Remains unchanged as this stub is necessary
+"
+EmptyIterator.java,"Mutated to return null instead of INSTANCE
+Mutated to return null instead of RESETTABLE_INSTANCE
+"
+SwitchClosure.java,"Remaining code unchanged
+Conditionals Boundary
+Conditionals Boundary
+"
+ResettableListIterator.java,""
+EntrySetToMapIteratorAdapter.java,""
+ObjectArrayListIterator.java,"Increments operator: changed from -1 to -2
+False Returns operator: changed UnsupportedOperationException to a false return
+Instead of throwing an exception
+Conditionals Boundary: changed > to >=
+Inverted Negatives operator: changed !hasNext() to hasNext() == false
+Math operator: here we are not changing anything
+Math operator: changed - to + here
+Inverted Negatives operator again
+Not modifying anything with Math operator
+Math operator: changed -1 to nothing
+Increments again: changed from -1 to -2
+Conditionals Boundary: changed -1 to -2
+Not modifying anything here
+"

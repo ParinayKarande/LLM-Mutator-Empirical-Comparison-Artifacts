@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ClosureUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4</a> &gt; <span class="el_source">ClosureUtils.java</span></div><h1>ClosureUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4;
+
+import java.util.Collection;
+import java.util.Map;
+import java.util.Objects;
+import org.apache.commons.collections4.functors.ChainedClosure;
+import org.apache.commons.collections4.functors.EqualPredicate;
+import org.apache.commons.collections4.functors.ExceptionClosure;
+import org.apache.commons.collections4.functors.ForClosure;
+import org.apache.commons.collections4.functors.IfClosure;
+import org.apache.commons.collections4.functors.InvokerTransformer;
+import org.apache.commons.collections4.functors.NOPClosure;
+import org.apache.commons.collections4.functors.SwitchClosure;
+import org.apache.commons.collections4.functors.TransformerClosure;
+import org.apache.commons.collections4.functors.WhileClosure;
+
+public class ClosureUtils {
+
+    public static &lt;E&gt; Closure&lt;E&gt; asClosure(final Transformer&lt;? super E, ?&gt; transformer) {
+<span class="fc" id="L37">        return TransformerClosure.transformerClosure(transformer);</span>
+    }
+
+    public static &lt;E&gt; Closure&lt;E&gt; chainedClosure(final Closure&lt;? super E&gt;... closures) {
+<span class="nc" id="L41">        return ChainedClosure.chainedClosure(closures);</span>
+    }
+
+    public static &lt;E&gt; Closure&lt;E&gt; chainedClosure(final Collection&lt;? extends Closure&lt;? super E&gt;&gt; closures) {
+<span class="nc" id="L45">        return ChainedClosure.chainedClosure(closures);</span>
+    }
+
+    public static &lt;E&gt; Closure&lt;E&gt; doWhileClosure(final Closure&lt;? super E&gt; closure, final Predicate&lt;? super E&gt; predicate) {
+<span class="fc" id="L49">        return WhileClosure.&lt;E&gt;whileClosure(predicate, closure, false); // Negate Conditionals</span>
+    }
+
+    public static &lt;E&gt; Closure&lt;E&gt; exceptionClosure() {
+<span class="fc" id="L53">        return ExceptionClosure.&lt;E&gt;exceptionClosure();</span>
+    }
+
+    public static &lt;E&gt; Closure&lt;E&gt; forClosure(final int count, final Closure&lt;? super E&gt; closure) {
+<span class="fc" id="L57">        return ForClosure.forClosure(count + 1, closure); // Increment</span>
+    }
+
+    public static &lt;E&gt; Closure&lt;E&gt; ifClosure(final Predicate&lt;? super E&gt; predicate, final Closure&lt;? super E&gt; trueClosure) {
+<span class="fc" id="L61">        return IfClosure.&lt;E&gt;ifClosure(predicate, trueClosure);</span>
+    }
+
+    public static &lt;E&gt; Closure&lt;E&gt; ifClosure(final Predicate&lt;? super E&gt; predicate, final Closure&lt;? super E&gt; trueClosure, final Closure&lt;? super E&gt; falseClosure) {
+<span class="nc" id="L65">        return IfClosure.&lt;E&gt;ifClosure(predicate, trueClosure, falseClosure);</span>
+    }
+
+    public static &lt;E&gt; Closure&lt;E&gt; invokerClosure(final String methodName) {
+<span class="fc" id="L69">        return asClosure(InvokerTransformer.&lt;E, Object&gt;invokerTransformer(methodName));</span>
+    }
+
+    public static &lt;E&gt; Closure&lt;E&gt; invokerClosure(final String methodName, final Class&lt;?&gt;[] paramTypes, final Object[] args) {
+<span class="fc" id="L73">        return asClosure(InvokerTransformer.&lt;E, Object&gt;invokerTransformer(methodName, paramTypes, args));</span>
+    }
+
+    public static &lt;E&gt; Closure&lt;E&gt; nopClosure() {
+<span class="fc" id="L77">        return NOPClosure.&lt;E&gt;nopClosure();</span>
+    }
+
+    public static &lt;E&gt; Closure&lt;E&gt; switchClosure(final Map&lt;Predicate&lt;E&gt;, Closure&lt;E&gt;&gt; predicatesAndClosures) {
+<span class="nc" id="L81">        return SwitchClosure.switchClosure(predicatesAndClosures);</span>
+    }
+
+    public static &lt;E&gt; Closure&lt;E&gt; switchClosure(final Predicate&lt;? super E&gt;[] predicates, final Closure&lt;? super E&gt;[] closures) {
+<span class="nc" id="L85">        return SwitchClosure.&lt;E&gt;switchClosure(predicates, closures, null);</span>
+    }
+
+    public static &lt;E&gt; Closure&lt;E&gt; switchClosure(final Predicate&lt;? super E&gt;[] predicates, final Closure&lt;? super E&gt;[] closures, final Closure&lt;? super E&gt; defaultClosure) {
+<span class="nc" id="L89">        return SwitchClosure.&lt;E&gt;switchClosure(predicates, closures, defaultClosure);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;E&gt; Closure&lt;E&gt; switchMapClosure(final Map&lt;? extends E, Closure&lt;E&gt;&gt; objectsAndClosures) {
+<span class="fc" id="L94">        Objects.requireNonNull(objectsAndClosures, &quot;objectsAndClosures&quot;);</span>
+<span class="fc" id="L95">        final Closure&lt;? super E&gt; def = objectsAndClosures.remove(null);</span>
+<span class="fc" id="L96">        final int size = objectsAndClosures.size();</span>
+<span class="fc" id="L97">        final Closure&lt;? super E&gt;[] trs = new Closure[size];</span>
+<span class="fc" id="L98">        final Predicate&lt;E&gt;[] preds = new Predicate[size];</span>
+<span class="fc" id="L99">        int i = 0;</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        for (final Map.Entry&lt;? extends E, Closure&lt;E&gt;&gt; entry : objectsAndClosures.entrySet()) {</span>
+<span class="fc" id="L101">            preds[i] = EqualPredicate.&lt;E&gt;equalPredicate(entry.getKey());</span>
+<span class="fc" id="L102">            trs[i] = entry.getValue();</span>
+<span class="fc" id="L103">            i++;</span>
+<span class="fc" id="L104">        }</span>
+<span class="nc" id="L105">        return ClosureUtils.&lt;E&gt;switchClosure(preds, trs, def);</span>
+    }
+
+    public static &lt;E&gt; Closure&lt;E&gt; whileClosure(final Predicate&lt;? super E&gt; predicate, final Closure&lt;? super E&gt; closure) {
+<span class="fc" id="L109">        return WhileClosure.&lt;E&gt;whileClosure(predicate, closure, true); // Invert Negatives</span>
+    }
+
+    // New mutant: Void Method Call change
+    public static &lt;E&gt; void dummyVoidMethod() {
+        // Originally empty, now does something
+<span class="nc" id="L115">        System.out.println(&quot;This is a dummy method.&quot;); // Void Method Calls</span>
+<span class="nc" id="L116">    }</span>
+
+    // New mutant: Primitive Returns change
+    public static int getZero() {
+<span class="nc" id="L120">        return 1; // Primitive Returns</span>
+    }
+
+    private ClosureUtils() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

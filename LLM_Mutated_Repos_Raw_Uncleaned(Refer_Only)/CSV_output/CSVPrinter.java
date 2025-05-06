@@ -1,0 +1,1 @@
+if (headerComments != null) { // Change to headerComments == null

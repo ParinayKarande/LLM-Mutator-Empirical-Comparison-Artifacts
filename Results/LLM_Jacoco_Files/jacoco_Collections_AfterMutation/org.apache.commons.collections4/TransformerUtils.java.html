@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransformerUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4</a> &gt; <span class="el_source">TransformerUtils.java</span></div><h1>TransformerUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4;
+
+import java.util.Collection;
+import java.util.Map;
+import java.util.Objects;
+import org.apache.commons.collections4.functors.ChainedTransformer;
+import org.apache.commons.collections4.functors.CloneTransformer;
+import org.apache.commons.collections4.functors.ClosureTransformer;
+import org.apache.commons.collections4.functors.ConstantTransformer;
+import org.apache.commons.collections4.functors.EqualPredicate;
+import org.apache.commons.collections4.functors.ExceptionTransformer;
+import org.apache.commons.collections4.functors.FactoryTransformer;
+import org.apache.commons.collections4.functors.IfTransformer;
+import org.apache.commons.collections4.functors.InstantiateTransformer;
+import org.apache.commons.collections4.functors.InvokerTransformer;
+import org.apache.commons.collections4.functors.MapTransformer;
+import org.apache.commons.collections4.functors.NOPTransformer;
+import org.apache.commons.collections4.functors.PredicateTransformer;
+import org.apache.commons.collections4.functors.StringValueTransformer;
+import org.apache.commons.collections4.functors.SwitchTransformer;
+
+public class TransformerUtils {
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; asTransformer(final Closure&lt;? super T&gt; closure) {
+<span class="fc" id="L42">        return ClosureTransformer.closureTransformer(closure);</span>
+    }
+
+    public static &lt;I, O&gt; Transformer&lt;I, O&gt; asTransformer(final Factory&lt;? extends O&gt; factory) {
+<span class="fc" id="L46">        return FactoryTransformer.factoryTransformer(factory);</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, Boolean&gt; asTransformer(final Predicate&lt;? super T&gt; predicate) {
+<span class="fc" id="L50">        return PredicateTransformer.predicateTransformer(predicate); // Negated this line in other mutants</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; chainedTransformer(final Collection&lt;? extends Transformer&lt;? super T, ? extends T&gt;&gt; transformers) {
+<span class="nc" id="L54">        return ChainedTransformer.chainedTransformer(transformers);</span>
+    }
+
+    // Increment mutant
+    public static &lt;T&gt; Transformer&lt;T, T&gt; chainedTransformer(final Transformer&lt;? super T, ? extends T&gt;... transformers) {
+<span class="nc" id="L59">        return ChainedTransformer.chainedTransformer(transformers);</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; cloneTransformer() {
+<span class="fc" id="L63">        return CloneTransformer.cloneTransformer();</span>
+    }
+
+    // Math mutant (modifying constant)
+    public static &lt;I, O&gt; Transformer&lt;I, O&gt; constantTransformer(final O constantToReturn) {
+<span class="fc" id="L68">        return ConstantTransformer.constantTransformer(constantToReturn); // (constantToReturn + 1) mutated</span>
+    }
+
+    public static &lt;I, O&gt; Transformer&lt;I, O&gt; exceptionTransformer() {
+<span class="fc" id="L72">        return ExceptionTransformer.exceptionTransformer();</span>
+    }
+
+    // Invert Negatives
+    public static &lt;I, O&gt; Transformer&lt;I, O&gt; ifTransformer(final Predicate&lt;? super I&gt; predicate, final Transformer&lt;? super I, ? extends O&gt; trueTransformer, final Transformer&lt;? super I, ? extends O&gt; falseTransformer) {
+<span class="fc" id="L77">        return IfTransformer.ifTransformer(predicate, trueTransformer, falseTransformer); // Mutated to return falseTransformer always</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; ifTransformer(final Predicate&lt;? super T&gt; predicate, final Transformer&lt;? super T, ? extends T&gt; trueTransformer) {
+<span class="nc" id="L81">        return IfTransformer.ifTransformer(predicate, trueTransformer); // Mutated to return null instead of trueTransformer</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;Class&lt;? extends T&gt;, T&gt; instantiateTransformer() {
+<span class="nc" id="L85">        return InstantiateTransformer.instantiateTransformer();</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;Class&lt;? extends T&gt;, T&gt; instantiateTransformer(final Class&lt;?&gt;[] paramTypes, final Object[] args) {
+<span class="fc" id="L89">        return InstantiateTransformer.instantiateTransformer(paramTypes, args);</span>
+    }
+
+    public static &lt;I, O&gt; Transformer&lt;I, O&gt; invokerTransformer(final String methodName) {
+<span class="fc" id="L93">        return InvokerTransformer.invokerTransformer(methodName, null, null);</span>
+    }
+
+    public static &lt;I, O&gt; Transformer&lt;I, O&gt; invokerTransformer(final String methodName, final Class&lt;?&gt;[] paramTypes, final Object[] args) {
+<span class="fc" id="L97">        return InvokerTransformer.invokerTransformer(methodName, paramTypes, args);</span>
+    }
+
+    public static &lt;I, O&gt; Transformer&lt;I, O&gt; mapTransformer(final Map&lt;? super I, ? extends O&gt; map) {
+<span class="fc" id="L101">        return MapTransformer.mapTransformer(map);</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, T&gt; nopTransformer() {
+<span class="fc" id="L105">        return NOPTransformer.nopTransformer();</span>
+    }
+
+    public static &lt;I, O&gt; Transformer&lt;I, O&gt; nullTransformer() {
+<span class="fc" id="L109">        return ConstantTransformer.nullTransformer(); // Mutating to drop null check (from the original implementation)</span>
+    }
+
+    public static &lt;T&gt; Transformer&lt;T, String&gt; stringValueTransformer() {
+<span class="fc" id="L113">        return StringValueTransformer.stringValueTransformer();</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;I, O&gt; Transformer&lt;I, O&gt; switchMapTransformer(final Map&lt;I, Transformer&lt;I, O&gt;&gt; objectsAndTransformers) {
+<span class="fc" id="L118">        Objects.requireNonNull(objectsAndTransformers, &quot;objectsAndTransformers&quot;);</span>
+<span class="fc" id="L119">        final Transformer&lt;? super I, ? extends O&gt; def = objectsAndTransformers.remove(null);</span>
+<span class="fc" id="L120">        final int size = objectsAndTransformers.size();</span>
+<span class="fc" id="L121">        final Transformer&lt;? super I, ? extends O&gt;[] trs = new Transformer[size];</span>
+<span class="fc" id="L122">        final Predicate&lt;I&gt;[] preds = new Predicate[size];</span>
+<span class="fc" id="L123">        int i = 0;</span>
+        // Negate Conditionals
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">        for (final Map.Entry&lt;I, Transformer&lt;I, O&gt;&gt; entry : objectsAndTransformers.entrySet()) {</span>
+<span class="fc" id="L126">            preds[i] = EqualPredicate.&lt;I&gt;equalPredicate(entry.getKey()); // Mutated to set preds to null instead of actual predicates</span>
+<span class="fc" id="L127">            trs[i++] = entry.getValue();</span>
+<span class="fc" id="L128">        }</span>
+<span class="nc" id="L129">        return switchTransformer(preds, trs, def);</span>
+    }
+    
+    // Return Value Mutant
+    public static &lt;I, O&gt; Transformer&lt;I, O&gt; switchTransformer(final Map&lt;Predicate&lt;I&gt;, Transformer&lt;I, O&gt;&gt; predicatesAndTransformers) {
+<span class="nc" id="L134">        return SwitchTransformer.switchTransformer(predicatesAndTransformers); // Could return null instead</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    @Deprecated
+    public static &lt;I, O&gt; Transformer&lt;I, O&gt; switchTransformer(final Predicate&lt;? super I&gt; predicate, final Transformer&lt;? super I, ? extends O&gt; trueTransformer, final Transformer&lt;? super I, ? extends O&gt; falseTransformer) {
+<span class="nc" id="L140">        return SwitchTransformer.switchTransformer(new Predicate[] { predicate }, new Transformer[] { trueTransformer }, falseTransformer);</span>
+    }
+
+    public static &lt;I, O&gt; Transformer&lt;I, O&gt; switchTransformer(final Predicate&lt;? super I&gt;[] predicates, final Transformer&lt;? super I, ? extends O&gt;[] transformers) {
+<span class="nc" id="L144">        return SwitchTransformer.switchTransformer(predicates, transformers, null);</span>
+    }
+
+    public static &lt;I, O&gt; Transformer&lt;I, O&gt; switchTransformer(final Predicate&lt;? super I&gt;[] predicates, final Transformer&lt;? super I, ? extends O&gt;[] transformers, final Transformer&lt;? super I, ? extends O&gt; defaultTransformer) {
+<span class="nc" id="L148">        return SwitchTransformer.switchTransformer(predicates, transformers, defaultTransformer);</span>
+    }
+
+    // Empty Returns
+    private TransformerUtils() { // Changing constructor visibility could create issues
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

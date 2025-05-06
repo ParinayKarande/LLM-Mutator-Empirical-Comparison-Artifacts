@@ -1,0 +1,1 @@
+if (fieldPos <= 0) { // Changed '<' to '<='

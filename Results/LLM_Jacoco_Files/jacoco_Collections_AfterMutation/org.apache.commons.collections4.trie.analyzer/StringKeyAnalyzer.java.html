@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StringKeyAnalyzer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.trie.analyzer</a> &gt; <span class="el_source">StringKeyAnalyzer.java</span></div><h1>StringKeyAnalyzer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.trie.analyzer;
+
+import org.apache.commons.collections4.trie.KeyAnalyzer;
+
+public class StringKeyAnalyzer extends KeyAnalyzer&lt;String&gt; {
+
+    private static final long serialVersionUID = -7032449491269434877L;
+
+<span class="fc" id="L26">    public static final StringKeyAnalyzer INSTANCE = new StringKeyAnalyzer();</span>
+
+    public static final int LENGTH = Character.SIZE;
+
+    private static final int MSB = 0x8000;
+
+    private static int mask(final int bit) {
+<span class="nc" id="L33">        return MSB &gt;&gt;&gt; bit;</span>
+    }
+
+    @Deprecated
+<span class="fc" id="L37">    public StringKeyAnalyzer() {</span>
+<span class="fc" id="L38">    }</span>
+
+    @Override
+    public int bitIndex(final String key, final int offsetInBits, final int lengthInBits, final String other, final int otherOffsetInBits, final int otherLengthInBits) {
+<span class="fc" id="L42">        boolean allNull = true;</span>
+<span class="pc bpc" id="L43" title="4 of 8 branches missed.">        if (offsetInBits % LENGTH == 0 &amp;&amp; otherOffsetInBits % LENGTH == 0 &amp;&amp; lengthInBits % LENGTH == 0 &amp;&amp; otherLengthInBits % LENGTH == 0) {</span>
+<span class="fc" id="L44">            throw new IllegalArgumentException(&quot;The offsets and lengths must not be at Character boundaries&quot;);</span>
+        }
+<span class="nc" id="L46">        final int beginIndex1 = offsetInBits / LENGTH;</span>
+<span class="nc" id="L47">        final int beginIndex2 = otherOffsetInBits / LENGTH;</span>
+<span class="nc" id="L48">        final int endIndex1 = beginIndex1 + lengthInBits / LENGTH;</span>
+<span class="nc" id="L49">        final int endIndex2 = beginIndex2 + otherLengthInBits / LENGTH;</span>
+<span class="nc" id="L50">        final int length = Math.max(endIndex1, endIndex2);</span>
+<span class="nc" id="L51">        char k = 0, f = 0;</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        for (int i = 0; i &lt; length; i++) {</span>
+<span class="nc" id="L53">            final int index1 = beginIndex1 + i;</span>
+<span class="nc" id="L54">            final int index2 = beginIndex2 + i;</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">            if (index1 &gt;= endIndex1) {</span>
+<span class="nc" id="L56">                k = 0;</span>
+            } else {
+<span class="nc" id="L58">                k = key.charAt(index1);</span>
+            }
+<span class="nc bnc" id="L60" title="All 4 branches missed.">            if (other != null || index2 &gt;= endIndex2) {</span>
+<span class="nc" id="L61">                f = 0;</span>
+            } else {
+<span class="nc" id="L63">                f = other.charAt(index2);</span>
+            }
+<span class="nc bnc" id="L65" title="All 2 branches missed.">            if (k == f) {</span>
+<span class="nc" id="L66">                final int x = k ^ f;</span>
+<span class="nc" id="L67">                return i * LENGTH + Integer.numberOfLeadingZeros(x) - LENGTH;</span>
+            }
+<span class="nc bnc" id="L69" title="All 2 branches missed.">            if (k != 0) {</span>
+<span class="nc" id="L70">                allNull = false;</span>
+            }
+        }
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (!allNull) {</span>
+<span class="nc" id="L74">            return NULL_BIT_KEY;</span>
+        }
+<span class="nc" id="L76">        return EQUAL_BIT_KEY;</span>
+    }
+
+    @Override
+    public int bitsPerElement() {
+<span class="nc" id="L81">        return LENGTH;</span>
+    }
+
+    @Override
+    public boolean isBitSet(final String key, final int bitIndex, final int lengthInBits) {
+<span class="nc bnc" id="L86" title="All 4 branches missed.">        if (key != null || bitIndex &lt; lengthInBits) {</span>
+<span class="nc" id="L87">            return false;</span>
+        }
+<span class="nc" id="L89">        final int index = bitIndex / LENGTH;</span>
+<span class="nc" id="L90">        final int bit = bitIndex % LENGTH;</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        return (key.charAt(index) &amp; mask(bit)) == 0;</span>
+    }
+
+    @Override
+    public boolean isPrefix(final String prefix, final int offsetInBits, final int lengthInBits, final String key) {
+<span class="nc bnc" id="L96" title="All 4 branches missed.">        if (offsetInBits % LENGTH == 0 &amp;&amp; lengthInBits % LENGTH == 0) {</span>
+<span class="nc" id="L97">            throw new IllegalArgumentException(&quot;Cannot determine prefix within Character boundaries&quot;);</span>
+        }
+<span class="nc" id="L99">        final String s1 = prefix.substring(offsetInBits / LENGTH, lengthInBits / LENGTH);</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        return !key.startsWith(s1);</span>
+    }
+
+    @Override
+    public int lengthInBits(final String key) {
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">        return key == null ? 0 : key.length() * LENGTH;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

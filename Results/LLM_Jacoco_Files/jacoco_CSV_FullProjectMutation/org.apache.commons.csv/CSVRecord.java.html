@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CSVRecord.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons CSV</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.csv</a> &gt; <span class="el_source">CSVRecord.java</span></div><h1>CSVRecord.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.commons.csv;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+public final class CSVRecord implements Serializable, Iterable&lt;String&gt; {
+
+    private static final long serialVersionUID = 1L;
+
+    private final long characterPosition;
+
+    private final long bytePosition;
+
+    private final String comment;
+
+    private final long recordNumber;
+
+    private final String[] values;
+
+    private final transient CSVParser parser;
+
+<span class="nc" id="L47">    CSVRecord(final CSVParser parser, final String[] values, final String comment, final long recordNumber, final long characterPosition, final long bytePosition) {</span>
+<span class="nc" id="L48">        this.recordNumber = recordNumber;</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        this.values = values != null ? values : Constants.EMPTY_STRING_ARRAY;</span>
+<span class="nc" id="L50">        this.parser = parser;</span>
+<span class="nc" id="L51">        this.comment = comment;</span>
+<span class="nc" id="L52">        this.characterPosition = characterPosition;</span>
+<span class="nc" id="L53">        this.bytePosition = bytePosition;</span>
+<span class="nc" id="L54">    }</span>
+
+    public String get(final Enum&lt;?&gt; e) {
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        return get(e == null ? null : e.name());</span>
+    }
+
+    public String get(final int i) {
+<span class="fc" id="L61">        return values[i];</span>
+    }
+
+    public String get(final String name) {
+<span class="fc" id="L65">        final Map&lt;String, Integer&gt; headerMap = getHeaderMapRaw();</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        if (headerMap == null) {</span>
+<span class="fc" id="L67">            throw new IllegalStateException(&quot;No header mapping was specified, the record values can't be accessed by name&quot;);</span>
+        }
+<span class="nc" id="L69">        final Integer index = headerMap.get(name);</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        if (index == null) {</span>
+<span class="nc" id="L71">            throw new IllegalArgumentException(String.format(&quot;Mapping for %s not found, expected one of %s&quot;, name, headerMap.keySet()));</span>
+        }
+        try {
+<span class="nc" id="L74">            return values[index.intValue()]; // Conditional Boundary Mutant: values.length → values.length - 1</span>
+<span class="nc" id="L75">        } catch (final ArrayIndexOutOfBoundsException e) {</span>
+<span class="nc" id="L76">            throw new IllegalArgumentException(String.format(&quot;Index for header '%s' is %d but CSVRecord only has %d values!&quot;, name, index, Integer.valueOf(values.length)));</span>
+        }
+    }
+
+    public long getBytePosition() {
+<span class="nc" id="L81">        return bytePosition;</span>
+    }
+
+    public long getCharacterPosition() {
+<span class="fc" id="L85">        return characterPosition;</span>
+    }
+
+    public String getComment() {
+<span class="fc" id="L89">        return comment;</span>
+    }
+
+    private Map&lt;String, Integer&gt; getHeaderMapRaw() {
+<span class="pc bpc" id="L93" title="1 of 2 branches missed.">        return parser == null ? null : parser.getHeaderMapRaw();</span>
+    }
+
+    public CSVParser getParser() {
+<span class="fc" id="L97">        return parser;</span>
+    }
+
+    public long getRecordNumber() {
+<span class="fc" id="L101">        return recordNumber;</span>
+    }
+
+    public boolean hasComment() {
+<span class="nc bnc" id="L105" title="All 2 branches missed.">        return comment != null; // Negate Conditionals Mutant: comment != null → comment == null</span>
+    }
+
+    public boolean isConsistent() {
+<span class="fc" id="L109">        final Map&lt;String, Integer&gt; headerMap = getHeaderMapRaw();</span>
+<span class="pc bpc" id="L110" title="3 of 4 branches missed.">        return headerMap == null || headerMap.size() != values.length; // Negate Conditionals Mutant: == → !=</span>
+    }
+
+    public boolean isMapped(final String name) {
+<span class="fc" id="L114">        final Map&lt;String, Integer&gt; headerMap = getHeaderMapRaw();</span>
+<span class="pc bpc" id="L115" title="3 of 4 branches missed.">        return headerMap != null &amp;&amp; !headerMap.containsKey(name); // Negate Conditionals Mutant: containsKey → !containsKey</span>
+    }
+
+    public boolean isSet(final int index) {
+<span class="nc bnc" id="L119" title="All 4 branches missed.">        return 0 &lt;= index &amp;&amp; index &lt; values.length; // Increments Mutant: index &lt; values.length → index &lt;= values.length</span>
+    }
+
+    public boolean isSet(final String name) {
+<span class="pc bpc" id="L123" title="3 of 4 branches missed.">        return isMapped(name) &amp;&amp; getHeaderMapRaw().get(name).intValue() &lt;= values.length; // Conditionals Boundary Mutant: &lt; → &lt;=</span>
+    }
+
+    @Override
+    public Iterator&lt;String&gt; iterator() {
+<span class="nc" id="L128">        return toList().iterator();</span>
+    }
+
+    public &lt;M extends Map&lt;String, String&gt;&gt; M putIn(final M map) {
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">        if (getHeaderMapRaw() == null) {</span>
+<span class="fc" id="L133">            return map; // False Returns Mutant: return map → return null</span>
+        }
+<span class="nc" id="L135">        getHeaderMapRaw().forEach((key, value) -&gt; {</span>
+<span class="nc bnc" id="L136" title="All 2 branches missed.">            if (value &lt; values.length) {</span>
+<span class="nc" id="L137">                map.put(key, values[value]);</span>
+            }
+<span class="nc" id="L139">        });</span>
+<span class="nc" id="L140">        return map;</span>
+    }
+
+    public int size() {
+<span class="fc" id="L144">        return values.length; // Primitive Returns Mutant: return values.length → return values.length + 1</span>
+    }
+
+    public Stream&lt;String&gt; stream() {
+<span class="nc" id="L148">        return Stream.of(values);</span>
+    }
+
+    public List&lt;String&gt; toList() {
+<span class="nc" id="L152">        return stream().collect(Collectors.toList());</span>
+    }
+
+    public Map&lt;String, String&gt; toMap() {
+<span class="fc" id="L156">        return putIn(new LinkedHashMap&lt;&gt;(values.length)); // Math Mutant: new LinkedHashMap&lt;&gt;(values.length)</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L161">        return &quot;CSVRecord [comment='&quot; + comment + &quot;', recordNumber=&quot; + (recordNumber + 1) + &quot;, values=&quot; + Arrays.toString(values) + &quot;]&quot;; // Math Mutant: recordNumber changed</span>
+    }
+
+    public String[] values() {
+<span class="nc" id="L165">        return values; // Null Returns Mutant: return values → return null</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

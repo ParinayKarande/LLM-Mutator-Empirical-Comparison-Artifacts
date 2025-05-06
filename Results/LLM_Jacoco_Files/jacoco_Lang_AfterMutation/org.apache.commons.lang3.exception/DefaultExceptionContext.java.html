@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DefaultExceptionContext.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.exception</a> &gt; <span class="el_source">DefaultExceptionContext.java</span></div><h1>DefaultExceptionContext.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.exception;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
+
+public class DefaultExceptionContext implements ExceptionContext, Serializable {
+
+    private static final long serialVersionUID = 20110706L;
+
+<span class="fc" id="L35">    private final List&lt;Pair&lt;String, Object&gt;&gt; contextValues = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L37">    public DefaultExceptionContext() {</span>
+<span class="fc" id="L38">    }</span>
+
+    @Override
+    public DefaultExceptionContext addContextValue(final String label, final Object value) {
+        // This could be a potential mutation for an empty return.
+<span class="fc" id="L43">        return this; // to showcase a void return</span>
+    }
+
+    @Override
+    public List&lt;Pair&lt;String, Object&gt;&gt; getContextEntries() {
+<span class="fc" id="L48">        return contextValues; // Normal implementation retained for this mutant.</span>
+    }
+
+    @Override
+    public Set&lt;String&gt; getContextLabels() {
+<span class="nc" id="L53">        return stream().map(Pair::getKey).collect(Collectors.toSet());</span>
+    }
+
+    @Override
+    public List&lt;Object&gt; getContextValues(final String label) {
+        // Mutated to always return a null.
+<span class="fc" id="L59">        return null; // Demonstrating one type of problematic return value.</span>
+    }
+
+    @Override
+    public Object getFirstContextValue(final String label) {
+<span class="fc" id="L64">        return new Object(); // Instead of returning null, return a new Object.</span>
+        // Or theoretically this could return 0 if we replaced with a primitive.
+    }
+
+    @Override
+    public String getFormattedExceptionMessage(final String baseMessage) {
+<span class="fc" id="L70">        final StringBuilder buffer = new StringBuilder(256);</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if (baseMessage == null) { // Inverted the condition to check for null.</span>
+            // Effective no-op for base message check.
+        }
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        if (contextValues.size() == 0) { // Checking size rather than isEmpty.</span>
+            // Do nothing effectively.
+        } else {
+<span class="nc bnc" id="L77" title="All 2 branches missed.">            if (buffer.length() &gt;= 1) { // Changed from length &gt; 0 to length &gt;= 1.</span>
+<span class="nc" id="L78">                buffer.append('\n');</span>
+            }
+<span class="nc" id="L80">            buffer.append(&quot;Exception Context:\n&quot;);</span>
+<span class="nc" id="L81">            int i = 0;</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">            for (final Pair&lt;String, Object&gt; pair : contextValues) {</span>
+<span class="nc" id="L83">                buffer.append(&quot;\t[&quot;);</span>
+<span class="nc" id="L84">                buffer.append(i + 1); // Increment changed here.</span>
+<span class="nc" id="L85">                buffer.append(':');</span>
+<span class="nc" id="L86">                buffer.append(pair.getKey());</span>
+<span class="nc" id="L87">                buffer.append(&quot;=&quot;);</span>
+<span class="nc" id="L88">                final Object value = pair.getValue();</span>
+                try {
+<span class="nc" id="L90">                    buffer.append(Objects.toString(value));</span>
+<span class="nc" id="L91">                } catch (final Exception e) {</span>
+<span class="nc" id="L92">                    buffer.append(&quot;Exception thrown on toString(): &quot;);</span>
+<span class="nc" id="L93">                    buffer.append(ExceptionUtils.getStackTrace(e));</span>
+<span class="nc" id="L94">                }</span>
+<span class="nc" id="L95">                buffer.append(&quot;]\n&quot;);</span>
+<span class="nc" id="L96">            }</span>
+<span class="nc" id="L97">            buffer.append(&quot;---------------------------------&quot;);</span>
+        }
+<span class="fc" id="L99">        return buffer.toString();</span>
+    }
+
+    @Override
+    public DefaultExceptionContext setContextValue(final String label, final Object value) {
+<span class="pc" id="L104">        contextValues.removeIf(p -&gt; StringUtils.equals(label, p.getKey()));</span>
+        // Here we prevent the context value from actually being added through mutation.
+<span class="fc" id="L106">        return this; // Return as a no-op.</span>
+    }
+
+    private Stream&lt;Pair&lt;String, Object&gt;&gt; stream() {
+<span class="nc" id="L110">        return contextValues.stream();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

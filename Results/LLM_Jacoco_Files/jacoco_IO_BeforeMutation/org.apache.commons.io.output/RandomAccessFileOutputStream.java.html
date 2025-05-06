@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RandomAccessFileOutputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.output</a> &gt; <span class="el_source">RandomAccessFileOutputStream.java</span></div><h1>RandomAccessFileOutputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.output;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.nio.file.StandardOpenOption;
+import java.util.Objects;
+
+import org.apache.commons.io.build.AbstractStreamBuilder;
+
+/**
+ * An {@link OutputStream} that writes to a {@link RandomAccessFile}.
+ *
+ * @since 2.18.0
+ */
+public final class RandomAccessFileOutputStream extends OutputStream {
+
+    // @formatter:off
+    /**
+     * Builds a new {@link RandomAccessFileOutputStream}.
+     * &lt;p&gt;
+     * For example:
+     * &lt;/p&gt;
+     * &lt;pre&gt;{@code
+     * RandomAccessFileOutputStream s = RandomAccessFileOutputStream.builder()
+     *   .setFile(&quot;myfile.txt&quot;)
+     *   .setOpenOptions(StandardOpenOption.SYNC)
+     *   .get();}
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * The only super's aspect used is buffer size.
+     * &lt;/p&gt;
+     *
+     * @see #get()
+     */
+    // @formatter:on
+    public final static class Builder extends AbstractStreamBuilder&lt;RandomAccessFileOutputStream, Builder&gt; {
+
+        /**
+         * Use {@link RandomAccessFileOutputStream#builder()}.
+         */
+<span class="fc" id="L59">        private Builder() {</span>
+<span class="fc" id="L60">            setOpenOptions(StandardOpenOption.WRITE);</span>
+<span class="fc" id="L61">        }</span>
+
+        @SuppressWarnings(&quot;resource&quot;)
+        @Override
+        public RandomAccessFileOutputStream get() throws IOException {
+<span class="fc" id="L66">            return new RandomAccessFileOutputStream(getRandomAccessFile());</span>
+        }
+
+    }
+
+    /**
+     * Constructs a new {@link Builder}.
+     *
+     * @return a new {@link Builder}.
+     */
+    public static Builder builder() {
+<span class="fc" id="L77">        return new Builder();</span>
+    }
+
+    private final RandomAccessFile randomAccessFile;
+
+<span class="fc" id="L82">    private RandomAccessFileOutputStream(final RandomAccessFile randomAccessFile) {</span>
+<span class="fc" id="L83">        this.randomAccessFile = Objects.requireNonNull(randomAccessFile);</span>
+<span class="fc" id="L84">    }</span>
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L88">        this.randomAccessFile.close();</span>
+<span class="fc" id="L89">        super.close();</span>
+<span class="fc" id="L90">    }</span>
+
+    @SuppressWarnings(&quot;resource&quot;)
+    @Override
+    public void flush() throws IOException {
+<span class="fc" id="L95">        randomAccessFile.getChannel().force(true);</span>
+<span class="fc" id="L96">        super.flush();</span>
+<span class="fc" id="L97">    }</span>
+
+    @Override
+    public void write(final int b) throws IOException {
+<span class="fc" id="L101">        randomAccessFile.write(b);</span>
+<span class="fc" id="L102">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

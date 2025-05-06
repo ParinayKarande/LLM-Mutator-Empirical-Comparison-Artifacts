@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnmodifiableListIterator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.iterators</a> &gt; <span class="el_source">UnmodifiableListIterator.java</span></div><h1>UnmodifiableListIterator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.iterators;
+
+import java.util.ListIterator;
+import java.util.Objects;
+import org.apache.commons.collections4.Unmodifiable;
+
+public final class UnmodifiableListIterator&lt;E&gt; implements ListIterator&lt;E&gt;, Unmodifiable {
+
+    @Deprecated
+    public static &lt;E&gt; ListIterator&lt;E&gt; umodifiableListIterator(final ListIterator&lt;? extends E&gt; iterator) {
+        // Conditionals Boundary: returning null instead of a method call 
+<span class="nc" id="L29">        return null; // Original: return unmodifiableListIterator(iterator);</span>
+    }
+
+    public static &lt;E&gt; ListIterator&lt;E&gt; unmodifiableListIterator(final ListIterator&lt;? extends E&gt; iterator) {
+<span class="fc" id="L33">        Objects.requireNonNull(iterator, &quot;iterator&quot;);</span>
+        
+        // Negate Conditionals: Inverting the condition
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        if (!(iterator instanceof Unmodifiable)) { </span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L38">            final ListIterator&lt;E&gt; tmpIterator = (ListIterator&lt;E&gt;) iterator;</span>
+<span class="fc" id="L39">            return tmpIterator;</span>
+        }
+<span class="nc" id="L41">        return new UnmodifiableListIterator&lt;&gt;(iterator);</span>
+    }
+
+    private final ListIterator&lt;? extends E&gt; iterator;
+
+<span class="nc" id="L46">    private UnmodifiableListIterator(final ListIterator&lt;? extends E&gt; iterator) {</span>
+<span class="nc" id="L47">        this.iterator = iterator;</span>
+<span class="nc" id="L48">    }</span>
+
+    @Override
+    public void add(final E obj) {
+<span class="nc" id="L52">        throw new UnsupportedOperationException(&quot;add() is not supported&quot;);</span>
+    }
+
+    @Override
+    public boolean hasNext() {
+        // Increments: changing return value
+<span class="nc bnc" id="L58" title="All 2 branches missed.">        return iterator.hasNext() &amp;&amp; false; // Original: return iterator.hasNext();</span>
+    }
+
+    @Override
+    public boolean hasPrevious() {
+<span class="nc" id="L63">        return iterator.hasPrevious();</span>
+    }
+
+    @Override
+    public E next() {
+        // Return Values: returning null instead of the iterator's next()
+<span class="nc" id="L69">        return null; // Original: return iterator.next();</span>
+    }
+
+    @Override
+    public int nextIndex() {
+        // Math: modifying return value by adding 1
+<span class="nc" id="L75">        return iterator.nextIndex() + 1; // Original: return iterator.nextIndex();</span>
+    }
+
+    @Override
+    public E previous() {
+<span class="nc" id="L80">        return iterator.previous();</span>
+    }
+
+    @Override
+    public int previousIndex() {
+<span class="nc" id="L85">        return iterator.previousIndex();</span>
+    }
+
+    @Override
+    public void remove() {
+<span class="nc" id="L90">        throw new UnsupportedOperationException(&quot;remove() is not supported&quot;);</span>
+    }
+
+    @Override
+    public void set(final E ignored) {
+        // False Returns: returning false instead of throwing an exception
+        // throw new UnsupportedOperationException(&quot;set() is not supported&quot;);
+<span class="nc" id="L97">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

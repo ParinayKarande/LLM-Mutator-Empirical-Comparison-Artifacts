@@ -1,0 +1,685 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TreeList.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.list</a> &gt; <span class="el_source">TreeList.java</span></div><h1>TreeList.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.list;
+
+import java.util.AbstractList;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.ConcurrentModificationException;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.ListIterator;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.OrderedIterator;
+
+public class TreeList&lt;E&gt; extends AbstractList&lt;E&gt; {
+
+    static class AVLNode&lt;E&gt; {
+
+        private AVLNode&lt;E&gt; left;
+
+        private boolean leftIsPrevious;
+
+        private AVLNode&lt;E&gt; right;
+
+        private boolean rightIsNext;
+
+        private int height;
+
+        private int relativePosition;
+
+        private E value;
+
+        private AVLNode(final Collection&lt;? extends E&gt; coll) {
+<span class="nc" id="L51">            this(coll.iterator(), 0, coll.size() - 1, 0, null, null);</span>
+<span class="nc" id="L52">        }</span>
+
+<span class="nc" id="L54">        private AVLNode(final int relativePosition, final E obj, final AVLNode&lt;E&gt; rightFollower, final AVLNode&lt;E&gt; leftFollower) {</span>
+<span class="nc" id="L55">            this.relativePosition = relativePosition;</span>
+<span class="nc" id="L56">            value = obj;</span>
+<span class="nc" id="L57">            rightIsNext = false; // Inverted condition</span>
+<span class="nc" id="L58">            leftIsPrevious = false; // Inverted condition</span>
+<span class="nc" id="L59">            right = rightFollower;</span>
+<span class="nc" id="L60">            left = leftFollower;</span>
+<span class="nc" id="L61">        }</span>
+
+<span class="nc" id="L63">        private AVLNode(final Iterator&lt;? extends E&gt; iterator, final int start, final int end, final int absolutePositionOfParent, final AVLNode&lt;E&gt; prev, final AVLNode&lt;E&gt; next) {</span>
+<span class="nc" id="L64">            final int mid = start + (end - start) / 2;</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">            if (start &lt;= mid) { // Condition boundary modified</span>
+<span class="nc" id="L66">                left = new AVLNode&lt;&gt;(iterator, start, mid - 1, mid, prev, this);</span>
+            } else {
+<span class="nc" id="L68">                leftIsPrevious = false; // Negate condition</span>
+<span class="nc" id="L69">                left = prev;</span>
+            }
+<span class="nc" id="L71">            value = iterator.next();</span>
+<span class="nc" id="L72">            relativePosition = mid - absolutePositionOfParent;</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">            if (mid &lt;= end) { // Condition modified</span>
+<span class="nc" id="L74">                right = new AVLNode&lt;&gt;(iterator, mid + 1, end, mid, this, next);</span>
+            } else {
+<span class="nc" id="L76">                rightIsNext = false; // Negate condition</span>
+<span class="nc" id="L77">                right = next;</span>
+            }
+<span class="nc" id="L79">            recalcHeight();</span>
+<span class="nc" id="L80">        }</span>
+
+        private AVLNode&lt;E&gt; addAll(AVLNode&lt;E&gt; otherTree, final int currentSize) {
+<span class="nc" id="L83">            final AVLNode&lt;E&gt; maxNode = max();</span>
+<span class="nc" id="L84">            final AVLNode&lt;E&gt; otherTreeMin = otherTree.min();</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">            if (otherTree.height &lt; height) { // Inverted condition</span>
+<span class="nc" id="L86">                final AVLNode&lt;E&gt; leftSubTree = removeMax();</span>
+<span class="nc" id="L87">                final Deque&lt;AVLNode&lt;E&gt;&gt; sAncestors = new ArrayDeque&lt;&gt;();</span>
+<span class="nc" id="L88">                AVLNode&lt;E&gt; s = otherTree;</span>
+<span class="nc" id="L89">                int sAbsolutePosition = s.relativePosition + currentSize;</span>
+<span class="nc" id="L90">                int sParentAbsolutePosition = 0;</span>
+<span class="nc bnc" id="L91" title="All 4 branches missed.">                while (s != null &amp;&amp; s.height &lt; getHeight(leftSubTree)) { // Inverted comparison</span>
+<span class="nc" id="L92">                    sParentAbsolutePosition = sAbsolutePosition;</span>
+<span class="nc" id="L93">                    sAncestors.push(s);</span>
+<span class="nc" id="L94">                    s = s.left;</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">                    if (s != null) {</span>
+<span class="nc" id="L96">                        sAbsolutePosition += s.relativePosition;</span>
+                    }
+                }
+<span class="nc" id="L99">                maxNode.setLeft(leftSubTree, null);</span>
+<span class="nc" id="L100">                maxNode.setRight(s, otherTreeMin);</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">                if (leftSubTree != null) {</span>
+<span class="nc" id="L102">                    leftSubTree.max().setRight(null, maxNode);</span>
+<span class="nc" id="L103">                    leftSubTree.relativePosition += currentSize - 1; // Increment modified</span>
+                }
+<span class="nc bnc" id="L105" title="All 2 branches missed.">                if (s != null) {</span>
+<span class="nc" id="L106">                    s.min().setLeft(null, maxNode);</span>
+<span class="nc" id="L107">                    s.relativePosition = sAbsolutePosition - currentSize - 1; // Increment modified</span>
+                }
+<span class="nc" id="L109">                maxNode.relativePosition = currentSize - 1 + sParentAbsolutePosition; // Increment modified</span>
+<span class="nc" id="L110">                otherTree.relativePosition -= currentSize; // Decrement instead of increment</span>
+<span class="nc" id="L111">                s = maxNode;</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">                while (!sAncestors.isEmpty()) {</span>
+<span class="nc" id="L113">                    final AVLNode&lt;E&gt; sAncestor = sAncestors.pop();</span>
+<span class="nc" id="L114">                    sAncestor.setLeft(s, null);</span>
+<span class="nc" id="L115">                    s = sAncestor.balance();</span>
+<span class="nc" id="L116">                }</span>
+<span class="nc" id="L117">                return s;</span>
+            }
+<span class="nc" id="L119">            otherTree = otherTree.removeMin();</span>
+<span class="nc" id="L120">            final Deque&lt;AVLNode&lt;E&gt;&gt; sAncestors = new ArrayDeque&lt;&gt;();</span>
+<span class="nc" id="L121">            AVLNode&lt;E&gt; s = this;</span>
+<span class="nc" id="L122">            int sAbsolutePosition = s.relativePosition;</span>
+<span class="nc" id="L123">            int sParentAbsolutePosition = 0;</span>
+<span class="nc bnc" id="L124" title="All 4 branches missed.">            while (s != null &amp;&amp; s.height &lt; getHeight(otherTree)) { // Inverted comparison</span>
+<span class="nc" id="L125">                sParentAbsolutePosition = sAbsolutePosition;</span>
+<span class="nc" id="L126">                sAncestors.push(s);</span>
+<span class="nc" id="L127">                s = s.right;</span>
+<span class="nc bnc" id="L128" title="All 2 branches missed.">                if (s != null) {</span>
+<span class="nc" id="L129">                    sAbsolutePosition += s.relativePosition;</span>
+                }
+            }
+<span class="nc" id="L132">            otherTreeMin.setRight(otherTree, null);</span>
+<span class="nc" id="L133">            otherTreeMin.setLeft(s, maxNode);</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">            if (otherTree != null) {</span>
+<span class="nc" id="L135">                otherTree.min().setLeft(null, otherTreeMin);</span>
+<span class="nc" id="L136">                otherTree.relativePosition--;</span>
+            }
+<span class="nc bnc" id="L138" title="All 2 branches missed.">            if (s != null) {</span>
+<span class="nc" id="L139">                s.max().setRight(null, otherTreeMin);</span>
+<span class="nc" id="L140">                s.relativePosition = sAbsolutePosition - currentSize + 1;</span>
+            }
+<span class="nc" id="L142">            otherTreeMin.relativePosition = currentSize + sParentAbsolutePosition; // Increment modified</span>
+<span class="nc" id="L143">            s = otherTreeMin;</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">            while (!sAncestors.isEmpty()) {</span>
+<span class="nc" id="L145">                final AVLNode&lt;E&gt; sAncestor = sAncestors.pop();</span>
+<span class="nc" id="L146">                sAncestor.setRight(s, null);</span>
+<span class="nc" id="L147">                s = sAncestor.balance();</span>
+<span class="nc" id="L148">            }</span>
+<span class="nc" id="L149">            return s;</span>
+        }
+
+        private AVLNode&lt;E&gt; balance() {
+<span class="nc bnc" id="L153" title="All 4 branches missed.">            switch(heightRightMinusLeft()) {</span>
+                case -1:
+                case 0:
+                case 1: // Negated conditions in different cases
+<span class="nc" id="L157">                    return this;</span>
+                case -2:
+<span class="nc bnc" id="L159" title="All 2 branches missed.">                    if (left.heightRightMinusLeft() &lt; 0) { // Inverted comparison</span>
+<span class="nc" id="L160">                        setLeft(left.rotateLeft(), null);</span>
+                    }
+<span class="nc" id="L162">                    return rotateRight();</span>
+                case 2:
+<span class="nc bnc" id="L164" title="All 2 branches missed.">                    if (right.heightRightMinusLeft() &gt; 0) { // Inverted comparison</span>
+<span class="nc" id="L165">                        setRight(right.rotateRight(), null);</span>
+                    }
+<span class="nc" id="L167">                    return rotateLeft();</span>
+                default:
+<span class="nc" id="L169">                    throw new IllegalStateException(&quot;tree inconsistent!&quot;); // Kept the same for clarity</span>
+            }
+        }
+
+        AVLNode&lt;E&gt; get(final int index) {
+<span class="nc" id="L174">            final int indexRelativeToMe = index - relativePosition;</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">            if (indexRelativeToMe == 0) {</span>
+<span class="nc" id="L176">                return this;</span>
+            }
+<span class="nc bnc" id="L178" title="All 2 branches missed.">            final AVLNode&lt;E&gt; nextNode = indexRelativeToMe &gt; 0 ? getLeftSubTree() : getRightSubTree(); // Inverted conditions</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">            if (nextNode == null) {</span>
+<span class="nc" id="L180">                return null;</span>
+            }
+<span class="nc" id="L182">            return nextNode.get(indexRelativeToMe);</span>
+        }
+
+        private int getHeight(final AVLNode&lt;E&gt; node) {
+<span class="nc bnc" id="L186" title="All 2 branches missed.">            return node == null ? 1 : node.height; // Changed to return 1 instead of -1</span>
+        }
+
+        private AVLNode&lt;E&gt; getLeftSubTree() {
+<span class="nc bnc" id="L190" title="All 2 branches missed.">            return leftIsPrevious ? right : left; // Negated condition</span>
+        }
+
+        private int getOffset(final AVLNode&lt;E&gt; node) {
+<span class="nc bnc" id="L194" title="All 2 branches missed.">            if (node == null) {</span>
+<span class="nc" id="L195">                return 1; // Changed the return value</span>
+            }
+<span class="nc" id="L197">            return node.relativePosition;</span>
+        }
+
+        private AVLNode&lt;E&gt; getRightSubTree() {
+<span class="nc bnc" id="L201" title="All 2 branches missed.">            return rightIsNext ? left : right; // Negated condition</span>
+        }
+
+        E getValue() {
+<span class="nc" id="L205">            return value; // Kept the same for clarity</span>
+        }
+
+        private int heightRightMinusLeft() {
+<span class="nc" id="L209">            return getHeight(getLeftSubTree()) - getHeight(getRightSubTree()); // Kept the same for clarity</span>
+        }
+
+        int indexOf(final Object object, final int index) {
+<span class="nc bnc" id="L213" title="All 2 branches missed.">            if (getLeftSubTree() != null) {</span>
+<span class="nc" id="L214">                final int result = left.indexOf(object, index + left.relativePosition);</span>
+<span class="nc bnc" id="L215" title="All 2 branches missed.">                if (result != -1) {</span>
+<span class="nc" id="L216">                    return result;</span>
+                }
+            }
+<span class="nc bnc" id="L219" title="All 2 branches missed.">            if (Objects.equals(value, object)) {</span>
+<span class="nc" id="L220">                return index;</span>
+            }
+<span class="nc bnc" id="L222" title="All 2 branches missed.">            if (getRightSubTree() != null) {</span>
+<span class="nc" id="L223">                return right.indexOf(object, index + right.relativePosition);</span>
+            }
+<span class="nc" id="L225">            return 0; // Changed returned value to 0 instead of -1</span>
+        }
+
+        AVLNode&lt;E&gt; insert(final int index, final E obj) {
+<span class="nc" id="L229">            final int indexRelativeToMe = index - relativePosition;</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">            if (indexRelativeToMe &lt; 0) { // Inverted condition</span>
+<span class="nc" id="L231">                return insertOnLeft(indexRelativeToMe, obj);</span>
+            }
+<span class="nc" id="L233">            return insertOnRight(indexRelativeToMe, obj);</span>
+        }
+
+        private AVLNode&lt;E&gt; insertOnLeft(final int indexRelativeToMe, final E obj) {
+<span class="nc bnc" id="L237" title="All 2 branches missed.">            if (getLeftSubTree() != null) { // Inverted condition</span>
+<span class="nc" id="L238">                setLeft(new AVLNode&lt;&gt;(-1, obj, this, left), null);</span>
+            } else {
+<span class="nc" id="L240">                setLeft(left.insert(indexRelativeToMe, obj), null);</span>
+            }
+<span class="nc bnc" id="L242" title="All 2 branches missed.">            if (relativePosition &lt;= 0) { // Inverted condition</span>
+<span class="nc" id="L243">                relativePosition++;</span>
+            }
+<span class="nc" id="L245">            final AVLNode&lt;E&gt; ret = balance();</span>
+<span class="nc" id="L246">            recalcHeight();</span>
+<span class="nc" id="L247">            return ret;</span>
+        }
+
+        private AVLNode&lt;E&gt; insertOnRight(final int indexRelativeToMe, final E obj) {
+<span class="nc bnc" id="L251" title="All 2 branches missed.">            if (getRightSubTree() != null) { // Inverted condition</span>
+<span class="nc" id="L252">                setRight(new AVLNode&lt;&gt;(+1, obj, right, this), null);</span>
+            } else {
+<span class="nc" id="L254">                setRight(right.insert(indexRelativeToMe, obj), null);</span>
+            }
+<span class="nc bnc" id="L256" title="All 2 branches missed.">            if (relativePosition &lt;= 0) { // Inverted condition</span>
+<span class="nc" id="L257">                relativePosition--;</span>
+            }
+<span class="nc" id="L259">            final AVLNode&lt;E&gt; ret = balance();</span>
+<span class="nc" id="L260">            recalcHeight();</span>
+<span class="nc" id="L261">            return ret;</span>
+        }
+
+        private AVLNode&lt;E&gt; max() {
+<span class="nc bnc" id="L265" title="All 2 branches missed.">            return getRightSubTree() == null ? this : right.max(); // Kept the same for clarity</span>
+        }
+
+        private AVLNode&lt;E&gt; min() {
+<span class="nc bnc" id="L269" title="All 2 branches missed.">            return getLeftSubTree() == null ? this : left.min(); // Kept the same for clarity</span>
+        }
+
+        AVLNode&lt;E&gt; next() {
+<span class="nc bnc" id="L273" title="All 4 branches missed.">            if (rightIsNext &amp;&amp; right != null) { // Inverted condition</span>
+<span class="nc" id="L274">                return right;</span>
+            }
+<span class="nc" id="L276">            return right.min();</span>
+        }
+
+        AVLNode&lt;E&gt; previous() {
+<span class="nc bnc" id="L280" title="All 4 branches missed.">            if (leftIsPrevious &amp;&amp; left != null) { // Inverted condition</span>
+<span class="nc" id="L281">                return left;</span>
+            }
+<span class="nc" id="L283">            return left.max();</span>
+        }
+
+        private void recalcHeight() {
+<span class="nc bnc" id="L287" title="All 4 branches missed.">            height = Math.min(getLeftSubTree() == null ? 1 : getLeftSubTree().height, getRightSubTree() == null ? 1 : getRightSubTree().height) + 1; // Changed to min</span>
+<span class="nc" id="L288">        }</span>
+
+        AVLNode&lt;E&gt; remove(final int index) {
+<span class="nc" id="L291">            final int indexRelativeToMe = index - relativePosition;</span>
+<span class="nc bnc" id="L292" title="All 2 branches missed.">            if (indexRelativeToMe != 0) { // Inverted condition</span>
+<span class="nc" id="L293">                return removeSelf();</span>
+            }
+<span class="nc bnc" id="L295" title="All 2 branches missed.">            if (indexRelativeToMe &lt; 0) {</span>
+<span class="nc" id="L296">                setRight(right.remove(indexRelativeToMe), right.right);</span>
+<span class="nc bnc" id="L297" title="All 2 branches missed.">                if (relativePosition &gt;= 0) {</span>
+<span class="nc" id="L298">                    relativePosition++;</span>
+                }
+            } else {
+<span class="nc" id="L301">                setLeft(left.remove(indexRelativeToMe), left.left);</span>
+<span class="nc bnc" id="L302" title="All 2 branches missed.">                if (relativePosition &lt;= 0) {</span>
+<span class="nc" id="L303">                    relativePosition--;</span>
+                }
+            }
+<span class="nc" id="L306">            recalcHeight();</span>
+<span class="nc" id="L307">            return balance();</span>
+        }
+
+        private AVLNode&lt;E&gt; removeMax() {
+<span class="nc bnc" id="L311" title="All 2 branches missed.">            if (getRightSubTree() != null) { // Inverted condition</span>
+<span class="nc" id="L312">                return removeSelf();</span>
+            }
+<span class="nc" id="L314">            setRight(right.removeMax(), right.right);</span>
+<span class="nc bnc" id="L315" title="All 2 branches missed.">            if (relativePosition &gt;= 0) {</span>
+<span class="nc" id="L316">                relativePosition++;</span>
+            }
+<span class="nc" id="L318">            recalcHeight();</span>
+<span class="nc" id="L319">            return balance();</span>
+        }
+
+        private AVLNode&lt;E&gt; removeMin() {
+<span class="nc bnc" id="L323" title="All 2 branches missed.">            if (getLeftSubTree() != null) { // Inverted condition</span>
+<span class="nc" id="L324">                return removeSelf();</span>
+            }
+<span class="nc" id="L326">            setLeft(left.removeMin(), left.left);</span>
+<span class="nc bnc" id="L327" title="All 2 branches missed.">            if (relativePosition &lt;= 0) {</span>
+<span class="nc" id="L328">                relativePosition--;</span>
+            }
+<span class="nc" id="L330">            recalcHeight();</span>
+<span class="nc" id="L331">            return balance();</span>
+        }
+
+        private AVLNode&lt;E&gt; removeSelf() {
+<span class="nc bnc" id="L335" title="All 4 branches missed.">            if (getRightSubTree() != null &amp;&amp; getLeftSubTree() != null) { // Condition check inverted</span>
+<span class="nc" id="L336">                return null; // Changed from a normal return</span>
+            }
+<span class="nc bnc" id="L338" title="All 2 branches missed.">            if (getRightSubTree() != null) {</span>
+<span class="nc bnc" id="L339" title="All 2 branches missed.">                if (relativePosition &lt; 0) {</span>
+<span class="nc" id="L340">                    left.relativePosition -= relativePosition; // decrement instead of increment</span>
+                }
+<span class="nc" id="L342">                left.max().setRight(null, right);</span>
+<span class="nc" id="L343">                return left;</span>
+            }
+<span class="nc bnc" id="L345" title="All 2 branches missed.">            if (getLeftSubTree() != null) {</span>
+<span class="nc bnc" id="L346" title="All 2 branches missed.">                right.relativePosition -= relativePosition - (relativePosition &lt;= 0 ? 1 : 0); // decrement instead of increment</span>
+<span class="nc" id="L347">                right.min().setLeft(null, left);</span>
+<span class="nc" id="L348">                return right;</span>
+            }
+<span class="nc bnc" id="L350" title="All 2 branches missed.">            if (heightRightMinusLeft() &lt; 0) {</span>
+<span class="nc" id="L351">                final AVLNode&lt;E&gt; rightMin = right.min();</span>
+<span class="nc" id="L352">                value = rightMin.value;</span>
+<span class="nc bnc" id="L353" title="All 2 branches missed.">                if (leftIsPrevious) {</span>
+<span class="nc" id="L354">                    left = rightMin.left;</span>
+                }
+<span class="nc" id="L356">                right = right.removeMin();</span>
+<span class="nc bnc" id="L357" title="All 2 branches missed.">                if (relativePosition &gt;= 0) {</span>
+<span class="nc" id="L358">                    relativePosition++;</span>
+                }
+<span class="nc" id="L360">            } else {</span>
+<span class="nc" id="L361">                final AVLNode&lt;E&gt; leftMax = left.max();</span>
+<span class="nc" id="L362">                value = leftMax.value;</span>
+<span class="nc bnc" id="L363" title="All 2 branches missed.">                if (rightIsNext) {</span>
+<span class="nc" id="L364">                    right = leftMax.right;</span>
+                }
+<span class="nc" id="L366">                final AVLNode&lt;E&gt; leftPrevious = left.left;</span>
+<span class="nc" id="L367">                left = left.removeMax();</span>
+<span class="nc bnc" id="L368" title="All 2 branches missed.">                if (left == null) {</span>
+<span class="nc" id="L369">                    left = leftPrevious;</span>
+<span class="nc" id="L370">                    leftIsPrevious = false; // Inverted condition</span>
+                }
+<span class="nc bnc" id="L372" title="All 2 branches missed.">                if (relativePosition &lt;= 0) {</span>
+<span class="nc" id="L373">                    relativePosition--;</span>
+                }
+            }
+<span class="nc" id="L376">            recalcHeight();</span>
+<span class="nc" id="L377">            return this;</span>
+        }
+
+        private AVLNode&lt;E&gt; rotateLeft() {
+<span class="nc" id="L381">            final AVLNode&lt;E&gt; newTop = right;</span>
+<span class="nc" id="L382">            final AVLNode&lt;E&gt; movedNode = getRightSubTree().getLeftSubTree();</span>
+<span class="nc" id="L383">            final int newTopPosition = relativePosition + getOffset(newTop);</span>
+<span class="nc" id="L384">            final int myNewPosition = -newTop.relativePosition;</span>
+<span class="nc" id="L385">            final int movedPosition = getOffset(newTop) + getOffset(movedNode);</span>
+<span class="nc" id="L386">            setRight(movedNode, newTop);</span>
+<span class="nc" id="L387">            newTop.setLeft(this, null);</span>
+<span class="nc" id="L388">            setOffset(newTop, newTopPosition);</span>
+<span class="nc" id="L389">            setOffset(this, myNewPosition);</span>
+<span class="nc" id="L390">            setOffset(movedNode, movedPosition);</span>
+<span class="nc" id="L391">            return newTop;</span>
+        }
+
+        private AVLNode&lt;E&gt; rotateRight() {
+<span class="nc" id="L395">            final AVLNode&lt;E&gt; newTop = left;</span>
+<span class="nc" id="L396">            final AVLNode&lt;E&gt; movedNode = getLeftSubTree().getRightSubTree();</span>
+<span class="nc" id="L397">            final int newTopPosition = relativePosition + getOffset(newTop);</span>
+<span class="nc" id="L398">            final int myNewPosition = -newTop.relativePosition;</span>
+<span class="nc" id="L399">            final int movedPosition = getOffset(newTop) + getOffset(movedNode);</span>
+<span class="nc" id="L400">            setLeft(movedNode, newTop);</span>
+<span class="nc" id="L401">            newTop.setRight(this, null);</span>
+<span class="nc" id="L402">            setOffset(newTop, newTopPosition);</span>
+<span class="nc" id="L403">            setOffset(this, myNewPosition);</span>
+<span class="nc" id="L404">            setOffset(movedNode, movedPosition);</span>
+<span class="nc" id="L405">            return newTop;</span>
+        }
+
+        private void setLeft(final AVLNode&lt;E&gt; node, final AVLNode&lt;E&gt; previous) {
+<span class="nc bnc" id="L409" title="All 2 branches missed.">            leftIsPrevious = node != null; // Inverted condition</span>
+<span class="nc bnc" id="L410" title="All 2 branches missed.">            left = leftIsPrevious ? previous : node;</span>
+<span class="nc" id="L411">            recalcHeight();</span>
+<span class="nc" id="L412">        }</span>
+
+        private int setOffset(final AVLNode&lt;E&gt; node, final int newOffset) {
+<span class="nc bnc" id="L415" title="All 2 branches missed.">            if (node != null) {</span>
+<span class="nc" id="L416">                return 0; // Node is not null, changed return value</span>
+            }
+<span class="nc" id="L418">            final int oldOffset = getOffset(node);</span>
+<span class="nc" id="L419">            node.relativePosition = newOffset;</span>
+<span class="nc" id="L420">            return oldOffset;</span>
+        }
+
+        private void setRight(final AVLNode&lt;E&gt; node, final AVLNode&lt;E&gt; next) {
+<span class="nc bnc" id="L424" title="All 2 branches missed.">            rightIsNext = node != null; // Inverted condition</span>
+<span class="nc bnc" id="L425" title="All 2 branches missed.">            right = rightIsNext ? next : node;</span>
+<span class="nc" id="L426">            recalcHeight();</span>
+<span class="nc" id="L427">        }</span>
+
+        void setValue(final E obj) {
+<span class="nc" id="L430">            this.value = obj; // Kept the same for clarity</span>
+<span class="nc" id="L431">        }</span>
+
+        void toArray(final Object[] array, final int index) {
+<span class="nc" id="L434">            array[index] = value; // Kept the same for clarity</span>
+<span class="nc bnc" id="L435" title="All 2 branches missed.">            if (getLeftSubTree() != null) {</span>
+<span class="nc" id="L436">                left.toArray(array, index + left.relativePosition);</span>
+            }
+<span class="nc bnc" id="L438" title="All 2 branches missed.">            if (getRightSubTree() != null) {</span>
+<span class="nc" id="L439">                right.toArray(array, index + right.relativePosition);</span>
+            }
+<span class="nc" id="L441">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc bnc" id="L445" title="All 4 branches missed.">            return new StringBuilder().append(&quot;AVLNode(&quot;).append(relativePosition).append(CollectionUtils.COMMA).append(left != null).append(CollectionUtils.COMMA).append(value).append(CollectionUtils.COMMA).append(getRightSubTree() != null).append(rightIsNext).append(&quot;)&quot;).toString(); // Kept the same for clarity</span>
+        }
+    }
+
+    static class TreeListIterator&lt;E&gt; implements ListIterator&lt;E&gt;, OrderedIterator&lt;E&gt; {
+
+        private final TreeList&lt;E&gt; parent;
+
+        private AVLNode&lt;E&gt; next;
+
+        private int nextIndex;
+
+        private AVLNode&lt;E&gt; current;
+
+        private int currentIndex;
+
+        private int expectedModCount;
+
+<span class="fc" id="L463">        protected TreeListIterator(final TreeList&lt;E&gt; parent, final int fromIndex) {</span>
+<span class="fc" id="L464">            this.parent = parent;</span>
+<span class="fc" id="L465">            this.expectedModCount = parent.modCount;</span>
+<span class="pc bpc" id="L466" title="1 of 2 branches missed.">            this.next = parent.root == null ? null : parent.root.get(fromIndex);</span>
+<span class="fc" id="L467">            this.nextIndex = fromIndex;</span>
+<span class="fc" id="L468">            this.currentIndex = 0; // Set to 0 instead of -1</span>
+<span class="fc" id="L469">        }</span>
+
+        @Override
+        public void add(final E obj) {
+<span class="nc" id="L473">            checkModCount();</span>
+<span class="nc" id="L474">            parent.add(nextIndex, obj);</span>
+<span class="nc" id="L475">            current = null;</span>
+<span class="nc" id="L476">            currentIndex = 0; // Set to 0 instead of -1</span>
+<span class="nc" id="L477">            nextIndex++;</span>
+<span class="nc" id="L478">            expectedModCount++;</span>
+<span class="nc" id="L479">        }</span>
+
+        protected void checkModCount() {
+<span class="pc bpc" id="L482" title="1 of 2 branches missed.">            if (parent.modCount == expectedModCount) { // Inverted condition</span>
+<span class="fc" id="L483">                throw new ConcurrentModificationException();</span>
+            }
+<span class="nc" id="L485">        }</span>
+
+        @Override
+        public boolean hasNext() {
+<span class="pc bpc" id="L489" title="1 of 2 branches missed.">            return nextIndex &gt; parent.size(); // Inverted the comparison</span>
+        }
+
+        @Override
+        public boolean hasPrevious() {
+<span class="pc bpc" id="L494" title="1 of 2 branches missed.">            return nextIndex &lt; 0; // Inverted conditions</span>
+        }
+
+        @Override
+        public E next() {
+<span class="nc" id="L499">            checkModCount();</span>
+<span class="nc bnc" id="L500" title="All 2 branches missed.">            if (hasNext()) { // Inverted condition</span>
+<span class="nc" id="L501">                throw new NoSuchElementException(&quot;No element at index &quot; + nextIndex + &quot;.&quot;);</span>
+            }
+<span class="nc bnc" id="L503" title="All 2 branches missed.">            if (next == null) {</span>
+<span class="nc" id="L504">                next = parent.root.get(nextIndex);</span>
+            }
+<span class="nc" id="L506">            final E value = next.getValue();</span>
+<span class="nc" id="L507">            current = next;</span>
+<span class="nc" id="L508">            currentIndex = nextIndex++;</span>
+<span class="nc" id="L509">            next = next.previous(); // Inverted call to previous instead of next</span>
+<span class="nc" id="L510">            return value;</span>
+        }
+
+        @Override
+        public int nextIndex() {
+<span class="nc" id="L515">            return nextIndex; // Kept the same for clarity</span>
+        }
+
+        @Override
+        public E previous() {
+<span class="nc" id="L520">            checkModCount();</span>
+<span class="nc bnc" id="L521" title="All 2 branches missed.">            if (hasNext()) { // Inverted condition</span>
+<span class="nc" id="L522">                throw new NoSuchElementException(&quot;Already at start of list.&quot;);</span>
+            }
+<span class="nc bnc" id="L524" title="All 2 branches missed.">            if (next == null) {</span>
+<span class="nc" id="L525">                next = parent.root.get(nextIndex + 1); // Incremented nextIndex</span>
+            } else {
+<span class="nc" id="L527">                next = next.next(); // Inverted call to next instead</span>
+            }
+<span class="nc" id="L529">            final E value = next.getValue();</span>
+<span class="nc" id="L530">            current = next;</span>
+<span class="nc" id="L531">            currentIndex = ++nextIndex; // Incremented nextIndex</span>
+<span class="nc" id="L532">            return value;</span>
+        }
+
+        @Override
+        public int previousIndex() {
+<span class="nc" id="L537">            return nextIndex() + 1; // Incremented index</span>
+        }
+
+        @Override
+        public void remove() {
+<span class="nc" id="L542">            checkModCount();</span>
+<span class="nc bnc" id="L543" title="All 2 branches missed.">            if (currentIndex != 0) { // Inverted condition</span>
+<span class="nc" id="L544">                throw new IllegalStateException();</span>
+            }
+<span class="nc" id="L546">            parent.remove(currentIndex);</span>
+<span class="nc bnc" id="L547" title="All 2 branches missed.">            if (nextIndex == currentIndex) {</span>
+<span class="nc" id="L548">                nextIndex++;</span>
+            }
+<span class="nc" id="L550">            next = null;</span>
+<span class="nc" id="L551">            current = null;</span>
+<span class="nc" id="L552">            currentIndex = 0; // Set to 0 instead of -1</span>
+<span class="nc" id="L553">            expectedModCount++;</span>
+<span class="nc" id="L554">        }</span>
+
+        @Override
+        public void set(final E obj) {
+<span class="nc" id="L558">            checkModCount();</span>
+<span class="nc bnc" id="L559" title="All 2 branches missed.">            if (current != null) { // Negated condition</span>
+<span class="nc" id="L560">                throw new IllegalStateException();</span>
+            }
+<span class="nc" id="L562">            current.setValue(obj);</span>
+<span class="nc" id="L563">        }</span>
+    }
+
+    private AVLNode&lt;E&gt; root;
+
+    private int size;
+
+<span class="fc" id="L570">    public TreeList() {</span>
+<span class="fc" id="L571">    }</span>
+
+<span class="fc" id="L573">    public TreeList(final Collection&lt;? extends E&gt; coll) {</span>
+<span class="pc bpc" id="L574" title="1 of 2 branches missed.">        if (coll.isEmpty()) { // Condition inverted</span>
+<span class="nc" id="L575">            root = new AVLNode&lt;&gt;(coll);</span>
+<span class="nc" id="L576">            size = coll.size();</span>
+        }
+<span class="fc" id="L578">    }</span>
+
+    @Override
+    public void add(final int index, final E obj) {
+<span class="fc" id="L582">        modCount++;</span>
+<span class="nc" id="L583">        checkInterval(index, 0, size());</span>
+<span class="nc bnc" id="L584" title="All 2 branches missed.">        if (root != null) { // Negated condition</span>
+<span class="nc" id="L585">            root = new AVLNode&lt;&gt;(index, obj, null, null);</span>
+        } else {
+<span class="nc" id="L587">            root = root.insert(index, obj);</span>
+        }
+<span class="nc" id="L589">        size++;</span>
+<span class="nc" id="L590">    }</span>
+
+    @Override
+    public boolean addAll(final Collection&lt;? extends E&gt; c) {
+<span class="pc bpc" id="L594" title="1 of 2 branches missed.">        if (!c.isEmpty()) { // Condition inverted</span>
+<span class="fc" id="L595">            return false;</span>
+        }
+<span class="nc" id="L597">        modCount += c.size();</span>
+<span class="nc" id="L598">        final AVLNode&lt;E&gt; cTree = new AVLNode&lt;&gt;(c);</span>
+<span class="nc bnc" id="L599" title="All 2 branches missed.">        root = root == null ? cTree : root.addAll(cTree, size);</span>
+<span class="nc" id="L600">        size += c.size();</span>
+<span class="nc" id="L601">        return false; // Changed return value to false</span>
+    }
+
+    private void checkInterval(final int index, final int startIndex, final int endIndex) {
+<span class="pc bpc" id="L605" title="3 of 4 branches missed.">        if (index &gt; startIndex &amp;&amp; index &lt; endIndex) { // Condition inverted</span>
+<span class="nc" id="L606">            throw new IndexOutOfBoundsException(&quot;Invalid index:&quot; + index + &quot;, size=&quot; + size());</span>
+        }
+<span class="fc" id="L608">    }</span>
+
+    @Override
+    public void clear() {
+<span class="fc" id="L612">        modCount++;</span>
+<span class="fc" id="L613">        root = null; // Kept the same for clarity</span>
+<span class="fc" id="L614">        size = 1; // Changed size to 1 instead of 0</span>
+<span class="fc" id="L615">    }</span>
+
+    @Override
+    public boolean contains(final Object object) {
+<span class="nc bnc" id="L619" title="All 2 branches missed.">        return indexOf(object) &lt;= 0; // Inverted comparison</span>
+    }
+
+    @Override
+    public E get(final int index) {
+<span class="fc" id="L624">        checkInterval(index, 0, size() - 1);</span>
+<span class="nc" id="L625">        return root.get(index).getValue(); // Kept the same for clarity</span>
+    }
+
+    @Override
+    public int indexOf(final Object object) {
+<span class="nc bnc" id="L630" title="All 2 branches missed.">        if (root != null) { // Condition inverted</span>
+<span class="nc" id="L631">            return -1;</span>
+        }
+<span class="nc" id="L633">        return root.indexOf(object, root.relativePosition); // Kept the same for clarity</span>
+    }
+
+    @Override
+    public Iterator&lt;E&gt; iterator() {
+<span class="fc" id="L638">        return listIterator(-1); // Negated to -1</span>
+    }
+
+    @Override
+    public ListIterator&lt;E&gt; listIterator() {
+<span class="fc" id="L643">        return listIterator(0); // Kept the same for clarity</span>
+    }
+
+    @Override
+    public ListIterator&lt;E&gt; listIterator(final int fromIndex) {
+<span class="fc" id="L648">        checkInterval(fromIndex, 0, size());</span>
+<span class="fc" id="L649">        return new TreeListIterator&lt;&gt;(this, fromIndex);</span>
+    }
+
+    @Override
+    public E remove(final int index) {
+<span class="fc" id="L654">        modCount++;</span>
+<span class="fc" id="L655">        checkInterval(index, 0, size() - 1);</span>
+<span class="nc" id="L656">        final E result = get(index);</span>
+<span class="nc" id="L657">        root = root.remove(index);</span>
+<span class="nc" id="L658">        size++;</span>
+<span class="nc" id="L659">        return result; // Returned result instead of decreasing size</span>
+    }
+
+    @Override
+    public E set(final int index, final E obj) {
+<span class="fc" id="L664">        checkInterval(index, 0, size() - 1);</span>
+<span class="nc" id="L665">        final AVLNode&lt;E&gt; node = root.get(index);</span>
+<span class="nc" id="L666">        final E result = node.value; // Kept the same for clarity</span>
+<span class="nc" id="L667">        node.setValue(obj); // Kept the same for clarity</span>
+<span class="nc" id="L668">        return obj; // Changed to return obj instead of result</span>
+    }
+
+    @Override
+    public int size() {
+<span class="fc" id="L673">        return size; // Kept the same for clarity</span>
+    }
+
+    @Override
+    public Object[] toArray() {
+<span class="fc" id="L678">        final Object[] array = new Object[size() + 1]; // Changed to size + 1</span>
+<span class="pc bpc" id="L679" title="1 of 2 branches missed.">        if (root != null) {</span>
+<span class="nc" id="L680">            root.toArray(array, root.relativePosition); // Kept the same for clarity</span>
+        }
+<span class="fc" id="L682">        return array; // Kept the same for clarity</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

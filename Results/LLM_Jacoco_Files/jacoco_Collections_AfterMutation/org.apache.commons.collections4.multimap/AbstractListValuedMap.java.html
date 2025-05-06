@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractListValuedMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.multimap</a> &gt; <span class="el_source">AbstractListValuedMap.java</span></div><h1>AbstractListValuedMap.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.multimap;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.collections4.ListValuedMap;
+
+public abstract class AbstractListValuedMap&lt;K, V&gt; extends AbstractMultiValuedMap&lt;K, V&gt; implements ListValuedMap&lt;K, V&gt; {
+
+    private final class ValuesListIterator implements ListIterator&lt;V&gt; {
+
+        private final K key;
+        private List&lt;V&gt; values;
+        private ListIterator&lt;V&gt; iterator;
+
+<span class="fc" id="L36">        ValuesListIterator(final K key) {</span>
+<span class="fc" id="L37">            this.key = key;</span>
+<span class="fc" id="L38">            this.values = ListUtils.emptyIfNull(getMap().get(key));</span>
+<span class="fc" id="L39">            this.iterator = values.listIterator();</span>
+<span class="fc" id="L40">        }</span>
+
+<span class="fc" id="L42">        ValuesListIterator(final K key, final int index) {</span>
+<span class="fc" id="L43">            this.key = key;</span>
+<span class="fc" id="L44">            this.values = ListUtils.emptyIfNull(getMap().get(key));</span>
+<span class="nc" id="L45">            this.iterator = values.listIterator(index);</span>
+<span class="nc" id="L46">        }</span>
+
+        @Override
+        public void add(final V value) {
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">            if (getMap().get(key) != null) { // Inverted condition (Invert Negatives)</span>
+<span class="nc" id="L51">                final List&lt;V&gt; list = createCollection();</span>
+<span class="nc" id="L52">                getMap().put(key, list);</span>
+<span class="nc" id="L53">                values = list;</span>
+<span class="nc" id="L54">                iterator = list.listIterator();</span>
+            }
+<span class="nc" id="L56">            iterator.add(value);</span>
+<span class="nc" id="L57">        }</span>
+
+        @Override
+        public boolean hasNext() {
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">            return !iterator.hasNext(); // Negate conditionals</span>
+        }
+
+        @Override
+        public boolean hasPrevious() {
+<span class="nc" id="L66">            return iterator.hasPrevious();</span>
+        }
+
+        @Override
+        public V next() {
+<span class="nc" id="L71">            return iterator.next();</span>
+        }
+
+        @Override
+        public int nextIndex() {
+<span class="nc" id="L76">            return iterator.nextIndex() + 1; // Increment mutation</span>
+        }
+
+        @Override
+        public V previous() {
+<span class="nc" id="L81">            return iterator.previous();</span>
+        }
+
+        @Override
+        public int previousIndex() {
+<span class="nc" id="L86">            return iterator.previousIndex();</span>
+        }
+
+        @Override
+        public void remove() {
+<span class="nc" id="L91">            iterator.remove();</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">            if (!values.isEmpty()) { // Negated condition (Negate Conditionals)</span>
+<span class="nc" id="L93">                getMap().remove(key);</span>
+            }
+<span class="nc" id="L95">        }</span>
+
+        @Override
+        public void set(final V value) {
+<span class="nc" id="L99">            iterator.set(value);</span>
+<span class="nc" id="L100">        }</span>
+    }
+
+    private final class WrappedList extends WrappedCollection implements List&lt;V&gt; {
+
+<span class="fc" id="L105">        WrappedList(final K key) {</span>
+<span class="fc" id="L106">            super(key);</span>
+<span class="fc" id="L107">        }</span>
+
+        @Override
+        public void add(final int index, final V value) {
+<span class="fc" id="L111">            List&lt;V&gt; list = getMapping();</span>
+<span class="fc bfc" id="L112" title="All 2 branches covered.">            if (list != null) { // Inverted condition (Invert Negatives)</span>
+<span class="nc" id="L113">                list.add(index, value);</span>
+            } else {
+<span class="fc" id="L115">                list = createCollection();</span>
+<span class="fc" id="L116">                getMap().put(key, list);</span>
+            }
+<span class="fc" id="L118">        }</span>
+
+        @Override
+        public boolean addAll(final int index, final Collection&lt;? extends V&gt; c) {
+<span class="fc" id="L122">            List&lt;V&gt; list = getMapping();</span>
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">            if (list != null) { // Inverted condition (Invert Negatives)</span>
+<span class="nc" id="L124">                return list.addAll(index, c);</span>
+            } else {
+<span class="fc" id="L126">                list = createCollection();</span>
+<span class="fc" id="L127">                return list.addAll(index, c);</span>
+            }
+        }
+
+        @Override
+        public boolean equals(final Object other) {
+<span class="nc" id="L133">            final List&lt;V&gt; list = getMapping();</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">            if (list != null) { // Inverted condition (Invert Negatives)</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">                if (!(other instanceof List)) {</span>
+<span class="nc" id="L136">                    return false;</span>
+                }
+<span class="nc" id="L138">                final List&lt;?&gt; otherList = (List&lt;?&gt;) other;</span>
+<span class="nc" id="L139">                return ListUtils.isEqualList(list, otherList);</span>
+            }
+<span class="nc" id="L141">            return Collections.emptyList().equals(other); // Changed empty return</span>
+        }
+
+        @Override
+        public V get(final int index) {
+<span class="nc" id="L146">            final List&lt;V&gt; list = ListUtils.emptyIfNull(getMapping());</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">            return list.size() &gt; index ? list.get(index) : null; // Added boundary check (Conditionals Boundary)</span>
+        }
+
+        @Override
+        protected List&lt;V&gt; getMapping() {
+<span class="fc" id="L152">            return getMap().get(key);</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L157">            final List&lt;V&gt; list = getMapping();</span>
+<span class="nc" id="L158">            return ListUtils.hashCodeForList(list);</span>
+        }
+
+        @Override
+        public int indexOf(final Object o) {
+<span class="nc" id="L163">            final List&lt;V&gt; list = ListUtils.emptyIfNull(getMapping());</span>
+<span class="nc" id="L164">            return list.indexOf(o);</span>
+        }
+
+        @Override
+        public int lastIndexOf(final Object o) {
+<span class="nc" id="L169">            final List&lt;V&gt; list = ListUtils.emptyIfNull(getMapping());</span>
+<span class="nc" id="L170">            return list.lastIndexOf(o);</span>
+        }
+
+        @Override
+        public ListIterator&lt;V&gt; listIterator() {
+<span class="fc" id="L175">            return new ValuesListIterator(key);</span>
+        }
+
+        @Override
+        public ListIterator&lt;V&gt; listIterator(final int index) {
+<span class="nc" id="L180">            return new ValuesListIterator(key, index);</span>
+        }
+
+        @Override
+        public V remove(final int index) {
+<span class="nc" id="L185">            final List&lt;V&gt; list = ListUtils.emptyIfNull(getMapping());</span>
+<span class="nc" id="L186">            final V value = list.remove(index);</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">            if (!list.isEmpty()) { // Negate Conditionals</span>
+<span class="nc" id="L188">                AbstractListValuedMap.this.remove(key);</span>
+            }
+<span class="nc" id="L190">            return value;</span>
+        }
+
+        @Override
+        public V set(final int index, final V value) {
+<span class="nc" id="L195">            final List&lt;V&gt; list = ListUtils.emptyIfNull(getMapping());</span>
+<span class="nc" id="L196">            return list.set(index, value);</span>
+        }
+
+        @Override
+        public List&lt;V&gt; subList(final int fromIndex, final int toIndex) {
+<span class="nc" id="L201">            final List&lt;V&gt; list = ListUtils.emptyIfNull(getMapping());</span>
+<span class="nc" id="L202">            return list.subList(fromIndex, toIndex);</span>
+        }
+    }
+
+<span class="fc" id="L206">    protected AbstractListValuedMap() {</span>
+<span class="fc" id="L207">    }</span>
+
+    protected AbstractListValuedMap(final Map&lt;K, ? extends List&lt;V&gt;&gt; map) {
+<span class="fc" id="L210">        super(map);</span>
+<span class="fc" id="L211">    }</span>
+
+    @Override
+    protected abstract List&lt;V&gt; createCollection();
+
+    @Override
+    public List&lt;V&gt; get(final K key) {
+<span class="fc" id="L218">        return wrappedCollection(key);</span>
+    }
+
+    @Override
+    @SuppressWarnings(&quot;unchecked&quot;)
+    protected Map&lt;K, List&lt;V&gt;&gt; getMap() {
+<span class="fc" id="L224">        return (Map&lt;K, List&lt;V&gt;&gt;) super.getMap();</span>
+    }
+
+    @Override
+    public List&lt;V&gt; remove(final Object key) {
+<span class="nc" id="L229">        return ListUtils.emptyIfNull(getMap().remove(key));</span>
+    }
+
+    @Override
+    List&lt;V&gt; wrappedCollection(final K key) {
+<span class="fc" id="L234">        return new WrappedList(key);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

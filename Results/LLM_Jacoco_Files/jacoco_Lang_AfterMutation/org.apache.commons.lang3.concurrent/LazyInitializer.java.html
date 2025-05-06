@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LazyInitializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.concurrent</a> &gt; <span class="el_source">LazyInitializer.java</span></div><h1>LazyInitializer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.concurrent;
+
+import org.apache.commons.lang3.function.FailableConsumer;
+import org.apache.commons.lang3.function.FailableSupplier;
+
+public class LazyInitializer&lt;T&gt; extends AbstractConcurrentInitializer&lt;T, ConcurrentException&gt; {
+
+    public static class Builder&lt;I extends LazyInitializer&lt;T&gt;, T&gt; extends AbstractBuilder&lt;I, T, Builder&lt;I, T&gt;, ConcurrentException&gt; {
+
+<span class="fc" id="L27">        public Builder() {</span>
+<span class="fc" id="L28">        }</span>
+
+        @SuppressWarnings(&quot;unchecked&quot;)
+        @Override
+        public I get() {
+<span class="nc" id="L33">            return (I) new LazyInitializer(getInitializer(), getCloser());</span>
+        }
+    }
+
+<span class="fc" id="L37">    private static final Object NO_INIT = new Object();</span>
+
+    public static &lt;T&gt; Builder&lt;LazyInitializer&lt;T&gt;, T&gt; builder() {
+<span class="fc" id="L40">        return new Builder&lt;&gt;();</span>
+    }
+
+<span class="pc" id="L43">    @SuppressWarnings(&quot;unchecked&quot;)</span>
+    private volatile T object = (T) NO_INIT;
+
+<span class="fc" id="L46">    public LazyInitializer() {</span>
+<span class="fc" id="L47">    }</span>
+
+    private LazyInitializer(final FailableSupplier&lt;T, ConcurrentException&gt; initializer, final FailableConsumer&lt;T, ConcurrentException&gt; closer) {
+<span class="nc" id="L50">        super(initializer, closer);</span>
+<span class="nc" id="L51">    }</span>
+
+    @Override
+    public T get() throws ConcurrentException {
+<span class="fc" id="L55">        T result = object;</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">        if (result == NO_INIT) {</span>
+<span class="fc" id="L57">            synchronized (this) {</span>
+<span class="fc" id="L58">                result = object;</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">                if (result == NO_INIT) {</span>
+<span class="fc" id="L60">                    object = result = initialize();</span>
+                }
+<span class="fc" id="L62">            }</span>
+        }
+<span class="fc" id="L64">        return result;</span>
+    }
+
+    @Override
+    protected ConcurrentException getTypedException(final Exception e) {
+<span class="nc" id="L69">        return new ConcurrentException(e);</span>
+    }
+
+    @Override
+    public boolean isInitialized() {
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        return object == NO_INIT; // Condition inverted</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

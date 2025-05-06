@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ThresholdingOutputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.output</a> &gt; <span class="el_source">ThresholdingOutputStream.java</span></div><h1>ThresholdingOutputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.output;
+
+import java.io.IOException;
+import java.io.OutputStream;
+
+import org.apache.commons.io.function.IOConsumer;
+import org.apache.commons.io.function.IOFunction;
+
+/**
+ * An output stream which triggers an event on the first write that causes
+ * the total number of bytes written to the stream to exceed a configured threshold,
+ * and every subsequent write. The event
+ * can be used, for example, to throw an exception if a maximum has been reached,
+ * or to switch the underlying stream when the threshold is exceeded.
+ *
+ * &lt;p&gt;
+ * This class overrides all {@link OutputStream} methods. However, these overrides ultimately call the corresponding
+ * methods in the underlying output stream implementation.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * NOTE: This implementation may trigger the event &lt;em&gt;before&lt;/em&gt; the threshold is actually reached, since it triggers
+ * when a pending write operation would cause the threshold to be exceeded.
+ * &lt;/p&gt;
+ */
+public class ThresholdingOutputStream extends OutputStream {
+
+    /**
+     * Noop output stream getter function.
+     */
+<span class="fc" id="L46">    private static final IOFunction&lt;ThresholdingOutputStream, OutputStream&gt; NOOP_OS_GETTER = os -&gt; NullOutputStream.INSTANCE;</span>
+
+    /**
+     * The threshold at which the event will be triggered.
+     */
+    private final int threshold;
+
+    /**
+     * Accepts reaching the threshold.
+     */
+    private final IOConsumer&lt;ThresholdingOutputStream&gt; thresholdConsumer;
+
+    /**
+     * Gets the output stream.
+     */
+    private final IOFunction&lt;ThresholdingOutputStream, OutputStream&gt; outputStreamGetter;
+
+    /**
+     * The number of bytes written to the output stream.
+     */
+    private long written;
+
+    /**
+     * Whether or not the configured threshold has been exceeded.
+     */
+    private boolean thresholdExceeded;
+
+    /**
+     * Constructs an instance of this class which will trigger an event at the specified threshold.
+     *
+     * @param threshold The number of bytes at which to trigger an event.
+     */
+    public ThresholdingOutputStream(final int threshold) {
+<span class="fc" id="L79">        this(threshold, IOConsumer.noop(), NOOP_OS_GETTER);</span>
+<span class="fc" id="L80">    }</span>
+
+    /**
+     * Constructs an instance of this class which will trigger an event at the specified threshold.
+     * A negative threshold has no meaning and will be treated as 0
+     *
+     * @param threshold The number of bytes at which to trigger an event.
+     * @param thresholdConsumer Accepts reaching the threshold.
+     * @param outputStreamGetter Gets the output stream.
+     * @since 2.9.0
+     */
+    public ThresholdingOutputStream(final int threshold, final IOConsumer&lt;ThresholdingOutputStream&gt; thresholdConsumer,
+<span class="fc" id="L92">        final IOFunction&lt;ThresholdingOutputStream, OutputStream&gt; outputStreamGetter) {</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        this.threshold = threshold &lt; 0 ? 0 : threshold;</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        this.thresholdConsumer = thresholdConsumer == null ? IOConsumer.noop() : thresholdConsumer;</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        this.outputStreamGetter = outputStreamGetter == null ? NOOP_OS_GETTER : outputStreamGetter;</span>
+<span class="fc" id="L96">    }</span>
+
+    /**
+     * Checks to see if writing the specified number of bytes would cause the configured threshold to be exceeded. If
+     * so, triggers an event to allow a concrete implementation to take action on this.
+     *
+     * @param count The number of bytes about to be written to the underlying output stream.
+     *
+     * @throws IOException if an error occurs.
+     */
+    protected void checkThreshold(final int count) throws IOException {
+<span class="fc bfc" id="L107" title="All 4 branches covered.">        if (!thresholdExceeded &amp;&amp; written + count &gt; threshold) {</span>
+<span class="fc" id="L108">            thresholdExceeded = true;</span>
+<span class="fc" id="L109">            thresholdReached();</span>
+        }
+<span class="fc" id="L111">    }</span>
+
+    /**
+     * Closes this output stream and releases any system resources associated with this stream.
+     *
+     * @throws IOException if an error occurs.
+     */
+    @Override
+    public void close() throws IOException {
+        try {
+<span class="fc" id="L121">            flush();</span>
+<span class="nc" id="L122">        } catch (final IOException ignored) {</span>
+            // ignore
+<span class="fc" id="L124">        }</span>
+        // TODO for 4.0: Replace with getOutputStream()
+<span class="fc" id="L126">        getStream().close();</span>
+<span class="fc" id="L127">    }</span>
+
+    /**
+     * Flushes this output stream and forces any buffered output bytes to be written out.
+     *
+     * @throws IOException if an error occurs.
+     */
+    @SuppressWarnings(&quot;resource&quot;) // the underlying stream is managed by a subclass.
+    @Override
+    public void flush() throws IOException {
+        // TODO for 4.0: Replace with getOutputStream()
+<span class="fc" id="L138">        getStream().flush();</span>
+<span class="fc" id="L139">    }</span>
+
+    /**
+     * Gets the number of bytes that have been written to this output stream.
+     *
+     * @return The number of bytes written.
+     */
+    public long getByteCount() {
+<span class="fc" id="L147">        return written;</span>
+    }
+
+    /**
+     * Gets the underlying output stream, to which the corresponding {@link OutputStream} methods in this class will
+     * ultimately delegate.
+     *
+     * @return The underlying output stream.
+     * @throws IOException if an error occurs.
+     * @since 2.14.0
+     */
+    protected OutputStream getOutputStream() throws IOException {
+<span class="fc" id="L159">        return outputStreamGetter.apply(this);</span>
+    }
+
+    /**
+     * Gets the underlying output stream, to which the corresponding {@link OutputStream} methods in this class will
+     * ultimately delegate.
+     *
+     * @return The underlying output stream.
+     * @throws IOException if an error occurs.
+     * @deprecated Use {@link #getOutputStream()}.
+     */
+    @Deprecated
+    protected OutputStream getStream() throws IOException {
+<span class="fc" id="L172">        return getOutputStream();</span>
+    }
+
+    /**
+     * Gets the threshold, in bytes, at which an event will be triggered.
+     *
+     * @return The threshold point, in bytes.
+     */
+    public int getThreshold() {
+<span class="nc" id="L181">        return threshold;</span>
+    }
+
+    /**
+     * Tests whether or not the configured threshold has been exceeded for this output stream.
+     *
+     * @return {@code true} if the threshold has been reached; {@code false} otherwise.
+     */
+    public boolean isThresholdExceeded() {
+<span class="fc bfc" id="L190" title="All 2 branches covered.">        return written &gt; threshold;</span>
+    }
+
+    /**
+     * Resets the byteCount to zero. You can call this from {@link #thresholdReached()} if you want the event to be
+     * triggered again.
+     */
+    protected void resetByteCount() {
+<span class="nc" id="L198">        this.thresholdExceeded = false;</span>
+<span class="nc" id="L199">        this.written = 0;</span>
+<span class="nc" id="L200">    }</span>
+
+    /**
+     * Sets the byteCount to count. Useful for re-opening an output stream that has previously been written to.
+     *
+     * @param count The number of bytes that have already been written to the output stream
+     *
+     * @since 2.5
+     */
+    protected void setByteCount(final long count) {
+<span class="fc" id="L210">        this.written = count;</span>
+<span class="fc" id="L211">    }</span>
+
+    /**
+     * Indicates that the configured threshold has been reached, and that a subclass should take whatever action
+     * necessary on this event. This may include changing the underlying output stream.
+     *
+     * @throws IOException if an error occurs.
+     */
+    protected void thresholdReached() throws IOException {
+<span class="fc" id="L220">        thresholdConsumer.accept(this);</span>
+<span class="fc" id="L221">    }</span>
+
+    /**
+     * Writes {@code b.length} bytes from the specified byte array to this output stream.
+     *
+     * @param b The array of bytes to be written.
+     *
+     * @throws IOException if an error occurs.
+     */
+    @SuppressWarnings(&quot;resource&quot;) // the underlying stream is managed by a subclass.
+    @Override
+    public void write(final byte[] b) throws IOException {
+<span class="fc" id="L233">        checkThreshold(b.length);</span>
+        // TODO for 4.0: Replace with getOutputStream()
+<span class="fc" id="L235">        getStream().write(b);</span>
+<span class="fc" id="L236">        written += b.length;</span>
+<span class="fc" id="L237">    }</span>
+
+    /**
+     * Writes {@code len} bytes from the specified byte array starting at offset {@code off} to this output stream.
+     *
+     * @param b The byte array from which the data will be written.
+     * @param off The start offset in the byte array.
+     * @param len The number of bytes to write.
+     *
+     * @throws IOException if an error occurs.
+     */
+    @SuppressWarnings(&quot;resource&quot;) // the underlying stream is managed by a subclass.
+    @Override
+    public void write(final byte[] b, final int off, final int len) throws IOException {
+        // TODO we could write the sub-array up the threshold, fire the event,
+        // and then write the rest so the event is always fired at the precise point.
+<span class="fc" id="L253">        checkThreshold(len);</span>
+        // TODO for 4.0: Replace with getOutputStream()
+<span class="fc" id="L255">        getStream().write(b, off, len);</span>
+<span class="fc" id="L256">        written += len;</span>
+<span class="fc" id="L257">    }</span>
+
+    /**
+     * Writes the specified byte to this output stream.
+     *
+     * @param b The byte to be written.
+     *
+     * @throws IOException if an error occurs.
+     */
+    @SuppressWarnings(&quot;resource&quot;) // the underlying stream is managed by a subclass.
+    @Override
+    public void write(final int b) throws IOException {
+<span class="fc" id="L269">        checkThreshold(1);</span>
+        // TODO for 4.0: Replace with getOutputStream()
+<span class="fc" id="L271">        getStream().write(b);</span>
+<span class="fc" id="L272">        written++;</span>
+<span class="fc" id="L273">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

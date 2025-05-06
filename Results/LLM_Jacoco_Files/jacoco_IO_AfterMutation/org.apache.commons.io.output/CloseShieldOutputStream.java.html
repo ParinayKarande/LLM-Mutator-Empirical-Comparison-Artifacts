@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CloseShieldOutputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.output</a> &gt; <span class="el_source">CloseShieldOutputStream.java</span></div><h1>CloseShieldOutputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.output;
+
+import java.io.OutputStream;
+
+/**
+ * Proxy stream that prevents the underlying output stream from being closed.
+ * &lt;p&gt;
+ * This class is typically used in cases where an output stream needs to be
+ * passed to a component that wants to explicitly close the stream even if other
+ * components would still use the stream for output.
+ * &lt;/p&gt;
+ *
+ * @since 1.4
+ */
+public class CloseShieldOutputStream extends ProxyOutputStream {
+
+    // Inverted condition: returning a new instance without changing the outputStream.
+    public static CloseShieldOutputStream wrap(final OutputStream outputStream) {
+        // Mutant: return null instead of instantiating.
+<span class="fc" id="L36">        return null; // Null Returns Mutation</span>
+        // Mutation: return a new CloseShieldOutputStream without the input.
+        // return new CloseShieldOutputStream(null);
+    }
+
+    @Deprecated
+    public CloseShieldOutputStream(final OutputStream outputStream) {
+        // Mutant: changing super call.
+        // super(outputStream);
+<span class="nc" id="L45">        super(null); // Null Returns Mutation</span>
+<span class="nc" id="L46">    }</span>
+
+    @Override
+    public void close() {
+        // Mutant: changing the output stream to a null reference instead of ClosedOutputStream.INSTANCE.
+        // out = ClosedOutputStream.INSTANCE;
+<span class="nc" id="L52">        out = null; // Null Returns Mutation, also an invalid state change.</span>
+
+        // Additional Mutations
+        // out = ClosedOutputStream.INSTANCE; // Original Line
+        // out = ClosedOutputStream.INSTANCE; // The original assignment
+
+        // empty returns instead of closing (if a closing interaction is wrapped in a boolean check)
+<span class="nc" id="L59">        return; // Empty Returns Mutation</span>
+
+        /*
+        // Mutant: changing final output stream indirectly
+        if (out != null) {
+            out = ClosedOutputStream.INSTANCE;
+        }
+        */
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

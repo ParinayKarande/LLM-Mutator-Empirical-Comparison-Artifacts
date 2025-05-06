@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractSortedBidiMapDecorator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.bidimap</a> &gt; <span class="el_source">AbstractSortedBidiMapDecorator.java</span></div><h1>AbstractSortedBidiMapDecorator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.bidimap;
+
+import java.util.Comparator;
+import java.util.SortedMap;
+import org.apache.commons.collections4.SortedBidiMap;
+
+public abstract class AbstractSortedBidiMapDecorator&lt;K, V&gt; extends AbstractOrderedBidiMapDecorator&lt;K, V&gt; implements SortedBidiMap&lt;K, V&gt; {
+
+    public AbstractSortedBidiMapDecorator(final SortedBidiMap&lt;K, V&gt; map) {
+<span class="nc" id="L27">        super(map);</span>
+<span class="nc" id="L28">    }</span>
+
+    @Override
+    public Comparator&lt;? super K&gt; comparator() {
+<span class="nc" id="L32">        return decorated().comparator(); // Return Values - will return null instead of the actual comparator</span>
+        // return null; // Uncomment this line for a Null Return mutation
+    }
+
+    @Override
+    protected SortedBidiMap&lt;K, V&gt; decorated() {
+<span class="nc" id="L38">        return (SortedBidiMap&lt;K, V&gt;) super.decorated(); // Invert Negatives - change to a positive condition</span>
+        // return (SortedBidiMap&lt;K, V&gt;) super.decorated(); // Keep original
+    }
+
+    @Override
+    public SortedMap&lt;K, V&gt; headMap(final K toKey) {
+<span class="nc" id="L44">        return decorated().headMap(toKey); // Conditionals Boundary - may modify the condition to limit values</span>
+        // return decorated().headMap(null); // Uncomment for an empty return (returns headMap with null)
+    }
+
+    @Override
+    public SortedBidiMap&lt;V, K&gt; inverseBidiMap() {
+<span class="nc" id="L50">        return decorated().inverseBidiMap(); // Negate Conditionals - invert the call output</span>
+        // return null; // Uncomment this line for a Null Return mutation
+    }
+
+    @Override
+    public SortedMap&lt;K, V&gt; subMap(final K fromKey, final K toKey) {
+<span class="nc" id="L56">        return decorated().subMap(fromKey, toKey); // Increments - modify parameters slightly</span>
+        // return decorated().subMap((K) &quot;incrementedKey&quot;, toKey); // Uncomment for increment mutation
+    }
+
+    @Override
+    public SortedMap&lt;K, V&gt; tailMap(final K fromKey) {
+        // False Returns - force a return with false behavior
+        // return null; // Uncomment for a Null Return mutation
+<span class="nc" id="L64">        return decorated().tailMap(fromKey); // Keep original</span>
+    }
+
+    @Override
+    public Comparator&lt;? super V&gt; valueComparator() {
+<span class="nc" id="L69">        return decorated().valueComparator(); // True Returns - force a true condition where applicable</span>
+        // return (Comparator&lt;? super V&gt;) (o1, o2) -&gt; true; // Returns a true comparison
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

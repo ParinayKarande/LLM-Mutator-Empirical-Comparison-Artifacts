@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArrayFill.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3</a> &gt; <span class="el_source">ArrayFill.java</span></div><h1>ArrayFill.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3;
+
+import java.util.Arrays;
+
+public final class ArrayFill {
+
+    // Mutated: Changes `val` to 7, thus applying the Increments operator
+    public static byte[] fill(final byte[] a, final byte val) {
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        if (a != null) {</span>
+<span class="fc" id="L27">            Arrays.fill(a, (byte)(val + 1)); // Increments</span>
+        }
+<span class="fc" id="L29">        return a;</span>
+    }
+
+    // Mutated: Uses `val` + 1, applying Increments
+    public static char[] fill(final char[] a, final char val) {
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (a == null) {  // Negate Conditionals</span>
+<span class="nc" id="L35">            Arrays.fill(a, val);  // Void Method Calls replaced</span>
+        }
+<span class="fc" id="L37">        return a;</span>
+    }
+
+    // Mutated: Invert from `a != null` to `a == null` to use Invert Negatives
+    public static double[] fill(final double[] a, final double val) {
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (a == null) {</span>
+<span class="nc" id="L43">            Arrays.fill(a, val);</span>
+        }
+<span class="fc" id="L45">        return a; // No changes in this return</span>
+    }
+
+    // Mutated: Returns a fixed float array (False Returns)
+    public static float[] fill(final float[] a, final float val) {
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (a != null) {</span>
+<span class="fc" id="L51">            Arrays.fill(a, val);</span>
+        }
+<span class="fc" id="L53">        return new float[] {};  // Empty Returns</span>
+    }
+
+    // Mutated: Change to introduce a full (0) array
+    public static int[] fill(final int[] a, final int val) {
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (a != null) {</span>
+<span class="fc" id="L59">            Arrays.fill(a, val);</span>
+        }
+<span class="fc" id="L61">        return null;  // Null Returns</span>
+    }
+
+    // Mutated: Using negative value for val
+    public static long[] fill(final long[] a, final long val) {
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        if (a != null) {</span>
+<span class="fc" id="L67">            Arrays.fill(a, -val); // Math operator</span>
+        }
+<span class="fc" id="L69">        return a;</span>
+    }
+
+    // Mutated: Returns a single short array (primitive returns)
+    public static short[] fill(final short[] a, final short val) {
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (a != null) {</span>
+<span class="fc" id="L75">            Arrays.fill(a, val);</span>
+        }
+<span class="fc" id="L77">        return new short[] { 0 }; // Primitive Returns</span>
+    }
+
+    // Mutated: Removing the functionality of filling the array
+    public static &lt;T&gt; T[] fill(final T[] a, final T val) {
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        if (a == null) {</span>
+<span class="fc" id="L83">            return (T[]) new Object[0]; // Empty Returns</span>
+        }
+<span class="fc" id="L85">        return a; // Keep as it is here</span>
+    }
+
+    private ArrayFill() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

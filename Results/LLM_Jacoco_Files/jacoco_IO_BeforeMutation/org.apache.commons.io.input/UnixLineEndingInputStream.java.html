@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnixLineEndingInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">UnixLineEndingInputStream.java</span></div><h1>UnixLineEndingInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.CR;
+import static org.apache.commons.io.IOUtils.EOF;
+import static org.apache.commons.io.IOUtils.LF;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+/**
+ * A filtering input stream that ensures the content will have UNIX-style line endings, LF.
+ *
+ * @since 2.5
+ */
+public class UnixLineEndingInputStream extends InputStream {
+
+    private boolean atEos;
+
+    private boolean atSlashCr;
+
+    private boolean atSlashLf;
+
+    private final InputStream in;
+
+    private final boolean lineFeedAtEndOfFile;
+
+    /**
+     * Constructs an input stream that filters another stream
+     *
+     * @param inputStream                        The input stream to wrap
+     * @param ensureLineFeedAtEndOfFile true to ensure that the file ends with LF
+     */
+<span class="fc" id="L49">    public UnixLineEndingInputStream(final InputStream inputStream, final boolean ensureLineFeedAtEndOfFile) {</span>
+<span class="fc" id="L50">        this.in = inputStream;</span>
+<span class="fc" id="L51">        this.lineFeedAtEndOfFile = ensureLineFeedAtEndOfFile;</span>
+<span class="fc" id="L52">    }</span>
+
+    /**
+     * Closes the stream. Also closes the underlying stream.
+     * @throws IOException upon error
+     */
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L60">        super.close();</span>
+<span class="fc" id="L61">        in.close();</span>
+<span class="fc" id="L62">    }</span>
+
+    /**
+     * Handles the end of stream condition.
+     *
+     * @param previousWasSlashCr Indicates if the last seen was a {@code \r}.
+     * @return The next char to output to the stream.
+     */
+    private int handleEos(final boolean previousWasSlashCr) {
+<span class="fc bfc" id="L71" title="All 4 branches covered.">        if (previousWasSlashCr || !lineFeedAtEndOfFile) {</span>
+<span class="fc" id="L72">            return EOF;</span>
+        }
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (!atSlashLf) {</span>
+<span class="fc" id="L75">            atSlashLf = true;</span>
+<span class="fc" id="L76">            return LF;</span>
+        }
+<span class="fc" id="L78">        return EOF;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public synchronized void mark(final int readLimit) {
+<span class="nc" id="L86">        throw UnsupportedOperationExceptions.mark();</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int read() throws IOException {
+<span class="fc" id="L94">        final boolean previousWasSlashR = atSlashCr;</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if (atEos) {</span>
+<span class="fc" id="L96">            return handleEos(previousWasSlashR);</span>
+        }
+<span class="fc" id="L98">        final int target = readWithUpdate();</span>
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        if (atEos) {</span>
+<span class="fc" id="L100">            return handleEos(previousWasSlashR);</span>
+        }
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        if (atSlashCr) {</span>
+<span class="fc" id="L103">            return LF;</span>
+        }
+
+<span class="fc bfc" id="L106" title="All 4 branches covered.">        if (previousWasSlashR &amp;&amp; atSlashLf) {</span>
+<span class="fc" id="L107">            return read();</span>
+        }
+
+<span class="fc" id="L110">        return target;</span>
+    }
+
+    /**
+     * Reads the next item from the target, updating internal flags in the process
+     * @return the next int read from the target stream
+     * @throws IOException upon error
+     */
+    private int readWithUpdate() throws IOException {
+<span class="fc" id="L119">        final int target = this.in.read();</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        atEos = target == EOF;</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        if (atEos) {</span>
+<span class="fc" id="L122">            return target;</span>
+        }
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        atSlashCr = target == CR;</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        atSlashLf = target == LF;</span>
+<span class="fc" id="L126">        return target;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

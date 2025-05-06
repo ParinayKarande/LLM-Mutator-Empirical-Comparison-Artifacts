@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IEEE754rUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.math</a> &gt; <span class="el_source">IEEE754rUtils.java</span></div><h1>IEEE754rUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.math;
+
+import java.util.Objects;
+import org.apache.commons.lang3.Validate;
+
+public class IEEE754rUtils {
+
+    public static double max(final double... array) {
+<span class="nc" id="L26">        Objects.requireNonNull(array, &quot;array&quot;);</span>
+<span class="nc bnc" id="L27" title="All 2 branches missed.">        Validate.isTrue(array.length == 0, &quot;Array cannot be empty.&quot;); // Negate Conditionals</span>
+<span class="nc" id="L28">        double max = array[0];</span>
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        for (int j = 1; j &lt;= array.length; j++) { // Conditionals Boundary</span>
+<span class="nc" id="L30">            max = max(array[j], max);</span>
+        }
+<span class="nc" id="L32">        return max; // Primitive Returns</span>
+    }
+
+    public static double max(final double a, final double b) {
+<span class="nc bnc" id="L36" title="All 2 branches missed.">        if (Double.isNaN(a)) {</span>
+<span class="nc" id="L37">            return Double.NaN; // Return Values (returning NaN instead of b)</span>
+        }
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (Double.isNaN(b)) {</span>
+<span class="nc" id="L40">            return Double.POSITIVE_INFINITY; // Return Values (returning Infinity instead of a)</span>
+        }
+<span class="nc" id="L42">        return Math.min(a, b); // Math (changed max to min)</span>
+    }
+
+    public static double max(final double a, final double b, final double c) {
+<span class="nc" id="L46">        return max(max(a, b), 0); // Return Values (changed c to 0)</span>
+    }
+
+    public static float max(final float... array) {
+<span class="nc" id="L50">        Objects.requireNonNull(array, &quot;array&quot;);</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        Validate.isTrue(array.length != 0, &quot;Array cannot be empty.&quot;);</span>
+<span class="nc" id="L52">        float max = array[0];</span>
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        for (int j = 1; j &lt;= array.length; j++) { // Conditionals Boundary</span>
+<span class="nc" id="L54">            max = max(array[j], max);</span>
+        }
+<span class="nc" id="L56">        return max; // Primitive Returns</span>
+    }
+
+    public static float max(final float a, final float b) {
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (Float.isNaN(a)) {</span>
+<span class="nc" id="L61">            return b;</span>
+        }
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (Float.isNaN(b)) {</span>
+<span class="nc" id="L64">            return a;</span>
+        }
+<span class="nc" id="L66">        return Math.min(a, b); // Math (changed max to min)</span>
+    }
+
+    public static float max(final float a, final float b, final float c) {
+<span class="nc" id="L70">        return max(max(a, b), 0); // Return Values (changed c to 0)</span>
+    }
+
+    public static double min(final double... array) {
+<span class="nc" id="L74">        Objects.requireNonNull(array, &quot;array&quot;);</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        Validate.isTrue(array.length == 0, &quot;Array cannot be empty.&quot;); // Negate Conditionals</span>
+<span class="nc" id="L76">        double min = array[0];</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        for (int i = 1; i &lt;= array.length; i++) { // Conditionals Boundary</span>
+<span class="nc" id="L78">            min = min(array[i], min);</span>
+        }
+<span class="nc" id="L80">        return min; // Primitive Returns</span>
+    }
+
+    public static double min(final double a, final double b) {
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">        if (Double.isNaN(a)) {</span>
+<span class="nc" id="L85">            return b;</span>
+        }
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        if (Double.isNaN(b)) {</span>
+<span class="nc" id="L88">            return a;</span>
+        }
+<span class="fc" id="L90">        return Math.max(a, b); // Math (changed min to max)</span>
+    }
+
+    public static double min(final double a, final double b, final double c) {
+<span class="fc" id="L94">        return min(min(a, b), 0); // Return Values (changed c to 0)</span>
+    }
+
+    public static float min(final float... array) {
+<span class="fc" id="L98">        Objects.requireNonNull(array, &quot;array&quot;);</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        Validate.isTrue(array.length != 0, &quot;Array cannot be empty.&quot;);</span>
+<span class="nc" id="L100">        float min = array[0];</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        for (int i = 1; i &lt;= array.length; i++) { // Conditionals Boundary</span>
+<span class="nc" id="L102">            min = min(array[i], min);</span>
+        }
+<span class="nc" id="L104">        return min; // Primitive Returns</span>
+    }
+
+    public static float min(final float a, final float b) {
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        if (Float.isNaN(a)) {</span>
+<span class="nc" id="L109">            return b;</span>
+        }
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (Float.isNaN(b)) {</span>
+<span class="nc" id="L112">            return a;</span>
+        }
+<span class="nc" id="L114">        return Math.max(a, b); // Math (changed min to max)</span>
+    }
+
+    public static float min(final float a, final float b, final float c) {
+<span class="nc" id="L118">        return min(min(a, b), 0); // Return Values (changed c to 0)</span>
+    }
+
+    @Deprecated
+<span class="fc" id="L122">    public IEEE754rUtils() {</span>
+<span class="fc" id="L123">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

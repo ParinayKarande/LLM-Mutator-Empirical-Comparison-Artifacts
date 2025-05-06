@@ -1,0 +1,2606 @@
+﻿Java File Name,Mutation Comments
+CountingPathVisitor.java,"Conditionals Boundary: suppose it's supposed to be FalseFileFilter.INSTANCE
+Negate Conditionals: change true to false
+Negate Return Values: change CONTINUE to SKIP_SUBTREE
+Invert Negatives: Swap CONTINUE logic
+Null Returns: changing return value to null
+Use -1 instead of incrementing for decrement
+Math: subtract 1 from the byte count
+Negate Conditionals: invert the conditional check
+False Returns: change to terminate instead of continue
+"
+TeeWriter.java,"Mutant 3: Comment out the first constructor.
+    public TeeWriter(final Collection<Writer> writers) {
+        //super(writers);
+    }
+Mutant 1: Change constructor to accept a null Collection.
+This now passes a null collection to the superclass.
+Mutant 2: Change constructor to accept an empty array.
+This now passes an empty Writer array to the superclass.
+Mutant 4: Reverse the order of super call (if applicable).
+this could also be called with `super(null)` as a mutant to trigger a null handling case.
+Original
+"
+AutoCloseInputStream.java,"Inverted Boundary condition: originally 'if (n == EOF)', now 'if (n != EOF)'
+A mutant return value of 'false' instead of using super method if the condition is false
+Representing Void Method Call mutation by empty return here
+Negated Conditionals mutation (could be inverting conditions if present)
+Introduced Primitive Returns mutation by changing the correct return value to a distinct primitive, could adapt as context requires
+Replacing close() with a null return for demonstration
+Unused variable, showing primitive context
+"
+FalseFileFilter.java,"Conditional Boundary Mutation: Change FALSE to TRUE
+Return Values Mutation: change the return value to true
+Changed from false to true
+Increments Mutation: Change accept to return the opposite
+Changed from false to true
+Math Mutation: Return some file visit result other than TERMINATE
+Changed from TERMINATE to CONTINUE
+Negate Conditionals Mutation (return current, but the logic is inverted)
+Changed from INSTANCE to fileFilter
+Return Values Mutation by simply returning null
+Changed from TrueFileFilter.INSTANCE to null
+False Returns Mutation: Changed the return logic
+Changed from fileFilter to FALSE
+Empty Returns Mutation: returns an empty string
+Changed from TO_STRING to empty string
+"
+CharSequenceReader.java,"Inverted boundary condition
+Negated condition
+This can also be mutated to, for example: mark += readAheadLimit; // Increment mutation
+Negated return value
+Changed from '>=' to '>'
+Mutate array check to give a false response
+Changed condition for IndexOutOfBoundsException
+Primitive return mutation
+Negated condition
+Mutated to do nothing (this method is pointless now)
+Negated condition for allowed values
+Changed condition
+Inverted boundary
+Inverted parameters for subSequence
+"
+IOIntSupplier.java,"Conditionals Boundary
+"
+UnsupportedOperationExceptions.java,"Mutant: Negate Conditionals
+Mutant: Invert Negatives (invert the error message)
+Changed from ""not supported""
+Mutant: Return Values (return a different constant string)
+Changed message
+Mutant: Primitive Returns (return null instead of object)
+Method shows a null return
+Mutant: False Returns
+Return a new UnsupportedOperationException with ""false message""
+Mutant: True Returns
+Return a new UnsupportedOperationException with ""true message""
+Mutant: Empty Returns
+Return an empty message
+"
+NullInputStream.java,"Inverted conditional: will not throw EOFException when it's supposed to.
+Commenting out this throw line as a mutation
+throw new EOFException(message);
+Changing return value to 0 instead of EOF.
+Mutated from return EOF;
+Negated conditionals for UnsupportedOperationExceptions
+throw UnsupportedOperationExceptions.mark();
+Returning false instead of true
+Mutated from ""return markSupported;""
+Adding a mutation here to return 1 instead of 0
+Mutated from return 0;
+Implementing empty processing in mutation
+Increment changed from position++ to position += 2.
+Increment mutation
+Added a mutation here to increase position by length + 1.
+Mutating as below
+throw UnsupportedOperationExceptions.reset();
+Keeping it as is for mutation.
+Increment mutation
+"
+ObjectStreamClassPredicate.java,"Mutated method: Conditionals Boundary and Return Values
+Negate conditionals
+False Returns
+ReturnValues negation
+Primitive Returns
+"
+LineIterator.java,"Mutated: Change close to closeQuietly to simulate a quiet close
+Mutation Operator: Void Method Calls
+Mutated: Negated conditionals
+Mutated: Inverted negation
+Mutation Operator: Negate Conditionals
+Mutated: Change IllegalStateException to a different exception
+Mutation Operator: Return Values
+Mutated: Unconditionally returns true (to simulate an error)
+Mutated: Return false to simulate an always invalid line
+Mutation Operator: Return Values
+Mutated: Invalid check for hasNext, throwing an unsupported exception
+Mutation Operator: True Returns
+Mutated: Added empty return here to introduce an unused path
+return; // Mutation Operator: Empty Returns
+"
+CircularBufferInputStream.java,"Conditionals Boundary / Invert Negatives
+Negate Conditionals
+Negate Conditionals
+Negate Conditionals
+Increments
+Negate Conditionals
+Negate Conditionals
+Increments
+Negate Conditionals
+Negate Conditionals
+Negate Conditionals
+Return Values
+Increments
+Increments
+Negate Conditionals
+Return Values
+Math
+"
+AbstractOriginSupplier.java,"Mutated to throw a different exception
+Negated condition
+Mutated to return null instead of the URI
+"
+StreamIterator.java,"Mutant: Changed false to true
+"
+PathVisitorFileFilter.java,"Changed == to !=
+Changed == to !=
+"
+CharacterFilterReader.java,"Changed c == skip to c >= skip
+"
+UncheckedIOExceptions.java,"Conditionals Boundary
+"
+IOUtils.java,"unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+Inverted return
+Incremented size
+unchanged
+unchanged
+Inverted size
+unchanged
+unchanged
+unchanged
+Negated condition
+Negated condition
+unchanged
+unchanged
+Inverted return
+Inverted return
+Negated return
+Negated return
+unchanged
+unchanged
+Negated return
+Negated return
+unchanged
+unchanged
+Inverted return
+Inverted return
+Negated return
+Negated return
+Negated return
+unchanged
+Negated return
+Negated return
+unchanged
+Negated return
+Negated return
+unchanged
+Incremented return
+Incremented return
+unchanged
+unchanged
+Negated return
+unchanged
+Negated return
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+NOSONAR
+NOSONAR
+NOSONAR
+unchanged
+NOSONAR
+NOSONAR
+NOSONAR
+NOSONAR
+unchanged
+NOSONAR
+NOSONAR
+NOSONAR
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+unchanged
+"
+DemuxInputStream.java,
+IOUnaryOperator.java,
+ChunkedOutputStream.java,"Changed from `<= 0` to `< 0`
+Changed from `bytes > 0` to `bytes <= 0`
+"
+FileFileFilter.java,"Math - convert isFile() to some mathematical operation
+Conditionals Boundary - changed to check for an empty file instead of null
+Increment mutant
+Negate Conditionals - negated the condition for the file acceptance check
+Negate Conditionals mutant
+In this case, we modify it to introduce a non-sensible mutation for testing purposes.
+Mathematics mutant
+Return Values - change return to false instead of true
+False Returns mutant
+Void Method Calls - Adding a void method that could do nothing and will be called
+This method intentionally left blank (Void Method Calls)
+Empty Returns - modifying the original to return if file is null
+Empty Returns mutant
+"
+TeeReader.java,"Inverted the default closeBranch value (false to true)
+Negated the closeBranch parameter
+Negated condition
+Conditionals Boundary: changed != EOF to == EOF
+Return Values: changed return value to -1 unconditionally
+Conditionals Boundary: changed != EOF to == EOF
+Return Values: changed return value to 0 unconditionally
+Conditionals Boundary: changed != EOF to == EOF
+No change here as it could still return a valid value
+Conditionals Boundary: changed != EOF to == EOF
+Null Returns: returned null instead of int
+"
+XmlStreamReaderException.java,"Inverted constructor argument behavior for testing
+Changed the constructor to accept null for contentTypeEncoding to check behavior
+Testing with default fallback
+Kept it as-is for testing
+Kept as-is
+Kept as-is
+Kept as-is
+Changed return value to null for testing purposes
+Mutated to return null
+Setting to an empty string to check behavior
+Mutated to return empty
+Changed to return a default value for testing
+Default fallback
+Added a case that could return a negative value or make it more complex
+Check fallback
+Added a case to return existing guess encoding or null
+Check return behaviors
+"
+ByteOrderParser.java,"Mutant using Negate Conditionals
+Negated conditional
+Negated conditional
+Mutant applying Invert Negatives
+Mutant applying Empty Returns
+Null return
+Mutant applying False Returns
+False return
+Mutant applying True Returns
+True return returning a fixed value
+Mutant applying Primitive Returns
+Primitive returns (incorrect type)
+"
+IOStream.java,"Negated the condition (Negate Conditionals)
+Condition switched (Conditionals Boundary)
+Condition modified
+Duplicate element added (Void Method Calls)
+Negated the condition (Invert Negatives)
+No change needed for mutation
+Empty return (Empty Returns)
+False return value (False Returns)
+Null return (Null Returns)
+Increment modified (Increments)
+Always return false (True Returns)
+Return the identity (Primitive Returns)
+Null return (Null Returns)
+Return an empty array (Empty Returns)
+"
+UnsynchronizedByteArrayOutputStream.java,
+IOExceptionWithCause.java,"Conditionals Boundary mutation
+Conditionals Boundary mutation
+"
+EmptyFileFilter.java,"Invert Negatives: changed condition
+Invert Negatives
+Negate Conditionals
+Negate Conditionals
+Invert Negatives
+Negate Conditionals
+Negate Conditionals
+Negate Conditionals
+"
+CopyUtils.java,"Conditionals Boundary: Inverted condition
+Added condition boundary
+Void Method Call Mutation
+Null Returns Mutation
+Increment Mutation: changed 1 to 2
+Incremented count
+Invert Negatives Mutation: negated condition
+True Returns Mutation
+Void Method Calls: making calls and not necessarily returning the output
+Primitive Returns: always returning a constant value instead of actual count
+Changed to always return 42
+Primitive Return Mutation
+Empty Returns: will not flush
+False Returns mutation, replacing output.write with a false return
+False Return (no action taken)
+"
+FilterCollectionWriter.java,"Conditionals Boundary
+Void Method Calls - No action taken
+Math could alter parameter calculations, not applicable here.
+Returns nothing
+Null Returns
+"
+ProxyReader.java,"Empty return mutation
+Empty return
+Inverted negatives mutation
+This inverts the logic. It will now do something only if n is negative which is incorrect for the original design
+Negate conditionals mutation
+Changed `if` to always true to mutate logic and can lead to unintended close calls.
+Return the IOException (not changed, kept for clarity)
+Conditionals boundary mutation (if idx < 0)
+Modified to check for less than or equal to zero
+False return mutation
+Directly returning false regardless of in.markSupported()
+Condition Size change (primitive return)
+Changed to logical mismatch
+Primitive return
+Return value mutation
+Inverted condition check
+False return mutation
+Always return false
+Conditionals boundary checking (if ln <= 0)
+Changed to always return zero instead of the original skip value
+"
+TaggedInputStream.java,"Mutation: Change the exception type thrown (Math operator)
+Null Return
+Null Return
+Mutation: Change the method signature by returning void
+"
+AbstractSupplier.java,
+FileEqualsFileFilter.java,"Boundary condition mutant
+"
+DirectoryStreamFilter.java,
+BrokenOutputStream.java,"Mutated - boundary condition
+"
+UncheckedBufferedReader.java,"Void Method Call mutation
+Primitive Returns mutation
+Increments mutation
+Null Returns mutation
+Invert Negatives mutation
+Math mutation
+"
+PathUtils.java,"Invert Negatives mutation (was true)
+Conditionals Boundary mutation
+Math condition mutation
+Negate Conditionals mutation
+Negate Conditionals mutation
+Invert Negatives mutation (originally equals)
+Empty Returns mutation (unmodified case would return parent)
+Negate the condition
+Invert returns
+Increments mutation (changed to decrement)
+True Returns mutation (changed to true)
+False Returns mutation (was true)
+True Returns mutation (was false)
+False Returns mutation (was true)
+True Returns mutation (change to true)
+True Returns mutation (changed to true)
+False Returns mutation (was true)
+Negate Conditionals mutation (changed from equals to !equals)
+False Returns mutation (was true)
+True Returns mutation (was false)
+True Returns mutation (was false)
+False Returns mutation (was true)
+True Returns mutation (was false)
+Invert Negatives mutation (was true)
+Negate Conditions mutation (changed from == to !=)
+Null Returns mutation (switch to empty array list)
+Empty Returns mutation (changed to empty string)
+Empty Returns mutation (changed to empty string)
+Empty Returns mutation (changed to empty string)
+Null Returns mutation (changed to return null)
+Negate Conditions mutation (changed from hasNext to !hasNext)
+Change from <= to < (Conditionals Boundary mutation)
+True Returns mutation (changed from false)
+True Returns mutation (changed from false)
+Invert Negatives mutation
+True Returns mutation (change from false)
+Negate Returns mutation (change from == to !=)
+Null Returns mutation (kept as null)
+Negate condition mutation (changed from readOnly to !readOnly)
+Invert Negatives mutation (removed instead of added)
+Increments mutation (changed to add)
+Math Inversions mutation (added instead of removing)
+Return Values mutation (originally returns null)
+False Returns mutation (changed return value for file case)
+False Returns mutation (changed return value)
+Negated return
+Primitive Returns mutation (originally null)
+False Returns mutation (changed from true)
+Negate Conditionals mutation (changed from exists to !exists)
+Negate Conditions mutation
+Negate Conditions mutation
+Return Values mutation (changed to return null)
+"
+Tailer.java,"Inverted the method to create a non-daemon thread
+Changed from true to false
+Changed from true to false
+Mutant: ExecutorService does not submit the task anymore (negate condition)
+executorService.submit(tailer);  // Commented out to negate the action
+Changed to 0 milliseconds
+Inverted the boolean value
+Inverted the boolean value
+Inverted the boolean value
+Mutant: Inverted file access mode from ""r"" to ""rw""
+Changed ""mode"" to ""rw""
+Negated the result
+Inverted the size return
+Inverted closing mechanics
+This method was unchanged
+Inverted boolean return
+Changed +1 to -1
+Changed +1 to -1
+This remained unchanged
+Changed to -1 when tailing ends
+This remained unchanged
+"
+ByteOrderMark.java,"Negate conditional (false return)
+Negate condition (false return)
+Negate condition (false return)
+Invert the return value
+Assume new invalid operation for testing
+Increment operator
+Change this to hashCode += (b + 1); for increment mutation
+Change the length by adding 1 to simulate a faulty length
+"
+FileAlterationListenerAdaptor.java,"Some behavior for when a directory changes
+Changed from ""if (directory != null)""
+Some behavior for when a directory is created
+Keep original behavior
+Keep original behavior
+Keep original behavior
+Keep original behavior
+Keep original behavior
+Keep original behavior
+"
+IOIteratorAdapter.java,
+StandardLineSeparator.java,"Changed the null-check in constructor to always throw an exception to test mutant behavior
+Invert Negatives
+Changed return value to always return a specific byte array for testing
+Primitive returns (changed from actual bytes)
+Changed the return statement to return a fixed string for mutation testing
+Return values
+"
+WildcardFileFilter.java,"Changed to INSENSITIVE
+Changed default
+Changed here
+Changed to INSENSITIVE
+Changed to INSENSITIVE
+Changed to INSENSITIVE
+Negated conditional
+Negated conditional
+Inverted and used noneMatch
+"
+FileEntry.java,"Inverted the negative value
+Negated the condition
+Changed return to 1 for non-null parent
+Inverted the boolean
+Inverted the boolean
+Inverted existence check
+Negated directory condition
+Switched logic
+Negated the return logic
+Inverted the boolean
+Inverted the boolean
+Incremented length
+"
+OrFileFilter.java,"Conditionals Boundary: Mutated from 0 to 1
+Increments: Mutated length
+Decreased initial capacity from 2 to 1 (Negate Conditionals)
+Invert Negatives: Changed to return false
+False Returns: Mutated to always return false
+Math: Mutated conditional logic
+Void Method Calls: Removed non-null check for fileFilter
+Primitive Returns: Changed return value to false without performing operation
+"
+Uncheck.java,"Increments: Assume the consumer might use t or u in some way that makes this addition valid
+Operating as per original logic
+Negate Conditionals: Instead of wrapping, just throw the IOException directly (flawed logic)
+Original logic, keeping it but could mutate the behavior of wrap
+Increments: Incrementing the integer before passing it
+Math: Assuming that we might want to introduce randomness
+No mutation on the function's logic here
+Return Values: Return a hardcoded value instead here as mutated behavior
+Instead of throwing an exception
+Changed the logic for comparison; perhaps use random or constant comparison
+False Returns: Pretend all objects are equal
+Instead of wrapping with message, throw a different exception
+Primitive Returns: Change exception type
+Keeping original behavior for mutant clarity
+Returning a fixed int; simulating a mutation
+Primitive Returns: A hardcoded default return
+Keeping original to focus mutants on different locations
+Running the original runnable
+Mutating the message thrown
+Change the type of feedback
+Invert Negatives: Inverting the outcome
+Returning a null check here helps test null behavior of the wrapper
+Null Returns: There might be a null to throw
+"
+CharsetDecoders.java,
+LastModifiedFileComparator.java,"Added Negate Conditionals operator
+Changed the comparison operators
+Conditionals Boundary: changed < to <=
+Return Value: changed -1 to 0
+Compare modified to >=
+Change the return value to a different integer
+Return a constant value instead
+Additional methods with various mutations for demonstration.
+Void Method Calls mutation: using a void call instead of a boolean return
+False Returns
+Null Returns
+Increment mutation used here
+Incrementing return value
+Empty Returns
+True Returns
+Always returning true
+"
+DefaultFileComparator.java,"Incremented
+"
+SimplePathVisitor.java,"Negate Conditionals Mutation: Changed the null check to not require null check meaning it will throw NullPointerException each time
+Original: Objects.requireNonNull(visitFileFailed, ""visitFileFailed"")
+Return Values Mutation: changed to return an opposite static value instead of using the apply function
+Original: return visitFileFailedFunction.apply(file, exc);
+Increment Mutation: this method is not relevant but for doing changes I’ll add this method which returns a hard coded value
+Original: int value unchanged, and returns original value
+Primitive Returns: added a method which returns primitive type but negated (as mutation)
+Original: would have returned true
+"
+FileCleaningTracker.java,"Negate Conditionals
+Invert Negatives
+Math
+Return Values
+Negate Conditionals
+Return Values
+Primitive Returns
+"
+AbstractOrigin.java,"Conditionals Boundary mutation
+Return Values mutation
+Mutated to return null
+Null Returns mutation
+Increments mutation
+Null Returns mutation
+Increments mutation
+"
+ThreadMonitor.java,"Added another isZero check
+"
+CloseShieldWriter.java,"Mutant: modifying wrap method to return null instead of a new instance
+Changed to return null
+Mutation - Null Returns
+Mutant: changing the assignment to a non-existing instance
+Mutation - Change the object being assigned
+out = new ClosedWriter(); // Uncommenting this would change the behavior
+Additional Mutant: Adding an empty return statement
+Retained original for context
+Mutation - Empty Return
+"
+ClassLoaderObjectInputStream.java,"return super.resolveClass(objectStreamClass); // Removed super call
+Null Return
+Increments change (<= instead of <)
+return super.resolveProxyClass(interfaces); // Removed super call
+Added to change return value to a new class instance
+"
+UncheckedAppendable.java,
+PathMatcherFileFilter.java,
+package-info.java,"Return 0 if the buffer is empty
+Return 0 for -1
+Channel close logic here
+Return true if channel is not null
+"
+FileDeleteStrategy.java,"Changed to return false
+Negated and boundary check
+Negated condition
+Return negated result
+Unchanged, but structure is altered.
+Changed the return value
+Change to true here
+"
+CharacterSetFilterReader.java,"Negated the condition
+"
+CanReadFileFilter.java,
+SerializableFileTime.java,"+1 to the comparison
+always true condition
+Altering hashCode
+Increment return value
+Decrement return value
+"
+DirectoryWalker.java,"Void method - remains unchanged
+Inverted the depth limit - using 0
+Incremented the depth limit
+Negated the condition
+Use False filter
+Use False filter
+Changed to intersection
+Negated condition
+Return null for empty returns
+Does nothing, simply propagates
+Should return false
+Returns true
+Negated condition
+Incremented by 2
+Negated conditions
+Conditions negated here
+Check for files instead of directories
+Closing the if condition
+"
+UnsynchronizedFilterInputStream.java,
+FileSystemUtils.java,"Inverted negation operator (returns negatives)
+Changed to return false, violating normal flow
+Incremented invalid parameter
+Changed to return false, violating normal flow
+Incremented
+Returns null instead, exhibiting a behavior change
+Updated to use 0 as timeout
+Changed to return a fixed value
+Return value mutant
+Negated condition
+Changed to return a fixed value instead of an exception
+Using negative as an invalid space return
+Changed exception type
+"
+FileAlterationMonitor.java,"Increment operator
+Negate conditionals
+Math mutation
+Negate conditionals
+Invert Negatives
+Negate conditionals
+Return Values - empty return
+Negate conditionals
+False return mutation
+Negate conditionals
+"
+SequenceReader.java,"Additional mutations could include forcing a false return.
+Empty method simulating a void method call mutation
+Negated conditional for boundary mutation
+Could introduce null returns
+Using next reader
+Here I can return null as well; demonstrating Null Returns
+Returning 0 instead of EOF for a mutation example
+Changed to equality to check EOF
+Enhanced exit condition
+Changing return value
+Changing return to 0 if count is 0
+Changed boundary condition
+Changed condition to continue
+Can return true or change exit criteria
+Demonstration of primitive returns
+"
+TailerListenerAdapter.java,"Mutation: Added a boundary condition check
+Boundary condition altered
+Mutation: Altered behavior
+Changed to void return
+Mutation: Altered behavior
+Changed to void return
+Mutation: Altered behavior
+Mutation to throw an exception
+Mutation: Altered behavior
+Changed to void return
+Mutation: Altered behavior
+Mutation to throw an exception
+"
+NullAppendable.java,"NOPMD Class will be final in 3.0.
+Return a different instance (a false return)
+Mutated to return a StringBuilder instead.
+Changed to return null
+Modified to null return
+Negate with an empty return
+kept the same for this example, but you might implement it differently.
+"
+SuffixFileFilter.java,"no mutation here
+no mutation here
+no mutation here
+no mutation here
+no mutation here
+no mutation here
+no mutation here
+no mutation here
+mutation could occur here
+Negate Conditionals operator applied here
+Negate Conditionals operator applied here
+mutation to FileVisitResult could be applied
+Negate Conditionals operator applied here
+"
+BoundedReader.java,"Negating the effect of maxCharsFromTargetReader, changing behavior
+Empty Return Mutation: Instead of closing, it does nothing
+target.close();
+Increments mutation: Adjusting to subtract 2 instead of 1
+Negate Conditionals: Flipping the conditions
+Return Values: Return a hardcoded value instead of 'len'
+Conditionals Boundary: Adjusting loop condition to behave differently
+Reading one extra character
+Mutated return value
+Void Method Call mutation: call target.reset() with a timeout or ignore
+target.reset();
+"
+CompositeFileComparator.java,"Mutated to return an empty array if null delegates are passed
+Mutated to change the filter condition: filtered to only positive results now
+Change default return value to 1
+No mutation here, but for completeness
+Mutated by calling toString on delegates differently
+return ""null"" for null delegate
+"
+PrefixFileFilter.java,"Mutated constructor to remove null checks and set default to Null
+Replaced ""prefixes"" with a null return
+Changed to always return false (False Return)
+Keeping same
+Applying Negate Conditionals
+Return constant value instead of actual logic (True Return)
+Changed to empty return
+Empty return instead of a FileVisitResult
+Inverted logic of the check
+Appending additional text to the string representation
+"
+NullWriter.java,"Invert the return to null, a negated conditional return.
+Inverted behavior.
+Inverted behavior.
+Empty return
+Empty return
+Empty return
+Empty return
+Empty return
+Empty return
+Empty return
+"
+IOFunction.java,"Mutant: Return a different value, e.g.: return (T t) -> t;
+Mutant: Change acceptance of R
+Mutant: Negate condition in lambda
+Mutant: Replace 'after.accept()' with a void method call (e.g., System.out.println)
+Mutant: Change return value to a fixed value
+Mutant: Returning a fixed value instead
+Mutant: negating a part of the operation
+return t -> { throw new RuntimeException(""Error""); };
+Mutant: Use a default return value for all calls
+Returning null instead
+Mutant: Null-check on the result
+Mutant: Return a constant value
+Mutant: Introduce an empty return
+"
+FullClassNameMatcher.java,"Not applicable, nothing modified here but could be if logic changed
+Changed: Could leave out classes causing a mutation or change its logic
+Negating the conditional check
+Return false instead of checking the presence of class
+return !classesSet.contains(className);
+Alternative mutation: using a boundary condition check instead
+return classesSet.size() == 0 || !classesSet.contains(className);
+Change: Always return true to check behavior
+return true;
+Change: Always return false instead
+return false;
+Return a primitive value instead (wrong logic could suggest)
+return 1 == 1; // Always true but not correct for logic here
+An inverted negation (this would yield incorrect behavior)
+"
+NotFileFilter.java,"Mutated: Negate the requirement of filter being non-null
+Objects.requireNonNull(filter, ""filter""); // Original code
+Mutation introduced (allow null filter, potentially causing NullPointerException)
+Mutated: Negate the conditional
+Mutation introduced (removes the negation)
+Mutated: Negate the conditional
+Mutation introduced (removes the negation)
+Mutated: Return value change (false returns)
+Mutation introduced (returning a constant value instead of negating)
+Mutated: Change the logic to always return CONTINUE
+Mutation introduced (removes previous logic)
+Mutated: Change string representation to always return a fixed string
+Mutation introduced (changed string output)
+"
+IOSpliteratorAdapter.java,
+TaggedWriter.java,"mutated boundary condition
+original code
+"
+LockableFileWriter.java,"Negate Conditionals: inverted append logic
+Negate Conditionals on append
+Negate Conditionals
+Negate Conditionals: use exists instead of createNewFile
+Negate Conditionals
+Return Values: left intact
+Increments: changed off by +1
+Primitive Returns: forcing primitive by appending a string
+Increments: changed len by +1
+"
+UncheckedIOIterator.java,"Invert Negatives: assert that the delegate is not null
+This is just changing from regular negative to uncertain state, which we are applying
+Conditionals Boundary: Changing condition for boundary cases
+Negate Conditionals: change to not check for hasNext
+return !Uncheck.get(delegate::hasNext);
+Always returns false
+Return Values: returning null directly instead of the next() value
+return null;  // This represents a Null Return mutation
+Math mutation: Let's assume there might be implicit math that returns its default
+Void Method Calls: Sort of commenting out
+Uncheck.run(delegate::remove);
+Empty Returns: Just to add a clear no-op behavior
+This applies empty return where there might be something
+"
+BrokenWriter.java,"Mutated: If length is zero, do not throw exception anymore.
+"
+RegexFileFilter.java,"Conditional Boundary Mutation: Changing the condition
+Changed '0' to '1'
+Negate Conditionals Mutation: Changed to null check
+Changed order of operations
+Invert Negatives Mutation: Change the return to its negation
+Changed to negation
+Math Mutation: Altered comparison
+Negated matcher result
+Return Values Mutation: Changed the return value
+Changed pattern display
+"
+NullOutputStream.java,"Mutation: Void Method Calls - Added a print statement to indicate constructor call.
+Void Method Call
+Mutation: Void Method Calls - Added a print statement to indicate write call.
+Void Method Call
+Mutation: True Returns - Changing return type logic for mutation demonstration
+Returning early with empty body. (equivalent to ""Null Returns"" mutation.)
+Added method call (Void Method Calls)
+Mutation: False Returns - Simulate a false return scenario by doing nothing
+Mutation: Negate Conditionals - Instead of writing, we do nothing if b is greater than 0
+Mutating to negate the action; hence not writing when b <= 0
+False Returns - Not doing any output when it's supposed to write
+"
+AccumulatorPathVisitor.java,"Mutated to return null instead of a new object
+Added a condition to check for null, mutated from previous implementation ignoring this
+Reversed the return value
+Mutated the return statement to create an empty list
+Always returns an empty list
+Changed to always return null
+Mutated to always return null instead of the real list
+"
+RandomAccessFileInputStream.java,"Changed return value to null to test Null Returns mutation
+This could represent a failure to create the object
+Inverted the negation check to check against null instead of requiring it
+no change here
+Conditionals Boundary mutation
+Changed condition to >=
+Negate Conditionals mutation
+Changed return value to -1 to simulate an error state
+True Returns mutation
+Changed to always return 0 to test False Returns mutation
+False return value
+"
+FileSystem.java,"Negated condition
+Negated condition
+Negated condition
+Changed the flow
+Changed return to a non-existent constant
+Changed return value to 'Error'
+Explicitly returning ""Error""
+Inverted condition
+Inverted condition
+Set to true if osName is null
+Inverted condition
+Changed return to ""null"" if path is null
+Increased returned blockSize by 1
+Incremented value
+Incremented maxFileNameLength
+Decreased maxPathLength by 1
+Changed to return the other name separator
+Inverted return value
+Inverted return value
+Inverted return value
+Adjusting logic
+Inverted return value to true
+Inverted return value
+Negated logic
+Inverted return value
+Swapped methods
+Inverted return value
+Adjusted logic
+Changed the index to include extension
+Inverted conditionals for casePreserving and caseSensitive, changed maxPathLength to Integer.MIN_VALUE
+Decreased blockSize and maxFileNameLength by 1
+Increased blockSize and maxFileNameLength, changed nameSeparator
+Changed maxFileNameLength and maxPathLength by decreasing both by 1
+"
+IOBiConsumer.java,"Conditionals Boundary
+"
+IO.java,"Inverted the condition to its negation
+Do nothing or handle the negative case
+"
+IOIterator.java,"Negate condition
+Changed to return false instead of standard check
+Changed return to return null instead (in certain mutants)
+Change void to return a value
+Empty return
+"
+UncheckedFilterWriter.java,"No change
+Changed from len to (len > 0 ? len : 0)
+"
+ReverseFileComparator.java,"Conditionals Boundary Mutant
+"
+DeferredFileOutputStream.java,"Increments mutation
+Conditionals boundary mutation
+Invert Negatives mutation
+Invert Negatives mutation
+Mutates from true to false during process
+Negate Conditionals mutation
+Empty Returns mutation
+False Returns mutation
+Null Returns mutation
+Void Method Calls mutation (acting method is unchanged)
+Negate Conditionals mutation
+Negate Conditionals mutation
+Math mutation (swapped prefix and suffix)
+A separate thought can also be to set it to a new instance
+Negate Conditionals mutation
+Negate Conditionals mutation
+Negate Conditionals mutation
+Negate Conditionals mutation
+In this branch, we might consider changing Files.copy to a noop or handle it differently
+"
+CloseShieldReader.java,"Conditionals Boundary mutation
+"
+IOExceptionList.java,"Negate Conditionals mutation: negated the condition
+Conditionals Boundary mutation: changed to > 0
+Null Returns mutation: change to return 1 instead of 0 if causeList is null
+Math mutation: Changed the format string
+Empty Returns mutation: change to return Collections.singletonList()
+Increments mutation: changed the parameter type to String
+Invert Negatives mutation: changes getCause to directly call on causeList
+returns the last element
+True Returns mutation: always returning a new empty list
+"
+PathEqualsFileFilter.java,
+ClassNameMatcher.java,"Original Class
+"
+NoopPathVisitor.java,"Changed from super(visitFileFailed) to super(null)
+"
+SizeFileFilter.java,"Inverted the default value
+Conditionals Boundary: Changed from ""<"" to ""<=""
+Changed error message
+Increments: Changed 0 to 1
+Negate Conditionals: Changed ""!="" to ""==""
+Negate Conditionals: Inverted the condition
+Increments: Subtracted 1 from the size
+Added additional mutant example cases
+False Returns: This method always returns false.
+True Returns: This method always returns true.
+Null Returns: Method that returns null.
+Void Method Calls: Method does nothing when called.
+Primitive Returns: Method returning a primitive type.
+Math operator: incremented or decremented based on condition
+Empty Returns: A method that has an empty return (does nothing).
+"
+ThrottledInputStream.java,"Changed return value to false for mutation
+added an empty return for mutation
+Inverted the condition for boundary mutation
+Negate conditionals
+Modify the Math calculation (increment operation)
+Negate conditionals
+Invert Negatives
+Deleted Void Method call and added a false return for mutation
+Changed from returning Duration to returning null for mutation
+Modified the condition
+Changed String return value to include false for False Return mutation
+"
+ClosedOutputStream.java,"Changed from checking len directly to a condition boundary
+"
+RandomAccessFileMode.java,"Changed return value to null for a Null Returns mutation
+Negate condition: changed 'if (!bestFit.implies(READ_WRITE))' to 'if (bestFit.implies(READ_WRITE))'
+Introduce a false return condition
+Changed the logic here
+False return: unchanged logic but could have lead to false return
+Changed from 'bestFit' to 'null' to induce a null return
+Changed to negate conditions and added cases for 'else'
+Added a condition to return a different mode
+Negate conditionals: changed 'return getLevel() >= other.getLevel();' to 'return getLevel() < other.getLevel();'
+Negating the condition
+Increment operator: changed level from 1 to 0
+Increment operator: changed level from 2 to 3
+Increment operator: changed level from 4 to 5
+Increment operator: changed level from 3 to 2
+"
+FileTimes.java,
+ValidatingObjectInputStream.java,"Negate Conditionals
+Changed the message to demonstrate Mutation
+Math and Change in message
+Return Value Mutation - this method could also throw a custom exception instead
+Additional void mutation example around void method calls
+Empty return to demonstrate mutation
+Void Method Calls
+False Return
+True Return
+Null Return
+Increment example
+Increment example
+Add Math mutation example
+Original: could mutate to return a / b for Math mutation
+"
+CloseableURLConnection.java,"Mutant: Inverting the call to IOUtils.close
+IOUtils.close(urlConnection);
+Mutant: Change to throw a generic exception instead of IOException
+Mutant: Negating the condition in equals
+Mutant: Returning a false constant value instead of the method call
+Detected null condition
+Unchanged for this variant
+Mutant: Returning null instead of the actual content
+Mutant: Null Returns
+Mutant: Returning a different value; monkeying with the Class type
+Mutant: Primitive Returns
+Unchanged for this variant
+Mutant: Returning a constant value
+Mutant: Returning Values
+Mutant: Incrementing content length by 1 here
+Mutant: Increments
+Unchanged for this variant
+Mutant: Set to a future date constant
+Future date
+Mutant: Negating the original return value
+Negate Conditionals
+Mutant: Returning true instead of the actual value
+True Returns
+Unchanged for this variant
+Mutant: Using a hardcoded string as the return value
+Returning Values
+Mutant: Returning null instead of actual header field
+Mutant: Null Returns
+Mutant: Returning a fixed date constant
+Empty Returns
+Mutant: Returning the default instead of the actual header field integer
+Mutant: Returning Values
+Unchanged for this variant
+Returning Value
+Unchanged for this variant
+Mutant: Incrementing to simulate a different behavior
+Increments
+Mutant: Throwing a different IOException
+Mutant: Returning a constant last modified date
+Empty Returns
+Mutant: Returning null instead of the output stream
+Null Returns
+Unchanged for this variant
+Unchanged for this variant
+Mutant: Returning a default value instead of calling the method
+Returning Values
+Unchanged for this variant
+Negate Conditionals
+Mutant: Returning a fixed hash code instead of the actual value
+Returning Values
+No operation - simulate a void method call
+Mutant: Changing timeout to a constant value
+Fixed value
+Setting to the opposite value
+No operation - simulate a void method call
+Mutant: Using wrong logic
+No operation - simulate a void method call
+Use a fixed timeout
+Simulate no operation
+Using the opposite value
+Mutant: Returning a constant string instead of the actual string
+Returning Values
+"
+IOBinaryOperator.java,"Changed >= to >
+Changed <= to <
+"
+XmlStreamWriter.java,"will close safely or fail
+return false if no encoding found
+keep default_charset if over limit
+misformatted header, reverting to default
+setting prologWriter to null to avoid future checks
+returns default encoding
+Primitive Returns: changing return type
+returns ""UTF-8"" if charset is null
+writing content directly
+"
+BoundedInputStream.java,"Negate Conditionals
+Increment
+Math
+Negate Conditionals
+Primitive Returns
+Negate Conditionals
+Return Values
+Negate Conditionals
+Math
+Invert Negatives
+Invert Negatives
+Negate Conditionals
+False Returns
+Math
+Mutate String Representation
+"
+FileSystemProviders.java,"condition altered
+"
+DelegateFileFilter.java,"Invert the condition for null check (Invert Negatives)
+This would mutate the logic to return a false scenario instead of throwing exception
+return false; // Mutant: change to false return, causing a functional issue
+change throw to return (False Returns)
+Change the null check (Conditionals Boundary)
+return null; // Mutant adding null return.
+returning null to allow processing (Null Returns)
+Negate the return value (Return Values)
+return true; // Another Mutant: always return true.
+Negate the conditionals (Negate Conditionals)
+This would cause the method to not filter appropriately
+always return false instead of calling super.accept
+Mutant: Negate return value of fileFilter.accept
+Negate the return value (Return Values)
+return true; // Another Mutant: always return true.
+Negate the conditional check (Negate Conditionals)
+always return false instead of calling super.accept
+Mutant: Negate return value of fileNameFilter.accept
+Changing the string output for the delegate (Primitive Returns)
+return null; // Another Mutant: return null instead of a meaningful string.
+Mutant: change parentheses to square brackets
+"
+FileAlterationListener.java,"Mutated behavior
+recursive call
+"
+ThresholdingOutputStream.java,"Conditionals Boundary
+Negate Conditionals & Invert Negatives
+early return to introduce a new flow
+Void Method Calls - changing the close call
+getStream().close(); -> getStream(); // remove close to introduce error
+Null Returns (returning null instead of a stream)
+Change from '>' to '>='
+Increments: increment count by 1
+False Returns
+Always false, won't execute code below
+Increments
+Increments
+Increments (writing two instead of one)
+"
+ProxyWriter.java,"Mutated to not perform any action, simulating an empty return
+Empty return
+Change the output length for mutation
+Mutated to return null
+Increment mutation
+Using mutated length
+Invert Negatives: Replace with a false condition error simulation
+Mutated to throw IOException instead
+False return on next call
+Void method call mutation
+Negate conditionals: Change flow here
+Modify error handling
+Invert negatives: Instead of throwing e, return true to simulate success
+Return false for assume successful handling
+Decrement for boundary condition
+Condition boundary mutation
+Math operator mutation increasing 1
+Increment mutation
+Increment afterWrite mutation
+"
+ThreadUtils.java,"Mutation: Return a constant value instead of calculation
+This could also be changed to a different constant or just return null.
+Mutation: Changing logic in the do-while loop condition
+Or: Thread.sleep(remainingDuration.toMillis(), getNanosOfMilli(remainingDuration));
+Mutation: Replace the sleep call with throwing an exception
+Mutation: Decrement remainingDuration incorrectly
+Mutation: Condition is negated
+Mutation: Altering constructor to do nothing noticeable
+"
+ReadAheadInputStream.java,"Negated return value mutation
+Changed byte array size
+Changed to not shutdown
+Changed to less than instead of less than or equal to
+Added 1
+Inverted condition
+Changed to true
+Changed to check isReading instead
+Changed to Long.MIN_VALUE
+Changed to true
+Inverted conditions
+Inverted logic
+Inverted condition
+Negated condition
+Switched condition
+Changed to Math.max
+Inverted logic
+Inverted state
+Inverted condition
+Changed to greater than
+Inverted the logic
+Change to check non-Error
+Logic inversion
+Set to false
+Negated null check
+Set to false
+Set to null
+Inverted state
+Changed to only signal once
+Inverted condition
+Changed to minus
+Inverted the logic
+Changed error message
+Logic inversion
+Inverted condition
+Changed to add instead of subtract
+Changed to greater than or equal
+Changed to add
+Logic remains unchanged
+Swapped the positions
+Changed initial state
+Inverted the condition
+"
+IOCase.java,"Negate conditionals mutation
+Invert Negatives
+Math / Negate Conditionals
+Changed ""||"" to ""&&"" for false returns
+False return
+Conditionals Boundary
+Negate Conditionals
+Negate Conditionals
+Increments mutation
+Negate Conditionals
+Negate Conditionals
+Invert Negatives
+Return values mutation
+Null Returns
+"
+QueueOutputStream.java,"Changed to always return null to observe false return
+Added an empty return to ensure no effect unless interrupted
+Changed incrementing to add and putting 0 instead of masking
+Allow all integers to be put directly
+"
+RandomAccessFileOutputStream.java,"Conditionals Boundary mutations: changed WRITE to READ
+Void Method Calls mutation: keeping original call
+Math mutation: changed true to false
+Increments mutation: increment the written byte by 1
+Empty Returns mutation: added return statement
+Negate Conditionals mutation: added a custom exception handling
+Empty Returns mutation: added return statement
+"
+TimestampedObserver.java,
+UncheckedIOBaseStream.java,"Original behavior remains unchanged
+Negate Conditionals: change the return value
+Negating the return value
+Conditionals Boundary: modified behavior
+kept original
+Void Method Call: added a fictitious call before the original
+Added a print statement before the call
+Increments: change behavior
+kept original
+Change to an empty return to simulate failure
+Changed to return null for this case
+Negate Conditionals: change behavior
+kept original
+Return Values: modify to always return (delegate.unordered()).unwrap()
+kept original
+"
+ReversedLinesFileReader.java,"Increments mutation
+Increments mutation
+Negate the condition and reassign the length
+Increments mutation
+Negate condition
+Conditionals Boundary mutation
+Invert Negatives mutation
+Increments mutation
+Empty Returns mutation
+Increments mutation
+Empty Returns mutation
+Negate conditionals
+Negate conditionals
+False Returns mutation
+"
+IOTriFunction.java,
+HiddenFileFilter.java,"Negate conditionals
+Negate conditionals
+Negate conditionals
+"
+XmlStreamReader.java,"Mutated to false
+Mutated to false
+Conditionals Boundary
+Invert Negatives
+Invert Negatives
+Negate Conditionals
+Negate Conditionals
+Returning null
+Bound Condition
+Invert Negatives
+Returning null
+Negate Conditionals
+Returning null
+Conditionals Boundary
+Math Mutation
+Mutated to false
+Math Mutation
+Negate Conditionals
+Returning null
+Math Mutation
+Conditionals Boundary
+Math Mutation
+Math Mutation
+Conditionals Boundary
+Return Values
+Positive Return Value
+Inverts
+Conditionals Boundary
+Math Mutation
+Negate
+Returning null
+Conditionals
+Negate
+Returning null
+Math Mutation
+"
+IOPredicate.java,"Negate Return Value
+Negate Return Value
+Invert Negatives
+Negate Conditionals
+Void Method Call Mutation
+Negate Conditionals
+Negate Conditionals
+"
+UnixLineEndingInputStream.java,"Added condition to check null input
+Inverted the condition
+super.close(); // Commented to introduce void method call mutation
+Negated the conditional logic
+Changed from EOF to EOF + 1 as a Math mutation
+Changed true to false for boundary mutation
+Changed LF to LF * 2 as another Math example
+Changed return value logic
+Changed the exception message
+Inverted boolean logic
+Changed LF to -1 for returning an invalid byte
+Negated the condition again
+Handling to demonstrate a primitive return mutation
+Negation check
+Boolean flag logic tweak
+Null return mutation applied
+"
+IOTriConsumer.java,"No change
+Mutated boundary condition: always call after
+"
+CountingOutputStream.java,"Change `>` to `>=`
+Change `>` to `>=`
+"
+CharsetEncoders.java,"Mutation: Invert Negatives / Negate Conditionals
+Original: return charsetEncoder != null ? charsetEncoder : defaultSupplier.get();
+Mutation: Change condition to use <=
+Mutation: Introduce a dummy math operation
+int dummyOperation = 1 + 1;  // Just demonstrate some calculation that does nothing
+return charsetEncoder; // This line remains unchanged
+Original: return charsetEncoder != null ? charsetEncoder : defaultSupplier.get();
+Mutation: Add a void method that might introduce side effects
+Suppose it logs or performs some action
+Mutation: Return an empty CharsetEncoder at certain times
+Example for returning a default
+Mutation: Change constructor logic
+"
+FileChannels.java,"Changed != to <=
+Changed != to <=
+"
+WildcardClassNameMatcher.java,"Inverted the return value
+"
+Counters.java,"Negate Conditionals mutation
+Invert the logical condition
+Return Values mutation
+Return Values mutation
+Null Returns mutation
+Increment mutation
+Increment mutation
+False Returns mutation
+Primitive Returns mutation
+Math mutation
+Change counter type for mutation
+Empty Returns mutation
+Math mutation
+False Returns mutation
+Negate Conditionals mutation
+Decrement mutation instead of increment
+Change the reset value for mutation
+Doing nothing for void method call mutation
+Primitive Returns mutation
+Null Returns mutation
+Void Method Call mutation
+Change representation for mutation
+Empty Returns mutation
+"
+TrueFileFilter.java,"Mutation: Negated the return value
+Mutation: Negated the return value
+Mutation: Changed to skip subtree
+Mutation: Inverted negate
+"
+IOBiFunction.java,"Changed from allowing after to be non-null to allowing a null value
+"
+Input.java,"Changed from !isOpen to isOpen
+"
+TaggedIOException.java,"Mutant for Negate Conditionals, Math, Conditionals Boundary
+Mutant for Invert Negatives, Empty Returns
+Mutant for Void Method Call
+Call this method might not do anything but demonstrates a void call
+Mutant for Return Values and Primitive Returns
+This changes how tag is assigned based on null check
+Mutant for Returning null (the original version always returns an IOException)
+This will change behavior significantly
+Mutant for True Returns or False Returns
+Example void method that does nothing
+No operation performed
+"
+UncheckedAppendableImpl.java,"Conditionals Boundary Example (No conditions available)
+Invert Negatives - assume null check
+Return Values Example
+Empty Returns Example
+Return Values Example - change to ""default"" or a constant string
+changed from appendable.toString()
+"
+RegexpClassNameMatcher.java,"Negate the null check
+Inverse of null check
+Return an empty pattern if regex is empty (Empty Returns)
+Make pattern always non-empty
+Change condition to always true (True Returns)
+Added condition
+Returning true for null or empty className
+Instead of returning the match directly, introduce irrelevant logic (Negate Conditionals)
+Inverting the result
+Adding a void method call that does nothing
+Intentionally left empty
+"
+FileExistsException.java,"Changed message to ""does not exist""
+"
+BufferedFileChannelInputStream.java,"Negated the condition where fileChannel is null
+Randomized the constructor call with a false logic
+Negate the return value from 0 to 1
+Changed the final block to empty return
+The EOF return logic remains unchanged
+Math mutation could be applied here
+Conditionals boundary mutation
+Changed  to return -1 instead of EOF
+Increments mutation
+Inverted the conditional
+Changed to initial value of -1
+Inversion of loop condition
+Negated the condition
+Changed return value from 0L to 1L
+Conditionals boundary mutation
+Changed return to 0 from size - currentFilePosition
+Kept return value the same
+"
+AbstractByteArrayOutputStream.java,"Mutate: Empty returns (void method call) can be a potential mutation
+return an early statement; redundant in this context
+Mutated: Incrementing the size may introduce unexpected buffer sizes
+Incrementing buffer size by 1
+Mutate: Negate conditionals when setting count to 0, can lead to unexpected behavior
+Setting count to -1 instead of 0
+Mutate: Returning null instead of empty array
+Changed == to <= for boundary mutation
+Mutated to return null
+Mutate: Return a different input stream; false returns
+Mutated to return a null input stream
+Mutate: Returning a primitive value instead of a string representation
+Changed to return count as a string representation instead
+Mutate: Enforcing a boundary cap on buffer position
+Change == to >= to test boundary
+"
+FileWriterWithEncoding.java,"Negate the condition
+Increment operator mutation
+Increased 'null' check
+Invert negation
+Negate condition
+Negate condition
+Return values mutation
+Change initial value from false to true
+Negate append
+Change initial value from false to true
+Change initial value from false to true
+Change initial value from false to true
+Change initial value from false to true
+Change initial value from false to true
+"
+UnsynchronizedBufferedReader.java,"Conditionals Boundary: changed <= 0 to < 0
+Negate Conditionals: changed to '< 0'
+Negate Conditionals: changed == to !=
+Negate Conditionals: removed '!'
+Invert Negatives: changed == to !=
+Increments: changed > 0 to >= 0
+Conditionals Boundary: changed > to <
+Conditionals Boundary: changed > to <
+Increments: changed > to <
+Negate Conditionals: changed != to ==
+Return Values: last return value is still count
+Negate Conditionals: changed < to >
+Negate Conditionals: changed true to false
+Negate Conditionals: changed < to >=
+Negate Conditionals & Increments: changed and adjusted logic
+Negate Conditionals: changed > to <
+Invert Negatives: changed && to ||
+Negate Conditionals: changed >= to <
+Increments: changed > to >=
+Return Values: adjusted logic
+Invert Negatives: changed == to <
+Void Method Calls: return type handling
+Invert Negatives: changed > to <
+Invert Negatives: changed == to !=
+Invert Negatives: changed == to !=
+Invert Negatives: changed == to !=
+Negate Conditionals: changed == to !=
+False Returns
+Invert Negatives: command logic changes
+Negate Conditionals: changed > to <
+Increment logic, position change
+Invert Negatives: changed == to !=
+Empty Returns: could end up with no data if the condition fails
+False Returns: may append with different lengths
+Negate Conditionals: changed to <=
+Conditionals Boundary: not found edge case where mark = 0
+Negate Conditionals: changed < to >
+Conditionals Boundary: changed < to >=
+Negate Conditionals: changed > to <=
+Primitive Returns: returning adjusted amount
+adjusted calculation
+Position adjusting
+Conditionals Boundary: changed < to >=
+may return less if EOF is hit
+Negate Conditionals: changed >= to <
+returning non-standard amount
+read adjusting for loops
+correcting assessment for next read
+Return for consistent handling
+"
+AppendableWriter.java,"Void Method Call mutation - changed to call appendable.close
+Void Method Call mutation - calling super.flush
+Conditionals Boundary mutation
+"
+AppendableOutputStream.java,
+AgeFileFilter.java,"Negate Conditionals: changed from true to false
+Invert Negatives: negating acceptOlder
+Negate Conditionals: changed from true to false
+Changed FileUtils.lastModifiedUnchecked to return a null value mutation
+Primitive Returns manipulation
+Return value mutation - changed default value
+Negate Conditionals: changed from true to false
+Invert Negatives: negating acceptOlder
+Increment: added 1 to cutoffMillis and negated acceptOlder
+Math operator mutation: adding -1 to the cutoffMillis
+Math and Invert Negatives
+Negate Conditionals: changed != to ==
+Negate Conditionals
+Negate Conditionals: replaced condition with negation
+"
+AbstractStreamBuilder.java,"Inverted conditional
+Return a constant instead of bufferSize
+Incremented by 1
+Null return
+Null return
+Kept same for demonstration, could be changed to mutator
+Added null check before return
+Null return
+Changed condition to >=
+Incremented by 1
+Decremented by 1
+Changed condition to <
+This line remains the same
+"
+CanWriteFileFilter.java,"Mutation: Changed CAN_WRITE to return null
+Mutation: Changed CANNOT_WRITE to assert true rather than negate CAN_WRITE
+Mutation: Changed the serialVersionUID to a different value
+Mutation: Negate the condition. Changed file.canWrite() to !file.canWrite()
+Mutation: Inverted the return condition
+Mutation: Changed the method to falsely state acceptability regardless of writable status.
+Mutation: Inverted the writable check
+"
+BrokenInputStream.java,"return 0; // Example of a return value mutation
+Mutated to return 0 instead of throwing
+// No operation
+Mutated to an empty return
+return -1; // Primitive return mutation
+Mutated to return -1, simulating end of stream
+return; // Converting to void method call mutation
+Mutated to not throw and silence any IO exception
+return new RuntimeException(""An error occurred""); // Example mutation
+Mutated to throwing a new type of exception
+Mutated to skip zero bytes instead of throwing an exception
+return 0; // Return value mutation
+Original line
+New void method call mutation added
+No operation (void method call mutation)
+Placeholder; do nothing here
+Additional methods simulating various return mutations
+Null Returns mutation
+False Returns mutation
+True Returns mutation
+"
+CleaningPathVisitor.java,"Mutation: Return Values
+Mutation: Invert Negatives
+Changed to return null instead of a new instance
+Mutation: Negate Conditionals
+Mutation: Conditionals Boundary
+Swapped values
+Mutation: Return Values
+Mutation: Math (here we could change the delete logic in various ways if applicable)
+Mutation: Invert Negatives (negated Files.exists)
+Mutation: Negate Conditionals
+No mutation here, but one could change this line if desired.
+Changed to SKIP_SUBTREE instead of CONTINUE
+"
+StringBuilderWriter.java,"Mutated to return null instead of new StringBuilder()
+Mutated: Now assuming a string can be null
+false return instead of allowing execution
+"
+MemoryMappedFileInputStream.java,"Conditional boundary mutation: DEFAULT_BUFFER_SIZE changed to 0
+Conditional boundary mutation: DEFAULT_BUFFER_SIZE changed to 0
+Invert Negatives: Negated condition
+Removed cleanBuffer functionality
+Negate Conditionals: Inverted condition
+Math mutation: Changed Math.min to Math.max
+Math mutation
+Negate Conditionals: Inverted condition
+False Returns mutation
+Negate Conditionals: Inverted condition
+False Returns mutation
+Conditionals Boundary mutation: Changed condition for n
+Math mutation
+"
+MessageDigestCalculatingInputStream.java,"Negate conditional: changed 'setObservers' call if observers are empty.
+False return mutation (non-existing observer)
+Conditionals boundary: using a different algorithm
+boundary mutation
+Increment mutation: altering the length
+changed to length + 1
+Invert Negatives: changing positive to negative
+changed
+Math mutation: different algorithm
+Using different hash algorithm
+Changed to a primitive return mutation
+True return mutation
+Empty return mutation (returns null)
+Empty return mutation (invalid)
+"
+CloseShieldInputStream.java,"Invert condition
+Null returns for void method
+"
+EndianUtils.java,"Negate conditional
+Increment offset
+Increment return value
+Increment offset
+Increment return value
+Increment return value
+Increment return value
+Increment return value
+Increment return value
+Increment return value
+Increment return value
+Increment passed value
+Increment passed value
+Increment return value
+Increment return value
+Change < to <=
+Increment passed value
+Increment passed value
+Increment passed value
+Increment passed value
+Increment last byte
+Increment last byte
+Removed increment for this method to keep it valid
+"
+FilesUncheck.java,"Mutant: Null returns for createDirectories
+return Uncheck.apply(Files::createDirectories, dir, attrs);
+Mutation: Return null instead of actual value
+Mutant: Increments in createFile
+Mutation: Increase attributes
+Mutation: False return for deleteIfExists
+return Uncheck.apply(Files::deleteIfExists, path);
+Mutation: Always return false
+Mutant: Negate conditionals for getLastModifiedTime
+Mutant: Use Empty Returns in newBufferedWriter
+No mutation
+Mutant: Negate iterable element count for walk methods
+Mutation: Return 0 instead of Stream
+"
+CloseShieldOutputStream.java,"Inverted condition: returning a new instance without changing the outputStream.
+Mutant: return null instead of instantiating.
+Mutation: return a new CloseShieldOutputStream without the input.
+return new CloseShieldOutputStream(null);
+Null Returns Mutation
+Mutant: changing super call.
+super(outputStream);
+Null Returns Mutation
+Mutant: changing the output stream to a null reference instead of ClosedOutputStream.INSTANCE.
+out = ClosedOutputStream.INSTANCE;
+Additional Mutations
+out = ClosedOutputStream.INSTANCE; // Original Line
+out = ClosedOutputStream.INSTANCE; // The original assignment
+empty returns instead of closing (if a closing interaction is wrapped in a boolean check)
+// Mutant: changing final output stream indirectly
+        if (out != null) {
+            out = ClosedOutputStream.INSTANCE; 
+        }
+Null Returns Mutation, also an invalid state change.
+Empty Returns Mutation
+"
+IOConsumer.java,"Changed return type to a primitive type (int) for mutation
+Instead of returning a Consumer, always return 0
+"
+ClosedReader.java,"Mutated method: adding a condition to simulate a boundary condition
+This should always be true for a closed reader
+Simulating a no-operation close
+Mutated return value changes to a non-EOF to simulate condition change
+Incrementing return value
+"
+MessageDigestInputStream.java,"Inverse the null check to throw exception if it is not null
+Change offset to -1 (negative boundary)
+Inverted check - if the message digest is null, it doesn't throw an exception
+Return null instead of the messageDigest
+"
+IOSupplier.java,"Mutated to return null instead of Uncheck.get(this)
+"
+ProxyCollectionWriter.java,"mutated
+mutated
+mutated
+mutated
+mutated
+mutated
+mutated
+mutated
+mutated
+"
+DeletingPathVisitor.java,"Changed to long counters
+Changed to big integer counters
+Negated condition
+Boundary condition change
+Changed to return false
+Changed to return false
+Changed to return false
+Negated comparison
+Changed prime number
+Changed to primitive return
+Negated condition
+Changed return value
+Negated condition
+Negated condition
+Early return
+Negated condition
+Early return
+Negated condition
+Changed to true
+Negated condition
+Now performs deletion only if it's not a symbolic link
+Changed return value
+"
+Charsets.java,"Mutated: Changed IS0_8859_1 to ISO_8859_2 for increment mutation
+Mutated: Changed UTF_16 to UTF_8
+Mutated: Changed UTF_16LE to null for Null Return mutation
+Mutated: Change to UTF_32 to represent a math mutation
+Mutated: Changed ISO_8859_1 to StandardCharsets.UTF_8 for void method calls
+Mutated: Changed UTF_16 to null for Null Return mutation
+Mutated: Changed UTF_8 to StandardCharsets.US_ASCII for void method calls
+Mutated: Return Collections.singleton(Map instead returning all standard)
+Mutated: Inverted the conditional to check for not null
+Mutated: Changed defaultCharset to Charset.defaultCharset() for return values
+Mutated: Changed Charset.defaultCharset() to null for Null Return mutation
+Mutated: Removed null condition on charsetName for false returns
+"
+IOIndexedException.java,"Changed from ""Null"" to ""Unknown""
+"
+UncheckedFilterReader.java,"Mutation: removed the call to super.close();
+Uncheck.run(super::close);
+Mutation: changed the return value to an edge case (0).
+Mutation: Always return false instead of the actual value
+Mutation: Return a negative value instead of the actual value
+"
+BOMInputStream.java,"Negate Conditionals
+Inverted value (False to True)
+Negate Conditionals
+Conditionals Boundary Mutation
+Invert Negatives
+Inverted value (False to True)
+Conditionals Boundary Mutation
+Inverted value
+Inverted condition
+False Return Mutation (Returning a non-null string)
+Negate Conditionals
+Void Method Calls Mutation (just to simulate a side effect)
+Inverted returns
+Conditionals Boundary Mutation
+Increment Mutation
+Inverted value
+Changed from false to true
+Conditionals Boundary Mutation
+Inverted condition
+Negate conditionals
+Inverted condition
+Increment Mutation
+Inverted value
+Inverted condition
+Increment Mutation
+"
+CanExecuteFileFilter.java,"Mutated: Invert negation
+Mutated: Negate conditionals
+Mutated: Return false directly
+Mutated: Here we could return null or a suitable value other than the original
+"
+UncheckedFilterOutputStream.java,"Mutated: Added a fake condition
+Mutated: Calling flush on a null reference might be interesting
+This would lead to a NPE if executed.
+Mutated: Empty return
+Only write if non-empty
+Mutated: Ignore length and offset
+Ignored input
+Mutated: Always write 0 as byte
+This will simply write 0 regardless of input
+"
+IOStreams.java,"Changing behavior check to return non-empty
+Negating the null condition to always return stream
+"
+IOStreamAdapter.java,"Math - operator applied; changing the parameters to an additional method.
+Not directly applicable, so omitted in this case
+Invert Negatives - operator applied
+Negated the condition to check if delegate is null
+Conditionals Boundary - operator applied; changed the condition to >=
+Remains unchanged
+"
+IORandomAccessFile.java,
+MarkShieldInputStream.java,"Mutant: Changed to an empty method to see how the consumer reacts to no-op
+return;
+return false; // Original
+Mutant: Changed return value to true
+Mutant: Changed to throw a different exception to test resilience
+was UnsupportedOperationExceptions.reset();
+Added new method with different conditional to test mutant scenario
+Perform other operations based on x
+Mutant: changed from x <= 0 to x < 0
+Mutant: Changed to return value from void method
+Added to test error handling
+"
+ClosedInputStream.java,"Conditional Boundary mutation
+"
+ProxyInputStream.java,"Conditionals Boundary: Changed this to always be NOOP
+Return Values: Changed to return 1 instead of 0
+Negate Conditionals: Negated the condition to always throw
+False Returns: Set closed to false here
+Invert Negatives: Inverted the condition to indicate open when closed
+Increments: Incremented readLimit by 1
+Negate Conditionals: Always return false
+Primitive Returns: Changed the return value when EOF
+Return Values: Changed EOF to -1 for better signaling
+Math: Prevents EOF; returns EOF when n < 0
+Return Values: Changed to -1 instead of EOF
+Increment: Incrementing n by 1, handling EOF
+Return the modified value for EOF
+Return Values: Changed to -1
+Null Returns: Emulate an effect of setting in to null
+Conditionals Boundary: Skips only when n >= 0
+Return Values: Return 0 instead of a direct skip
+"
+SwappedDataInputStream.java,"Negate Conditionals: true if byte read is 0
+Negated the condition
+Increments: change the way we read byte
+Incrementing read value by 1
+Math: Increment
+Math: Increment
+Returning when more than necessary
+Empty Returns
+Conditionals Boundary: change the loop condition
+Incorrect boundary condition to cause infinite loop
+Math: Increment
+Void Method Calls: Call this instead of exception
+Some void method that does nothing (example skipped here)
+Math: Increment
+Math: Increment
+Invert Negatives
+Math: Decrement
+Returning null instead
+Null Returns
+Negate Conditionals
+Negating count
+"
+IOBaseStreamAdapter.java,"Changed the message string to ""delegate must not be null""
+Change return statement for boundary condition test
+Mutated to return null intentionally
+"
+WindowsLineEndingInputStream.java,"Negate Conditionals
+Void Method Calls mutated to return a null for experimental purposes
+Conditionals Boundary - adding more conditions
+Inverting logic
+Adding a logical OR condition
+Changed to assignment rather than a check
+Primitive Returns - altered the type of exception thrown
+Inverting this to return CR instead
+Negate Conditionals
+Inverting logic
+Added condition negation
+Return values mutated to switch positions
+"
+IOIntConsumer.java,"Mutation: Inverted the condition in the throw clause to force it to throw an IOException
+(No mutation applied)
+Mutation: Negate the condition (if 'accept' throws, so 'after' is also executed)
+(No mutation applied)
+(mutated with a possible IOException)
+Mutation: Conditionals Boundary (changed the condition to check for value not equal to zero)
+Mutation: changed condition
+Mutation: Increments (adjusted for an IntConsumer with an increment)
+Mutation: Incremented the value by 1
+Mutation: Added a condition that results in a false return
+Mutation: Void method that shouldn't execute
+Mutation: Returns an empty return instead of performing any operation
+Mutation: Added void reference
+Mutation: Always returns null
+Mutation: Always null return
+Mutation: If a condition is met, it forces a true or false return
+Mutation: Changed to return boolean true
+Mutation: Switched the order of the parameters
+Mutation: Switching the order of execution
+Mutated with an alternative execution order
+Mutation: Changed a return value where applicable
+Mutation: Returning a constant value
+Mutation: Added an alternative return condition
+"
+ChecksumInputStream.java,"Mutation: math change
+Mutation: Negate conditional and change condition boundary check
+Mutation: Invert the returned checksum
+Mutation: return 0 instead of the difference
+Changed from countThreshold - getByteCount() to 0
+"
+RandomAccessFiles.java,"Negate Conditionals: Changed from true to false
+Inverted condition
+False Return mutation
+Conditionals Boundary mutation
+Changed from != to <
+Increments: added +1 to be non-zero comparison
+Increments mutation
+Increments and Null Returns mutation
+Null Returns mutation
+Void Method Calls: calling a deprecated method
+"
+TaggedOutputStream.java,
+IOBaseStream.java,"Negate Conditionals
+Removed isParallel() check (Negate Conditionals)
+Removed isParallel() check (Negate Conditionals)
+"
+IOSpliterator.java,"Mutation: Negate return value
+Originally returns new UncheckedIOSpliterator<>(this);
+Mutation: Increment the returned value
+Originally unwrap().characteristics();
+Mutation: Return a fixed value instead
+Originally unwrap().estimateSize();
+Mutation: Empty return (no action taken)
+Originally, action is called in a while loop
+No operation performed
+Mutation: Invert Negatives (returning null instead)
+Originally returns (IOComparator<T>) unwrap().getComparator();
+Mutation: Return a negative value
+Originally unwrap().getExactSizeIfKnown();
+Mutation: Negate the condition
+Originally returns unwrap().hasCharacteristics(characteristics);
+Mutation: Return false instead of relying on unwrap
+Originally returns unwrap().tryAdvance(Objects.requireNonNull(action, ""action"").asConsumer());
+Mutation: Return a null instead of performing the split
+Originally returns adapt(unwrap().trySplit());
+"
+NullPrintStream.java,
+CircularByteBuffer.java,"Conditionals Boundary: `>=` to `>`
+Negate Conditionals: `<` to `<=`
+Invert Negatives: `<` to `<=`
+Void Method Call: Adding unnecessary return statement
+Primitive Returns: No changes, left as is
+Primitive Returns: No changes, left as is
+Negate Conditionals: `>` to `<`
+Conditionals Boundary: `<` to `<=`
+Negate Conditionals: `<=` to `<`
+Conditionals Boundary: `>` to `>=`
+Invert Negatives
+Math: Inverted condition
+Conditionals Boundary: `<=` to `<`
+No change, kept as is
+Return Values: Changed return value to an invalid byte
+Conditionals Boundary: `>` to `>=`
+Conditionals Boundary: `>` to `>=`
+Error message adjusted
+Void Method Call: Unnecessary void return
+"
+TaggedReader.java,"False Returns mutation - does not throw the exception
+throw new TaggedIOException(e, tag);
+Added the return statement to simulate void behavior
+Negate Conditionals mutation - always returns false
+return TaggedIOException.isTaggedWith(exception, tag);
+Changed to false return
+Invert Negatives mutation - checking for negation
+TaggedIOException.throwCauseIfTaggedWith(throwable, tag);
+Logic changed to throw IOException on true
+"
+NameFileComparator.java,"Boundary mutation
+"
+FilenameUtils.java,"Further methods can also follow a similar mutation approach, exploring the operators
+Add mutation to other methods in a similar manner...
+Ensure that the changes made are consistent with the invariants of the class behavior
+conditionally inverted => 1
+value negated => ','
+incremented => '0'
+incremented => ']'
+incremented => %%
+incremented => 0xfffe
+empty return instead of null
+empty return instead of null
+negate return value
+negate return value
+empty return instead of null
+empty return instead of null
+negated boolean
+conditionally negated integer
+empty return instead of null
+empty return instead of null
+return value negated to EMPTY_STRING instead of null
+method remains but its behavior can be toggled
+Here is a sample for `normalizeNoEndSeparator` method using Negate Conditionals
+Negated the condition
+empty return instead of null
+No change, keep original behavior
+Negated condition
+"
+ReaderInputStream.java,"Inverted conditional boundary mutation
+Math mutation: multiplied by 3
+Math mutation: changed allocated size
+False return value defaulting to 1 instead of 0
+Added closing bracket for mutated conditional logic
+Negate conditionals
+Inverted conditional mutation
+Null return mutation
+Return value mutation applied by changing return flow
+Return an EOF for zero-length reads
+Increment mutation: +1
+Negated conditional mutation
+"
+PathFilter.java,
+ByteArrayOutputStream.java,"Changed DEFAULT_SIZE to 1024 (example size)
+Initialized with a fixed value instead of DEFAULT_SIZE
+Changed to <= to allow zero (boundary condition)
+Changed exception message
+Removed the resetImpl call to introduce a void method call mutation
+resetImpl(); // This line commented out to create mutation
+Inverted the size return value (negative return)
+Returning null instead of the actual byte array
+This line unchanged
+Changed > to >= and < to > for boundary condition
+Customized message
+Negated the if condition
+Removed writeImpl call to introduce a void method call mutation
+Inverted the write return value
+This line unchanged
+"
+IORunnable.java,
+NameFileFilter.java,"Math: changed the last digit
+No change
+No change
+Negate Conditionals: changed to 'or'
+Invert Negatives: negated the result
+No change
+Changed 'anyMatch' to 'noneMatch'
+Change the default case to INSENSITIVE
+No change
+Additional methods to demonstrate void method calls and return values.
+Void Method Call
+Primitive Returns
+Return a cloned array for safety
+New method with Null Returns
+Returning null if baseName is null
+Changed to return true
+Standard false return
+"
+IOLongSupplier.java,"Boundary condition changed
+"
+PathVisitor.java,
+FileUtils.java,"Change > to >= (Conditionals Boundary)
+Change > to >=
+Change > to >=
+Change > to >=
+Change > to >=
+Change > to >=
+Increment mutation
+Invert Negatives
+Void Method Calls
+False Returns mutation
+True Returns mutation
+False Returns mutation
+Negated this conditional (Negate Conditionals)
+No longer calls cleanDirectoryOnExit if isSymlink (Void Method Calls)
+Changed from false to true (True Returns)
+Changed from false to true (True Returns)
+Increment mutation
+Decrement mutation
+Return is its own condition (Return Values mutation)
+Invert Negatives
+"
+Erase.java,"Negate Conditionals: Inverted if clause
+Conditionals Boundary: Using a boundary check
+Empty Returns
+Math: Modify return value slightly
+Return Values: Returning a constant instead of derived value
+Primitive Returns
+Increments: Increment comparison result
+Incremented by 1
+False Returns: Return null
+False Returns
+Invert Negatives: Reverse logic
+Null Returns
+Void Method Calls: Call an empty method
+Void Method Calls
+Negate Conditionals: Directly inversed logic
+Added empty method to act as a placeholder for void calls
+Does nothing
+"
+InfiniteCircularInputStream.java,"Mutant: Switched parameters
+"
+CountingInputStream.java,"Negate conditionals mutation
+No change to this line, but could affect logic
+Conditionals Boundary mutation
+Increments mutation: changed from 0 to 1
+Conditionals Boundary mutation
+Here the count is changed instead to only increment by 1
+Return Values mutation: changed return to constant 1
+"
+AbstractFileFilter.java,"Inverted condition
+"
+TailerListener.java,"No specific conditionals to negate
+"
+Constants.java,"Empty return used (Mutation: Empty Returns)
+Empty return used (Mutation: Empty Returns)
+Mutation: Return False
+Mutation: Return Null
+Mutation: Return True
+Mutation: Return False
+Mutation: Void Method Calls
+Mutation: Invert Negatives
+No changes needed as the constructor should remain private.
+"
+ConditionalFileFilter.java,"Mutant applying the Empty Returns operator
+Empty method body
+Mutant applying the Negate Conditionals operator
+Negated the return, which doesn't actually apply in an interface, but for mutation purposes, let's return null.
+Instead of current behavior which would be some list.
+Mutant applying the False Returns operator
+Should return false instead of an actual logical expression.
+Mutant applying the True Returns operator
+Instead of actual processing, we state it as true to indicate 'accepting' the function.
+This would be invalid in this context but serves mutation.
+"
+CircularInputStream.java,"Boundary changed
+Condition changed
+"
+ByteBufferCleaner.java,"Changed the condition to check for null
+Flipped the return logic
+"
+UncheckedIOSpliterator.java,
+HexDump.java,"Mutated from System.lineSeparator();
+Negate Conditionals: Changed from < and >= to >
+Negate the condition
+Increments: Change '>' to '>=', could also change to '<='
+Inverted condition
+Changing from '>= ' to '<'
+Changed from System.lineSeparator()
+Added an explicit return statement, simulating a Void Method Call mutation.
+Math mutation - added a space
+Math mutation - added a space
+Change to constructor for testing, for instance, to Null Returns
+"
+DeleteOption.java,
+UnsynchronizedBufferedInputStream.java,"Conditionals Boundary: Changed from count to count + 1
+Increments: Changed pos to pos + 1
+Math: In the constructor, changed size > 0 to size < 1
+Negated the check to introduce an error.
+Inverted a conditional if(coumt != 0){ // Conditionals Boundary
+Void Method Calls: Buffer not set to null
+Made the close() call on the inputStream conditional.
+False Returns: This condition will never lead to closing the InputStream
+Negate Conditionals
+Other parts remain unchanged
+Negated the condition
+Inverted comparison
+Inverted assignment
+Increments: pos incremented unexpectedly
+Conditionals Boundary
+Math: halved the length instead of doubling.
+Condition changed
+...
+Null Returns: added return null; at the end to cause Null return
+Empty Returns: method does not set any values
+Inverts the original assignment to markPos
+Negated the return value of the method
+Inverted logic
+Inverted logic
+Increments: Changed the pos variable handle in increments
+Math: Changed to subtract 0xFF.
+Other sections remain largely the same...
+...
+Null Returns: added return null;
+Changed to return -1 on null buffer
+Inverted logic
+Conditionals Boundary: returning 1 instead of 0
+Logic inversion
+Inverted return value
+Inverted: expect buffer to be not null
+Error message flipped
+Inverted logic
+Left unchanged
+Left unchanged sections...
+Inverted message
+Inverted comparison
+Changed return to 0
+Math: Added amount to count
+Math: Changing amount on the call
+"
+IOComparator.java,"Changed condition comparison
+"
+FileAlterationObserver.java,"conditionally changed this return value to return `this`
+mutated constructor to call a different overload
+mutated constructor (moved instantiation of IOCase to null)
+Changed ':' to 'TrueFileFilter.INSTANCE' returning null for fileFilter
+altered argument type
+altered argument type
+reverted to a previous state for ioCase
+negate the condition
+do nothing intentionally
+mutated to >=
+changed file to a new File(""mutation"") for testing purposes
+added an empty return to mimic Void Method Call
+altering the return to always invoke this instead of the proper file
+always return null for mutation testing
+negated condition to always return empty
+negated check for length
+"
+PathFileComparator.java,"Mutation: Changed default IOCase.SENSITIVE to IOCase.INSENSITIVE
+Mutation: Incremented the checkCompareTo return value
+"
+FileCleaner.java,"Mutated using Void Method Calls: Replaced call with a no-op
+INSTANCE.exitWhenFinished();
+Mutated using False Returns: Returning an alternative boolean instead of instance
+return null; // Null Returns
+Original
+Mutated using Primitive Returns: Returning a fixed value instead of original
+Could also apply true return or false return
+Mutated using Invert Negatives: Negate logical operations if they existed
+if(file != null) { INSTANCE.track(file, marker); }
+else { /* no operation, or logging */  }
+Original
+Mutated using Math or Increments: Decrementing an argument or changing conditions
+INSTANCE.track(file, marker, deleteStrategy + 1); // Increment operation
+Original
+Mutated using Empty Returns: Function does nothing
+return; // Empty Returns
+Original
+Mutated using Negate Conditionals: Negate the operation somehow
+if(true) { /* no operation */ }
+Original
+"
+AbstractInputStream.java,"Changed from '!isClosed()' to 'isClosed()'
+"
+PeekableInputStream.java,
+TeeInputStream.java,"Negate condition
+branch.close(); // Comment out to perform void method call mutation
+Conditionals Boundary mutation: change to ==
+Primitive Returns mutation
+Conditionals Boundary mutation: change to ==
+Primitive Returns mutation
+Conditionals Boundary mutation: change to ==
+Empty Returns mutation
+"
+ObservableInputStream.java,"Negate conditionals mutation
+Invert Negatives mutation
+Void method calls mutation
+Void Method Call substantial mutation
+Math operator mutation (e.g., Math operations changed)
+Conditionals Boundary mutation
+Increment mutation on result
+Return Values mutation (changing how result is set)
+False Returns mutation
+Introduced false return
+Void Method Call mutation
+"
+ExtensionFileComparator.java,"Conditionals Boundary mutation
+"
+UncheckedFilterInputStream.java,"Increment operator
+Void method call alteration: calling an additional (non-existent) close method
+This will generate a compile error (Void Method Calls)
+Invert Negatives
+Return Values (returning empty value)
+Conditionals Boundary and Increments
+Empty Returns mutation
+using a return statement where the method should normally continue execution
+Math mutation (negating value)
+Added to demonstrate additional mutations
+The purpose here is to simulate a void method call
+Null Returns
+Primitive Returns (return immutable value)
+True Returns
+"
+WildcardFilter.java,"Negated condition (Negate Conditionals)
+Inverted negation example (Invert Negatives)
+Negated condition
+Changed return based on false condition (False Returns)
+Changed to CONTINUE from TERMINATE
+"
+IOFileFilter.java,
+FileFilterUtils.java,"return null;
+Return Values - changed to null (Null Returns)
+Invert Negatives - negated acceptOlder
+Negate Conditionals - switched acceptOlder
+Invert Negatives - negated acceptOlder
+return new AndFileFilter(toList(filters));
+Conditionals Boundary - check for empty filters
+Void Method Calls - would ignore the filter
+return filterFiles(filter, Stream.of(files), Collectors.toList()).toArray(FileUtils.EMPTY_FILE_ARRAY);
+return filterList(filter, files).toArray(FileUtils.EMPTY_FILE_ARRAY);
+False Returns - always return empty
+return Collections.emptySet();
+Empty Returns - if files is null, return null
+Invert Negatives - negated acceptLarger
+"
+NullReader.java,"Inverted the value of throwEofException
+Mutated: originally false
+Inverted negation of throwEofException
+Mutated
+Negated the condition
+Changed to False Returns mutation
+Mutated: if true, throws exception
+Changed to Primitive Returns mutation (doubled the position)
+Mutated: returning doubled value
+Mutated: typo
+Negated the condition
+Mutated
+Changed to return a non-zero value (increment)
+Modified to increment length
+Mutated to assign incrementing characters
+Negated condition
+Retaining increment
+Changed to True Returns mutation for the calculated return length
+Negated condition
+Mutated
+Mutated: typo
+Inverted condition
+Retaining original condition
+"
+UnsynchronizedReader.java,"Negate the condition (original was `!isClosed()`)
+Add a void method call (simulating some operation)
+Void method call for mutation
+Do nothing
+Primitive return alteration - returning a fixed value (e.g., 0)
+Change the condition boundary (< 0L to <= 0L)
+Increment the buffer size by 1 (to introduce a change)
+Invert the remaining condition (using `<=` instead of `>`)
+Return value mutated.
+"
+CharSequenceInputStream.java,"Changed from -1
+Changed to throw IllegalArgumentException instead of return a CharsetEncoder.
+Changed true to false
+Inverted mark support condition
+Changed from true
+Negated the condition for EOF
+Changed this logic for return value
+Negated condition
+Removed unnecessary else if
+Primitive returns
+Removed resetting states
+Could also implement skipping logic
+Negated return logic
+"
+MagicNumberFileFilter.java,"Conditionals Boundary: modified to <= 0
+Negate Conditionals: changed < to <=
+Mutated constructor
+Invert Negatives: changed < to >=
+Changed error message to say cannot be non-negative
+Negate Conditionals: inverted conditions
+Return Values: changed false to true
+Negate Conditionals: inverted conditions
+Conditionals Boundary: modified to ==
+Changed to CONTINUE instead of TERMINATE
+Increments: added +1
+"
+ProxyOutputStream.java,"Empty return
+Empty Returns
+Negate Conditionals: suppose we had a check, negate here for mutation
+Effectively doing nothing when n is non-positive
+True return
+True Returns (however, the method is void)
+Invert Negatives
+False return
+Inverted to handle varying conditions
+False Returns (however, the method is void)
+Primitive return to indicate the IOException info
+Null return
+Void Method Calls mutated to call a different handler
+Null Returns (however, the method is void)
+Negative Condition
+Primitive Returns (returning -1 in context of void)
+Increment: Increase idx by 1 before writing
+"
+AbstractCharacterFilterReader.java,"Conditionals Boundary Mutation: Changed SKIP_NONE predicate.
+Changed false to true
+Void Method Calls Mutation: Used null directly as an argument instead of SKIP_NONE.
+Mutated from SKIP_NONE to null
+Negate Conditionals Mutation: Inverted the null check logic.
+Mutated SKIP_NONE to null
+Invert Negatives Mutation: Changed filter logic.
+Inverted the test
+Negated the filter call
+Return no longer occurs here if ch equals EOF
+Negate Conditionals Mutation: Returning negative value instead.
+Empty Return Mutation: Added check to return immediately without executing further logic
+Changed return calculation to negative
+"
+DemuxOutputStream.java,"Condition altered
+Do nothing if output is null
+Condition altered
+Do nothing if output is null
+"
+StandardDeleteOption.java,
+ClosedWriter.java,"Introduced condition using boundary
+Introduced a boundary condition
+"
+CopyDirectoryVisitor.java,"Mutation: Return Values Mutant
+True Return (changed to null)
+Mutation: Invert Negatives
+no change
+no change
+no change
+no change
+Mutation: Math Mutant (assuming CopyOption just represents states)
+Math mutation (edge case)
+Mutation: Negate Conditionals (changed to false)
+Mutation: Conditionals Boundary
+Change handling of array length
+Mutation: Void Method Calls (removing condition)
+Removed the check for existence
+Mutation: Empty Returns
+Changed to return null instead of super.visitFile
+"
+DirectoryFileFilter.java,"Mutant 4: Increments - Inverting the logic with a different condition
+Mutant 1: Invert Negatives in the method `accept`
+Inverted condition
+Mutant 2: Return false as return value in `accept` method
+False return
+Mutant 3: Return true instead of the actual condition
+True return
+(not applicable, but changing the logic slightly)
+Incremented check
+Mutant 5: Null Returns - returning null instead of a boolean
+Null return value (not allowed in boolean return, but considering for the example)
+Mutant 6: Change 'isDirectory()' to 'isFile()' (Negate Conditionals)
+Negated condition
+Negated the condition
+Mutant 7: Changing return value mechanism to demonstrate Void Method Calls
+Always terminate
+Mutant 8: Empty return
+Returning null (can be interpreted as an empty return)
+Mutant 9: Changing logic to return a false state
+False return in FileVisitResult
+"
+BrokenReader.java,
+AbstractFileComparator.java,"Negate Conditionals
+False Return (returning null if 'files' is null)
+Conditionals Boundary (changed to check for null)
+Null Return
+Empty Return (returning an empty list if 'files' is empty)
+Increments (added a redundant empty string concatenation)
+"
+SizeFileComparator.java,"Empty Returns
+Conditionals Boundary / Negate Conditionals
+Invert Negatives
+Conditionals Boundary / Negate Conditionals
+Invert Negatives
+Return Values / False Returns
+instead of -1
+Return Values / True Returns
+Keeps current logic but represents a mutant case
+"
+UnsynchronizedByteArrayInputStream.java,"Mutated: inverts the null check to trigger potential null pointer exceptions
+Mutated: Negate conditionals and return value change (returns null instead of `this`)
+Mutated: Change exception type thrown
+Conditionals Boundary mutation
+Conditionals Boundary mutation
+Math mutation (changed -1 to 0)
+Mutated: Invert negation on conditions
+Invert condition
+Mutated: Null return
+Mutated: False return instead of conditional statement
+Mutant: Override to change behavior
+Mutant: Always return false instead of true
+Math Mutant: END_OF_STREAM constant changed
+Mutated: Empty return for specific conditions
+Changed to always return 0 to simulate failure
+Changed END_OF_STREAM to 0
+Change behavior for mutant
+Mutated: Primitive returns (always return 0)
+Skip mechanism failure
+"
+IOQuadFunction.java,"Return Values: Change return type to a different primitive type
+Conditionals Boundary: Change if null to if not null check
+Invert Negatives: Change the logic of null check
+Void Method Calls: Call some void method to demonstrate mutation
+This will also potentially trigger an Empty Returns mutation
+Mutated from R to Integer
+Method to demonstrate ""Void Method Calls"" mutation
+Do nothing or some other operation
+False Returns: Mutate apply to always return false (if applicable)
+This might represent some erroneous behavior
+"
+SymbolicLinkFileFilter.java,"Negate Conditionals
+Conditionals Boundary
+Invert Negatives
+"
+QueueInputStream.java,"Boundary condition mutated to <=
+"
+WriterOutputStream.java,"Negate Conditionals
+Empty Returns could apply here as well
+Increments
+Negate Conditionals
+"
+AndFileFilter.java,"Conditionals Boundary Mutation: Changed from 0 to 1
+Increments Mutation: Increased capacity by 1
+Increment mutation
+Changed from 2 to 1
+Negate Conditionals Mutation: Changed `!isEmpty()` to `isEmpty()`
+Negate Conditionals Mutation
+Invert Negatives Mutation: Inverted the check
+No Mutation Here
+Conditionals Boundary Mutation: Changed to < 1
+False Returns Mutation: Always returns false
+Null Returns Mutation: Changed buffer append to ""null""
+"
+DirectoryFileComparator.java,"Changed: +1 to return a boundary condition
+"
+ChunkedWriter.java,"Changed condition from <= 0 to < 0
+"
+TeeOutputStream.java,"Mutated condition boundary
+"

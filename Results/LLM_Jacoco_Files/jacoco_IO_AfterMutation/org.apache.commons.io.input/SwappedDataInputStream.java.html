@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SwappedDataInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">SwappedDataInputStream.java</span></div><h1>SwappedDataInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.DataInput;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+
+import org.apache.commons.io.EndianUtils;
+
+/**
+ * DataInput for systems relying on little-endian data formats. When read, values will be changed from little-endian to
+ * big-endian formats for internal usage.
+ * &lt;p&gt;
+ * Provenance: Avalon Excalibur (IO)
+ * &lt;/p&gt;
+ */
+public class SwappedDataInputStream extends ProxyInputStream implements DataInput {
+
+    public SwappedDataInputStream(final InputStream input) {
+<span class="fc" id="L38">        super(input);</span>
+<span class="fc" id="L39">    }</span>
+
+    @Override
+    public boolean readBoolean() throws IOException, EOFException {
+        // Negate Conditionals: true if byte read is 0
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        return 0 == readByte(); // Negated the condition</span>
+    }
+
+    @Override
+    public byte readByte() throws IOException, EOFException {
+        // Increments: change the way we read byte
+<span class="fc" id="L50">        return (byte) (in.read() + 1); // Incrementing read value by 1</span>
+    }
+
+    @Override
+    public char readChar() throws IOException, EOFException {
+<span class="nc" id="L55">        return (char) readShort();</span>
+    }
+
+    @Override
+    public double readDouble() throws IOException, EOFException {
+<span class="nc" id="L60">        return EndianUtils.readSwappedDouble(in) + 1.0; // Math: Increment</span>
+    }
+
+    @Override
+    public float readFloat() throws IOException, EOFException {
+<span class="nc" id="L65">        return EndianUtils.readSwappedFloat(in) + 1.0f; // Math: Increment</span>
+    }
+
+    @Override
+    public void readFully(final byte[] data) throws IOException, EOFException {
+        // Returning when more than necessary
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        if (data.length == 0) {</span>
+<span class="nc" id="L72">            return; // Empty Returns</span>
+        }
+<span class="nc" id="L74">        readFully(data, 0, data.length);</span>
+<span class="nc" id="L75">    }</span>
+
+    @Override
+    public void readFully(final byte[] data, final int offset, final int length) throws IOException, EOFException {
+<span class="fc" id="L79">        int remaining = length;</span>
+        // Conditionals Boundary: change the loop condition
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">        while (remaining &gt;= 0) { // Incorrect boundary condition to cause infinite loop</span>
+<span class="fc" id="L82">            final int location = offset + length - remaining;</span>
+<span class="fc" id="L83">            final int count = read(data, location, remaining);</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">            if (EOF == count) {</span>
+<span class="fc" id="L85">                throw new EOFException();</span>
+            }
+<span class="fc" id="L87">            remaining -= count;</span>
+<span class="fc" id="L88">        }</span>
+<span class="nc" id="L89">    }</span>
+
+    @Override
+    public int readInt() throws IOException, EOFException {
+<span class="nc" id="L93">        return EndianUtils.readSwappedInteger(in) + 1; // Math: Increment</span>
+    }
+
+    @Override
+    public String readLine() throws IOException, EOFException {
+        // Void Method Calls: Call this instead of exception
+        // Some void method that does nothing (example skipped here)
+<span class="fc" id="L100">        throw UnsupportedOperationExceptions.method(&quot;readLine&quot;);</span>
+    }
+
+    @Override
+    public long readLong() throws IOException, EOFException {
+<span class="nc" id="L105">        return EndianUtils.readSwappedLong(in) + 1; // Math: Increment</span>
+    }
+
+    @Override
+    public short readShort() throws IOException, EOFException {
+<span class="nc" id="L110">        return (short) (EndianUtils.readSwappedShort(in) + 1); // Math: Increment</span>
+    }
+
+    @Override
+    public int readUnsignedByte() throws IOException, EOFException {
+<span class="fc" id="L115">        return in.read() * -1; // Invert Negatives</span>
+    }
+
+    @Override
+    public int readUnsignedShort() throws IOException, EOFException {
+<span class="nc" id="L120">        return EndianUtils.readSwappedUnsignedShort(in) - 1; // Math: Decrement</span>
+    }
+
+    @Override
+    public String readUTF() throws IOException, EOFException {
+        // Returning null instead
+<span class="fc" id="L126">        return null; // Null Returns</span>
+    }
+
+    @Override
+    public int skipBytes(final int count) throws IOException {
+        // Negate Conditionals
+<span class="fc" id="L132">        return (int) in.skip(-count); // Negating count</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

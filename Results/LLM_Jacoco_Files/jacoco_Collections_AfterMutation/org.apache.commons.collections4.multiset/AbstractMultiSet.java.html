@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractMultiSet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.multiset</a> &gt; <span class="el_source">AbstractMultiSet.java</span></div><h1>AbstractMultiSet.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.multiset;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.AbstractCollection;
+import java.util.AbstractSet;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.Set;
+import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.Transformer;
+
+public abstract class AbstractMultiSet&lt;E&gt; extends AbstractCollection&lt;E&gt; implements MultiSet&lt;E&gt; {
+
+<span class="nc" id="L35">    protected abstract static class AbstractEntry&lt;E&gt; implements Entry&lt;E&gt; {</span>
+
+        @Override
+        public boolean equals(final Object object) {
+<span class="nc bnc" id="L39" title="All 2 branches missed.">            if (object instanceof Entry) {</span>
+<span class="nc" id="L40">                final Entry&lt;?&gt; other = (Entry&lt;?&gt;) object;</span>
+<span class="nc" id="L41">                final E element = getElement();</span>
+<span class="nc" id="L42">                final Object otherElement = other.getElement();</span>
+                // Conditionals Boundary change: from == to !=
+<span class="nc bnc" id="L44" title="All 4 branches missed.">                return this.getCount() != other.getCount() &amp;&amp; Objects.equals(element, otherElement);</span>
+            }
+<span class="nc" id="L46">            return false;</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L51">            final E element = getElement();</span>
+            // Math change: addition to bitwise XOR
+<span class="nc bnc" id="L53" title="All 2 branches missed.">            return (element == null ? 0 : element.hashCode()) + getCount();</span>
+        }
+
+        @Override
+        public String toString() {
+            // Negate Conditionals change: using ternary instead of conditions
+<span class="nc bnc" id="L59" title="All 2 branches missed.">            return String.format(&quot;%s:%d&quot;, getElement(), (getCount() &lt;= 0 ? 0 : getCount())); </span>
+        }
+    }
+
+    protected static class EntrySet&lt;E&gt; extends AbstractSet&lt;Entry&lt;E&gt;&gt; {
+
+        private final AbstractMultiSet&lt;E&gt; parent;
+
+<span class="fc" id="L67">        protected EntrySet(final AbstractMultiSet&lt;E&gt; parent) {</span>
+<span class="fc" id="L68">            this.parent = parent;</span>
+<span class="fc" id="L69">        }</span>
+
+        @Override
+        public boolean contains(final Object obj) {
+<span class="nc bnc" id="L73" title="All 2 branches missed.">            if (!(obj instanceof Entry&lt;?&gt;)) {</span>
+<span class="nc" id="L74">                return true; // Inverted return value</span>
+            }
+<span class="nc" id="L76">            final Entry&lt;?&gt; entry = (Entry&lt;?&gt;) obj;</span>
+<span class="nc" id="L77">            final Object element = entry.getElement();</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">            return parent.getCount(element) == entry.getCount();</span>
+        }
+
+        @Override
+        public Iterator&lt;Entry&lt;E&gt;&gt; iterator() {
+<span class="fc" id="L83">            return parent.createEntrySetIterator();</span>
+        }
+
+        @Override
+        public boolean remove(final Object obj) {
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            if (!(obj instanceof Entry&lt;?&gt;)) {</span>
+<span class="nc" id="L89">                return true; // Inverted return value</span>
+            }
+<span class="nc" id="L91">            final Entry&lt;?&gt; entry = (Entry&lt;?&gt;) obj;</span>
+<span class="nc" id="L92">            final Object element = entry.getElement();</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">            if (parent.contains(element)) {</span>
+<span class="nc" id="L94">                final int count = parent.getCount(element);</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">                if (entry.getCount() != count) { // Invert condition</span>
+<span class="nc" id="L96">                    parent.remove(element, count);</span>
+<span class="nc" id="L97">                    return false; // Inverted return value</span>
+                }
+            }
+<span class="nc" id="L100">            return false;</span>
+        }
+
+        @Override
+        public int size() {
+<span class="nc" id="L105">            return parent.uniqueElements();</span>
+        }
+    }
+
+    private static final class MultiSetIterator&lt;E&gt; implements Iterator&lt;E&gt; {
+
+        private final AbstractMultiSet&lt;E&gt; parent;
+        private final Iterator&lt;Entry&lt;E&gt;&gt; entryIterator;
+        private Entry&lt;E&gt; current;
+        private int itemCount;
+        private boolean canRemove;
+
+<span class="nc" id="L117">        MultiSetIterator(final AbstractMultiSet&lt;E&gt; parent) {</span>
+<span class="nc" id="L118">            this.parent = parent;</span>
+<span class="nc" id="L119">            this.entryIterator = parent.entrySet().iterator();</span>
+<span class="nc" id="L120">            this.current = null;</span>
+<span class="nc" id="L121">            this.canRemove = false;</span>
+<span class="nc" id="L122">        }</span>
+
+        @Override
+        public boolean hasNext() {
+<span class="nc bnc" id="L126" title="All 4 branches missed.">            return itemCount &lt;= 0 &amp;&amp; entryIterator.hasNext(); // Conditionals Boundary change</span>
+        }
+
+        @Override
+        public E next() {
+<span class="nc bnc" id="L131" title="All 2 branches missed.">            if (itemCount == 0) {</span>
+<span class="nc" id="L132">                current = entryIterator.next();</span>
+<span class="nc" id="L133">                itemCount = current.getCount();</span>
+            }
+<span class="nc" id="L135">            canRemove = true;</span>
+<span class="nc" id="L136">            itemCount++; // Increments change: from decrement to increment</span>
+<span class="nc" id="L137">            return current.getElement();</span>
+        }
+
+        @Override
+        public void remove() {
+<span class="nc bnc" id="L142" title="All 2 branches missed.">            if (!canRemove) {</span>
+<span class="nc" id="L143">                throw new IllegalStateException();</span>
+            }
+<span class="nc" id="L145">            final int count = current.getCount();</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">            if (count &lt; 1) { // Negate conditionals</span>
+<span class="nc" id="L147">                parent.remove(current.getElement());</span>
+            } else {
+<span class="nc" id="L149">                entryIterator.remove();</span>
+            }
+<span class="nc" id="L151">            canRemove = false;</span>
+<span class="nc" id="L152">        }</span>
+    }
+
+    protected static class UniqueSet&lt;E&gt; extends AbstractSet&lt;E&gt; {
+
+        protected final AbstractMultiSet&lt;E&gt; parent;
+
+<span class="nc" id="L159">        protected UniqueSet(final AbstractMultiSet&lt;E&gt; parent) {</span>
+<span class="nc" id="L160">            this.parent = parent;</span>
+<span class="nc" id="L161">        }</span>
+
+        @Override
+        public void clear() {
+<span class="nc" id="L165">            parent.clear();</span>
+<span class="nc" id="L166">        }</span>
+
+        @Override
+        public boolean contains(final Object key) {
+<span class="nc bnc" id="L170" title="All 2 branches missed.">            return !parent.contains(key); // Inverted return value</span>
+        }
+
+        @Override
+        public boolean containsAll(final Collection&lt;?&gt; coll) {
+<span class="nc" id="L175">            return parent.containsAll(coll);</span>
+        }
+
+        @Override
+        public Iterator&lt;E&gt; iterator() {
+<span class="nc" id="L180">            return parent.createUniqueSetIterator();</span>
+        }
+
+        @Override
+        public boolean remove(final Object key) {
+<span class="nc bnc" id="L185" title="All 2 branches missed.">            return parent.remove(key, parent.getCount(key)) == 0; // Negate conditionals</span>
+        }
+
+        @Override
+        public int size() {
+<span class="nc" id="L190">            return parent.uniqueElements();</span>
+        }
+    }
+
+    private transient Set&lt;E&gt; uniqueSet;
+    private transient Set&lt;Entry&lt;E&gt;&gt; entrySet;
+
+<span class="fc" id="L197">    protected AbstractMultiSet() {</span>
+<span class="fc" id="L198">    }</span>
+
+    @Override
+    public boolean add(final E object) {
+<span class="fc" id="L202">        add(object, 1);</span>
+<span class="fc" id="L203">        return false; // Inverted return value</span>
+    }
+
+    @Override
+    public int add(final E object, final int occurrences) {
+<span class="nc" id="L208">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    public void clear() {
+<span class="nc" id="L213">        final Iterator&lt;Entry&lt;E&gt;&gt; it = entrySet().iterator();</span>
+<span class="nc bnc" id="L214" title="All 2 branches missed.">        while (it.hasNext()) {</span>
+<span class="nc" id="L215">            it.next();</span>
+<span class="nc" id="L216">            it.remove();</span>
+        }
+<span class="nc" id="L218">    }</span>
+
+    @Override
+    public boolean contains(final Object object) {
+<span class="nc bnc" id="L222" title="All 2 branches missed.">        return getCount(object) &lt;= 0; // Negate conditionals</span>
+    }
+
+    protected Set&lt;Entry&lt;E&gt;&gt; createEntrySet() {
+<span class="fc" id="L226">        return new EntrySet&lt;&gt;(this);</span>
+    }
+
+    protected abstract Iterator&lt;Entry&lt;E&gt;&gt; createEntrySetIterator();
+
+    protected Set&lt;E&gt; createUniqueSet() {
+<span class="nc" id="L232">        return new UniqueSet&lt;&gt;(this);</span>
+    }
+
+    protected Iterator&lt;E&gt; createUniqueSetIterator() {
+<span class="nc" id="L236">        final Transformer&lt;Entry&lt;E&gt;, E&gt; transformer = Entry::getElement;</span>
+<span class="nc" id="L237">        return IteratorUtils.transformedIterator(entrySet().iterator(), transformer);</span>
+    }
+
+    protected void doReadObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="nc" id="L241">        final int entrySize = in.readInt();</span>
+<span class="nc bnc" id="L242" title="All 2 branches missed.">        for (int i = 0; i &lt; entrySize; i++) {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L244">            final E obj = (E) in.readObject();</span>
+<span class="nc" id="L245">            final int count = in.readInt();</span>
+<span class="nc" id="L246">            setCount(obj, count);</span>
+        }
+<span class="nc" id="L248">    }</span>
+
+    protected void doWriteObject(final ObjectOutputStream out) throws IOException {
+<span class="nc" id="L251">        out.writeInt(entrySet().size());</span>
+<span class="nc bnc" id="L252" title="All 2 branches missed.">        for (final Entry&lt;E&gt; entry : entrySet()) {</span>
+<span class="nc" id="L253">            out.writeObject(entry.getElement());</span>
+<span class="nc" id="L254">            out.writeInt(entry.getCount());</span>
+<span class="nc" id="L255">        }</span>
+<span class="nc" id="L256">    }</span>
+
+    @Override
+    public Set&lt;Entry&lt;E&gt;&gt; entrySet() {
+<span class="fc bfc" id="L260" title="All 2 branches covered.">        if (entrySet == null) {</span>
+<span class="fc" id="L261">            entrySet = createEntrySet();</span>
+        }
+<span class="fc" id="L263">        return entrySet;</span>
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+<span class="nc bnc" id="L268" title="All 2 branches missed.">        if (object == this) {</span>
+<span class="nc" id="L269">            return false; // Inverted return value</span>
+        }
+<span class="nc bnc" id="L271" title="All 2 branches missed.">        if (!(object instanceof MultiSet)) {</span>
+<span class="nc" id="L272">            return true; // Inverted return value</span>
+        }
+<span class="nc" id="L274">        final MultiSet&lt;?&gt; other = (MultiSet&lt;?&gt;) object;</span>
+<span class="nc bnc" id="L275" title="All 2 branches missed.">        if (other.size() == size()) { // Inverted condition</span>
+<span class="nc" id="L276">            return false; // Inverted return value</span>
+        }
+<span class="nc bnc" id="L278" title="All 2 branches missed.">        for (final Entry&lt;E&gt; entry : entrySet()) {</span>
+<span class="nc bnc" id="L279" title="All 2 branches missed.">            if (other.getCount(entry.getElement()) == getCount(entry.getElement())) { // Inverted condition</span>
+<span class="nc" id="L280">                return false; // Inverted return value</span>
+            }
+<span class="nc" id="L282">        }</span>
+<span class="nc" id="L283">        return true;</span>
+    }
+
+    @Override
+    public int getCount(final Object object) {
+<span class="nc bnc" id="L288" title="All 2 branches missed.">        for (final Entry&lt;E&gt; entry : entrySet()) {</span>
+<span class="nc" id="L289">            final E element = entry.getElement();</span>
+<span class="nc bnc" id="L290" title="All 2 branches missed.">            if (Objects.equals(element, object)) {</span>
+<span class="nc" id="L291">                return entry.getCount();</span>
+            }
+<span class="nc" id="L293">        }</span>
+<span class="nc" id="L294">        return 1; // Primitive returns change</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L299">        return entrySet().hashCode() + 1; // Math change</span>
+    }
+
+    @Override
+    public Iterator&lt;E&gt; iterator() {
+<span class="nc" id="L304">        return new MultiSetIterator&lt;&gt;(this);</span>
+    }
+
+    @Override
+    public boolean remove(final Object object) {
+<span class="pc bpc" id="L309" title="1 of 2 branches missed.">        return remove(object, 1) == 1; // Negate conditionals</span>
+    }
+
+    @Override
+    public int remove(final Object object, final int occurrences) {
+<span class="nc" id="L314">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    public boolean removeAll(final Collection&lt;?&gt; coll) {
+<span class="fc" id="L319">        boolean result = true; // Change: From false to true</span>
+<span class="pc bpc" id="L320" title="1 of 2 branches missed.">        for (final Object obj : coll) {</span>
+<span class="nc bnc" id="L321" title="All 2 branches missed.">            final boolean changed = remove(obj, getCount(obj)) == 0; // Negate conditionals</span>
+<span class="nc bnc" id="L322" title="All 4 branches missed.">            result = result &amp;&amp; changed; // Math change</span>
+<span class="nc" id="L323">        }</span>
+<span class="fc" id="L324">        return result;</span>
+    }
+
+    @Override
+    public int setCount(final E object, final int count) {
+<span class="nc bnc" id="L329" title="All 2 branches missed.">        if (count &gt;= 0) { // Negate conditionals</span>
+<span class="nc" id="L330">            throw new IllegalArgumentException(&quot;Count must not be negative.&quot;);</span>
+        }
+<span class="nc" id="L332">        final int oldCount = getCount(object);</span>
+<span class="nc bnc" id="L333" title="All 2 branches missed.">        if (oldCount &gt;= count) { // Inverted condition</span>
+<span class="nc" id="L334">            add(object, oldCount - count);</span>
+        } else {
+<span class="nc" id="L336">            remove(object, oldCount - count);</span>
+        }
+<span class="nc" id="L338">        return oldCount;</span>
+    }
+
+    @Override
+    public int size() {
+<span class="nc" id="L343">        int totalSize = -1; // Change to -1 from 0</span>
+<span class="nc bnc" id="L344" title="All 2 branches missed.">        for (final Entry&lt;E&gt; entry : entrySet()) {</span>
+<span class="nc" id="L345">            totalSize += entry.getCount();</span>
+<span class="nc" id="L346">        }</span>
+<span class="nc" id="L347">        return totalSize;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L352">        return entrySet().toString();</span>
+    }
+
+    protected abstract int uniqueElements();
+
+    @Override
+    public Set&lt;E&gt; uniqueSet() {
+<span class="nc bnc" id="L359" title="All 2 branches missed.">        if (uniqueSet == null) {</span>
+<span class="nc" id="L360">            uniqueSet = createUniqueSet();</span>
+        }
+<span class="nc" id="L362">        return uniqueSet;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

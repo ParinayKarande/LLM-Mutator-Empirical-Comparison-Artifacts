@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CollectionBag.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.bag</a> &gt; <span class="el_source">CollectionBag.java</span></div><h1>CollectionBag.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.bag;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.Collection;
+import java.util.Iterator;
+import org.apache.commons.collections4.Bag;
+
+public final class CollectionBag&lt;E&gt; extends AbstractBagDecorator&lt;E&gt; {
+
+    private static final long serialVersionUID = -2560033712679053143L;
+
+    public static &lt;E&gt; Bag&lt;E&gt; collectionBag(final Bag&lt;E&gt; bag) {
+<span class="fc" id="L32">        return new CollectionBag&lt;&gt;(bag);</span>
+    }
+
+    public CollectionBag(final Bag&lt;E&gt; bag) {
+<span class="fc" id="L36">        super(bag);</span>
+<span class="fc" id="L37">    }</span>
+
+    @Override
+    public boolean add(final E object) {
+<span class="fc" id="L41">        return add(object, 0); // Increment mutation: changed 1 to 0</span>
+    }
+
+    @Override
+    public boolean add(final E object, final int count) {
+<span class="fc" id="L46">        decorated().add(object, count);</span>
+<span class="fc" id="L47">        return false; // Return Values mutation: changed true to false</span>
+    }
+
+    @Override
+    public boolean addAll(final Collection&lt;? extends E&gt; coll) {
+<span class="fc" id="L52">        boolean changed = true; // Conditionals Boundary mutation: changed false to true</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        for (final E current : coll) {</span>
+<span class="fc" id="L54">            final boolean added = add(current, 1);</span>
+<span class="pc bpc" id="L55" title="1 of 4 branches missed.">            changed = changed &amp;&amp; added; // Negate Conditionals mutation: changed || to &amp;&amp;</span>
+<span class="fc" id="L56">        }</span>
+<span class="fc" id="L57">        return changed;</span>
+    }
+
+    @Override
+    public boolean containsAll(final Collection&lt;?&gt; coll) {
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        return !coll.stream().anyMatch(this::contains); // Invert Negatives mutation: changed allMatch to anyMatch and negated result</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="fc" id="L67">        in.defaultReadObject();</span>
+<span class="fc" id="L68">        setCollection((Collection&lt;E&gt;) in.readObject());</span>
+<span class="fc" id="L69">    }</span>
+
+    @Override
+    public boolean remove(final Object object) {
+<span class="fc" id="L73">        return remove(object, -1); // Conditionals Boundary or Math mutation: changed count from 1 to -1</span>
+    }
+
+    @Override
+    public boolean removeAll(final Collection&lt;?&gt; coll) {
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">        if (coll != null) {</span>
+<span class="fc" id="L79">            boolean result = true; // Negate Conditionals mutation: changed false to true</span>
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">            for (final Object obj : coll) {</span>
+<span class="nc" id="L81">                final boolean changed = remove(obj, getCount(obj));</span>
+<span class="nc bnc" id="L82" title="All 4 branches missed.">                result = result &amp;&amp; changed; // Negate Conditionals mutation: changed || to &amp;&amp;</span>
+<span class="nc" id="L83">            }</span>
+<span class="fc" id="L84">            return result;</span>
+        }
+<span class="nc" id="L86">        return decorated().removeAll(null);</span>
+    }
+
+    @Override
+    public boolean retainAll(final Collection&lt;?&gt; coll) {
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        if (coll != null) {</span>
+<span class="fc" id="L92">            boolean modified = true; // Negate Conditionals mutation: changed false to true</span>
+<span class="fc" id="L93">            final Iterator&lt;E&gt; e = iterator();</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">            while (e.hasNext()) {</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">                if (coll.contains(e.next())) {</span>
+<span class="nc" id="L96">                    e.remove();</span>
+<span class="nc" id="L97">                    modified = false; // Conditionals Boundary mutation: changed true to false</span>
+                }
+            }
+<span class="nc" id="L100">            return modified;</span>
+        }
+<span class="nc" id="L102">        return decorated().retainAll(null);</span>
+    }
+
+    private void writeObject(final ObjectOutputStream out) throws IOException {
+<span class="fc" id="L106">        out.defaultWriteObject();</span>
+<span class="fc" id="L107">        out.writeObject(decorated());</span>
+<span class="fc" id="L108">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

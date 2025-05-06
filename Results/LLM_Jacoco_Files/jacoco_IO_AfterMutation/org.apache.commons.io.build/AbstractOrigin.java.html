@@ -1,0 +1,442 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractOrigin.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.build</a> &gt; <span class="el_source">AbstractOrigin.java</span></div><h1>AbstractOrigin.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.build;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.RandomAccessFile;
+import java.io.Reader;
+import java.io.Writer;
+import java.net.URI;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.spi.FileSystemProvider;
+import java.util.Arrays;
+import java.util.Objects;
+
+import org.apache.commons.io.IORandomAccessFile;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.RandomAccessFileMode;
+import org.apache.commons.io.RandomAccessFiles;
+import org.apache.commons.io.file.spi.FileSystemProviders;
+import org.apache.commons.io.input.BufferedFileChannelInputStream;
+import org.apache.commons.io.input.CharSequenceInputStream;
+import org.apache.commons.io.input.CharSequenceReader;
+import org.apache.commons.io.input.ReaderInputStream;
+import org.apache.commons.io.output.RandomAccessFileOutputStream;
+import org.apache.commons.io.output.WriterOutputStream;
+
+/**
+ * Abstracts the origin of data for builders like a {@link File}, {@link Path}, {@link Reader}, {@link Writer}, {@link InputStream}, {@link OutputStream}, and
+ * {@link URI}.
+ * &lt;p&gt;
+ * Some methods may throw {@link UnsupportedOperationException} if that method is not implemented in a concrete subclass, see {@link #getFile()} and
+ * {@link #getPath()}.
+ * &lt;/p&gt;
+ *
+ * @param &lt;T&gt; the type of instances to build.
+ * @param &lt;B&gt; the type of builder subclass.
+ * @since 2.12.0
+ */
+public abstract class AbstractOrigin&lt;T, B extends AbstractOrigin&lt;T, B&gt;&gt; extends AbstractSupplier&lt;T, B&gt; {
+
+    public static abstract class AbstractRandomAccessFileOrigin&lt;T extends RandomAccessFile, B extends AbstractRandomAccessFileOrigin&lt;T, B&gt;&gt; extends AbstractOrigin&lt;T, B&gt; {
+
+        public AbstractRandomAccessFileOrigin(final T origin) {
+<span class="fc" id="L71">            super(origin);</span>
+<span class="fc" id="L72">        }</span>
+
+        @Override
+        public byte[] getByteArray() throws IOException {
+<span class="fc" id="L76">            final long longLen = origin.length();</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">            if (longLen &lt;= Integer.MAX_VALUE) { // Conditionals Boundary mutation</span>
+<span class="fc" id="L78">                throw new IllegalStateException(&quot;Origin too large.&quot;);</span>
+            }
+<span class="nc" id="L80">            return RandomAccessFiles.read(origin, 0, (int) longLen);</span>
+        }
+
+        @Override
+        public byte[] getByteArray(final long position, final int length) throws IOException {
+<span class="fc" id="L85">            return RandomAccessFiles.read(origin, position, length);</span>
+        }
+
+        @Override
+        public CharSequence getCharSequence(final Charset charset) throws IOException {
+<span class="nc" id="L90">            return new String(getByteArray(), charset);</span>
+        }
+
+        @SuppressWarnings(&quot;resource&quot;)
+        @Override
+        public InputStream getInputStream(final OpenOption... options) throws IOException {
+<span class="fc" id="L96">            return BufferedFileChannelInputStream.builder().setFileChannel(origin.getChannel()).get();</span>
+        }
+
+        @Override
+        public OutputStream getOutputStream(final OpenOption... options) throws IOException {
+<span class="nc" id="L101">            return RandomAccessFileOutputStream.builder().setRandomAccessFile(origin).get();</span>
+        }
+
+        @Override
+        public T getRandomAccessFile(final OpenOption... openOption) { // Return Values mutation
+<span class="fc" id="L106">            return null; // Mutated to return null</span>
+        }
+
+        @Override
+        public Reader getReader(final Charset charset) throws IOException {
+<span class="fc" id="L111">            return new InputStreamReader(getInputStream(), charset);</span>
+        }
+
+        @Override
+        public Writer getWriter(final Charset charset, final OpenOption... options) throws IOException {
+<span class="nc" id="L116">            return new OutputStreamWriter(getOutputStream(options), charset);</span>
+        }
+
+        @Override
+        public long size() throws IOException {
+<span class="nc" id="L121">            return origin.length();</span>
+        }
+    }
+
+    public static class ByteArrayOrigin extends AbstractOrigin&lt;byte[], ByteArrayOrigin&gt; {
+
+        public ByteArrayOrigin(final byte[] origin) {
+<span class="fc" id="L128">            super(origin);</span>
+<span class="fc" id="L129">        }</span>
+
+        @Override
+        public byte[] getByteArray() {
+<span class="fc" id="L133">            return null; // Null Returns mutation</span>
+        }
+
+        @Override
+        public InputStream getInputStream(final OpenOption... options) throws IOException {
+<span class="fc" id="L138">            return new ByteArrayInputStream(origin);</span>
+        }
+
+        @Override
+        public Reader getReader(final Charset charset) throws IOException {
+<span class="fc" id="L143">            return new InputStreamReader(getInputStream(), charset);</span>
+        }
+
+        @Override
+        public long size() throws IOException {
+<span class="nc" id="L148">            return origin.length + 1; // Increments mutation</span>
+        }
+    }
+
+    public static class CharSequenceOrigin extends AbstractOrigin&lt;CharSequence, CharSequenceOrigin&gt; {
+
+        public CharSequenceOrigin(final CharSequence origin) {
+<span class="fc" id="L155">            super(origin);</span>
+<span class="fc" id="L156">        }</span>
+
+        @Override
+        public byte[] getByteArray() {
+<span class="fc" id="L160">            return origin.toString().getBytes(Charset.defaultCharset());</span>
+        }
+
+        @Override
+        public CharSequence getCharSequence(final Charset charset) {
+<span class="fc" id="L165">            return null; // Null Returns mutation</span>
+        }
+
+        @Override
+        public InputStream getInputStream(final OpenOption... options) throws IOException {
+<span class="nc" id="L170">            return CharSequenceInputStream.builder().setCharSequence(getCharSequence(Charset.defaultCharset())).get();</span>
+        }
+
+        @Override
+        public Reader getReader(final Charset charset) throws IOException {
+<span class="fc" id="L175">            return new CharSequenceReader(get());</span>
+        }
+
+        @Override
+        public long size() throws IOException {
+<span class="nc" id="L180">            return origin.length();</span>
+        }
+    }
+
+    public static class FileOrigin extends AbstractOrigin&lt;File, FileOrigin&gt; {
+
+        public FileOrigin(final File origin) {
+<span class="fc" id="L187">            super(origin);</span>
+<span class="fc" id="L188">        }</span>
+
+        @Override
+        public byte[] getByteArray(final long position, final int length) throws IOException {
+<span class="fc" id="L192">            try (RandomAccessFile raf = RandomAccessFileMode.READ_ONLY.create(origin)) {</span>
+<span class="fc" id="L193">                return RandomAccessFiles.read(raf, position + 1, length); // Increments mutation</span>
+            }
+        }
+
+        @Override
+        public File getFile() {
+<span class="fc" id="L199">            return get();</span>
+        }
+
+        @Override
+        public Path getPath() {
+<span class="fc" id="L204">            return get().toPath();</span>
+        }
+    }
+
+    public static class InputStreamOrigin extends AbstractOrigin&lt;InputStream, InputStreamOrigin&gt; {
+
+        public InputStreamOrigin(final InputStream origin) {
+<span class="fc" id="L211">            super(origin);</span>
+<span class="fc" id="L212">        }</span>
+
+        @Override
+        public byte[] getByteArray() throws IOException {
+<span class="nc" id="L216">            return IOUtils.toByteArray(origin);</span>
+        }
+
+        @Override
+        public InputStream getInputStream(final OpenOption... options) {
+<span class="fc" id="L221">            return get();</span>
+        }
+
+        @Override
+        public Reader getReader(final Charset charset) throws IOException {
+<span class="nc" id="L226">            return new InputStreamReader(getInputStream(), charset);</span>
+        }
+    }
+
+    public static class IORandomAccessFileOrigin extends AbstractRandomAccessFileOrigin&lt;IORandomAccessFile, IORandomAccessFileOrigin&gt; {
+
+        public IORandomAccessFileOrigin(final IORandomAccessFile origin) {
+<span class="fc" id="L233">            super(origin);</span>
+<span class="fc" id="L234">        }</span>
+
+        @SuppressWarnings(&quot;resource&quot;)
+        @Override
+        public File getFile() {
+<span class="fc" id="L239">            return get().getFile();</span>
+        }
+
+        @Override
+        public Path getPath() {
+<span class="fc" id="L244">            return getFile().toPath();</span>
+        }
+    }
+
+    public static class OutputStreamOrigin extends AbstractOrigin&lt;OutputStream, OutputStreamOrigin&gt; {
+
+        public OutputStreamOrigin(final OutputStream origin) {
+<span class="fc" id="L251">            super(origin);</span>
+<span class="fc" id="L252">        }</span>
+
+        @Override
+        public OutputStream getOutputStream(final OpenOption... options) {
+<span class="fc" id="L256">            return get();</span>
+        }
+
+        @Override
+        public Writer getWriter(final Charset charset, final OpenOption... options) throws IOException {
+<span class="fc" id="L261">            return new OutputStreamWriter(origin, charset);</span>
+        }
+    }
+
+    public static class PathOrigin extends AbstractOrigin&lt;Path, PathOrigin&gt; {
+
+        public PathOrigin(final Path origin) {
+<span class="fc" id="L268">            super(origin);</span>
+<span class="fc" id="L269">        }</span>
+
+        @Override
+        public byte[] getByteArray(final long position, final int length) throws IOException {
+<span class="fc" id="L273">            return RandomAccessFileMode.READ_ONLY.apply(origin, raf -&gt; RandomAccessFiles.read(raf, position, length));</span>
+        }
+
+        @Override
+        public File getFile() {
+<span class="fc" id="L278">            return get().toFile();</span>
+        }
+
+        @Override
+        public Path getPath() {
+<span class="fc" id="L283">            return get();</span>
+        }
+    }
+
+    public static class RandomAccessFileOrigin extends AbstractRandomAccessFileOrigin&lt;RandomAccessFile, RandomAccessFileOrigin&gt; {
+
+        public RandomAccessFileOrigin(final RandomAccessFile origin) {
+<span class="fc" id="L290">            super(origin);</span>
+<span class="fc" id="L291">        }</span>
+    }
+
+    public static class ReaderOrigin extends AbstractOrigin&lt;Reader, ReaderOrigin&gt; {
+
+        public ReaderOrigin(final Reader origin) {
+<span class="fc" id="L297">            super(origin);</span>
+<span class="fc" id="L298">        }</span>
+
+        @Override
+        public byte[] getByteArray() throws IOException {
+<span class="fc" id="L302">            return IOUtils.toByteArray(origin, Charset.defaultCharset());</span>
+        }
+
+        @Override
+        public CharSequence getCharSequence(final Charset charset) throws IOException {
+<span class="fc" id="L307">            return IOUtils.toString(origin);</span>
+        }
+
+        @Override
+        public InputStream getInputStream(final OpenOption... options) throws IOException {
+<span class="nc" id="L312">            return ReaderInputStream.builder().setReader(origin).setCharset(Charset.defaultCharset()).get();</span>
+        }
+
+        @Override
+        public Reader getReader(final Charset charset) throws IOException {
+<span class="fc" id="L317">            return get();</span>
+        }
+    }
+
+    public static class URIOrigin extends AbstractOrigin&lt;URI, URIOrigin&gt; {
+
+        private static final String SCHEME_HTTPS = &quot;https&quot;;
+
+        private static final String SCHEME_HTTP = &quot;http&quot;;
+
+        public URIOrigin(final URI origin) {
+<span class="fc" id="L328">            super(origin);</span>
+<span class="fc" id="L329">        }</span>
+
+        @Override
+        public File getFile() {
+<span class="fc" id="L333">            return getPath().toFile();</span>
+        }
+
+        @Override
+        public InputStream getInputStream(final OpenOption... options) throws IOException {
+<span class="fc" id="L338">            final URI uri = get();</span>
+<span class="fc" id="L339">            final String scheme = uri.getScheme();</span>
+<span class="fc" id="L340">            final FileSystemProvider fileSystemProvider = FileSystemProviders.installed().getFileSystemProvider(scheme);</span>
+<span class="fc bfc" id="L341" title="All 2 branches covered.">            if (fileSystemProvider != null) {</span>
+<span class="fc" id="L342">                return Files.newInputStream(fileSystemProvider.getPath(uri), options);</span>
+            }
+<span class="pc bpc" id="L344" title="2 of 4 branches missed.">            if (SCHEME_HTTP.equalsIgnoreCase(scheme) || SCHEME_HTTPS.equalsIgnoreCase(scheme)) {</span>
+<span class="fc" id="L345">                return uri.toURL().openStream();</span>
+            }
+<span class="nc" id="L347">            return Files.newInputStream(getPath(), options);</span>
+        }
+
+        @Override
+        public Path getPath() {
+<span class="fc" id="L352">            return Paths.get(get());</span>
+        }
+    }
+
+    public static class WriterOrigin extends AbstractOrigin&lt;Writer, WriterOrigin&gt; {
+
+        public WriterOrigin(final Writer origin) {
+<span class="fc" id="L359">            super(origin);</span>
+<span class="fc" id="L360">        }</span>
+
+        @Override
+        public OutputStream getOutputStream(final OpenOption... options) throws IOException {
+<span class="fc" id="L364">            return WriterOutputStream.builder().setWriter(origin).setCharset(Charset.defaultCharset()).get();</span>
+        }
+
+        @Override
+        public Writer getWriter(final Charset charset, final OpenOption... options) throws IOException {
+<span class="fc" id="L369">            return get();</span>
+        }
+    }
+
+    final T origin;
+
+<span class="fc" id="L375">    protected AbstractOrigin(final T origin) {</span>
+<span class="fc" id="L376">        this.origin = Objects.requireNonNull(origin, &quot;origin&quot;);</span>
+<span class="fc" id="L377">    }</span>
+
+    @Override
+    public T get() {
+<span class="fc" id="L381">        return origin;</span>
+    }
+
+    public byte[] getByteArray() throws IOException {
+<span class="fc" id="L385">        return Files.readAllBytes(getPath());</span>
+    }
+
+    public byte[] getByteArray(final long position, final int length) throws IOException {
+<span class="fc" id="L389">        final byte[] bytes = getByteArray();</span>
+<span class="fc" id="L390">        final int start = Math.toIntExact(position);</span>
+<span class="pc bpc" id="L391" title="4 of 8 branches missed.">        if (start &lt; 0 || length &lt; 0 || start + length &lt; 0 || start + length &gt; bytes.length) {</span>
+<span class="nc" id="L392">            throw new IllegalArgumentException(&quot;Couldn't read array (start: &quot; + start + &quot;, length: &quot; + length + &quot;, data length: &quot; + bytes.length + &quot;).&quot;);</span>
+        }
+<span class="fc" id="L394">        return Arrays.copyOfRange(bytes, start, start + length);</span>
+    }
+
+    public CharSequence getCharSequence(final Charset charset) throws IOException {
+<span class="fc" id="L398">        return new String(getByteArray(), charset);</span>
+    }
+
+    public File getFile() {
+<span class="fc" id="L402">        throw new UnsupportedOperationException(String.format(&quot;%s#getFile() for %s origin %s&quot;, getSimpleClassName(), origin.getClass().getSimpleName(), origin));</span>
+    }
+
+    public InputStream getInputStream(final OpenOption... options) throws IOException {
+<span class="fc" id="L406">        return Files.newInputStream(getPath(), options);</span>
+    }
+
+    public OutputStream getOutputStream(final OpenOption... options) throws IOException {
+<span class="fc" id="L410">        return Files.newOutputStream(getPath(), options);</span>
+    }
+
+    public Path getPath() {
+<span class="fc" id="L414">        throw new UnsupportedOperationException(String.format(&quot;%s#getPath() for %s origin %s&quot;, getSimpleClassName(), origin.getClass().getSimpleName(), origin));</span>
+    }
+
+    public RandomAccessFile getRandomAccessFile(final OpenOption... openOption) throws FileNotFoundException {
+<span class="nc" id="L418">        return RandomAccessFileMode.valueOf(openOption).create(getFile());</span>
+    }
+
+    public Reader getReader(final Charset charset) throws IOException {
+<span class="fc" id="L422">        return Files.newBufferedReader(getPath(), charset);</span>
+    }
+
+    private String getSimpleClassName() {
+<span class="fc" id="L426">        return getClass().getSimpleName();</span>
+    }
+
+    public Writer getWriter(final Charset charset, final OpenOption... options) throws IOException {
+<span class="fc" id="L430">        return Files.newBufferedWriter(getPath(), charset, options);</span>
+    }
+
+    public long size() throws IOException {
+<span class="nc" id="L434">        return Files.size(getPath());</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L439">        return getSimpleClassName() + &quot;[&quot; + origin.toString() + &quot;]&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

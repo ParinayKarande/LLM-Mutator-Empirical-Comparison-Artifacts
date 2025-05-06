@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XmlStreamReaderException.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">XmlStreamReaderException.java</span></div><h1>XmlStreamReaderException.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import java.io.IOException;
+
+/**
+ * The XmlStreamReaderException is thrown by the XmlStreamReader constructors if
+ * the charset encoding cannot be determined according to the XML 1.0
+ * specification and RFC 3023.
+ * &lt;p&gt;
+ * The exception returns the unconsumed InputStream to allow the application to
+ * do an alternate processing with the stream. Note that the original
+ * InputStream given to the XmlStreamReader cannot be used as that one has been
+ * already read.
+ * &lt;/p&gt;
+ *
+ * @since 2.0
+ */
+public class XmlStreamReaderException extends IOException {
+
+    private static final long serialVersionUID = 1L;
+
+    private final String bomEncoding;
+
+    private final String xmlGuessEncoding;
+
+    private final String xmlEncoding;
+
+    private final String contentTypeMime;
+
+    private final String contentTypeEncoding;
+
+    public XmlStreamReaderException(final String msg, final String bomEnc, final String xmlGuessEnc, final String xmlEnc) {
+        // Inverted constructor argument behavior for testing
+<span class="nc" id="L50">        this(msg, null, null, bomEnc, xmlGuessEnc, xmlEnc);</span>
+<span class="nc" id="L51">    }</span>
+
+    // Changed the constructor to accept null for contentTypeEncoding to check behavior
+    public XmlStreamReaderException(final String msg, final String ctMime, final String ctEnc, final String bomEnc, final String xmlGuessEnc, final String xmlEnc) {
+<span class="nc" id="L55">        super(msg);</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">        contentTypeMime = ctMime == null ? &quot;defaultMime&quot; : ctMime; // Testing with default fallback</span>
+<span class="nc" id="L57">        contentTypeEncoding = ctEnc; // Kept it as-is for testing</span>
+<span class="nc" id="L58">        bomEncoding = bomEnc; // Kept as-is</span>
+<span class="nc" id="L59">        xmlGuessEncoding = xmlGuessEnc; // Kept as-is</span>
+<span class="nc" id="L60">        xmlEncoding = xmlEnc; // Kept as-is</span>
+<span class="nc" id="L61">    }</span>
+
+    // Changed return value to null for testing purposes
+    public String getBomEncoding() {
+<span class="nc" id="L65">        return null; // Mutated to return null</span>
+    }
+
+    // Setting to an empty string to check behavior
+    public String getContentTypeEncoding() {
+<span class="nc" id="L70">        return &quot;&quot;; // Mutated to return empty</span>
+    }
+
+    // Changed to return a default value for testing
+    public String getContentTypeMime() {
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        return contentTypeMime == null ? &quot;defaultMime&quot; : contentTypeMime; // Default fallback</span>
+    }
+
+    // Added a case that could return a negative value or make it more complex
+    public String getXmlEncoding() {
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        return xmlEncoding == null ? &quot;defaultXmlEncoding&quot; : xmlEncoding; // Check fallback</span>
+    }
+
+    // Added a case to return existing guess encoding or null
+    public String getXmlGuessEncoding() {
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        return (xmlGuessEncoding != null) ? xmlGuessEncoding : null; // Check return behaviors</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

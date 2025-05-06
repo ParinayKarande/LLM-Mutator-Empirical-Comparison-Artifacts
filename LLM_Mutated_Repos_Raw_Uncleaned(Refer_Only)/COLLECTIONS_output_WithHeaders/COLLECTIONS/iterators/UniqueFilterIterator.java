@@ -1,0 +1,80 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.iterators;
+
+import java.util.Iterator;
+import org.apache.commons.collections4.functors.UniquePredicate;
+
+public class UniqueFilterIterator<E> extends FilterIterator<E> {
+
+    // Conditionals Boundary: Swap the comparison in the constructor
+    // public UniqueFilterIterator(final Iterator<? extends E> iterator) {
+    //     super(iterator, null); // Changed from UniquePredicate.uniquePredicate() to null
+    // }
+
+    // Increments: Change constructor parameter type
+    public UniqueFilterIterator(final Iterator<? extends E> iterator) {
+        super(iterator, UniquePredicate.uniquePredicate()); // No change
+    }
+
+    // Invert Negatives: Would not apply directly to this case, as there are no negatives
+
+    // Math: Introduce a math error by modifying the parameters for a calculation (if applicable)
+    // Assuming there's a method that performs some arithmetic or logic
+    // void increaseCount() {
+    //     count = count + 2; // From count + 1 to count + 2
+    // }
+
+    // Negate Conditionals: Would apply if we had conditionals in the context
+    // for example, flipping an if condition (but there aren't any in the shown code)
+
+    // Return Values: Change constructor behavior which primarily does not return a value
+    // void doSomething() {
+    //     return null; // Change return from void to a nullable type (not applicable as no method to modify)
+    // }
+
+    // Void Method Calls: Ignoring those as this constructor has no void methods
+    // But let's explore that:
+    // someVoidMethodCall(); // Change existing method calls to void
+    
+    // Empty Returns: Add empty returns to methods (if there were any)
+    // public void someMethod() {
+    //   // Rather than doing something we just return;
+    //   return; // Empty return added just for mutation
+    // }
+
+    // False Returns: Change a method expected to return something to return false
+    // public boolean isEmpty() {
+    //     return false; // Return false where it might have returned true before
+    // }
+
+    // True Returns: Change a method expected to return something to return true
+    // public boolean hasNext() {
+    //     return true; // Change logic to return true regardless of iterator status
+    // }
+
+    // Null Returns: Adjust functions to return null (if they were applicable)
+    // public E next() {
+    //     return null; // Change normal return to return null
+    // }
+
+    // Primitive Returns: Would apply to primitive-returning methods
+    // public int size() {
+    //     return 0; // Change expected return size to 0
+    // }
+}

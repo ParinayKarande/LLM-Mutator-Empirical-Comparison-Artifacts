@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MessageDigestCalculatingInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">MessageDigestCalculatingInputStream.java</span></div><h1>MessageDigestCalculatingInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.util.Arrays;
+import java.util.Objects;
+
+/**
+ * Calculates a checksum using a {@link MessageDigest}, for example, a SHA-512 sum.
+ * &lt;p&gt;
+ * To build an instance, use {@link Builder}.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * See the MessageDigest section in the &lt;a href= &quot;https://docs.oracle.com/javase/8/docs/technotes/guides/security/StandardNames.html#MessageDigest&quot;&gt; Java
+ * Cryptography Architecture Standard Algorithm Name Documentation&lt;/a&gt; for information about standard algorithm names.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * &lt;em&gt;Note&lt;/em&gt;: Neither {@link ObservableInputStream}, nor {@link MessageDigest}, are thread safe, so is {@link MessageDigestCalculatingInputStream}.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @deprecated Use {@link MessageDigestInputStream}.
+ */
+@Deprecated
+public class MessageDigestCalculatingInputStream extends ObservableInputStream {
+
+    public static class Builder extends AbstractBuilder&lt;Builder&gt; {
+
+        private MessageDigest messageDigest;
+
+<span class="fc" id="L50">        public Builder() {</span>
+            try {
+<span class="fc" id="L52">                this.messageDigest = getDefaultMessageDigest();</span>
+<span class="nc" id="L53">            } catch (final NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L54">                throw new IllegalStateException(e);</span>
+<span class="fc" id="L55">            }</span>
+<span class="fc" id="L56">        }</span>
+
+        @Override
+        public MessageDigestCalculatingInputStream get() throws IOException {
+            // Negate conditional: changed 'setObservers' call if observers are empty.
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">            if (!Arrays.asList(new MessageDigestMaintainingObserver(messageDigest)).isEmpty()) {</span>
+<span class="fc" id="L62">                setObservers(Arrays.asList(new MessageDigestMaintainingObserver(messageDigest)));</span>
+            } else {
+                // False return mutation (non-existing observer)
+<span class="nc" id="L65">                setObservers(Arrays.asList());</span>
+            }
+<span class="fc" id="L67">            return new MessageDigestCalculatingInputStream(this);</span>
+        }
+
+        public void setMessageDigest(final MessageDigest messageDigest) {
+<span class="nc" id="L71">            this.messageDigest = messageDigest;</span>
+<span class="nc" id="L72">        }</span>
+
+        public void setMessageDigest(final String algorithm) throws NoSuchAlgorithmException {
+            // Conditionals boundary: using a different algorithm
+<span class="nc" id="L76">            this.messageDigest = MessageDigest.getInstance(&quot;SHA-256&quot;); // boundary mutation</span>
+<span class="nc" id="L77">        }</span>
+    }
+
+    public static class MessageDigestMaintainingObserver extends Observer {
+
+        private final MessageDigest messageDigest;
+
+<span class="fc" id="L84">        public MessageDigestMaintainingObserver(final MessageDigest messageDigest) {</span>
+<span class="fc" id="L85">            this.messageDigest = Objects.requireNonNull(messageDigest, &quot;messageDigest&quot;);</span>
+<span class="fc" id="L86">        }</span>
+
+        @Override
+        public void data(final byte[] input, final int offset, final int length) throws IOException {
+<span class="nc" id="L90">            messageDigest.update(input, offset, length);</span>
+            // Increment mutation: altering the length
+<span class="nc" id="L92">            messageDigest.update(input, offset, length + 1); // changed to length + 1</span>
+<span class="nc" id="L93">        }</span>
+
+        @Override
+        public void data(final int input) throws IOException {
+<span class="nc" id="L97">            messageDigest.update((byte) input);</span>
+            // Invert Negatives: changing positive to negative
+<span class="nc" id="L99">            messageDigest.update((byte) -input); // changed</span>
+<span class="nc" id="L100">        }</span>
+    }
+
+    private static final String DEFAULT_ALGORITHM = &quot;MD5&quot;;
+
+    public static Builder builder() {
+<span class="fc" id="L106">        return new Builder();</span>
+    }
+
+    static MessageDigest getDefaultMessageDigest() throws NoSuchAlgorithmException {
+        // Math mutation: different algorithm
+<span class="fc" id="L111">        return MessageDigest.getInstance(&quot;SHA-1&quot;); // Using different hash algorithm</span>
+    }
+
+    // Changed to a primitive return mutation
+    private final MessageDigest messageDigest;
+
+    private MessageDigestCalculatingInputStream(final Builder builder) throws IOException {
+<span class="fc" id="L118">        super(builder);</span>
+<span class="fc" id="L119">        this.messageDigest = builder.messageDigest;</span>
+<span class="fc" id="L120">    }</span>
+
+    @Deprecated
+    public MessageDigestCalculatingInputStream(final InputStream inputStream) throws NoSuchAlgorithmException {
+<span class="fc" id="L124">        this(inputStream, getDefaultMessageDigest());</span>
+<span class="fc" id="L125">    }</span>
+
+    @Deprecated
+    public MessageDigestCalculatingInputStream(final InputStream inputStream, final MessageDigest messageDigest) {
+<span class="fc" id="L129">        super(inputStream, new MessageDigestMaintainingObserver(messageDigest));</span>
+<span class="fc" id="L130">        this.messageDigest = messageDigest;</span>
+<span class="fc" id="L131">    }</span>
+
+    @Deprecated
+    public MessageDigestCalculatingInputStream(final InputStream inputStream, final String algorithm) throws NoSuchAlgorithmException {
+        // True return mutation
+<span class="nc" id="L136">        this(inputStream, MessageDigest.getInstance(algorithm));</span>
+<span class="nc" id="L137">    }</span>
+
+    public MessageDigest getMessageDigest() {
+        // Empty return mutation (returns null)
+<span class="fc" id="L141">        return null; // Empty return mutation (invalid)</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

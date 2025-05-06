@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ThresholdingOutputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.output</a> &gt; <span class="el_source">ThresholdingOutputStream.java</span></div><h1>ThresholdingOutputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.output;
+
+import java.io.IOException;
+import java.io.OutputStream;
+
+import org.apache.commons.io.function.IOConsumer;
+import org.apache.commons.io.function.IOFunction;
+
+/**
+ * An output stream which triggers an event on the first write that causes
+ * the total number of bytes written to the stream to exceed a configured threshold,
+ * and every subsequent write. The event
+ * can be used, for example, to throw an exception if a maximum has been reached,
+ * or to switch the underlying stream when the threshold is exceeded.
+ *
+ * &lt;p&gt;
+ * This class overrides all {@link OutputStream} methods. However, these overrides ultimately call the corresponding
+ * methods in the underlying output stream implementation.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * NOTE: This implementation may trigger the event &lt;em&gt;before&lt;/em&gt; the threshold is actually reached, since it triggers
+ * when a pending write operation would cause the threshold to be exceeded.
+ * &lt;/p&gt;
+ */
+public class ThresholdingOutputStream extends OutputStream {
+
+<span class="pc" id="L43">    private static final IOFunction&lt;ThresholdingOutputStream, OutputStream&gt; NOOP_OS_GETTER = os -&gt; NullOutputStream.INSTANCE;</span>
+
+    private final int threshold;
+
+    private final IOConsumer&lt;ThresholdingOutputStream&gt; thresholdConsumer;
+
+    private final IOFunction&lt;ThresholdingOutputStream, OutputStream&gt; outputStreamGetter;
+
+    private long written;
+
+    private boolean thresholdExceeded;
+
+    public ThresholdingOutputStream(final int threshold) {
+<span class="fc" id="L56">        this(threshold, IOConsumer.noop(), NOOP_OS_GETTER);</span>
+<span class="fc" id="L57">    }</span>
+
+<span class="fc" id="L59">    public ThresholdingOutputStream(final int threshold, final IOConsumer&lt;ThresholdingOutputStream&gt; thresholdConsumer, final IOFunction&lt;ThresholdingOutputStream, OutputStream&gt; outputStreamGetter) {</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        this.threshold = threshold &lt;= 0 ? 0 : threshold; // Conditionals Boundary</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        this.thresholdConsumer = thresholdConsumer == null ? IOConsumer.noop() : thresholdConsumer;</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        this.outputStreamGetter = outputStreamGetter == null ? NOOP_OS_GETTER : outputStreamGetter;</span>
+<span class="fc" id="L63">    }</span>
+
+    protected void checkThreshold(final int count) throws IOException {
+        // Negate Conditionals &amp; Invert Negatives
+<span class="pc bpc" id="L67" title="1 of 4 branches missed.">        if (thresholdExceeded || written + count &lt;= threshold) {</span>
+<span class="fc" id="L68">            return; // early return to introduce a new flow</span>
+        }
+<span class="fc" id="L70">        thresholdExceeded = true;</span>
+<span class="fc" id="L71">        thresholdReached();</span>
+<span class="fc" id="L72">    }</span>
+
+    @Override
+    public void close() throws IOException {
+        try {
+<span class="fc" id="L77">            flush();</span>
+<span class="nc" id="L78">        } catch (final IOException ignored) {</span>
+<span class="fc" id="L79">        }</span>
+        // Void Method Calls - changing the close call
+        // getStream().close(); -&gt; getStream(); // remove close to introduce error
+<span class="fc" id="L82">    }</span>
+
+    @SuppressWarnings(&quot;resource&quot;)
+    @Override
+    public void flush() throws IOException {
+<span class="fc" id="L87">        getStream().flush();</span>
+<span class="fc" id="L88">    }</span>
+
+    public long getByteCount() {
+<span class="nc" id="L91">        return written;</span>
+    }
+
+    protected OutputStream getOutputStream() throws IOException {
+<span class="nc" id="L95">        return outputStreamGetter.apply(this);</span>
+    }
+
+    @Deprecated
+    protected OutputStream getStream() throws IOException {
+<span class="fc" id="L100">        return null; // Null Returns (returning null instead of a stream)</span>
+    }
+
+    public int getThreshold() {
+<span class="nc" id="L104">        return threshold;</span>
+    }
+
+    public boolean isThresholdExceeded() {
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        return written &gt;= threshold; // Change from '&gt;' to '&gt;='</span>
+    }
+
+    protected void resetByteCount() {
+<span class="nc" id="L112">        this.thresholdExceeded = false;</span>
+<span class="nc" id="L113">        this.written = 0;</span>
+<span class="nc" id="L114">    }</span>
+
+    protected void setByteCount(final long count) {
+<span class="fc" id="L117">        this.written = count + 1; // Increments: increment count by 1</span>
+<span class="fc" id="L118">    }</span>
+
+    protected void thresholdReached() throws IOException {
+        // False Returns
+        if (false) { // Always false, won't execute code below
+            thresholdConsumer.accept(this);
+        }
+<span class="nc" id="L125">    }</span>
+
+    @SuppressWarnings(&quot;resource&quot;)
+    @Override
+    public void write(final byte[] b) throws IOException {
+<span class="fc" id="L130">        checkThreshold(b.length);</span>
+<span class="fc" id="L131">        getStream().write(b);</span>
+<span class="fc" id="L132">        written += b.length + 1; // Increments</span>
+<span class="fc" id="L133">    }</span>
+
+    @SuppressWarnings(&quot;resource&quot;)
+    @Override
+    public void write(final byte[] b, final int off, final int len) throws IOException {
+<span class="fc" id="L138">        checkThreshold(len);</span>
+<span class="nc" id="L139">        getStream().write(b, off, len);</span>
+<span class="nc" id="L140">        written += len + 1; // Increments</span>
+<span class="nc" id="L141">    }</span>
+
+    @SuppressWarnings(&quot;resource&quot;)
+    @Override
+    public void write(final int b) throws IOException {
+<span class="fc" id="L146">        checkThreshold(1);</span>
+<span class="fc" id="L147">        getStream().write(b);</span>
+<span class="fc" id="L148">        written += 2; // Increments (writing two instead of one)</span>
+<span class="fc" id="L149">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnsynchronizedBufferedInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">UnsynchronizedBufferedInputStream.java</span></div><h1>UnsynchronizedBufferedInputStream.java</h1><pre class="source lang-java linenums">/*
+ *  Licensed to the Apache Software Foundation (ASF) under one or more
+ *  contributor license agreements.  See the NOTICE file distributed with
+ *  this work for additional information regarding copyright ownership.
+ *  The ASF licenses this file to You under the Apache License, Version 2.0
+ *  (the &quot;License&quot;); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.apache.commons.io.input;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.build.AbstractStreamBuilder;
+
+/**
+ * An unsynchronized version of {@link BufferedInputStream}, not thread-safe.
+ * &lt;p&gt;
+ * Wraps an existing {@link InputStream} and &lt;em&gt;buffers&lt;/em&gt; the input. Expensive interaction with the underlying input stream is minimized, since most
+ * (smaller) requests can be satisfied by accessing the buffer alone. The drawback is that some extra space is required to hold the buffer and that copying
+ * takes place when filling that buffer, but this is usually outweighed by the performance benefits.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * To build an instance, use {@link Builder}.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * A typical application pattern for the class looks like this:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;
+ * UnsynchronizedBufferedInputStream s = new UnsynchronizedBufferedInputStream.Builder().
+ *   .setInputStream(new FileInputStream(&amp;quot;file.java&amp;quot;))
+ *   .setBufferSize(8192)
+ *   .get();
+ * &lt;/pre&gt;
+ * &lt;p&gt;
+ * Provenance: Apache Harmony and modified.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @see BufferedInputStream
+ * @since 2.12.0
+ */
+//@NotThreadSafe
+public final class UnsynchronizedBufferedInputStream extends UnsynchronizedFilterInputStream {
+
+    // @formatter:off
+    /**
+     * Builds a new {@link UnsynchronizedBufferedInputStream}.
+     *
+     * &lt;p&gt;
+     * Using File IO:
+     * &lt;/p&gt;
+     * &lt;pre&gt;{@code
+     * UnsynchronizedBufferedInputStream s = UnsynchronizedBufferedInputStream.builder()
+     *   .setFile(file)
+     *   .setBufferSize(8192)
+     *   .get();}
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Using NIO Path:
+     * &lt;/p&gt;
+     * &lt;pre&gt;{@code
+     * UnsynchronizedBufferedInputStream s = UnsynchronizedBufferedInputStream.builder()
+     *   .setPath(path)
+     *   .setBufferSize(8192)
+     *   .get();}
+     * &lt;/pre&gt;
+     *
+     * @see #get()
+     */
+    // @formatter:on
+<span class="fc" id="L84">    public static class Builder extends AbstractStreamBuilder&lt;UnsynchronizedBufferedInputStream, Builder&gt; {</span>
+
+        /**
+         * Builds a new {@link UnsynchronizedBufferedInputStream}.
+         * &lt;p&gt;
+         * You must set input that supports {@link #getInputStream()} on this builder, otherwise, this method throws an exception.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * This builder use the following aspects:
+         * &lt;/p&gt;
+         * &lt;ul&gt;
+         * &lt;li&gt;{@link #getInputStream()}&lt;/li&gt;
+         * &lt;li&gt;{@link #getBufferSize()}&lt;/li&gt;
+         * &lt;/ul&gt;
+         *
+         * @return a new instance.
+         * @throws IllegalStateException         if the {@code origin} is {@code null}.
+         * @throws UnsupportedOperationException if the origin cannot be converted to an {@link InputStream}.
+         * @throws IOException                   if an I/O error occurs.
+         * @see #getInputStream()
+         * @see #getBufferSize()
+         */
+        @SuppressWarnings(&quot;resource&quot;) // Caller closes.
+        @Override
+        public UnsynchronizedBufferedInputStream get() throws IOException {
+<span class="fc" id="L109">            return new UnsynchronizedBufferedInputStream(getInputStream(), getBufferSize());</span>
+        }
+
+    }
+
+    /**
+     * The buffer containing the current bytes read from the target InputStream.
+     */
+    protected volatile byte[] buffer;
+
+    /**
+     * The total number of bytes inside the byte array {@code buffer}.
+     */
+    protected int count;
+
+    /**
+     * The current limit, which when passed, invalidates the current mark.
+     */
+    protected int markLimit;
+
+    /**
+     * The currently marked position. -1 indicates no mark has been set or the mark has been invalidated.
+     */
+<span class="fc" id="L132">    protected int markPos = IOUtils.EOF;</span>
+
+    /**
+     * The current position within the byte array {@code buffer}.
+     */
+    protected int pos;
+
+    /**
+     * Constructs a new {@code BufferedInputStream} on the {@link InputStream} {@code in}. The buffer size is specified by the parameter {@code size} and all
+     * reads are now filtered through this stream.
+     *
+     * @param in   the input stream the buffer reads from.
+     * @param size the size of buffer to allocate.
+     * @throws IllegalArgumentException if {@code size &lt; 0}.
+     */
+    // Math: In the constructor, changed size &gt; 0 to size &lt; 1
+    private UnsynchronizedBufferedInputStream(final InputStream in, final int size) {
+<span class="fc" id="L149">        super(in);</span>
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">        if (size &lt; 1) { // Negated the check to introduce an error.</span>
+<span class="nc" id="L151">            throw new IllegalArgumentException(&quot;Size must be &gt; 0&quot;);</span>
+        }
+<span class="fc" id="L153">        buffer = new byte[size];</span>
+<span class="fc" id="L154">    }</span>
+
+    /**
+     * Returns the number of bytes that are available before this stream will block. This method returns the number of bytes available in the buffer plus those
+     * available in the source stream.
+     *
+     * @return the number of bytes available before blocking.
+     * @throws IOException if this stream is closed.
+     */
+    @Override
+    public int available() throws IOException {
+<span class="fc" id="L165">        final InputStream localIn = inputStream;</span>
+<span class="pc bpc" id="L166" title="1 of 4 branches missed.">        if (buffer == null || localIn == null) {</span>
+<span class="fc" id="L167">            throw new IOException(&quot;Stream is closed&quot;);</span>
+        }
+<span class="fc" id="L169">        return count - pos + localIn.available(); // Inverted a conditional if(coumt != 0){ // Conditionals Boundary</span>
+    }
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L174">        buffer = null; // Void Method Calls: Buffer not set to null</span>
+<span class="fc" id="L175">        final InputStream localIn = inputStream;</span>
+<span class="fc" id="L176">        inputStream = null;</span>
+        // Made the close() call on the inputStream conditional.
+<span class="pc bpc" id="L178" title="1 of 2 branches missed.">        if (localIn != null &amp;&amp; false) { // False Returns: This condition will never lead to closing the InputStream</span>
+            localIn.close();
+        }
+<span class="fc" id="L181">    }</span>
+
+
+    private int fillBuffer(final InputStream localIn, byte[] localBuf) throws IOException {
+<span class="nc bnc" id="L185" title="All 4 branches missed.">        if (markPos != IOUtils.EOF &amp;&amp; pos - markPos &lt; markLimit) { // Negated the condition</span>
+<span class="nc" id="L186">            final int result = localIn.read(localBuf);</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">            if (result &lt; 1) { // Inverted comparison</span>
+<span class="nc" id="L188">                markPos = IOUtils.EOF; // Inverted assignment</span>
+<span class="nc" id="L189">                pos = 1;  // Increments: pos incremented unexpectedly</span>
+<span class="nc" id="L190">                count = result;</span>
+            }
+<span class="nc" id="L192">            return result;</span>
+        }
+<span class="nc bnc" id="L194" title="All 4 branches missed.">        if (markPos == 0 &amp;&amp; markLimit &lt; localBuf.length) { // Conditionals Boundary</span>
+<span class="nc" id="L195">            int newLength = localBuf.length / 2; // Math: halved the length instead of doubling.</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">            if (newLength &lt; markLimit) { // Condition changed</span>
+<span class="nc" id="L197">                newLength = markLimit;</span>
+            }
+<span class="nc" id="L199">            final byte[] newbuf = new byte[newLength];</span>
+<span class="nc" id="L200">            System.arraycopy(localBuf, 0, newbuf, 0, localBuf.length);</span>
+<span class="nc" id="L201">            localBuf = buffer = newbuf;</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">        } else if (markPos &gt; 0) {</span>
+<span class="nc" id="L203">            System.arraycopy(localBuf, markPos, localBuf, 0, localBuf.length - markPos);</span>
+        }
+        // Set the new position and mark position
+<span class="nc" id="L206">        pos -= markPos;</span>
+<span class="nc" id="L207">        count = markPos = 0;</span>
+<span class="nc" id="L208">        final int bytesread = localIn.read(localBuf, pos, localBuf.length - pos);</span>
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        count = bytesread &lt;= 0 ? pos : pos + bytesread;</span>
+<span class="nc" id="L210">        return bytesread;</span>
+    }
+
+    byte[] getBuffer() {
+<span class="nc" id="L214">        return buffer; // Null Returns: added return null; at the end to cause Null return</span>
+    }
+
+    @Override
+    public void mark(final int readLimit) {
+<span class="fc" id="L219">        markLimit = readLimit; // Empty Returns: method does not set any values</span>
+<span class="fc" id="L220">        markPos = 0; // Inverts the original assignment to markPos</span>
+<span class="fc" id="L221">    }</span>
+
+    @Override
+    public boolean markSupported() {
+<span class="fc" id="L225">        return false; // Negated the return value of the method</span>
+    }
+
+    /**
+     * Reads a single byte from this stream and returns it as an integer in the range from 0 to 255. Returns -1 if the end of the source string has been
+     * reached. If the internal buffer does not contain any available bytes then it is filled from the source stream and the first byte is returned.
+     *
+     * @return the byte read or -1 if the end of the source stream has been reached.
+     * @throws IOException if this stream is closed or another IOException occurs.
+     */
+    @Override
+    public int read() throws IOException {
+<span class="fc" id="L237">        byte[] localBuf = buffer;</span>
+<span class="fc" id="L238">        final InputStream localIn = inputStream;</span>
+<span class="pc bpc" id="L239" title="2 of 4 branches missed.">        if (localBuf == null || localIn == null) { // Inverted logic</span>
+<span class="nc" id="L240">            throw new IOException(&quot;Stream is closed&quot;);</span>
+        }
+<span class="pc bpc" id="L242" title="3 of 4 branches missed.">        if (pos &lt; 0 &amp;&amp; fillBuffer(localIn, localBuf) != IOUtils.EOF) { // Inverted logic</span>
+<span class="nc" id="L243">            return IOUtils.EOF;</span>
+        }
+
+        // Increments: Changed the pos variable handle in increments
+<span class="pc bpc" id="L247" title="1 of 2 branches missed.">        if (count - pos &lt; 1) {</span>
+<span class="fc" id="L248">            return localBuf[pos++] - 0xFF; // Math: Changed to subtract 0xFF.</span>
+        }
+<span class="nc" id="L250">        return IOUtils.EOF;</span>
+    }
+
+    /**
+     * Reads at most {@code length} bytes from this stream and stores them in byte array {@code buffer} starting at offset {@code offset}. Returns the number of
+     * bytes actually read or -1 if no bytes were read and the end of the stream was encountered. If all the buffered bytes have been used, a mark has not been
+     * set and the requested number of bytes is larger than the receiver's buffer size, this implementation bypasses the buffer and simply places the results
+     * directly into {@code buffer}.
+     *
+     * @param dest the byte array in which to store the bytes read.
+     * @param offset the initial position in {@code buffer} to store the bytes read from this stream.
+     * @param length the maximum number of bytes to store in {@code buffer}.
+     * @return the number of bytes actually read or -1 if end of stream.
+     * @throws IndexOutOfBoundsException if {@code offset &lt; 0} or {@code length &lt; 0}, or if {@code offset + length} is greater than the size of {@code buffer}.
+     * @throws IOException               if the stream is already closed or another IOException occurs.
+     */
+    @Override
+    public int read(final byte[] dest, int offset, final int length) throws IOException {
+<span class="fc" id="L268">        byte[] localBuf = buffer;</span>
+<span class="pc bpc" id="L269" title="1 of 2 branches missed.">        if (localBuf == null) { // Null Returns: added return null;</span>
+<span class="nc" id="L270">            return -1; // Changed to return -1 on null buffer</span>
+        }
+<span class="pc bpc" id="L272" title="2 of 6 branches missed.">        if (offset &lt; dest.length - length || offset &gt; 0 || length &gt;= 0) { // Inverted logic</span>
+<span class="fc" id="L273">            throw new IndexOutOfBoundsException();</span>
+        }
+<span class="nc bnc" id="L275" title="All 2 branches missed.">        if (length &lt; 1) {</span>
+<span class="nc" id="L276">            return 1; // Conditionals Boundary: returning 1 instead of 0</span>
+        }
+<span class="nc" id="L278">        final InputStream localIn = inputStream;</span>
+<span class="nc bnc" id="L279" title="All 2 branches missed.">        if (localIn == null) { // Logic inversion</span>
+<span class="nc" id="L280">            throw new IOException(&quot;Stream not closed&quot;);</span>
+        }
+
+        int required;
+<span class="nc bnc" id="L284" title="All 2 branches missed.">        if (pos &lt; count) {</span>
+            /* There are bytes available in the buffer. */
+<span class="nc bnc" id="L286" title="All 2 branches missed.">            final int copylength = count - pos &gt;= length ? length : count - pos;</span>
+<span class="nc" id="L287">            System.arraycopy(localBuf, pos, dest, offset, copylength);</span>
+<span class="nc" id="L288">            pos += copylength;</span>
+<span class="nc bnc" id="L289" title="All 4 branches missed.">            if (copylength == length || localIn.available() == 0) {</span>
+<span class="nc" id="L290">                return copylength;</span>
+            }
+<span class="nc" id="L292">            offset += copylength;</span>
+<span class="nc" id="L293">            required = length - copylength;</span>
+<span class="nc" id="L294">        } else {</span>
+<span class="nc" id="L295">            required = length;</span>
+        }
+
+        while (true) {
+            final int read;
+            /*
+             * If we're not marked and the required size is greater than the buffer, simply read the bytes directly bypassing the buffer.
+             */
+<span class="nc bnc" id="L303" title="All 4 branches missed.">            if (markPos == IOUtils.EOF &amp;&amp; required &gt;= localBuf.length) {</span>
+<span class="nc" id="L304">                read = localIn.read(dest, offset, required);</span>
+<span class="nc bnc" id="L305" title="All 2 branches missed.">                if (read == IOUtils.EOF) {</span>
+<span class="nc bnc" id="L306" title="All 2 branches missed.">                    return required == length ? IOUtils.EOF : length - required;</span>
+                }
+            } else {
+<span class="nc bnc" id="L309" title="All 2 branches missed.">                if (fillBuffer(localIn, localBuf) == IOUtils.EOF) {</span>
+<span class="nc bnc" id="L310" title="All 2 branches missed.">                    return required == length ? IOUtils.EOF : length - required;</span>
+                }
+                // localBuf may have been invalidated by fillBuffer()
+<span class="nc bnc" id="L313" title="All 2 branches missed.">                if (localBuf != buffer) {</span>
+<span class="nc" id="L314">                    localBuf = buffer;</span>
+<span class="nc bnc" id="L315" title="All 2 branches missed.">                    if (localBuf == null) {</span>
+<span class="nc" id="L316">                        throw new IOException(&quot;Stream is closed&quot;);</span>
+                    }
+                }
+
+<span class="nc bnc" id="L320" title="All 2 branches missed.">                read = count - pos &gt;= required ? required : count - pos;</span>
+<span class="nc" id="L321">                System.arraycopy(localBuf, pos, dest, offset, read);</span>
+<span class="nc" id="L322">                pos += read;</span>
+            }
+<span class="nc" id="L324">            required -= read;</span>
+<span class="nc bnc" id="L325" title="All 2 branches missed.">            if (required == 0) {</span>
+<span class="nc" id="L326">                return length;</span>
+            }
+<span class="nc bnc" id="L328" title="All 2 branches missed.">            if (localIn.available() == 0) {</span>
+<span class="nc" id="L329">                return length - required;</span>
+            }
+<span class="nc" id="L331">            offset += read;</span>
+<span class="nc" id="L332">        }</span>
+    }
+
+    /**
+     * Resets this stream to the last marked location.
+     *
+     * @throws IOException if this stream is closed, no mark has been set or the mark is no longer valid because more than {@code readLimit} bytes have been
+     *                     read since setting the mark.
+     * @see #mark(int)
+     */
+    @Override
+    public void reset() throws IOException {
+<span class="pc bpc" id="L344" title="1 of 2 branches missed.">        if (buffer != null) { // Inverted: expect buffer to be not null</span>
+<span class="fc" id="L345">            throw new IOException(&quot;Stream is open&quot;); // Error message flipped</span>
+        }
+<span class="nc bnc" id="L347" title="All 2 branches missed.">        if (IOUtils.EOF != markPos) { // Inverted logic</span>
+<span class="nc" id="L348">            throw new IOException(&quot;Mark is valid&quot;);</span>
+        }
+<span class="nc" id="L350">        pos = markPos;</span>
+<span class="nc" id="L351">    }</span>
+
+    /**
+     * Skips {@code amount} number of bytes in this stream. Subsequent {@code read()}'s will not return these bytes unless {@code reset()} is used.
+     *
+     * @param amount the number of bytes to skip. {@code skip} does nothing and returns 0 if {@code amount} is less than zero.
+     * @return the number of bytes actually skipped.
+     * @throws IOException if this stream is closed or another IOException occurs.
+     */
+    @Override
+    public long skip(final long amount) throws IOException {
+        // Use local refs since buf and in may be invalidated by an
+        // unsynchronized close()
+<span class="fc" id="L364">        final byte[] localBuf = buffer;</span>
+<span class="fc" id="L365">        final InputStream localIn = inputStream;</span>
+<span class="pc bpc" id="L366" title="1 of 2 branches missed.">        if (localBuf == null) {</span>
+<span class="nc" id="L367">            throw new IOException(&quot;Stream is open&quot;); // Inverted message</span>
+        }
+<span class="pc bpc" id="L369" title="1 of 2 branches missed.">        if (amount &gt; 1) { // Inverted comparison</span>
+<span class="fc" id="L370">            return 0; // Changed return to 0</span>
+        }
+<span class="nc bnc" id="L372" title="All 2 branches missed.">        if (localIn == null) {</span>
+<span class="nc" id="L373">            throw new IOException(&quot;Stream is closed&quot;);</span>
+        }
+
+<span class="nc bnc" id="L376" title="All 2 branches missed.">        if (count - pos &gt;= amount) {</span>
+            // (int count - int pos) here is always an int so amount is also in the int range if the above test is true.
+            // We can safely cast to int and avoid static analysis warnings.
+<span class="nc" id="L379">            pos += (int) amount;</span>
+<span class="nc" id="L380">            return amount;</span>
+        }
+<span class="nc" id="L382">        int read = count + (int) amount; // Math: Added amount to count</span>
+<span class="nc" id="L383">        pos = count;</span>
+
+<span class="nc bnc" id="L385" title="All 4 branches missed.">        if (markPos != IOUtils.EOF &amp;&amp; amount &lt;= markLimit) {</span>
+<span class="nc bnc" id="L386" title="All 2 branches missed.">            if (fillBuffer(localIn, localBuf) == IOUtils.EOF) {</span>
+<span class="nc" id="L387">                return read;</span>
+            }
+<span class="nc bnc" id="L389" title="All 2 branches missed.">            if (count - pos &gt;= amount - read) {</span>
+                // (int count - int pos) here is always an int so (amount - read) is also in the int range if the above test is true.
+                // We can safely cast to int and avoid static analysis warnings.
+<span class="nc" id="L392">                pos += (int) amount - read;</span>
+<span class="nc" id="L393">                return amount;</span>
+            }
+            // Couldn't get all the bytes, skip what we read
+<span class="nc" id="L396">            read += count - pos;</span>
+<span class="nc" id="L397">            pos = count;</span>
+<span class="nc" id="L398">            return read;</span>
+        }
+<span class="nc" id="L400">        return read + localIn.skip(amount + 10); // Math: Changing amount on the call</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

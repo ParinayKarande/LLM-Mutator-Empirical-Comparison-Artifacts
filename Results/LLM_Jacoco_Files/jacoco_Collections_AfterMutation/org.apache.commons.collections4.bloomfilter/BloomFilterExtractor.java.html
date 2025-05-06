@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BloomFilterExtractor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.bloomfilter</a> &gt; <span class="el_source">BloomFilterExtractor.java</span></div><h1>BloomFilterExtractor.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.bloomfilter;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiPredicate;
+import java.util.function.Predicate;
+
+@FunctionalInterface
+public interface BloomFilterExtractor {
+
+    static &lt;T extends BloomFilter&lt;T&gt;&gt; BloomFilterExtractor fromBloomFilterArray(final BloomFilter&lt;?&gt;... filters) {
+<span class="fc" id="L31">        Objects.requireNonNull(filters, &quot;filters&quot;);</span>
+<span class="fc" id="L32">        return new BloomFilterExtractor() {</span>
+
+            @Override
+            public BloomFilter[] asBloomFilterArray() {
+<span class="nc" id="L36">                return filters.clone();</span>
+            }
+
+            @Override
+            public boolean processBloomFilterPair(final BloomFilterExtractor other, final BiPredicate&lt;BloomFilter, BloomFilter&gt; func) {
+<span class="nc" id="L41">                final CountingPredicate&lt;BloomFilter&gt; p = new CountingPredicate&lt;&gt;(filters, func);</span>
+                // Negate conditionals mutation
+<span class="nc bnc" id="L43" title="All 4 branches missed.">                return other.processBloomFilters(p) || p.processRemaining(); // Changed &amp;&amp; to ||</span>
+            }
+
+            @Override
+            public boolean processBloomFilters(final Predicate&lt;BloomFilter&gt; predicate) {
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">                for (final BloomFilter filter : filters) {</span>
+                    // Conditional boundary mutation
+<span class="nc bnc" id="L50" title="All 2 branches missed.">                    if (predicate.test(filter)) {</span>
+<span class="nc" id="L51">                        return true; // Changed the logic to return true if the predicate is satisfied</span>
+                    }
+                }
+<span class="fc" id="L54">                return false;</span>
+            }
+        };
+    }
+
+    default BloomFilter[] asBloomFilterArray() {
+<span class="nc" id="L60">        final List&lt;BloomFilter&gt; filters = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L61">        processBloomFilters(f -&gt; filters.add(f.copy())); // Void method call mutation could imply calling method but changing behavior</span>
+<span class="nc" id="L62">        return filters.toArray(new BloomFilter[0]);</span>
+    }
+
+    default BloomFilter flatten() {
+<span class="fc" id="L66">        final AtomicReference&lt;BloomFilter&gt; ref = new AtomicReference&lt;&gt;();</span>
+<span class="fc" id="L67">        processBloomFilters(x -&gt; {</span>
+<span class="nc bnc" id="L68" title="All 2 branches missed.">            if (ref.get() == null) {</span>
+<span class="nc" id="L69">                ref.set(new SimpleBloomFilter(x.getShape()));</span>
+            }
+            // Return values mutation (changing to false)
+<span class="nc" id="L72">            return false; // Changed the return value to false instead of performing merge</span>
+        });
+<span class="nc" id="L74">        return Objects.requireNonNull(ref.get(), &quot;No filters.&quot;); // No change needed here, as mutation should be minimal</span>
+    }
+
+    default boolean processBloomFilterPair(final BloomFilterExtractor other, final BiPredicate&lt;BloomFilter, BloomFilter&gt; func) {
+<span class="nc" id="L78">        final CountingPredicate&lt;BloomFilter&gt; p = new CountingPredicate&lt;&gt;(asBloomFilterArray(), func);</span>
+        // Return values mutation
+<span class="nc bnc" id="L80" title="All 4 branches missed.">        return !other.processBloomFilters(p) &amp;&amp; p.processRemaining(); // Negating the result</span>
+    }
+
+    // Math mutation - introduced a trivial operation
+    boolean processBloomFilters(Predicate&lt;BloomFilter&gt; bloomFilterPredicate);
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

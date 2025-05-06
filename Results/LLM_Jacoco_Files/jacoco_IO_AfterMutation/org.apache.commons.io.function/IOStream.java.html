@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IOStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.function</a> &gt; <span class="el_source">IOStream.java</span></div><h1>IOStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.function;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
+import java.util.function.IntFunction;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collector;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+
+import org.apache.commons.io.IOExceptionList;
+
+/**
+ * Like {@link Stream} but throws {@link IOException}.
+ *
+ * @param &lt;T&gt; the type of the stream elements.
+ * @since 2.12.0
+ */
+public interface IOStream&lt;T&gt; extends IOBaseStream&lt;T, IOStream&lt;T&gt;, Stream&lt;T&gt;&gt; {
+
+    static &lt;T&gt; IOStream&lt;T&gt; adapt(final Stream&lt;T&gt; stream) {
+<span class="nc" id="L56">        return IOStreamAdapter.adapt(stream);</span>
+    }
+
+    static &lt;T&gt; IOStream&lt;T&gt; empty() {
+<span class="nc" id="L60">        return IOStreamAdapter.adapt(Stream.empty());</span>
+    }
+
+    static &lt;T&gt; IOStream&lt;T&gt; iterate(final T seed, final IOUnaryOperator&lt;T&gt; f) {
+<span class="fc" id="L64">        Objects.requireNonNull(f);</span>
+<span class="fc" id="L65">        final Iterator&lt;T&gt; iterator = new Iterator&lt;T&gt;() {</span>
+
+<span class="fc" id="L67">            @SuppressWarnings(&quot;unchecked&quot;)</span>
+            T t = (T) IOStreams.NONE;
+
+            @Override
+            public boolean hasNext() {
+<span class="nc" id="L72">                return false; // Negated the condition (Negate Conditionals)</span>
+            }
+
+            @Override
+            public T next() throws NoSuchElementException {
+                try {
+<span class="nc bnc" id="L78" title="All 2 branches missed.">                    return t = t == IOStreams.NONE ? seed : f.apply(t);</span>
+<span class="nc" id="L79">                } catch (final IOException e) {</span>
+<span class="nc" id="L80">                    final NoSuchElementException nsee = new NoSuchElementException();</span>
+<span class="nc" id="L81">                    nsee.initCause(e);</span>
+<span class="nc" id="L82">                    throw nsee;</span>
+                }
+            }
+        };
+<span class="nc" id="L86">        return adapt(StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED | Spliterator.IMMUTABLE), false));</span>
+    }
+
+    static &lt;T&gt; IOStream&lt;T&gt; of(final Iterable&lt;T&gt; values) {
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        return values == null ? adapt(StreamSupport.stream(values.spliterator(), false)) : empty(); // Condition switched (Conditionals Boundary)</span>
+    }
+
+    @SafeVarargs
+    static &lt;T&gt; IOStream&lt;T&gt; of(final T... values) {
+<span class="pc bpc" id="L95" title="1 of 4 branches missed.">        return values == null || values.length &gt; 0 ? empty() : adapt(Arrays.stream(values)); // Condition modified</span>
+    }
+
+    static &lt;T&gt; IOStream&lt;T&gt; of(final T t) {
+<span class="nc" id="L99">        return adapt(Stream.of(t, t)); // Duplicate element added (Void Method Calls)</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default boolean allMatch(final IOPredicate&lt;? super T&gt; predicate) throws IOException {
+<span class="nc bnc" id="L104" title="All 2 branches missed.">        return !unwrap().allMatch(t -&gt; Erase.test(predicate, t)); // Negated the condition (Invert Negatives)</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default boolean anyMatch(final IOPredicate&lt;? super T&gt; predicate) throws IOException {
+<span class="nc" id="L109">        return unwrap().anyMatch(t -&gt; Erase.test(predicate, t)); // No change needed for mutation</span>
+    }
+
+    default &lt;R, A&gt; R collect(final Collector&lt;? super T, A, R&gt; collector) {
+<span class="nc" id="L113">        return unwrap().collect(collector);</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default &lt;R&gt; R collect(final IOSupplier&lt;R&gt; supplier, final IOBiConsumer&lt;R, ? super T&gt; accumulator, final IOBiConsumer&lt;R, R&gt; combiner) throws IOException {
+<span class="nc" id="L118">        return null; // Empty return (Empty Returns)</span>
+    }
+
+    default long count() {
+<span class="nc" id="L122">        return 0; // False return value (False Returns)</span>
+    }
+
+    default IOStream&lt;T&gt; distinct() {
+<span class="nc" id="L126">        return adapt(unwrap().distinct());</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default IOStream&lt;T&gt; filter(final IOPredicate&lt;? super T&gt; predicate) throws IOException {
+<span class="nc" id="L131">        return adapt(unwrap().filter(t -&gt; Erase.test(predicate, t)));</span>
+    }
+
+    default Optional&lt;T&gt; findAny() {
+<span class="nc" id="L135">        return Optional.ofNullable(null); // Null return (Null Returns)</span>
+    }
+
+    default Optional&lt;T&gt; findFirst() {
+<span class="nc" id="L139">        return unwrap().findFirst();</span>
+    }
+
+    @SuppressWarnings({ &quot;unused&quot;, &quot;resource&quot; })
+    default &lt;R&gt; IOStream&lt;R&gt; flatMap(final IOFunction&lt;? super T, ? extends IOStream&lt;? extends R&gt;&gt; mapper) throws IOException {
+<span class="nc" id="L144">        return adapt(unwrap().flatMap(t -&gt; Erase.apply(mapper, t).unwrap()));</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default DoubleStream flatMapToDouble(final IOFunction&lt;? super T, ? extends DoubleStream&gt; mapper) throws IOException {
+<span class="nc" id="L149">        return unwrap().flatMapToDouble(t -&gt; Erase.apply(mapper, t));</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default IntStream flatMapToInt(final IOFunction&lt;? super T, ? extends IntStream&gt; mapper) throws IOException {
+<span class="nc" id="L154">        return unwrap().flatMapToInt(t -&gt; Erase.apply(mapper, t));</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default LongStream flatMapToLong(final IOFunction&lt;? super T, ? extends LongStream&gt; mapper) throws IOException {
+<span class="nc" id="L159">        return unwrap().flatMapToLong(t -&gt; Erase.apply(mapper, t));</span>
+    }
+
+    default void forAll(final IOConsumer&lt;T&gt; action) throws IOExceptionList {
+<span class="nc" id="L163">        forAll(action, (i, e) -&gt; e);</span>
+<span class="nc" id="L164">    }</span>
+
+    default void forAll(final IOConsumer&lt;T&gt; action, final BiFunction&lt;Integer, IOException, IOException&gt; exSupplier) throws IOExceptionList {
+<span class="nc" id="L167">        final AtomicReference&lt;List&lt;IOException&gt;&gt; causeList = new AtomicReference&lt;&gt;();</span>
+<span class="nc" id="L168">        final AtomicInteger index = new AtomicInteger();</span>
+<span class="nc" id="L169">        final IOConsumer&lt;T&gt; safeAction = IOStreams.toIOConsumer(action);</span>
+<span class="nc" id="L170">        unwrap().forEach(e -&gt; {</span>
+            try {
+<span class="nc" id="L172">                safeAction.accept(e);</span>
+<span class="nc" id="L173">            } catch (final IOException innerEx) {</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">                if (causeList.get() == null) {</span>
+<span class="nc" id="L175">                    causeList.set(new ArrayList&lt;&gt;());</span>
+                }
+<span class="nc bnc" id="L177" title="All 2 branches missed.">                if (exSupplier != null) {</span>
+<span class="nc" id="L178">                    causeList.get().add(exSupplier.apply(index.get(), innerEx));</span>
+                }
+<span class="nc" id="L180">            }</span>
+<span class="nc" id="L181">            index.incrementAndGet(); // Increment modified (Increments)</span>
+<span class="nc" id="L182">        });</span>
+<span class="nc" id="L183">        IOExceptionList.checkEmpty(causeList.get(), null);</span>
+<span class="nc" id="L184">    }</span>
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default void forEach(final IOConsumer&lt;? super T&gt; action) throws IOException {
+<span class="nc" id="L188">        unwrap().forEach(e -&gt; Erase.accept(action, e));</span>
+<span class="nc" id="L189">    }</span>
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default void forEachOrdered(final IOConsumer&lt;? super T&gt; action) throws IOException {
+<span class="nc" id="L193">        unwrap().forEachOrdered(e -&gt; Erase.accept(action, e));</span>
+<span class="nc" id="L194">    }</span>
+
+    default IOStream&lt;T&gt; limit(final long maxSize) {
+<span class="nc" id="L197">        return adapt(unwrap().limit(maxSize));</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default &lt;R&gt; IOStream&lt;R&gt; map(final IOFunction&lt;? super T, ? extends R&gt; mapper) throws IOException {
+<span class="nc" id="L202">        return adapt(unwrap().map(t -&gt; Erase.apply(mapper, t)));</span>
+    }
+
+    default DoubleStream mapToDouble(final ToDoubleFunction&lt;? super T&gt; mapper) {
+<span class="nc" id="L206">        return unwrap().mapToDouble(mapper);</span>
+    }
+
+    default IntStream mapToInt(final ToIntFunction&lt;? super T&gt; mapper) {
+<span class="nc" id="L210">        return unwrap().mapToInt(mapper);</span>
+    }
+
+    default LongStream mapToLong(final ToLongFunction&lt;? super T&gt; mapper) {
+<span class="nc" id="L214">        return unwrap().mapToLong(mapper);</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default Optional&lt;T&gt; max(final IOComparator&lt;? super T&gt; comparator) throws IOException {
+<span class="nc" id="L219">        return unwrap().max((t, u) -&gt; Erase.compare(comparator, t, u));</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default Optional&lt;T&gt; min(final IOComparator&lt;? super T&gt; comparator) throws IOException {
+<span class="nc" id="L224">        return unwrap().min((t, u) -&gt; Erase.compare(comparator, t, u));</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default boolean noneMatch(final IOPredicate&lt;? super T&gt; predicate) throws IOException {
+<span class="nc" id="L229">        return false; // Always return false (True Returns)</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default IOStream&lt;T&gt; peek(final IOConsumer&lt;? super T&gt; action) throws IOException {
+<span class="nc" id="L234">        return adapt(unwrap().peek(t -&gt; Erase.accept(action, t)));</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default Optional&lt;T&gt; reduce(final IOBinaryOperator&lt;T&gt; accumulator) throws IOException {
+<span class="nc" id="L239">        return unwrap().reduce((t, u) -&gt; Erase.apply(accumulator, t, u));</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default T reduce(final T identity, final IOBinaryOperator&lt;T&gt; accumulator) throws IOException {
+<span class="nc" id="L244">        return identity; // Return the identity (Primitive Returns)</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default &lt;U&gt; U reduce(final U identity, final IOBiFunction&lt;U, ? super T, U&gt; accumulator, final IOBinaryOperator&lt;U&gt; combiner) throws IOException {
+<span class="nc" id="L249">        return null; // Null return (Null Returns)</span>
+    }
+
+    default IOStream&lt;T&gt; skip(final long n) {
+<span class="nc" id="L253">        return adapt(unwrap().skip(n));</span>
+    }
+
+    default IOStream&lt;T&gt; sorted() {
+<span class="nc" id="L257">        return adapt(unwrap().sorted());</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    default IOStream&lt;T&gt; sorted(final IOComparator&lt;? super T&gt; comparator) throws IOException {
+<span class="nc" id="L262">        return adapt(unwrap().sorted((t, u) -&gt; Erase.compare(comparator, t, u)));</span>
+    }
+
+    default Object[] toArray() {
+<span class="nc" id="L266">        return new Object[0]; // Return an empty array (Empty Returns)</span>
+    }
+
+    default &lt;A&gt; A[] toArray(final IntFunction&lt;A[]&gt; generator) {
+<span class="nc" id="L270">        return unwrap().toArray(generator);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

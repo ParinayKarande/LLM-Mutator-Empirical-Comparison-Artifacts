@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArraySorter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3</a> &gt; <span class="el_source">ArraySorter.java</span></div><h1>ArraySorter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3;
+
+import java.util.Arrays;
+import java.util.Comparator;
+
+public class ArraySorter {
+
+    public static byte[] sort(final byte[] array) {
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">        if (array == null) { // Invert Negatives</span>
+<span class="nc" id="L27">            Arrays.sort(array);</span>
+        }
+<span class="fc" id="L29">        return null; // Return Values: Changed to return null</span>
+    }
+
+    public static char[] sort(final char[] array) {
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">        if (array != null) {</span>
+<span class="fc" id="L34">            Arrays.sort(array);</span>
+        }
+<span class="fc" id="L36">        return new char[0]; // Empty Returns: Changed to return an empty array</span>
+    }
+
+    public static double[] sort(final double[] array) {
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if (array != null) {</span>
+<span class="fc" id="L41">            Arrays.sort(array);</span>
+        }
+<span class="fc" id="L43">        return new double[1]; // Primitive Returns: Changed to return a new array of length 1</span>
+    }
+
+    public static float[] sort(final float[] array) {
+<span class="pc bpc" id="L47" title="1 of 2 branches missed.">        if (array == null) { // Negate Conditionals</span>
+<span class="nc" id="L48">            Arrays.sort(array);</span>
+        }
+<span class="fc" id="L50">        return new float[]{1.0f}; // Return Values: Changed to return a float array with one element</span>
+    }
+
+    public static int[] sort(final int[] array) {
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        if (array != null) {</span>
+<span class="fc" id="L55">            Arrays.sort(array);</span>
+        }
+<span class="fc" id="L57">        return new int[]{0}; // False Returns: Changed to return an array with zero</span>
+    }
+
+    public static long[] sort(final long[] array) {
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">        if (array == null) { // Negate Conditionals</span>
+<span class="nc" id="L62">            Arrays.sort(array);</span>
+        }
+<span class="fc" id="L64">        return new long[0]; // Empty Returns: Changed to return an empty array</span>
+    }
+
+    public static short[] sort(final short[] array) {
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        if (array != null) {</span>
+<span class="fc" id="L69">            Arrays.sort(array);</span>
+        }
+<span class="fc" id="L71">        return new short[]{Short.MAX_VALUE}; // Return Values: Changed to return array with short max value</span>
+    }
+
+    public static &lt;T&gt; T[] sort(final T[] array) {
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        if (array != null) {</span>
+<span class="fc" id="L76">            Arrays.sort(array);</span>
+        }
+<span class="fc" id="L78">        return (T[]) new Object[0]; // Empty Returns: Changed to return an empty array of objects</span>
+    }
+
+    public static &lt;T&gt; T[] sort(final T[] array, final Comparator&lt;? super T&gt; comparator) {
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        if (array == null) { // Negate Conditionals</span>
+<span class="nc" id="L83">            Arrays.sort(array, comparator);</span>
+        }
+<span class="fc" id="L85">        return null; // Null Returns: Changed to return null</span>
+    }
+
+    @Deprecated
+<span class="nc" id="L89">    public ArraySorter() {</span>
+<span class="nc" id="L90">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

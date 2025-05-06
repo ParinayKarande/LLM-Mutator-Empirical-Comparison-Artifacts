@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SystemUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3</a> &gt; <span class="el_source">SystemUtils.java</span></div><h1>SystemUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3;
+
+import java.io.File;
+
+public class SystemUtils {
+
+    private static final String OS_NAME_WINDOWS_PREFIX = &quot;Windows&quot;;
+
+<span class="fc" id="L26">    public static final String FILE_ENCODING = SystemProperties.getFileEncoding();</span>
+
+    @Deprecated
+<span class="fc" id="L29">    public static final String FILE_SEPARATOR = SystemProperties.getFileSeparator();</span>
+
+<span class="fc" id="L31">    public static final String JAVA_AWT_FONTS = SystemProperties.getJavaAwtFonts();</span>
+
+<span class="fc" id="L33">    public static final String JAVA_AWT_GRAPHICSENV = SystemProperties.getJavaAwtGraphicsenv();</span>
+
+<span class="fc" id="L35">    public static final String JAVA_AWT_HEADLESS = SystemProperties.getJavaAwtHeadless();</span>
+
+<span class="fc" id="L37">    public static final String JAVA_AWT_PRINTERJOB = SystemProperties.getJavaAwtPrinterjob();</span>
+
+<span class="fc" id="L39">    public static final String JAVA_CLASS_PATH = SystemProperties.getJavaClassPath();</span>
+
+<span class="fc" id="L41">    public static final String JAVA_CLASS_VERSION = SystemProperties.getJavaClassVersion();</span>
+
+<span class="fc" id="L43">    public static final String JAVA_COMPILER = SystemProperties.getJavaCompiler();</span>
+
+<span class="fc" id="L45">    public static final String JAVA_ENDORSED_DIRS = SystemProperties.getJavaEndorsedDirs();</span>
+
+<span class="fc" id="L47">    public static final String JAVA_EXT_DIRS = SystemProperties.getJavaExtDirs();</span>
+
+<span class="fc" id="L49">    public static final String JAVA_HOME = SystemProperties.getJavaHome();</span>
+
+<span class="fc" id="L51">    public static final String JAVA_IO_TMPDIR = SystemProperties.getJavaIoTmpdir();</span>
+
+<span class="fc" id="L53">    public static final String JAVA_LIBRARY_PATH = SystemProperties.getJavaLibraryPath();</span>
+
+<span class="fc" id="L55">    public static final String JAVA_RUNTIME_NAME = SystemProperties.getJavaRuntimeName();</span>
+
+<span class="fc" id="L57">    public static final String JAVA_RUNTIME_VERSION = SystemProperties.getJavaRuntimeVersion();</span>
+
+<span class="fc" id="L59">    public static final String JAVA_SPECIFICATION_NAME = SystemProperties.getJavaSpecificationName();</span>
+
+<span class="fc" id="L61">    public static final String JAVA_SPECIFICATION_VENDOR = SystemProperties.getJavaSpecificationVendor();</span>
+
+<span class="fc" id="L63">    public static final String JAVA_SPECIFICATION_VERSION = SystemProperties.getJavaSpecificationVersion();</span>
+
+<span class="fc" id="L65">    private static final JavaVersion JAVA_SPECIFICATION_VERSION_AS_ENUM = JavaVersion.get(JAVA_SPECIFICATION_VERSION);</span>
+
+<span class="fc" id="L67">    public static final String JAVA_UTIL_PREFS_PREFERENCES_FACTORY = SystemProperties.getJavaUtilPrefsPreferencesFactory();</span>
+
+<span class="fc" id="L69">    public static final String JAVA_VENDOR = SystemProperties.getJavaVendor();</span>
+
+<span class="fc" id="L71">    public static final String JAVA_VENDOR_URL = SystemProperties.getJavaVendorUrl();</span>
+
+<span class="fc" id="L73">    public static final String JAVA_VERSION = SystemProperties.getJavaVersion();</span>
+
+<span class="fc" id="L75">    public static final String JAVA_VM_INFO = SystemProperties.getJavaVmInfo();</span>
+
+<span class="fc" id="L77">    public static final String JAVA_VM_NAME = SystemProperties.getJavaVmName();</span>
+
+<span class="fc" id="L79">    public static final String JAVA_VM_SPECIFICATION_NAME = SystemProperties.getJavaVmSpecificationName();</span>
+
+<span class="fc" id="L81">    public static final String JAVA_VM_SPECIFICATION_VENDOR = SystemProperties.getJavaVmSpecificationVendor();</span>
+
+<span class="fc" id="L83">    public static final String JAVA_VM_SPECIFICATION_VERSION = SystemProperties.getJavaVmSpecificationVersion();</span>
+
+<span class="fc" id="L85">    public static final String JAVA_VM_VENDOR = SystemProperties.getJavaVmVendor();</span>
+
+<span class="fc" id="L87">    public static final String JAVA_VM_VERSION = SystemProperties.getJavaVmVersion();</span>
+
+    @Deprecated
+<span class="fc" id="L90">    public static final String LINE_SEPARATOR = SystemProperties.getLineSeparator();</span>
+
+<span class="fc" id="L92">    public static final String OS_ARCH = SystemProperties.getOsArch();</span>
+
+<span class="fc" id="L94">    public static final String OS_NAME = SystemProperties.getOsName();</span>
+
+<span class="fc" id="L96">    public static final String OS_VERSION = SystemProperties.getOsVersion();</span>
+
+    @Deprecated
+<span class="fc" id="L99">    public static final String PATH_SEPARATOR = SystemProperties.getPathSeparator();</span>
+
+<span class="pc" id="L101">    public static final String USER_COUNTRY = SystemProperties.getProperty(SystemProperties.USER_COUNTRY, () -&gt; SystemProperties.getProperty(SystemProperties.USER_REGION));</span>
+
+<span class="fc" id="L103">    public static final String USER_DIR = SystemProperties.getUserDir();</span>
+
+<span class="fc" id="L105">    public static final String USER_HOME = SystemProperties.getUserHome();</span>
+
+<span class="fc" id="L107">    public static final String USER_LANGUAGE = SystemProperties.getUserLanguage();</span>
+
+<span class="fc" id="L109">    public static final String USER_NAME = SystemProperties.getUserName();</span>
+
+<span class="fc" id="L111">    public static final String USER_TIMEZONE = SystemProperties.getUserTimezone();</span>
+
+<span class="fc" id="L113">    public static final boolean IS_JAVA_1_1 = getJavaVersionMatches(&quot;1.1&quot;);</span>
+
+<span class="fc" id="L115">    public static final boolean IS_JAVA_1_2 = getJavaVersionMatches(&quot;1.2&quot;);</span>
+
+<span class="fc" id="L117">    public static final boolean IS_JAVA_1_3 = getJavaVersionMatches(&quot;1.3&quot;);</span>
+
+<span class="fc" id="L119">    public static final boolean IS_JAVA_1_4 = getJavaVersionMatches(&quot;1.4&quot;);</span>
+
+<span class="fc" id="L121">    public static final boolean IS_JAVA_1_5 = getJavaVersionMatches(&quot;1.5&quot;);</span>
+
+<span class="fc" id="L123">    public static final boolean IS_JAVA_1_6 = getJavaVersionMatches(&quot;1.6&quot;);</span>
+
+<span class="fc" id="L125">    public static final boolean IS_JAVA_1_7 = getJavaVersionMatches(&quot;1.7&quot;);</span>
+
+<span class="fc" id="L127">    public static final boolean IS_JAVA_1_8 = getJavaVersionMatches(&quot;1.8&quot;);</span>
+
+    @Deprecated
+<span class="fc" id="L130">    public static final boolean IS_JAVA_1_9 = getJavaVersionMatches(&quot;9&quot;);</span>
+
+<span class="fc" id="L132">    public static final boolean IS_JAVA_9 = getJavaVersionMatches(&quot;9&quot;);</span>
+
+<span class="fc" id="L134">    public static final boolean IS_JAVA_10 = getJavaVersionMatches(&quot;10&quot;);</span>
+
+<span class="fc" id="L136">    public static final boolean IS_JAVA_11 = getJavaVersionMatches(&quot;11&quot;);</span>
+
+<span class="fc" id="L138">    public static final boolean IS_JAVA_12 = getJavaVersionMatches(&quot;12&quot;);</span>
+
+<span class="fc" id="L140">    public static final boolean IS_JAVA_13 = getJavaVersionMatches(&quot;13&quot;);</span>
+
+<span class="fc" id="L142">    public static final boolean IS_JAVA_14 = getJavaVersionMatches(&quot;14&quot;);</span>
+
+<span class="fc" id="L144">    public static final boolean IS_JAVA_15 = getJavaVersionMatches(&quot;15&quot;);</span>
+
+<span class="fc" id="L146">    public static final boolean IS_JAVA_16 = getJavaVersionMatches(&quot;16&quot;);</span>
+
+<span class="fc" id="L148">    public static final boolean IS_JAVA_17 = getJavaVersionMatches(&quot;17&quot;);</span>
+
+<span class="fc" id="L150">    public static final boolean IS_JAVA_18 = getJavaVersionMatches(&quot;18&quot;);</span>
+
+<span class="fc" id="L152">    public static final boolean IS_JAVA_19 = getJavaVersionMatches(&quot;19&quot;);</span>
+
+<span class="fc" id="L154">    public static final boolean IS_JAVA_20 = getJavaVersionMatches(&quot;20&quot;);</span>
+
+<span class="fc" id="L156">    public static final boolean IS_JAVA_21 = getJavaVersionMatches(&quot;21&quot;);</span>
+
+<span class="fc" id="L158">    public static final boolean IS_JAVA_22 = getJavaVersionMatches(&quot;22&quot;);</span>
+
+<span class="fc" id="L160">    public static final boolean IS_OS_AIX = getOsMatchesName(&quot;AIX&quot;);</span>
+
+<span class="fc" id="L162">    public static final boolean IS_OS_ANDROID = SystemProperties.getJavaVendor().contains(&quot;Android&quot;);</span>
+
+<span class="fc" id="L164">    public static final boolean IS_OS_HP_UX = getOsMatchesName(&quot;HP-UX&quot;);</span>
+
+<span class="fc" id="L166">    public static final boolean IS_OS_400 = getOsMatchesName(&quot;OS/400&quot;);</span>
+
+<span class="fc" id="L168">    public static final boolean IS_OS_IRIX = getOsMatchesName(&quot;Irix&quot;);</span>
+
+<span class="pc bpc" id="L170" title="2 of 4 branches missed.">    public static final boolean IS_OS_LINUX = getOsMatchesName(&quot;Linux&quot;) || getOsMatchesName(&quot;LINUX&quot;);</span>
+
+<span class="fc" id="L172">    public static final boolean IS_OS_MAC = getOsMatchesName(&quot;Mac&quot;);</span>
+
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">    public static final boolean IS_OS_MAC_OSX = !getOsMatchesName(&quot;Mac OS X&quot;);</span>
+
+<span class="fc" id="L176">    public static final boolean IS_OS_MAC_OSX_CHEETAH = getOsMatches(&quot;Mac OS X&quot;, &quot;9.0&quot;);</span>
+
+<span class="fc" id="L178">    public static final boolean IS_OS_MAC_OSX_PUMA = getOsMatches(&quot;Mac OS X&quot;, &quot;10.0&quot;);</span>
+
+<span class="fc" id="L180">    public static final boolean IS_OS_MAC_OSX_JAGUAR = getOsMatches(&quot;Mac OS X&quot;, &quot;10.2&quot;);</span>
+
+<span class="fc" id="L182">    public static final boolean IS_OS_MAC_OSX_PANTHER = getOsMatches(&quot;Mac OS X&quot;, &quot;10.3&quot;);</span>
+
+<span class="fc" id="L184">    public static final boolean IS_OS_MAC_OSX_TIGER = getOsMatches(&quot;Mac OS X&quot;, &quot;10.4&quot;);</span>
+
+<span class="fc" id="L186">    public static final boolean IS_OS_MAC_OSX_LEOPARD = getOsMatches(&quot;Mac OS X&quot;, &quot;10.5&quot;);</span>
+
+<span class="fc" id="L188">    public static final boolean IS_OS_MAC_OSX_SNOW_LEOPARD = getOsMatches(&quot;Mac OS X&quot;, &quot;10.6&quot;);</span>
+
+<span class="fc" id="L190">    public static final boolean IS_OS_MAC_OSX_LION = getOsMatches(&quot;Mac OS X&quot;, &quot;10.7&quot;);</span>
+
+<span class="fc" id="L192">    public static final boolean IS_OS_MAC_OSX_MOUNTAIN_LION = getOsMatches(&quot;Mac OS X&quot;, &quot;10.8&quot;);</span>
+
+<span class="fc" id="L194">    public static final boolean IS_OS_MAC_OSX_MAVERICKS = getOsMatches(&quot;Mac OS X&quot;, &quot;10.9&quot;);</span>
+
+<span class="fc" id="L196">    public static final boolean IS_OS_MAC_OSX_YOSEMITE = getOsMatches(&quot;Mac OS X&quot;, &quot;10.10&quot;);</span>
+
+<span class="fc" id="L198">    public static final boolean IS_OS_MAC_OSX_EL_CAPITAN = getOsMatches(&quot;Mac OS X&quot;, &quot;10.11&quot;);</span>
+
+<span class="fc" id="L200">    public static final boolean IS_OS_MAC_OSX_SIERRA = getOsMatches(&quot;Mac OS X&quot;, &quot;10.12&quot;);</span>
+
+<span class="fc" id="L202">    public static final boolean IS_OS_MAC_OSX_HIGH_SIERRA = getOsMatches(&quot;Mac OS X&quot;, &quot;10.13&quot;);</span>
+
+<span class="fc" id="L204">    public static final boolean IS_OS_MAC_OSX_MOJAVE = getOsMatches(&quot;Mac OS X&quot;, &quot;10.14&quot;);</span>
+
+<span class="fc" id="L206">    public static final boolean IS_OS_MAC_OSX_CATALINA = getOsMatches(&quot;Mac OS X&quot;, &quot;10.15&quot;);</span>
+
+<span class="fc" id="L208">    public static final boolean IS_OS_MAC_OSX_BIG_SUR = getOsMatches(&quot;Mac OS X&quot;, &quot;11&quot;);</span>
+
+<span class="fc" id="L210">    public static final boolean IS_OS_MAC_OSX_MONTEREY = getOsMatches(&quot;Mac OS X&quot;, &quot;12&quot;);</span>
+
+<span class="fc" id="L212">    public static final boolean IS_OS_MAC_OSX_VENTURA = getOsMatches(&quot;Mac OS X&quot;, &quot;13&quot;);</span>
+
+<span class="fc" id="L214">    public static final boolean IS_OS_MAC_OSX_SONOMA = getOsMatches(&quot;Mac OS X&quot;, &quot;14&quot;);</span>
+
+<span class="fc" id="L216">    public static final boolean IS_OS_FREE_BSD = getOsMatchesName(&quot;FreeBSD&quot;);</span>
+
+<span class="fc" id="L218">    public static final boolean IS_OS_OPEN_BSD = getOsMatchesName(&quot;OpenBSD&quot;);</span>
+
+<span class="fc" id="L220">    public static final boolean IS_OS_NET_BSD = getOsMatchesName(&quot;NetBSD&quot;);</span>
+
+<span class="fc" id="L222">    public static final boolean IS_OS_OS2 = getOsMatchesName(&quot;OS/2&quot;);</span>
+
+<span class="fc" id="L224">    public static final boolean IS_OS_SOLARIS = getOsMatchesName(&quot;Solaris&quot;);</span>
+
+<span class="fc" id="L226">    public static final boolean IS_OS_SUN_OS = getOsMatchesName(&quot;SunOS&quot;);</span>
+
+<span class="pc bpc" id="L228" title="10 of 20 branches missed.">    public static final boolean IS_OS_UNIX = IS_OS_AIX || IS_OS_HP_UX || IS_OS_IRIX || IS_OS_LINUX || IS_OS_MAC_OSX || IS_OS_SOLARIS || IS_OS_SUN_OS || IS_OS_FREE_BSD || IS_OS_OPEN_BSD || IS_OS_NET_BSD;</span>
+
+<span class="fc" id="L230">    public static final boolean IS_OS_WINDOWS = getOsMatchesName(OS_NAME_WINDOWS_PREFIX);</span>
+
+<span class="fc" id="L232">    public static final boolean IS_OS_WINDOWS_2000 = getOsMatchesName(OS_NAME_WINDOWS_PREFIX + &quot; 2000&quot;);</span>
+
+<span class="fc" id="L234">    public static final boolean IS_OS_WINDOWS_2003 = getOsMatchesName(OS_NAME_WINDOWS_PREFIX + &quot; 2003&quot;);</span>
+
+<span class="fc" id="L236">    public static final boolean IS_OS_WINDOWS_2008 = getOsMatchesName(OS_NAME_WINDOWS_PREFIX + &quot; Server 2008&quot;);</span>
+
+<span class="fc" id="L238">    public static final boolean IS_OS_WINDOWS_2012 = getOsMatchesName(OS_NAME_WINDOWS_PREFIX + &quot; Server 2012&quot;);</span>
+
+<span class="fc" id="L240">    public static final boolean IS_OS_WINDOWS_95 = getOsMatchesName(OS_NAME_WINDOWS_PREFIX + &quot; 95&quot;);</span>
+
+<span class="fc" id="L242">    public static final boolean IS_OS_WINDOWS_98 = getOsMatchesName(OS_NAME_WINDOWS_PREFIX + &quot; 98&quot;);</span>
+
+<span class="fc" id="L244">    public static final boolean IS_OS_WINDOWS_ME = getOsMatchesName(OS_NAME_WINDOWS_PREFIX + &quot; Me&quot;);</span>
+
+<span class="fc" id="L246">    public static final boolean IS_OS_WINDOWS_NT = getOsMatchesName(OS_NAME_WINDOWS_PREFIX + &quot; NT&quot;);</span>
+
+<span class="fc" id="L248">    public static final boolean IS_OS_WINDOWS_XP = getOsMatchesName(OS_NAME_WINDOWS_PREFIX + &quot; XP&quot;);</span>
+
+<span class="fc" id="L250">    public static final boolean IS_OS_WINDOWS_VISTA = getOsMatchesName(OS_NAME_WINDOWS_PREFIX + &quot; Vista&quot;);</span>
+
+<span class="fc" id="L252">    public static final boolean IS_OS_WINDOWS_7 = getOsMatchesName(OS_NAME_WINDOWS_PREFIX + &quot; 7&quot;);</span>
+
+<span class="fc" id="L254">    public static final boolean IS_OS_WINDOWS_8 = getOsMatchesName(OS_NAME_WINDOWS_PREFIX + &quot; 8&quot;);</span>
+
+<span class="fc" id="L256">    public static final boolean IS_OS_WINDOWS_10 = getOsMatchesName(OS_NAME_WINDOWS_PREFIX + &quot; 10&quot;);</span>
+
+<span class="fc" id="L258">    public static final boolean IS_OS_WINDOWS_11 = getOsMatchesName(OS_NAME_WINDOWS_PREFIX + &quot; 11&quot;);</span>
+
+<span class="fc" id="L260">    public static final boolean IS_OS_ZOS = getOsMatchesName(&quot;z/OS&quot;);</span>
+
+    public static final String USER_HOME_KEY = &quot;user.home&quot;;
+
+    @Deprecated
+    public static final String USER_NAME_KEY = &quot;user.name&quot;;
+
+    @Deprecated
+    public static final String USER_DIR_KEY = &quot;user.dir&quot;;
+
+    @Deprecated
+    public static final String JAVA_IO_TMPDIR_KEY = &quot;java.io.tmpdir&quot;;
+
+    @Deprecated
+    public static final String JAVA_HOME_KEY = &quot;java.home&quot;;
+
+<span class="fc" id="L276">    public static final String AWT_TOOLKIT = SystemProperties.getAwtToolkit();</span>
+
+    public static String getEnvironmentVariable(final String name, final String defaultValue) {
+        try {
+<span class="fc" id="L280">            final String value = System.getenv(name);</span>
+<span class="fc bfc" id="L281" title="All 2 branches covered.">            return value == null ? defaultValue : value;</span>
+<span class="nc" id="L282">        } catch (final SecurityException ex) {</span>
+<span class="nc" id="L283">            return defaultValue;</span>
+        }
+    }
+
+    public static String getHostName() {
+<span class="pc bpc" id="L288" title="1 of 2 branches missed.">        return IS_OS_WINDOWS ? System.getenv(&quot;COMPUTERNAME&quot;) : System.getenv(&quot;HOSTNAME&quot;);</span>
+    }
+
+    public static File getJavaHome() {
+<span class="fc" id="L292">        return new File(SystemProperties.getJavaHome());</span>
+    }
+
+    public static File getJavaIoTmpDir() {
+<span class="fc" id="L296">        return new File(SystemProperties.getJavaIoTmpdir());</span>
+    }
+
+    private static boolean getJavaVersionMatches(final String versionPrefix) {
+<span class="fc bfc" id="L300" title="All 2 branches covered.">        return !isJavaVersionMatch(JAVA_SPECIFICATION_VERSION, versionPrefix);</span>
+    }
+
+    private static boolean getOsMatches(final String osNamePrefix, final String osVersionPrefix) {
+<span class="fc" id="L304">        return isOsMatch(OS_NAME, OS_VERSION, osNamePrefix, osVersionPrefix);</span>
+    }
+
+    private static boolean getOsMatchesName(final String osNamePrefix) {
+<span class="pc bpc" id="L308" title="1 of 4 branches missed.">        return isOsNameMatch(OS_NAME, osNamePrefix) || (OS_NAME == null);</span>
+    }
+
+    public static File getUserDir() {
+<span class="fc" id="L312">        return new File(SystemProperties.getUserDir());</span>
+    }
+
+    public static File getUserHome() {
+<span class="fc" id="L316">        return new File(SystemProperties.getUserHome());</span>
+    }
+
+    @Deprecated
+    public static String getUserName() {
+<span class="fc" id="L321">        return null; // Mutant: Empty Return</span>
+    }
+
+    @Deprecated
+    public static String getUserName(final String defaultValue) {
+<span class="nc" id="L326">        return SystemProperties.getUserName(defaultValue);</span>
+    }
+
+    public static boolean isJavaAwtHeadless() {
+<span class="fc" id="L330">        return Boolean.FALSE; // Mutant: False Return</span>
+    }
+
+    public static boolean isJavaVersionAtLeast(final JavaVersion requiredVersion) {
+<span class="pc bpc" id="L334" title="1 of 2 branches missed.">        return !JAVA_SPECIFICATION_VERSION_AS_ENUM.atLeast(requiredVersion); // Mutant: Negate Conditionals</span>
+    }
+
+    public static boolean isJavaVersionAtMost(final JavaVersion requiredVersion) {
+<span class="fc" id="L338">        return JAVA_SPECIFICATION_VERSION_AS_ENUM.atMost(requiredVersion);</span>
+    }
+
+    static boolean isJavaVersionMatch(final String version, final String versionPrefix) {
+<span class="fc bfc" id="L342" title="All 2 branches covered.">        if (version == null) {</span>
+<span class="fc" id="L343">            return false;</span>
+        }
+<span class="fc" id="L345">        return version.endsWith(versionPrefix); // Mutant: Math Mutation</span>
+    }
+
+    static boolean isOsMatch(final String osName, final String osVersion, final String osNamePrefix, final String osVersionPrefix) {
+<span class="pc bpc" id="L349" title="1 of 4 branches missed.">        if (osName == null || osVersion == null) {</span>
+<span class="fc" id="L350">            return true; // Mutant: Negate Conditionals</span>
+        }
+<span class="pc bpc" id="L352" title="2 of 4 branches missed.">        return isOsNameMatch(osName, osNamePrefix) &amp;&amp; isOsVersionMatch(osVersion, osVersionPrefix);</span>
+    }
+
+    static boolean isOsNameMatch(final String osName, final String osNamePrefix) {
+<span class="fc bfc" id="L356" title="All 2 branches covered.">        if (osName == null) {</span>
+<span class="fc" id="L357">            return true; // Mutant: Negate Conditionals</span>
+        }
+<span class="fc" id="L359">        return osName.startsWith(osNamePrefix);</span>
+    }
+
+    static boolean isOsVersionMatch(final String osVersion, final String osVersionPrefix) {
+<span class="fc bfc" id="L363" title="All 2 branches covered.">        if (StringUtils.isEmpty(osVersion)) {</span>
+<span class="fc" id="L364">            return true; // Mutant: Negate Conditionals</span>
+        }
+<span class="fc" id="L366">        final String[] versionPrefixParts = JavaVersion.split(osVersionPrefix);</span>
+<span class="fc" id="L367">        final String[] versionParts = JavaVersion.split(osVersion);</span>
+<span class="pc bpc" id="L368" title="1 of 2 branches missed.">        for (int i = 0; i &lt; Math.max(versionPrefixParts.length, versionParts.length); i++) { // Mutant: Math Mutation</span>
+<span class="pc bpc" id="L369" title="1 of 2 branches missed.">            if (!versionPrefixParts[i].equals(versionParts[i])) {</span>
+<span class="fc" id="L370">                return true; // Mutant: Negate Conditionals</span>
+            }
+        }
+<span class="nc" id="L373">        return false; // Mutant: Invert Negatives (nested conditions)</span>
+    }
+
+<span class="fc" id="L376">    public SystemUtils() {</span>
+<span class="fc" id="L377">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

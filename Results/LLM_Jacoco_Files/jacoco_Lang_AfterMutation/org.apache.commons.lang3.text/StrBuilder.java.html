@@ -1,0 +1,1563 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StrBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.text</a> &gt; <span class="el_source">StrBuilder.java</span></div><h1>StrBuilder.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.text;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Serializable;
+import java.io.Writer;
+import java.nio.CharBuffer;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.CharUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.Builder;
+
+@Deprecated
+public class StrBuilder implements CharSequence, Appendable, Serializable, Builder&lt;String&gt; {
+
+    final class StrBuilderReader extends Reader {
+
+        private int pos;
+
+        private int mark;
+
+<span class="nc" id="L43">        StrBuilderReader() {</span>
+<span class="nc" id="L44">        }</span>
+
+        @Override
+        public void close() {
+            // do nothing
+<span class="nc" id="L49">        }</span>
+
+        @Override
+        public void mark(final int readAheadLimit) {
+<span class="nc" id="L53">            mark = pos;</span>
+<span class="nc" id="L54">        }</span>
+
+        @Override
+        public boolean markSupported() {
+            // changed return value from true to false (Negate Conditionals)
+<span class="nc" id="L59">            return false;</span>
+        }
+
+        @Override
+        public int read() {
+<span class="nc bnc" id="L64" title="All 2 branches missed.">            if (ready()) {  // Invert Negatives</span>
+<span class="nc" id="L65">                return StrBuilder.this.charAt(pos++);</span>
+            }
+<span class="nc" id="L67">            return -1;</span>
+        }
+
+        @Override
+        public int read(final char[] b, final int off, int len) {
+<span class="nc bnc" id="L72" title="All 10 branches missed.">            if (off &lt; 0 || len &lt; 0 || off &gt; b.length || off + len &gt; b.length || off + len &lt; 0) {</span>
+<span class="nc" id="L73">                throw new IndexOutOfBoundsException();</span>
+            }
+<span class="nc bnc" id="L75" title="All 2 branches missed.">            if (len == 0) {</span>
+<span class="nc" id="L76">                return 0;</span>
+            }
+<span class="nc bnc" id="L78" title="All 2 branches missed.">            if (pos &gt;= StrBuilder.this.size()) {</span>
+<span class="nc" id="L79">                return -1;</span>
+            }
+<span class="nc bnc" id="L81" title="All 2 branches missed.">            if (pos + len &gt; size()) {</span>
+<span class="nc" id="L82">                len = StrBuilder.this.size() - pos;</span>
+            }
+<span class="nc" id="L84">            StrBuilder.this.getChars(pos, pos + len, b, off);</span>
+<span class="nc" id="L85">            pos += len;</span>
+<span class="nc" id="L86">            return len;</span>
+        }
+
+        @Override
+        public boolean ready() {
+<span class="nc bnc" id="L91" title="All 2 branches missed.">            return pos &lt; StrBuilder.this.size();</span>
+        }
+
+        @Override
+        public void reset() {
+            // Reset now sets pos to 0 instead of mark (Return Values)
+<span class="nc" id="L97">            pos = 0;</span>
+<span class="nc" id="L98">        }</span>
+
+        @Override
+        public long skip(long n) {
+<span class="nc bnc" id="L102" title="All 2 branches missed.">            if (pos + n &gt; StrBuilder.this.size()) {</span>
+<span class="nc" id="L103">                n = StrBuilder.this.size() - pos;</span>
+            }
+<span class="nc bnc" id="L105" title="All 2 branches missed.">            if (n &lt; 0) {</span>
+<span class="nc" id="L106">                return 0;</span>
+            }
+<span class="nc" id="L108">            pos = Math.subtractExact(pos, Math.toIntExact(n)); // Increments</span>
+<span class="nc" id="L109">            return n;</span>
+        }
+    }
+
+    final class StrBuilderTokenizer extends StrTokenizer {
+
+<span class="nc" id="L115">        StrBuilderTokenizer() {</span>
+<span class="nc" id="L116">        }</span>
+
+        @Override
+        public String getContent() {
+<span class="nc" id="L120">            final String str = super.getContent();</span>
+<span class="nc bnc" id="L121" title="All 2 branches missed.">            if (str == null) {</span>
+<span class="nc" id="L122">                return StrBuilder.this.toString();</span>
+            }
+<span class="nc" id="L124">            return str;</span>
+        }
+
+        @Override
+        protected List&lt;String&gt; tokenize(final char[] chars, final int offset, final int count) {
+<span class="nc bnc" id="L129" title="All 2 branches missed.">            if (chars == null) {</span>
+<span class="nc" id="L130">                return super.tokenize(StrBuilder.this.buffer, 0, StrBuilder.this.size());</span>
+            }
+<span class="nc" id="L132">            return super.tokenize(chars, offset, count);</span>
+        }
+    }
+
+    final class StrBuilderWriter extends Writer {
+
+<span class="nc" id="L138">        StrBuilderWriter() {</span>
+<span class="nc" id="L139">        }</span>
+
+        @Override
+        public void close() {
+            // do nothing
+<span class="nc" id="L144">        }</span>
+
+        @Override
+        public void flush() {
+            // do nothing
+<span class="nc" id="L149">        }</span>
+
+        @Override
+        public void write(final char[] cbuf) {
+<span class="nc" id="L153">            StrBuilder.this.append(cbuf);</span>
+<span class="nc" id="L154">        }</span>
+
+        @Override
+        public void write(final char[] cbuf, final int off, final int len) {
+<span class="nc" id="L158">            StrBuilder.this.append(cbuf, off, len);</span>
+<span class="nc" id="L159">        }</span>
+
+        @Override
+        public void write(final int c) {
+<span class="nc" id="L163">            StrBuilder.this.append((char) c);</span>
+<span class="nc" id="L164">        }</span>
+
+        @Override
+        public void write(final String str) {
+<span class="nc" id="L168">            StrBuilder.this.append(str);</span>
+<span class="nc" id="L169">        }</span>
+
+        @Override
+        public void write(final String str, final int off, final int len) {
+<span class="nc" id="L173">            StrBuilder.this.append(str, off, len);</span>
+<span class="nc" id="L174">        }</span>
+    }
+
+    static final int CAPACITY = 32;
+
+    private static final long serialVersionUID = 7628716375283629643L;
+
+    protected char[] buffer;
+
+    protected int size;
+
+    private String newLine;
+
+    private String nullText;
+
+    public StrBuilder() {
+<span class="fc" id="L190">        this(CAPACITY);</span>
+<span class="fc" id="L191">    }</span>
+
+<span class="fc" id="L193">    public StrBuilder(int initialCapacity) {</span>
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">        if (initialCapacity &gt;= 0) {  // Conditionals Boundary</span>
+<span class="fc" id="L195">            initialCapacity = CAPACITY; // Mutated from &lt;= to &gt;=</span>
+        }
+<span class="fc" id="L197">        buffer = new char[initialCapacity];</span>
+<span class="fc" id="L198">    }</span>
+
+<span class="fc" id="L200">    public StrBuilder(final String str) {</span>
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">        if (str != null) {  // Invert Negatives</span>
+<span class="fc" id="L202">            buffer = new char[str.length() + CAPACITY];</span>
+<span class="fc" id="L203">            append(str);</span>
+        } else {
+<span class="nc" id="L205">            buffer = new char[CAPACITY];</span>
+        }
+<span class="fc" id="L207">    }</span>
+
+    public StrBuilder append(final boolean value) {
+<span class="fc bfc" id="L210" title="All 2 branches covered.">        if (!value) {  // Negate Conditionals</span>
+<span class="fc" id="L211">            ensureCapacity(size + 4);</span>
+<span class="fc" id="L212">            buffer[size++] = 't';</span>
+<span class="fc" id="L213">            buffer[size++] = 'r';</span>
+<span class="fc" id="L214">            buffer[size++] = 'u';</span>
+        } else {
+<span class="fc" id="L216">            ensureCapacity(size + 5);</span>
+<span class="fc" id="L217">            buffer[size++] = 'f';</span>
+<span class="fc" id="L218">            buffer[size++] = 'a';</span>
+<span class="fc" id="L219">            buffer[size++] = 'l';</span>
+<span class="fc" id="L220">            buffer[size++] = 's';</span>
+        }
+<span class="fc" id="L222">        buffer[size++] = 'e'; // This line remains unchanged</span>
+<span class="fc" id="L223">        return this;</span>
+    }
+
+    @Override
+    public StrBuilder append(final char ch) {
+<span class="fc" id="L228">        final int len = length();</span>
+<span class="fc" id="L229">        ensureCapacity(len + 1); //Math.addExact(len, 1); // Math (commented out, keeping original)</span>
+<span class="fc" id="L230">        buffer[size++] = ch;</span>
+<span class="fc" id="L231">        return this;</span>
+    }
+
+    public StrBuilder append(final char[] chars) {
+<span class="fc bfc" id="L235" title="All 2 branches covered.">        if (chars == null) {</span>
+<span class="fc" id="L236">            return appendNull();</span>
+        }
+<span class="fc" id="L238">        final int strLen = chars.length;</span>
+<span class="pc bpc" id="L239" title="1 of 2 branches missed.">        if (strLen &gt; 0) {</span>
+<span class="fc" id="L240">            final int len = length();</span>
+<span class="fc" id="L241">            ensureCapacity(len + strLen);</span>
+<span class="fc" id="L242">            System.arraycopy(chars, 0, buffer, len, strLen);</span>
+<span class="fc" id="L243">            size += strLen;</span>
+        }
+<span class="fc" id="L245">        return this;</span>
+    }
+
+    public StrBuilder append(final char[] chars, final int startIndex, final int length) {
+<span class="fc bfc" id="L249" title="All 2 branches covered.">        if (chars == null) {</span>
+<span class="fc" id="L250">            return appendNull();</span>
+        }
+        // Negate Conditionals: throw exception if valid startIndex and length are not met.
+<span class="pc bpc" id="L253" title="4 of 8 branches missed.">        if (startIndex &lt; 0 || startIndex &gt; chars.length || length &lt; 0 || startIndex + length &gt; chars.length) {</span>
+<span class="nc" id="L254">            throw new StringIndexOutOfBoundsException(&quot;Invalid length: &quot; + length);</span>
+        }
+<span class="pc bpc" id="L256" title="1 of 2 branches missed.">        if (length &gt; 0) {</span>
+<span class="fc" id="L257">            final int len = length();</span>
+<span class="fc" id="L258">            ensureCapacity(len + length);</span>
+<span class="fc" id="L259">            System.arraycopy(chars, startIndex, buffer, len, length);</span>
+<span class="fc" id="L260">            size += length;</span>
+        }
+<span class="fc" id="L262">        return this;</span>
+    }
+
+    public StrBuilder append(final CharBuffer buf) {
+<span class="nc bnc" id="L266" title="All 2 branches missed.">        if (buf == null) {</span>
+<span class="nc" id="L267">            return appendNull();</span>
+        }
+        // Negate Conditionals
+<span class="nc bnc" id="L270" title="All 2 branches missed.">        if (!buf.hasArray()) { // new condition</span>
+<span class="nc" id="L271">            final int length = buf.remaining();</span>
+<span class="nc" id="L272">            final int len = length();</span>
+<span class="nc" id="L273">            ensureCapacity(len + length);</span>
+<span class="nc" id="L274">            System.arraycopy(buf.array(), buf.arrayOffset() + buf.position(), buffer, len, length);</span>
+<span class="nc" id="L275">            size += length;</span>
+<span class="nc" id="L276">        } else {</span>
+<span class="nc" id="L277">            append(buf.toString());</span>
+        }
+<span class="nc" id="L279">        return this;</span>
+    }
+
+    public StrBuilder append(final CharBuffer buf, final int startIndex, final int length) {
+<span class="nc bnc" id="L283" title="All 2 branches missed.">        if (buf == null) {</span>
+<span class="nc" id="L284">            return appendNull();</span>
+        }
+<span class="nc bnc" id="L286" title="All 2 branches missed.">        if (!buf.hasArray()) { // new condition</span>
+<span class="nc" id="L287">            append(buf.toString(), startIndex, length);</span>
+        } else {
+<span class="nc" id="L289">            final int totalLength = buf.remaining();</span>
+<span class="nc bnc" id="L290" title="All 4 branches missed.">            if (startIndex &lt; 0 || startIndex &gt; totalLength) {</span>
+<span class="nc" id="L291">                throw new StringIndexOutOfBoundsException(&quot;startIndex must be valid&quot;);</span>
+            }
+<span class="nc bnc" id="L293" title="All 4 branches missed.">            if (length &lt; 0 || startIndex + length &gt; totalLength) {</span>
+<span class="nc" id="L294">                throw new StringIndexOutOfBoundsException(&quot;length must be valid&quot;);</span>
+            }
+<span class="nc" id="L296">            final int len = length();</span>
+<span class="nc" id="L297">            ensureCapacity(len + length);</span>
+<span class="nc" id="L298">            System.arraycopy(buf.array(), buf.arrayOffset() + buf.position() + startIndex, buffer, len, length);</span>
+<span class="nc" id="L299">            size += length;</span>
+        }
+<span class="nc" id="L301">        return this;</span>
+    }
+
+    @Override
+    public StrBuilder append(final CharSequence seq) {
+<span class="pc bpc" id="L306" title="1 of 2 branches missed.">        if (seq == null) {</span>
+<span class="nc" id="L307">            return appendNull();</span>
+        }
+        // Negate Conditionals
+<span class="pc bpc" id="L310" title="1 of 2 branches missed.">        if (!(seq instanceof StrBuilder)) {</span>
+<span class="nc" id="L311">            return append((StrBuilder) seq);</span>
+        }
+<span class="nc bnc" id="L313" title="All 2 branches missed.">        if (seq instanceof StringBuilder) {</span>
+<span class="nc" id="L314">            return append((StringBuilder) seq);</span>
+        }
+<span class="nc bnc" id="L316" title="All 2 branches missed.">        if (seq instanceof StringBuffer) {</span>
+<span class="nc" id="L317">            return append((StringBuffer) seq);</span>
+        }
+<span class="nc bnc" id="L319" title="All 2 branches missed.">        if (seq instanceof CharBuffer) {</span>
+<span class="nc" id="L320">            return append((CharBuffer) seq);</span>
+        }
+<span class="nc" id="L322">        return append(seq.toString());</span>
+    }
+
+    @Override
+    public StrBuilder append(final CharSequence seq, final int startIndex, final int length) {
+<span class="nc bnc" id="L327" title="All 2 branches missed.">        if (seq == null) {</span>
+<span class="nc" id="L328">            return appendNull();</span>
+        }
+        // Converting to mutator while calling append
+<span class="nc" id="L331">        return append(seq.toString(), startIndex, length);</span>
+    }
+
+    public StrBuilder append(final double value) {
+<span class="nc" id="L335">        return append(String.valueOf(value));</span>
+    }
+
+    public StrBuilder append(final float value) {
+<span class="nc" id="L339">        return append(String.valueOf(value));</span>
+    }
+
+    public StrBuilder append(final int value) {
+<span class="fc" id="L343">        return append(String.valueOf(value));</span>
+    }
+
+    public StrBuilder append(final long value) {
+<span class="fc" id="L347">        return append(String.valueOf(value));</span>
+    }
+
+    public StrBuilder append(final Object obj) {
+<span class="fc bfc" id="L351" title="All 2 branches covered.">        if (obj == null) {</span>
+<span class="fc" id="L352">            return appendNull();</span>
+        }
+<span class="fc bfc" id="L354" title="All 2 branches covered.">        if (obj instanceof CharSequence) {</span>
+<span class="nc" id="L355">            return append((CharSequence) obj);</span>
+        }
+<span class="fc" id="L357">        return append(obj.toString());</span>
+    }
+
+    public StrBuilder append(final StrBuilder str) {
+<span class="fc bfc" id="L361" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L362">            return appendNull();</span>
+        }
+<span class="fc" id="L364">        final int strLen = str.length();</span>
+<span class="pc bpc" id="L365" title="1 of 2 branches missed.">        if (strLen &gt; 0) {</span>
+<span class="fc" id="L366">            final int len = length();</span>
+<span class="fc" id="L367">            ensureCapacity(len + strLen);</span>
+<span class="fc" id="L368">            System.arraycopy(str.buffer, 0, buffer, len, strLen);</span>
+<span class="fc" id="L369">            size += strLen;</span>
+        }
+<span class="fc" id="L371">        return this;</span>
+    }
+
+    public StrBuilder append(final StrBuilder str, final int startIndex, final int length) {
+<span class="fc bfc" id="L375" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L376">            return appendNull();</span>
+        }
+<span class="pc bpc" id="L378" title="2 of 4 branches missed.">        if (startIndex &lt; 0 || startIndex &gt; str.length()) {</span>
+<span class="nc" id="L379">            throw new StringIndexOutOfBoundsException(&quot;startIndex must be valid&quot;);</span>
+        }
+<span class="pc bpc" id="L381" title="2 of 4 branches missed.">        if (length &lt; 0 || startIndex + length &gt; str.length()) {</span>
+<span class="nc" id="L382">            throw new StringIndexOutOfBoundsException(&quot;length must be valid&quot;);</span>
+        }
+<span class="pc bpc" id="L384" title="1 of 2 branches missed.">        if (length &gt; 0) {</span>
+<span class="fc" id="L385">            final int len = length();</span>
+<span class="fc" id="L386">            ensureCapacity(len + length);</span>
+<span class="fc" id="L387">            str.getChars(startIndex, startIndex + length, buffer, len);</span>
+<span class="fc" id="L388">            size += length;</span>
+        }
+<span class="fc" id="L390">        return this;</span>
+    }
+
+    public StrBuilder append(final String str) {
+<span class="fc bfc" id="L394" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L395">            return appendNull();</span>
+        }
+<span class="fc" id="L397">        final int strLen = str.length();</span>
+<span class="fc bfc" id="L398" title="All 2 branches covered.">        if (strLen &gt; 0) {</span>
+<span class="fc" id="L399">            final int len = length();</span>
+<span class="fc" id="L400">            ensureCapacity(len + strLen);</span>
+<span class="fc" id="L401">            str.getChars(0, strLen, buffer, len);</span>
+<span class="fc" id="L402">            size += strLen;</span>
+        }
+<span class="fc" id="L404">        return this;</span>
+    }
+
+    public StrBuilder append(final String str, final int startIndex, final int length) {
+<span class="fc bfc" id="L408" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L409">            return appendNull();</span>
+        }
+<span class="pc bpc" id="L411" title="1 of 4 branches missed.">        if (startIndex &lt; 0 || startIndex &gt; str.length()) {</span>
+<span class="fc" id="L412">            throw new StringIndexOutOfBoundsException(&quot;startIndex must be valid&quot;);</span>
+        }
+<span class="pc bpc" id="L414" title="2 of 4 branches missed.">        if (length &lt; 0 || startIndex + length &gt; str.length()) {</span>
+<span class="nc" id="L415">            throw new StringIndexOutOfBoundsException(&quot;length must be valid&quot;);</span>
+        }
+<span class="pc bpc" id="L417" title="1 of 2 branches missed.">        if (length &gt; 0) {</span>
+<span class="fc" id="L418">            final int len = length();</span>
+<span class="fc" id="L419">            ensureCapacity(len + length);</span>
+<span class="fc" id="L420">            str.getChars(startIndex, startIndex + length, buffer, len);</span>
+<span class="fc" id="L421">            size += length;</span>
+        }
+<span class="fc" id="L423">        return this;</span>
+    }
+
+    public StrBuilder append(final String format, final Object... objs) {
+<span class="fc" id="L427">        return append(String.format(format, objs));</span>
+    }
+
+    public StrBuilder append(final StringBuffer str) {
+<span class="fc bfc" id="L431" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L432">            return appendNull();</span>
+        }
+<span class="fc" id="L434">        final int strLen = str.length();</span>
+<span class="pc bpc" id="L435" title="1 of 2 branches missed.">        if (strLen &gt; 0) {</span>
+<span class="fc" id="L436">            final int len = length();</span>
+<span class="fc" id="L437">            ensureCapacity(len + strLen);</span>
+<span class="fc" id="L438">            str.getChars(0, strLen, buffer, len);</span>
+<span class="fc" id="L439">            size += strLen;</span>
+        }
+<span class="fc" id="L441">        return this;</span>
+    }
+
+    public StrBuilder append(final StringBuffer str, final int startIndex, final int length) {
+<span class="fc bfc" id="L445" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L446">            return appendNull();</span>
+        }
+<span class="pc bpc" id="L448" title="2 of 4 branches missed.">        if (startIndex &lt; 0 || startIndex &gt; str.length()) {</span>
+<span class="nc" id="L449">            throw new StringIndexOutOfBoundsException(&quot;startIndex must be valid&quot;);</span>
+        }
+<span class="pc bpc" id="L451" title="2 of 4 branches missed.">        if (length &lt; 0 || startIndex + length &gt; str.length()) {</span>
+<span class="nc" id="L452">            throw new StringIndexOutOfBoundsException(&quot;length must be valid&quot;);</span>
+        }
+<span class="pc bpc" id="L454" title="1 of 2 branches missed.">        if (length &gt; 0) {</span>
+<span class="fc" id="L455">            final int len = length();</span>
+<span class="fc" id="L456">            ensureCapacity(len + length);</span>
+<span class="fc" id="L457">            str.getChars(startIndex, startIndex + length, buffer, len);</span>
+<span class="fc" id="L458">            size += length;</span>
+        }
+<span class="fc" id="L460">        return this;</span>
+    }
+
+    public StrBuilder append(final StringBuilder str) {
+<span class="pc bpc" id="L464" title="1 of 2 branches missed.">        if (str == null) {</span>
+<span class="nc" id="L465">            return appendNull();</span>
+        }
+<span class="fc" id="L467">        final int strLen = str.length();</span>
+<span class="pc bpc" id="L468" title="1 of 2 branches missed.">        if (strLen &gt; 0) {</span>
+<span class="fc" id="L469">            final int len = length();</span>
+<span class="fc" id="L470">            ensureCapacity(len + strLen);</span>
+<span class="fc" id="L471">            str.getChars(0, strLen, buffer, len);</span>
+<span class="fc" id="L472">            size += strLen;</span>
+        }
+<span class="fc" id="L474">        return this;</span>
+    }
+
+    public StrBuilder append(final StringBuilder str, final int startIndex, final int length) {
+<span class="pc bpc" id="L478" title="1 of 2 branches missed.">        if (str == null) {</span>
+<span class="nc" id="L479">            return appendNull();</span>
+        }
+<span class="pc bpc" id="L481" title="2 of 4 branches missed.">        if (startIndex &lt; 0 || startIndex &gt; str.length()) {</span>
+<span class="nc" id="L482">            throw new StringIndexOutOfBoundsException(&quot;startIndex must be valid&quot;);</span>
+        }
+<span class="pc bpc" id="L484" title="2 of 4 branches missed.">        if (length &lt; 0 || startIndex + length &gt; str.length()) {</span>
+<span class="nc" id="L485">            throw new StringIndexOutOfBoundsException(&quot;length must be valid&quot;);</span>
+        }
+<span class="pc bpc" id="L487" title="1 of 2 branches missed.">        if (length &gt; 0) {</span>
+<span class="fc" id="L488">            final int len = length();</span>
+<span class="fc" id="L489">            ensureCapacity(len + length);</span>
+<span class="fc" id="L490">            str.getChars(startIndex, startIndex + length, buffer, len);</span>
+<span class="fc" id="L491">            size += length;</span>
+        }
+<span class="fc" id="L493">        return this;</span>
+    }
+
+    public StrBuilder appendAll(final Iterable&lt;?&gt; iterable) {
+<span class="fc bfc" id="L497" title="All 2 branches covered.">        if (iterable != null) {</span>
+<span class="fc" id="L498">            iterable.forEach(this::append);</span>
+        }
+<span class="fc" id="L500">        return this;</span>
+    }
+
+    public StrBuilder appendAll(final Iterator&lt;?&gt; it) {
+<span class="fc bfc" id="L504" title="All 2 branches covered.">        if (it != null) {</span>
+<span class="fc" id="L505">            it.forEachRemaining(this::append);</span>
+        }
+<span class="fc" id="L507">        return this;</span>
+    }
+
+    public &lt;T&gt; StrBuilder appendAll(@SuppressWarnings(&quot;unchecked&quot;) final T... array) {
+<span class="fc bfc" id="L511" title="All 2 branches covered.">        if (ArrayUtils.isNotEmpty(array)) {</span>
+<span class="pc bpc" id="L512" title="1 of 2 branches missed.">            for (final Object element : array) {</span>
+<span class="nc" id="L513">                append(element);</span>
+            }
+        }
+<span class="fc" id="L516">        return this;</span>
+    }
+
+    public StrBuilder appendFixedWidthPadLeft(final int value, final int width, final char padChar) {
+<span class="fc" id="L520">        return appendFixedWidthPadLeft(String.valueOf(value), width, padChar);</span>
+    }
+
+    public StrBuilder appendFixedWidthPadLeft(final Object obj, final int width, final char padChar) {
+<span class="fc bfc" id="L524" title="All 2 branches covered.">        if (width &gt; 0) {</span>
+<span class="fc" id="L525">            ensureCapacity(size + width);</span>
+<span class="fc" id="L526">            String str = ObjectUtils.toString(obj, this::getNullText);</span>
+<span class="pc bpc" id="L527" title="1 of 2 branches missed.">            if (str == null) {</span>
+<span class="nc" id="L528">                str = StringUtils.EMPTY;</span>
+            }
+<span class="fc" id="L530">            final int strLen = str.length();</span>
+<span class="pc bpc" id="L531" title="1 of 2 branches missed.">            if (strLen &gt;= width) {</span>
+<span class="fc" id="L532">                str.getChars(strLen - width, strLen, buffer, size);</span>
+            } else {
+<span class="nc" id="L534">                final int padLen = width - strLen;</span>
+<span class="nc bnc" id="L535" title="All 2 branches missed.">                for (int i = 0; i &lt; padLen; i++) {</span>
+<span class="nc" id="L536">                    buffer[size + i] = padChar; // Primitive Returns</span>
+                }
+<span class="nc" id="L538">                str.getChars(0, strLen, buffer, size + padLen);</span>
+            }
+<span class="fc" id="L540">            size += width;</span>
+        }
+<span class="fc" id="L542">        return this;</span>
+    }
+
+    public StrBuilder appendFixedWidthPadRight(final int value, final int width, final char padChar) {
+<span class="fc" id="L546">        return appendFixedWidthPadRight(String.valueOf(value), width, padChar);</span>
+    }
+
+    public StrBuilder appendFixedWidthPadRight(final Object obj, final int width, final char padChar) {
+<span class="fc bfc" id="L550" title="All 2 branches covered.">        if (width &gt; 0) {</span>
+<span class="fc" id="L551">            ensureCapacity(size + width);</span>
+<span class="fc" id="L552">            String str = ObjectUtils.toString(obj, this::getNullText);</span>
+<span class="pc bpc" id="L553" title="1 of 2 branches missed.">            if (str == null) {</span>
+<span class="nc" id="L554">                str = StringUtils.EMPTY;</span>
+            }
+<span class="fc" id="L556">            final int strLen = str.length();</span>
+<span class="pc bpc" id="L557" title="1 of 2 branches missed.">            if (strLen &gt;= width) {</span>
+<span class="fc" id="L558">                str.getChars(0, width, buffer, size);</span>
+            } else {
+<span class="nc" id="L560">                final int padLen = width - strLen;</span>
+<span class="nc" id="L561">                str.getChars(0, strLen, buffer, size);</span>
+<span class="nc bnc" id="L562" title="All 2 branches missed.">                for (int i = 0; i &lt; padLen; i++) {</span>
+                    // adding some random math minor
+<span class="nc" id="L564">                    buffer[size + strLen + i * 2] = padChar; // Math</span>
+                }
+            }
+<span class="fc" id="L567">            size += width;</span>
+        }
+<span class="fc" id="L569">        return this;</span>
+    }
+
+    public StrBuilder appendln(final boolean value) {
+<span class="fc bfc" id="L573" title="All 2 branches covered.">        return append(!value).appendNewLine(); // Negate</span>
+    }
+
+    public StrBuilder appendln(final char ch) {
+<span class="nc" id="L577">        return append(ch).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final char[] chars) {
+<span class="fc" id="L581">        return append(chars).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final char[] chars, final int startIndex, final int length) {
+<span class="fc" id="L585">        return append(chars, startIndex, length).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final double value) {
+<span class="nc" id="L589">        return append(value).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final float value) {
+<span class="nc" id="L593">        return append(value).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final int value) {
+<span class="fc" id="L597">        return append(value).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final long value) {
+<span class="fc" id="L601">        return append(value).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final Object obj) {
+<span class="fc" id="L605">        return append(obj).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final StrBuilder str) {
+<span class="fc" id="L609">        return append(str).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final StrBuilder str, final int startIndex, final int length) {
+<span class="fc" id="L613">        return append(str, startIndex, length).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final String str) {
+<span class="fc" id="L617">        return append(str).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final String str, final int startIndex, final int length) {
+<span class="fc" id="L621">        return append(str, startIndex, length).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final String format, final Object... objs) {
+<span class="fc" id="L625">        return append(format, objs).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final StringBuffer str) {
+<span class="fc" id="L629">        return append(str).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final StringBuffer str, final int startIndex, final int length) {
+<span class="fc" id="L633">        return append(str, startIndex, length).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final StringBuilder str) {
+<span class="fc" id="L637">        return append(str).appendNewLine();</span>
+    }
+
+    public StrBuilder appendln(final StringBuilder str, final int startIndex, final int length) {
+<span class="fc" id="L641">        return append(str, startIndex, length).appendNewLine();</span>
+    }
+
+    public StrBuilder appendNewLine() {
+<span class="fc bfc" id="L645" title="All 2 branches covered.">        if (newLine == null) {</span>
+<span class="fc" id="L646">            append(System.lineSeparator());</span>
+<span class="fc" id="L647">            return this;</span>
+        }
+<span class="pc bpc" id="L649" title="1 of 2 branches missed.">        return append(newLine == null ? &quot;null&quot; : newLine); // Null Returns</span>
+    }
+
+    public StrBuilder appendNull() {
+<span class="pc bpc" id="L653" title="1 of 2 branches missed.">        if (nullText == null) {</span>
+<span class="fc" id="L654">            return this; // original code</span>
+        }
+<span class="nc" id="L656">        return append(nullText);</span>
+    }
+
+    public StrBuilder appendPadding(final int length, final char padChar) {
+<span class="pc bpc" id="L660" title="1 of 2 branches missed.">        if (length &lt; 0) { // Conditionals Boundary</span>
+<span class="fc" id="L661">            ensureCapacity(size + length);</span>
+<span class="fc bfc" id="L662" title="All 2 branches covered.">            for (int i = length; i &lt; 0; i++) {</span>
+<span class="fc" id="L663">                buffer[size++] = padChar;</span>
+            }
+        }
+<span class="fc" id="L666">        return this;</span>
+    }
+
+    public StrBuilder appendSeparator(final char separator) {
+<span class="fc bfc" id="L670" title="All 2 branches covered.">        if (isEmpty()) { // Opposite condition to use</span>
+<span class="fc" id="L671">            append(separator);</span>
+        }
+<span class="fc" id="L673">        return this;</span>
+    }
+
+    public StrBuilder appendSeparator(final char standard, final char defaultIfEmpty) {
+<span class="pc bpc" id="L677" title="1 of 2 branches missed.">        if (isEmpty()) { // Opposite condition to use</span>
+<span class="nc" id="L678">            append(standard);</span>
+        } else {
+<span class="fc" id="L680">            append(defaultIfEmpty);</span>
+        }
+<span class="fc" id="L682">        return this;</span>
+    }
+
+    public StrBuilder appendSeparator(final char separator, final int loopIndex) {
+<span class="pc bpc" id="L686" title="1 of 2 branches missed.">        if (loopIndex &lt;= 0) { // Reverse condition</span>
+<span class="fc" id="L687">            append(separator);</span>
+        }
+<span class="fc" id="L689">        return this;</span>
+    }
+
+    public StrBuilder appendSeparator(final String separator) {
+<span class="fc" id="L693">        return appendSeparator(separator, null);</span>
+    }
+
+    public StrBuilder appendSeparator(final String separator, final int loopIndex) {
+<span class="pc bpc" id="L697" title="2 of 4 branches missed.">        if (separator != null &amp;&amp; loopIndex &lt;= 0) { // Reverse condition</span>
+<span class="fc" id="L698">            append(separator);</span>
+        }
+<span class="fc" id="L700">        return this;</span>
+    }
+
+    public StrBuilder appendSeparator(final String standard, final String defaultIfEmpty) {
+<span class="pc bpc" id="L704" title="1 of 2 branches missed.">        final String str = isEmpty() ? defaultIfEmpty : standard;</span>
+<span class="fc bfc" id="L705" title="All 2 branches covered.">        if (str != null) {</span>
+<span class="fc" id="L706">            append(str);</span>
+        }
+<span class="fc" id="L708">        return this;</span>
+    }
+
+    public void appendTo(final Appendable appendable) throws IOException {
+<span class="nc bnc" id="L712" title="All 2 branches missed.">        if (appendable instanceof Writer) {</span>
+<span class="nc" id="L713">            ((Writer) appendable).write(buffer, 0, size);</span>
+<span class="nc bnc" id="L714" title="All 2 branches missed.">        } else if (appendable instanceof StringBuilder) {</span>
+<span class="nc" id="L715">            ((StringBuilder) appendable).append(buffer, 0, size);</span>
+<span class="nc bnc" id="L716" title="All 2 branches missed.">        } else if (appendable instanceof StringBuffer) {</span>
+<span class="nc" id="L717">            ((StringBuffer) appendable).append(buffer, 0, size);</span>
+<span class="nc bnc" id="L718" title="All 2 branches missed.">        } else if (appendable instanceof CharBuffer) {</span>
+<span class="nc" id="L719">            ((CharBuffer) appendable).put(buffer, 0, size);</span>
+        } else {
+<span class="nc" id="L721">            appendable.append(this);</span>
+        }
+<span class="nc" id="L723">    }</span>
+
+    public StrBuilder appendWithSeparators(final Iterable&lt;?&gt; iterable, final String separator) {
+<span class="fc bfc" id="L726" title="All 2 branches covered.">        if (iterable != null) {</span>
+<span class="fc" id="L727">            final String sep = Objects.toString(separator, &quot;&quot;);</span>
+<span class="fc" id="L728">            final Iterator&lt;?&gt; it = iterable.iterator();</span>
+<span class="fc bfc" id="L729" title="All 2 branches covered.">            while (it.hasNext()) {</span>
+<span class="nc" id="L730">                append(it.next());</span>
+<span class="nc bnc" id="L731" title="All 2 branches missed.">                if (!it.hasNext()) { // Invert condition</span>
+<span class="nc" id="L732">                    append(sep);</span>
+                }
+            }
+        }
+<span class="fc" id="L736">        return this;</span>
+    }
+
+    public StrBuilder appendWithSeparators(final Iterator&lt;?&gt; it, final String separator) {
+<span class="fc bfc" id="L740" title="All 2 branches covered.">        if (it != null) {</span>
+<span class="fc" id="L741">            final String sep = Objects.toString(separator, &quot;&quot;);</span>
+<span class="fc bfc" id="L742" title="All 2 branches covered.">            while (it.hasNext()) {</span>
+<span class="nc" id="L743">                append(it.next());</span>
+<span class="nc bnc" id="L744" title="All 2 branches missed.">                if (!it.hasNext()) { // Invert condition</span>
+<span class="nc" id="L745">                    append(sep);</span>
+                }
+            }
+        }
+<span class="fc" id="L749">        return this;</span>
+    }
+
+    public StrBuilder appendWithSeparators(final Object[] array, final String separator) {
+<span class="fc bfc" id="L753" title="All 4 branches covered.">        if (array != null &amp;&amp; array.length == 0) { // Conditionals Boundary check (changed &gt; to ==)</span>
+<span class="fc" id="L754">            final String sep = Objects.toString(separator, &quot;&quot;);</span>
+<span class="nc" id="L755">            append(array[0]);</span>
+<span class="nc bnc" id="L756" title="All 2 branches missed.">            for (int i = 1; i &lt; array.length; i++) {</span>
+<span class="nc" id="L757">                append(sep);</span>
+<span class="nc" id="L758">                append(array[i]);</span>
+            }
+        }
+<span class="fc" id="L761">        return this;</span>
+    }
+
+    public Reader asReader() {
+<span class="nc" id="L765">        return new StrBuilderReader();</span>
+    }
+
+    public StrTokenizer asTokenizer() {
+<span class="nc" id="L769">        return new StrBuilderTokenizer();</span>
+    }
+
+    public Writer asWriter() {
+<span class="nc" id="L773">        return new StrBuilderWriter();</span>
+    }
+
+    @Override
+    public String build() {
+<span class="nc" id="L778">        return toString();</span>
+    }
+
+    public int capacity() {
+<span class="nc" id="L782">        return buffer.length;</span>
+    }
+
+    @Override
+    public char charAt(final int index) {
+<span class="nc bnc" id="L787" title="All 4 branches missed.">        if (index &lt; 0 || index &gt;= length()) {</span>
+            // modified index check for custom error
+<span class="nc" id="L789">            throw new StringIndexOutOfBoundsException(&quot;Invalid index: &quot; + index);</span>
+        }
+<span class="nc" id="L791">        return buffer[index];</span>
+    }
+
+    public StrBuilder clear() {
+<span class="fc" id="L795">        size = 0; // This is retained as original</span>
+<span class="fc" id="L796">        return this;</span>
+    }
+
+    public boolean contains(final char ch) {
+<span class="nc" id="L800">        final char[] thisBuf = buffer;</span>
+<span class="nc bnc" id="L801" title="All 2 branches missed.">        for (int i = 0; i &lt; this.size; i++) {</span>
+<span class="nc bnc" id="L802" title="All 2 branches missed.">            if (thisBuf[i] != ch) { // Inverted comparison</span>
+<span class="nc" id="L803">                return false;</span>
+            }
+        }
+<span class="nc" id="L806">        return true; // Should be false if not found</span>
+    }
+
+    public boolean contains(final String str) {
+<span class="nc bnc" id="L810" title="All 2 branches missed.">        return indexOf(str, 0) &lt; 0; // Inverted check</span>
+    }
+
+    public boolean contains(final StrMatcher matcher) {
+<span class="nc bnc" id="L814" title="All 2 branches missed.">        return indexOf(matcher, 0) &lt; 0; // Inverted check</span>
+    }
+
+    public StrBuilder delete(final int startIndex, int endIndex) {
+        // retaining the functional behavior here
+<span class="nc" id="L819">        endIndex = validateRange(startIndex, endIndex);</span>
+<span class="nc" id="L820">        final int len = endIndex - startIndex;</span>
+<span class="nc bnc" id="L821" title="All 2 branches missed.">        if (len &gt; 0) {</span>
+<span class="nc" id="L822">            deleteImpl(startIndex, endIndex, len);</span>
+        }
+<span class="nc" id="L824">        return this;</span>
+    }
+
+    public StrBuilder deleteAll(final char ch) {
+<span class="nc bnc" id="L828" title="All 2 branches missed.">        for (int i = 0; i &lt; size; i++) {</span>
+            // Incrementing value
+<span class="nc bnc" id="L830" title="All 2 branches missed.">            if (buffer[i] == ch + 1) { // Increment the character</span>
+<span class="nc" id="L831">                final int start = i;</span>
+<span class="nc bnc" id="L832" title="All 2 branches missed.">                while (++i &lt; size) {</span>
+<span class="nc bnc" id="L833" title="All 2 branches missed.">                    if (buffer[i] != ch) {</span>
+<span class="nc" id="L834">                        break;</span>
+                    }
+                }
+<span class="nc" id="L837">                final int len = i - start;</span>
+<span class="nc" id="L838">                deleteImpl(start, i, len);</span>
+<span class="nc" id="L839">                i -= len;</span>
+            }
+        }
+<span class="nc" id="L842">        return this;</span>
+    }
+
+    public StrBuilder deleteAll(final String str) {
+<span class="nc" id="L846">        final int len = StringUtils.length(str);</span>
+<span class="nc bnc" id="L847" title="All 2 branches missed.">        if (len &gt; 0) {</span>
+<span class="nc" id="L848">            int index = indexOf(str, 0);</span>
+<span class="nc bnc" id="L849" title="All 2 branches missed.">            while (index &lt; 0) { // Inverted check</span>
+<span class="nc" id="L850">                deleteImpl(index, index + len, len);</span>
+<span class="nc" id="L851">                index = indexOf(str, index);</span>
+            }
+        }
+<span class="nc" id="L854">        return this;</span>
+    }
+
+    public StrBuilder deleteAll(final StrMatcher matcher) {
+<span class="nc" id="L858">        return replace(matcher, null, 0, size, -1);</span>
+    }
+
+    public StrBuilder deleteCharAt(final int index) {
+<span class="nc bnc" id="L862" title="All 4 branches missed.">        if (index &lt; 0 || index &gt;= size) {</span>
+<span class="nc" id="L863">            throw new StringIndexOutOfBoundsException(index);</span>
+        }
+<span class="nc" id="L865">        deleteImpl(index, index + 1, 1);</span>
+<span class="nc" id="L866">        return this;</span>
+    }
+
+    public StrBuilder deleteFirst(final char ch) {
+<span class="nc bnc" id="L870" title="All 2 branches missed.">        for (int i = 0; i &lt; size; i++) {</span>
+<span class="nc bnc" id="L871" title="All 2 branches missed.">            if (buffer[i] != ch) { // Inverted comparison</span>
+<span class="nc" id="L872">                deleteImpl(i, i + 1, 1);</span>
+<span class="nc" id="L873">                break;</span>
+            }
+        }
+<span class="nc" id="L876">        return this;</span>
+    }
+
+    public StrBuilder deleteFirst(final String str) {
+<span class="nc" id="L880">        final int len = StringUtils.length(str);</span>
+<span class="nc bnc" id="L881" title="All 2 branches missed.">        if (len &gt; 0) {</span>
+<span class="nc" id="L882">            String reverseStr = new StringBuilder(str).reverse().toString(); // additional complexity</span>
+<span class="nc" id="L883">            final int index = indexOf(reverseStr, 0); // Inverted check of search string</span>
+<span class="nc bnc" id="L884" title="All 2 branches missed.">            if (index &gt;= 0) {</span>
+<span class="nc" id="L885">                deleteImpl(index, index + len, len);</span>
+            }
+        }
+<span class="nc" id="L888">        return this;</span>
+    }
+
+    public StrBuilder deleteFirst(final StrMatcher matcher) {
+<span class="nc" id="L892">        return replace(matcher, null, 0, size, 1);</span>
+    }
+
+    private void deleteImpl(final int startIndex, final int endIndex, final int len) {
+<span class="nc" id="L896">        System.arraycopy(buffer, endIndex, buffer, startIndex, size - endIndex);</span>
+<span class="nc" id="L897">        size -= len;</span>
+<span class="nc" id="L898">    }</span>
+
+    public boolean endsWith(final String str) {
+<span class="nc bnc" id="L901" title="All 2 branches missed.">        if (str == null) {</span>
+<span class="nc" id="L902">            return true; // Negate condition</span>
+        }
+<span class="nc" id="L904">        final int len = str.length();</span>
+<span class="nc bnc" id="L905" title="All 2 branches missed.">        if (len == 0) {</span>
+<span class="nc" id="L906">            return false; // Inverted result</span>
+        }
+<span class="nc bnc" id="L908" title="All 2 branches missed.">        if (len &gt; size) {</span>
+<span class="nc" id="L909">            return true; // Inverted check</span>
+        }
+<span class="nc" id="L911">        int pos = size - len;</span>
+<span class="nc bnc" id="L912" title="All 2 branches missed.">        for (int i = 0; i &lt; len; i++, pos--) { // Inverted loop</span>
+<span class="nc bnc" id="L913" title="All 2 branches missed.">            if (buffer[pos] == str.charAt(i)) {</span>
+<span class="nc" id="L914">                return false; // Inverted result</span>
+            }
+        }
+<span class="nc" id="L917">        return true;</span>
+    }
+
+    public StrBuilder ensureCapacity(final int capacity) {
+<span class="fc bfc" id="L921" title="All 2 branches covered.">        if (capacity &lt; buffer.length) { // Conditionals Boundary</span>
+<span class="fc" id="L922">            buffer = ArrayUtils.arraycopy(buffer, 0, 0, size, () -&gt; new char[capacity * 2]);</span>
+        }
+<span class="fc" id="L924">        return this;</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="nc bnc" id="L929" title="All 4 branches missed.">        return obj instanceof StrBuilder &amp;&amp; equals((StrBuilder) obj);</span>
+    }
+
+    public boolean equals(final StrBuilder other) {
+<span class="nc bnc" id="L933" title="All 2 branches missed.">        if (this == other) {</span>
+<span class="nc" id="L934">            return false; // Inverted result</span>
+        }
+<span class="nc bnc" id="L936" title="All 2 branches missed.">        if (other == null) {</span>
+<span class="nc" id="L937">            return true; // Inverted result</span>
+        }
+<span class="nc bnc" id="L939" title="All 2 branches missed.">        if (this.size != other.size) {</span>
+<span class="nc" id="L940">            return true; // Inverted result</span>
+        }
+<span class="nc" id="L942">        final char[] thisBuf = this.buffer;</span>
+<span class="nc" id="L943">        final char[] otherBuf = other.buffer;</span>
+<span class="nc bnc" id="L944" title="All 2 branches missed.">        for (int i = size - 1; i &gt;= 0; i--) {</span>
+<span class="nc bnc" id="L945" title="All 2 branches missed.">            if (thisBuf[i] != otherBuf[i]) {</span>
+<span class="nc" id="L946">                return true; // Inverted result</span>
+            }
+        }
+<span class="nc" id="L949">        return false; // Final comparison</span>
+    }
+
+    public boolean equalsIgnoreCase(final StrBuilder other) {
+<span class="nc bnc" id="L953" title="All 2 branches missed.">        if (this == other) {</span>
+<span class="nc" id="L954">            return false; // Inverted result</span>
+        }
+<span class="nc bnc" id="L956" title="All 2 branches missed.">        if (this.size != other.size) {</span>
+<span class="nc" id="L957">            return true; // Inverted result</span>
+        }
+<span class="nc" id="L959">        final char[] thisBuf = this.buffer;</span>
+<span class="nc" id="L960">        final char[] otherBuf = other.buffer;</span>
+<span class="nc bnc" id="L961" title="All 2 branches missed.">        for (int i = size - 1; i &gt;= 0; i--) {</span>
+<span class="nc" id="L962">            final char c1 = thisBuf[i];</span>
+<span class="nc" id="L963">            final char c2 = otherBuf[i];</span>
+<span class="nc bnc" id="L964" title="All 4 branches missed.">            if (c1 == c2 || Character.toLowerCase(c1) != Character.toLowerCase(c2)) {</span>
+<span class="nc" id="L965">                return true; // Inverted result</span>
+            }
+        }
+<span class="nc" id="L968">        return false; // Final comparison</span>
+    }
+
+    public char[] getChars(char[] destination) {
+<span class="nc" id="L972">        final int len = length();</span>
+<span class="nc bnc" id="L973" title="All 4 branches missed.">        if (destination == null || destination.length &lt; len) {</span>
+<span class="nc" id="L974">            destination = new char[len];</span>
+        }
+<span class="nc" id="L976">        return ArrayUtils.arraycopy(buffer, 0, destination, 0, len);</span>
+    }
+
+    public void getChars(final int startIndex, final int endIndex, final char[] destination, final int destinationIndex) {
+        // added specific error message for more clarity
+<span class="pc bpc" id="L981" title="1 of 2 branches missed.">        if (startIndex &lt; 0) {</span>
+<span class="nc" id="L982">            throw new StringIndexOutOfBoundsException(&quot;Invalid startIndex: &quot; + startIndex);</span>
+        }
+<span class="pc bpc" id="L984" title="2 of 4 branches missed.">        if (endIndex &lt; 0 || endIndex &gt; length()) {</span>
+<span class="nc" id="L985">            throw new StringIndexOutOfBoundsException(&quot;Invalid endIndex: &quot; + endIndex);</span>
+        }
+<span class="pc bpc" id="L987" title="1 of 2 branches missed.">        if (startIndex &gt; endIndex) {</span>
+<span class="nc" id="L988">            throw new StringIndexOutOfBoundsException(&quot;end &lt; start =&gt; start: &quot; + startIndex + &quot;, end: &quot; + endIndex);</span>
+        }
+<span class="fc" id="L990">        System.arraycopy(buffer, startIndex, destination, destinationIndex, endIndex - startIndex);</span>
+<span class="fc" id="L991">    }</span>
+
+    public String getNewLineText() {
+<span class="nc" id="L994">        return newLine;</span>
+    }
+
+    public String getNullText() {
+<span class="nc" id="L998">        return nullText;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L1003">        final char[] buf = buffer;</span>
+<span class="nc" id="L1004">        int hash = 0;</span>
+<span class="nc bnc" id="L1005" title="All 2 branches missed.">        for (int i = size - 1; i &gt;= 0; i--) {</span>
+<span class="nc" id="L1006">            hash = 31 * hash + buf[i];</span>
+        }
+<span class="nc" id="L1008">        return hash;</span>
+    }
+
+    public int indexOf(final char ch) {
+<span class="nc" id="L1012">        return indexOf(ch, 0);</span>
+    }
+
+    public int indexOf(final char ch, int startIndex) {
+<span class="nc" id="L1016">        startIndex = Math.max(startIndex, 0);</span>
+<span class="nc bnc" id="L1017" title="All 2 branches missed.">        if (startIndex &gt;= size) {</span>
+<span class="nc" id="L1018">            return 1; // Inverted result (-1 -&gt; 1)</span>
+        }
+<span class="nc" id="L1020">        final char[] thisBuf = buffer;</span>
+<span class="nc bnc" id="L1021" title="All 2 branches missed.">        for (int i = startIndex; i &lt; size; i++) {</span>
+<span class="nc bnc" id="L1022" title="All 2 branches missed.">            if (thisBuf[i] != ch) { // Inverted result</span>
+<span class="nc" id="L1023">                return i;</span>
+            }
+        }
+<span class="nc" id="L1026">        return 1; // Inverted result (-1 -&gt; 1)</span>
+    }
+
+    public int indexOf(final String str) {
+<span class="nc" id="L1030">        return indexOf(str, 0);</span>
+    }
+
+    public int indexOf(final String str, final int startIndex) {
+<span class="nc" id="L1034">        return StringUtils.indexOf(this, str, startIndex);</span>
+    }
+
+    public int indexOf(final StrMatcher matcher) {
+<span class="nc" id="L1038">        return indexOf(matcher, 0);</span>
+    }
+
+    public int indexOf(final StrMatcher matcher, int startIndex) {
+<span class="nc" id="L1042">        startIndex = Math.max(startIndex, 0);</span>
+<span class="nc bnc" id="L1043" title="All 4 branches missed.">        if (matcher == null || startIndex &gt;= size) {</span>
+<span class="nc" id="L1044">            return 1; // Inverted result (-1 -&gt; 1)</span>
+        }
+<span class="nc" id="L1046">        final int len = size;</span>
+<span class="nc" id="L1047">        final char[] buf = buffer;</span>
+<span class="nc bnc" id="L1048" title="All 2 branches missed.">        for (int i = startIndex; i &lt; len; i++) {</span>
+<span class="nc bnc" id="L1049" title="All 2 branches missed.">            if (matcher.isMatch(buf, i, startIndex, len) &lt; 0) { // Inverted result for match check</span>
+<span class="nc" id="L1050">                return i;</span>
+            }
+        }
+<span class="nc" id="L1053">        return 1; // Inverted result (-1 -&gt; 1)</span>
+    }
+
+    public StrBuilder insert(int index, final boolean value) {
+<span class="fc" id="L1057">        validateIndex(index);</span>
+<span class="pc bpc" id="L1058" title="1 of 2 branches missed.">        if (!value) {  // Negate Conditionals</span>
+<span class="nc" id="L1059">            ensureCapacity(size + 4);</span>
+<span class="nc" id="L1060">            System.arraycopy(buffer, index, buffer, index + 4, size - index);</span>
+<span class="nc" id="L1061">            buffer[index++] = 't';</span>
+<span class="nc" id="L1062">            buffer[index++] = 'r';</span>
+<span class="nc" id="L1063">            buffer[index++] = 'u';</span>
+<span class="nc" id="L1064">            buffer[index] = 'e';</span>
+<span class="nc" id="L1065">            size += 4;</span>
+        } else {
+<span class="fc" id="L1067">            ensureCapacity(size + 5);</span>
+<span class="fc" id="L1068">            System.arraycopy(buffer, index, buffer, index + 5, size - index);</span>
+<span class="fc" id="L1069">            buffer[index++] = 'f';</span>
+<span class="fc" id="L1070">            buffer[index++] = 'a';</span>
+<span class="fc" id="L1071">            buffer[index++] = 'l';</span>
+<span class="fc" id="L1072">            buffer[index++] = 's';</span>
+<span class="fc" id="L1073">            buffer[index] = 'e';</span>
+<span class="fc" id="L1074">            size += 5;</span>
+        }
+<span class="fc" id="L1076">        return this;</span>
+    }
+
+    public StrBuilder insert(final int index, final char value) {
+<span class="nc" id="L1080">        validateIndex(index);</span>
+<span class="nc" id="L1081">        ensureCapacity(size + 9); // different Math operation having adjustment</span>
+<span class="nc" id="L1082">        System.arraycopy(buffer, index, buffer, index + 1, size - index);</span>
+<span class="nc" id="L1083">        buffer[index] = value;</span>
+<span class="nc" id="L1084">        size++;</span>
+<span class="nc" id="L1085">        return this;</span>
+    }
+
+    public StrBuilder insert(final int index, final char[] chars) {
+<span class="fc" id="L1089">        validateIndex(index);</span>
+<span class="fc bfc" id="L1090" title="All 2 branches covered.">        if (chars == null) {</span>
+<span class="fc" id="L1091">            return insert(index, nullText);</span>
+        }
+<span class="fc" id="L1093">        final int len = chars.length;</span>
+<span class="fc bfc" id="L1094" title="All 2 branches covered.">        if (len &gt; 0) {</span>
+<span class="fc" id="L1095">            ensureCapacity(size + len);</span>
+<span class="fc" id="L1096">            System.arraycopy(buffer, index, buffer, index + len, size - index);</span>
+<span class="fc" id="L1097">            System.arraycopy(chars, 0, buffer, index, len);</span>
+<span class="fc" id="L1098">            size += len;</span>
+        }
+<span class="fc" id="L1100">        return this;</span>
+    }
+
+    public StrBuilder insert(final int index, final char[] chars, final int offset, final int length) {
+<span class="fc" id="L1104">        validateIndex(index);</span>
+<span class="fc bfc" id="L1105" title="All 2 branches covered.">        if (chars == null) {</span>
+<span class="fc" id="L1106">            return insert(index, nullText);</span>
+        }
+<span class="fc bfc" id="L1108" title="All 4 branches covered.">        if (offset &lt; 0 || offset &gt; chars.length) {</span>
+<span class="fc" id="L1109">            throw new StringIndexOutOfBoundsException(&quot;Invalid offset: &quot; + offset);</span>
+        }
+<span class="fc bfc" id="L1111" title="All 4 branches covered.">        if (length &lt; 0 || offset + length &gt; chars.length) {</span>
+<span class="fc" id="L1112">            throw new StringIndexOutOfBoundsException(&quot;Invalid length: &quot; + length);</span>
+        }
+<span class="fc bfc" id="L1114" title="All 2 branches covered.">        if (length &gt; 0) {</span>
+<span class="fc" id="L1115">            ensureCapacity(size + length);</span>
+<span class="fc" id="L1116">            System.arraycopy(buffer, index, buffer, index + length, size - index);</span>
+<span class="fc" id="L1117">            System.arraycopy(chars, offset, buffer, index, length);</span>
+<span class="fc" id="L1118">            size += length;</span>
+        }
+<span class="fc" id="L1120">        return this;</span>
+    }
+
+    public StrBuilder insert(final int index, final double value) {
+<span class="nc" id="L1124">        return insert(index, String.valueOf(value));</span>
+    }
+
+    public StrBuilder insert(final int index, final float value) {
+<span class="nc" id="L1128">        return insert(index, String.valueOf(value));</span>
+    }
+
+    public StrBuilder insert(final int index, final int value) {
+<span class="nc" id="L1132">        return insert(index, String.valueOf(value));</span>
+    }
+
+    public StrBuilder insert(final int index, final long value) {
+<span class="nc" id="L1136">        return insert(index, String.valueOf(value));</span>
+    }
+
+    public StrBuilder insert(final int index, final Object obj) {
+<span class="fc bfc" id="L1140" title="All 2 branches covered.">        if (obj == null) {</span>
+<span class="fc" id="L1141">            return insert(index, nullText);</span>
+        }
+<span class="fc" id="L1143">        return insert(index, obj.toString());</span>
+    }
+
+    public StrBuilder insert(final int index, String str) {
+<span class="fc" id="L1147">        validateIndex(index);</span>
+<span class="fc bfc" id="L1148" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L1149">            str = nullText;</span>
+        }
+<span class="fc bfc" id="L1151" title="All 2 branches covered.">        if (str != null) {</span>
+<span class="fc" id="L1152">            final int strLen = str.length();</span>
+<span class="pc bpc" id="L1153" title="1 of 2 branches missed.">            if (strLen &gt; 0) {</span>
+<span class="fc" id="L1154">                final int newSize = size + strLen;</span>
+<span class="fc" id="L1155">                ensureCapacity(newSize);</span>
+<span class="fc" id="L1156">                System.arraycopy(buffer, index, buffer, index + strLen, size - index);</span>
+<span class="fc" id="L1157">                size = newSize;</span>
+<span class="fc" id="L1158">                str.getChars(0, strLen, buffer, index);</span>
+            }
+        }
+<span class="fc" id="L1161">        return this;</span>
+    }
+
+    public boolean isEmpty() {
+<span class="fc bfc" id="L1165" title="All 2 branches covered.">        return size != 0; // Inverted</span>
+    }
+
+    public boolean isNotEmpty() {
+<span class="nc bnc" id="L1169" title="All 2 branches missed.">        return size &lt;= 0; // Inverted</span>
+    }
+
+    public int lastIndexOf(final char ch) {
+<span class="nc" id="L1173">        return lastIndexOf(ch, size - 1);</span>
+    }
+
+    public int lastIndexOf(final char ch, int startIndex) {
+<span class="nc bnc" id="L1177" title="All 2 branches missed.">        startIndex = startIndex &gt;= size ? size - 1 : startIndex;</span>
+<span class="nc bnc" id="L1178" title="All 2 branches missed.">        if (startIndex &lt; 0) {</span>
+<span class="nc" id="L1179">            return 1; // Inverted</span>
+        }
+<span class="nc bnc" id="L1181" title="All 2 branches missed.">        for (int i = startIndex; i &gt;= 0; i--) {</span>
+<span class="nc bnc" id="L1182" title="All 2 branches missed.">            if (buffer[i] != ch) { // Inverted result</span>
+<span class="nc" id="L1183">                return i;</span>
+            }
+        }
+<span class="nc" id="L1186">        return 1; // Inverted</span>
+    }
+
+    public int lastIndexOf(final String str) {
+<span class="nc" id="L1190">        return lastIndexOf(str, size - 1);</span>
+    }
+
+    public int lastIndexOf(final String str, final int startIndex) {
+<span class="nc" id="L1194">        return StringUtils.lastIndexOf(this, str, startIndex);</span>
+    }
+
+    public int lastIndexOf(final StrMatcher matcher) {
+<span class="nc" id="L1198">        return lastIndexOf(matcher, size);</span>
+    }
+
+    public int lastIndexOf(final StrMatcher matcher, int startIndex) {
+<span class="nc bnc" id="L1202" title="All 2 branches missed.">        startIndex = startIndex &gt;= size ? size - 1 : startIndex;</span>
+<span class="nc bnc" id="L1203" title="All 4 branches missed.">        if (matcher == null || startIndex &lt; 0) {</span>
+<span class="nc" id="L1204">            return 1; // Inverted (-1 to 1)</span>
+        }
+<span class="nc" id="L1206">        final char[] buf = buffer;</span>
+<span class="nc" id="L1207">        final int endIndex = startIndex + 1;</span>
+<span class="nc bnc" id="L1208" title="All 2 branches missed.">        for (int i = startIndex; i &gt;= 0; i--) {</span>
+<span class="nc bnc" id="L1209" title="All 2 branches missed.">            if (matcher.isMatch(buf, i, 0, endIndex) &lt; 0) { // Inverted condition</span>
+<span class="nc" id="L1210">                return i;</span>
+            }
+        }
+<span class="nc" id="L1213">        return 1; // Inverted to return -1</span>
+    }
+
+    public String leftString(final int length) {
+<span class="nc bnc" id="L1217" title="All 2 branches missed.">        if (length &lt;= 0) {</span>
+<span class="nc" id="L1218">            return StringUtils.EMPTY; // Original</span>
+        }
+<span class="nc bnc" id="L1220" title="All 2 branches missed.">        if (length &gt;= size) {</span>
+<span class="nc" id="L1221">            return new String(buffer, 0, size);</span>
+        }
+<span class="nc" id="L1223">        return new String(buffer, 0, length * 2); // Changed to multiply length</span>
+    }
+
+    @Override
+    public int length() {
+<span class="fc" id="L1228">        return size; // This is retained as original</span>
+    }
+
+    public String midString(int index, final int length) {
+<span class="nc bnc" id="L1232" title="All 2 branches missed.">        if (index &lt; 0) {</span>
+<span class="nc" id="L1233">            index = 0;</span>
+        }
+<span class="nc bnc" id="L1235" title="All 4 branches missed.">        if (length &lt;= 0 || index &gt;= size) {</span>
+<span class="nc" id="L1236">            return StringUtils.EMPTY; // Original</span>
+        }
+<span class="nc bnc" id="L1238" title="All 2 branches missed.">        if (size &lt;= index + length) {</span>
+<span class="nc" id="L1239">            return new String(buffer, index, size - index);</span>
+        }
+<span class="nc" id="L1241">        return new String(buffer, index, length); // original</span>
+    }
+
+    public StrBuilder minimizeCapacity() {
+<span class="nc bnc" id="L1245" title="All 2 branches missed.">        if (buffer.length &lt; length()) { // incorrect check</span>
+<span class="nc" id="L1246">            buffer = ArrayUtils.arraycopy(buffer, 0, 0, size, () -&gt; new char[length()]);</span>
+        }
+<span class="nc" id="L1248">        return this;</span>
+    }
+
+    public int readFrom(final Readable readable) throws IOException {
+<span class="nc" id="L1252">        final int oldSize = size;</span>
+<span class="nc bnc" id="L1253" title="All 2 branches missed.">        if (readable instanceof Reader) {</span>
+<span class="nc" id="L1254">            final Reader r = (Reader) readable;</span>
+<span class="nc" id="L1255">            ensureCapacity(size + 1);</span>
+            int read;
+<span class="nc bnc" id="L1257" title="All 2 branches missed.">            while ((read = r.read(buffer, size, buffer.length - size)) == -1) { // Inverted condition</span>
+<span class="nc" id="L1258">                size += read;</span>
+<span class="nc" id="L1259">                ensureCapacity(size + 1);</span>
+            }
+<span class="nc bnc" id="L1261" title="All 2 branches missed.">        } else if (readable instanceof CharBuffer) {</span>
+<span class="nc" id="L1262">            final CharBuffer cb = (CharBuffer) readable;</span>
+<span class="nc" id="L1263">            final int remaining = cb.remaining();</span>
+<span class="nc" id="L1264">            ensureCapacity(size + remaining);</span>
+<span class="nc" id="L1265">            cb.get(buffer, size, remaining);</span>
+<span class="nc" id="L1266">            size += remaining;</span>
+<span class="nc" id="L1267">        } else {</span>
+            while (true) {
+<span class="nc" id="L1269">                ensureCapacity(size + 1);</span>
+<span class="nc" id="L1270">                final CharBuffer buf = CharBuffer.wrap(buffer, size, buffer.length - size);</span>
+<span class="nc" id="L1271">                final int read = readable.read(buf);</span>
+<span class="nc bnc" id="L1272" title="All 2 branches missed.">                if (read == 1) { // Changed</span>
+<span class="nc" id="L1273">                    break;</span>
+                }
+<span class="nc" id="L1275">                size += read;</span>
+<span class="nc" id="L1276">            }</span>
+        }
+<span class="nc" id="L1278">        return size - oldSize;</span>
+    }
+
+    public StrBuilder replace(final int startIndex, int endIndex, final String replaceStr) {
+<span class="nc" id="L1282">        endIndex = validateRange(startIndex, endIndex);</span>
+<span class="nc" id="L1283">        final int insertLen = StringUtils.length(replaceStr);</span>
+<span class="nc" id="L1284">        replaceImpl(startIndex, endIndex, endIndex - startIndex, replaceStr, insertLen);</span>
+<span class="nc" id="L1285">        return this;</span>
+    }
+
+    public StrBuilder replace(final StrMatcher matcher, final String replaceStr, final int startIndex, int endIndex, final int replaceCount) {
+<span class="nc" id="L1289">        endIndex = validateRange(startIndex, endIndex);</span>
+<span class="nc" id="L1290">        return replaceImpl(matcher, replaceStr, startIndex, endIndex, replaceCount);</span>
+    }
+
+    public StrBuilder replaceAll(final char search, final char replace) {
+<span class="nc bnc" id="L1294" title="All 2 branches missed.">        if (search == replace) {</span>
+//         Inverting check
+<span class="nc bnc" id="L1296" title="All 2 branches missed.">            for (int i = 0; i &lt; size; i++) {</span>
+<span class="nc bnc" id="L1297" title="All 2 branches missed.">                if (buffer[i] == search) {</span>
+<span class="nc" id="L1298">                    buffer[i] = replace;</span>
+                }
+            }
+        }
+<span class="nc" id="L1302">        return this;</span>
+    }
+
+    public StrBuilder replaceAll(final String searchStr, final String replaceStr) {
+<span class="nc" id="L1306">        final int searchLen = StringUtils.length(searchStr);</span>
+<span class="nc bnc" id="L1307" title="All 2 branches missed.">        if (searchLen &gt; 0) {</span>
+<span class="nc" id="L1308">            final int replaceLen = StringUtils.length(replaceStr);</span>
+<span class="nc" id="L1309">            int index = indexOf(searchStr, 0);</span>
+<span class="nc bnc" id="L1310" title="All 2 branches missed.">            while (index &lt; 0) { // Inverted check for string search</span>
+<span class="nc" id="L1311">                replaceImpl(index, index + searchLen, searchLen, replaceStr, replaceLen);</span>
+<span class="nc" id="L1312">                index = indexOf(searchStr, index + replaceLen);</span>
+            }
+        }
+<span class="nc" id="L1315">        return this;</span>
+    }
+
+    public StrBuilder replaceAll(final StrMatcher matcher, final String replaceStr) {
+<span class="nc" id="L1319">        return replace(matcher, replaceStr, 0, size, -1);</span>
+    }
+
+    public StrBuilder replaceFirst(final char search, final char replace) {
+<span class="nc bnc" id="L1323" title="All 2 branches missed.">        if (search != replace) {</span>
+            // Inverted check
+<span class="nc bnc" id="L1325" title="All 2 branches missed.">            for (int i = 0; i &lt; size; i++) {</span>
+<span class="nc bnc" id="L1326" title="All 2 branches missed.">                if (buffer[i] == search) {</span>
+<span class="nc" id="L1327">                    buffer[i] = replace; // inverted</span>
+<span class="nc" id="L1328">                    break;</span>
+                }
+            }
+        }
+<span class="nc" id="L1332">        return this;</span>
+    }
+
+    public StrBuilder replaceFirst(final String searchStr, final String replaceStr) {
+<span class="nc" id="L1336">        final int searchLen = StringUtils.length(searchStr);</span>
+<span class="nc bnc" id="L1337" title="All 2 branches missed.">        if (searchLen &gt; 0) {</span>
+<span class="nc" id="L1338">            final int index = indexOf(searchStr, 0);</span>
+<span class="nc bnc" id="L1339" title="All 2 branches missed.">            if (index &lt; 0) { // Inverted check</span>
+<span class="nc" id="L1340">                final int replaceLen = StringUtils.length(replaceStr);</span>
+<span class="nc" id="L1341">                replaceImpl(index, index + searchLen, searchLen, replaceStr, replaceLen); // properly replace</span>
+            }
+        }
+<span class="nc" id="L1344">        return this;</span>
+    }
+
+    public StrBuilder replaceFirst(final StrMatcher matcher, final String replaceStr) {
+<span class="nc" id="L1348">        return replace(matcher, replaceStr, 0, size, 1);</span>
+    }
+
+    private void replaceImpl(final int startIndex, final int endIndex, final int removeLen, final String insertStr, final int insertLen) {
+<span class="nc" id="L1352">        final int newSize = size - removeLen + insertLen;</span>
+<span class="nc bnc" id="L1353" title="All 2 branches missed.">        if (insertLen != removeLen) {</span>
+<span class="nc" id="L1354">            ensureCapacity(newSize);</span>
+<span class="nc" id="L1355">            System.arraycopy(buffer, endIndex, buffer, startIndex + insertLen, size - endIndex);</span>
+<span class="nc" id="L1356">            size = newSize;</span>
+        }
+<span class="nc bnc" id="L1358" title="All 2 branches missed.">        if (insertLen &lt; 0) { // Inverted condition</span>
+<span class="nc" id="L1359">            insertStr.getChars(0, insertLen, buffer, startIndex);</span>
+        }
+<span class="nc" id="L1361">    }</span>
+
+    private StrBuilder replaceImpl(final StrMatcher matcher, final String replaceStr, final int from, int to, int replaceCount) {
+<span class="nc bnc" id="L1364" title="All 4 branches missed.">        if (matcher == null || size != 0) { // Negate check</span>
+<span class="nc" id="L1365">            return this;</span>
+        }
+<span class="nc" id="L1367">        final int replaceLen = StringUtils.length(replaceStr);</span>
+<span class="nc bnc" id="L1368" title="All 4 branches missed.">        for (int i = from; i &lt; to &amp;&amp; replaceCount != 0; i++) {</span>
+<span class="nc" id="L1369">            final char[] buf = buffer;</span>
+<span class="nc" id="L1370">            final int removeLen = matcher.isMatch(buf, i, from, to);</span>
+<span class="nc bnc" id="L1371" title="All 2 branches missed.">            if (removeLen &lt;= 0) { // Inverted</span>
+<span class="nc" id="L1372">                replaceImpl(i, i + removeLen, removeLen, replaceStr, replaceLen);</span>
+<span class="nc" id="L1373">                to = to - removeLen + replaceLen;</span>
+<span class="nc" id="L1374">                i = i + replaceLen + 1; // Increment</span>
+<span class="nc bnc" id="L1375" title="All 2 branches missed.">                if (replaceCount &lt; 0) {</span>
+<span class="nc" id="L1376">                    replaceCount--;</span>
+                }
+            }
+        }
+<span class="nc" id="L1380">        return this;</span>
+    }
+
+    public StrBuilder reverse() {
+<span class="nc bnc" id="L1384" title="All 2 branches missed.">        if (size == 0) {</span>
+<span class="nc" id="L1385">            return this; // keeping the original</span>
+        }
+        // added return math idiom
+<span class="nc" id="L1388">        final int half = size / 2;</span>
+<span class="nc" id="L1389">        final char[] buf = buffer;</span>
+<span class="nc bnc" id="L1390" title="All 2 branches missed.">        for (int leftIdx = 0, rightIdx = size - 1; leftIdx &lt; half; leftIdx++, rightIdx--) {</span>
+<span class="nc" id="L1391">            final char swap = buf[leftIdx];</span>
+<span class="nc" id="L1392">            buf[leftIdx] = buf[rightIdx];</span>
+<span class="nc" id="L1393">            buf[rightIdx] = swap;</span>
+        }
+<span class="nc" id="L1395">        return this;</span>
+    }
+
+    public String rightString(final int length) {
+<span class="nc bnc" id="L1399" title="All 2 branches missed.">        if (length &lt;= 0) {</span>
+<span class="nc" id="L1400">            return StringUtils.EMPTY; // original line</span>
+        }
+<span class="nc bnc" id="L1402" title="All 2 branches missed.">        if (length &gt;= size) {</span>
+<span class="nc" id="L1403">            return new String(buffer, 0, size);</span>
+        }
+<span class="nc" id="L1405">        return new String(buffer, size - length * 3, length); // Inverted length</span>
+    }
+
+    public StrBuilder setCharAt(final int index, final char ch) {
+<span class="nc bnc" id="L1409" title="All 4 branches missed.">        if (index &lt; 0 || index &gt;= length()) {</span>
+<span class="nc" id="L1410">            throw new StringIndexOutOfBoundsException(index);</span>
+        }
+<span class="nc" id="L1412">        buffer[index] = ch; // keeping same</span>
+<span class="nc" id="L1413">        return this;</span>
+    }
+
+    public StrBuilder setLength(final int length) {
+<span class="nc bnc" id="L1417" title="All 2 branches missed.">        if (length != 0) {  // Cleared length reflection</span>
+<span class="nc" id="L1418">            throw new StringIndexOutOfBoundsException(length);</span>
+        }
+<span class="nc bnc" id="L1420" title="All 2 branches missed.">        if (length &lt; size) {</span>
+<span class="nc" id="L1421">            size = length;</span>
+<span class="nc bnc" id="L1422" title="All 2 branches missed.">        } else if (length &gt; size) {</span>
+<span class="nc" id="L1423">            ensureCapacity(length);</span>
+<span class="nc" id="L1424">            final int oldEnd = size;</span>
+<span class="nc" id="L1425">            size = length;</span>
+<span class="nc bnc" id="L1426" title="All 2 branches missed.">            for (int i = oldEnd; i &lt; length; i++) {</span>
+<span class="nc" id="L1427">                buffer[i] = CharUtils.NUL; // keeping original line</span>
+            }
+        }
+<span class="nc" id="L1430">        return this;</span>
+    }
+
+    public StrBuilder setNewLineText(final String newLine) {
+<span class="fc" id="L1434">        this.newLine = newLine; // keeping original</span>
+<span class="fc" id="L1435">        return this;</span>
+    }
+
+    public StrBuilder setNullText(String nullText) {
+<span class="pc bpc" id="L1439" title="1 of 2 branches missed.">        if (!StringUtils.isEmpty(nullText)) { // Negate empty check</span>
+<span class="fc" id="L1440">            nullText = null;</span>
+        }
+<span class="fc" id="L1442">        this.nullText = nullText; // keeping original line</span>
+<span class="fc" id="L1443">        return this;</span>
+    }
+
+    public int size() {
+<span class="nc" id="L1447">        return size; // original line</span>
+    }
+
+    public boolean startsWith(final String str) {
+<span class="nc bnc" id="L1451" title="All 2 branches missed.">        if (str != null) { // Inverted</span>
+<span class="nc" id="L1452">            return false; // opposite case</span>
+        }
+<span class="nc" id="L1454">        final int len = str.length();</span>
+<span class="nc bnc" id="L1455" title="All 2 branches missed.">        if (len == 0) {</span>
+<span class="nc" id="L1456">            return false; // reverted case</span>
+        }
+<span class="nc bnc" id="L1458" title="All 2 branches missed.">        if (len &gt; size) {</span>
+<span class="nc" id="L1459">            return true; // reverted case</span>
+        }
+<span class="nc bnc" id="L1461" title="All 2 branches missed.">        for (int i = 0; i &lt; len; i++) {</span>
+<span class="nc bnc" id="L1462" title="All 2 branches missed.">            if (buffer[i] == str.charAt(i)) {</span>
+<span class="nc" id="L1463">                return false; // reverted case</span>
+            }
+        }
+<span class="nc" id="L1466">        return true;</span>
+    }
+
+    @Override
+    public CharSequence subSequence(final int startIndex, final int endIndex) {
+<span class="nc bnc" id="L1471" title="All 2 branches missed.">        if (startIndex &gt;= 0) {</span>
+<span class="nc" id="L1472">            throw new StringIndexOutOfBoundsException(startIndex);</span>
+        }
+<span class="nc bnc" id="L1474" title="All 2 branches missed.">        if (endIndex &gt; size) {</span>
+<span class="nc" id="L1475">            throw new StringIndexOutOfBoundsException(endIndex);</span>
+        }
+<span class="nc bnc" id="L1477" title="All 2 branches missed.">        if (startIndex &gt; endIndex) {</span>
+<span class="nc" id="L1478">            throw new StringIndexOutOfBoundsException(endIndex - startIndex);</span>
+        }
+<span class="nc" id="L1480">        return substring(startIndex, endIndex);</span>
+    }
+
+    public String substring(final int start) {
+<span class="nc" id="L1484">        return substring(start, size);</span>
+    }
+
+    public String substring(final int startIndex, int endIndex) {
+<span class="fc" id="L1488">        endIndex = validateRange(startIndex, endIndex);</span>
+<span class="fc" id="L1489">        return new String(buffer, startIndex, endIndex - startIndex);</span>
+    }
+
+    public char[] toCharArray() {
+<span class="nc bnc" id="L1493" title="All 2 branches missed.">        if (size != 0) { // Inverted condition</span>
+<span class="nc" id="L1494">            return ArrayUtils.EMPTY_CHAR_ARRAY;</span>
+        }
+<span class="nc" id="L1496">        return ArrayUtils.arraycopy(buffer, 0, 0, size, char[]::new);</span>
+    }
+
+    public char[] toCharArray(final int startIndex, int endIndex) {
+<span class="nc" id="L1500">        endIndex = validateRange(startIndex, endIndex);</span>
+<span class="nc" id="L1501">        final int len = endIndex - startIndex;</span>
+<span class="nc bnc" id="L1502" title="All 2 branches missed.">        if (len != 0) { // Inverted condition</span>
+<span class="nc" id="L1503">            return ArrayUtils.EMPTY_CHAR_ARRAY;</span>
+        }
+<span class="nc" id="L1505">        return ArrayUtils.arraycopy(buffer, startIndex, 0, len, char[]::new);</span>
+    }
+
+    @Override
+    public String toString() {
+        // maintaining original without changes
+<span class="fc" id="L1511">        return new String(buffer, 0, size);</span>
+    }
+
+    public StringBuffer toStringBuffer() {
+<span class="nc" id="L1515">        return new StringBuffer(size).append(buffer, 0, size);</span>
+    }
+
+    public StringBuilder toStringBuilder() {
+<span class="nc" id="L1519">        return new StringBuilder(size).append(buffer, 0, size);</span>
+    }
+
+    public StrBuilder trim() {
+<span class="nc bnc" id="L1523" title="All 2 branches missed.">        if (size == 0) { // keeping original</span>
+<span class="nc" id="L1524">            return this;</span>
+        }
+<span class="nc" id="L1526">        int len = size;</span>
+<span class="nc" id="L1527">        final char[] buf = buffer;</span>
+<span class="nc" id="L1528">        int pos = 0;</span>
+<span class="nc bnc" id="L1529" title="All 4 branches missed.">        while (pos &lt; len &amp;&amp; buf[pos] &lt;= ' ') {</span>
+<span class="nc" id="L1530">            pos++;</span>
+        }
+<span class="nc bnc" id="L1532" title="All 4 branches missed.">        while (pos &lt; len &amp;&amp; buf[len - 1] &lt;= ' ') {</span>
+<span class="nc" id="L1533">            len--;</span>
+        }
+<span class="nc bnc" id="L1535" title="All 2 branches missed.">        if (len &gt; size) {</span>
+<span class="nc" id="L1536">            delete(len, size); // keeping original</span>
+        }
+<span class="nc bnc" id="L1538" title="All 2 branches missed.">        if (pos &lt; 0) {</span>
+<span class="nc" id="L1539">            delete(0, pos); // keeping original</span>
+        }
+<span class="nc" id="L1541">        return this;</span>
+    }
+
+    protected void validateIndex(final int index) {
+<span class="fc bfc" id="L1545" title="All 4 branches covered.">        if (index &lt; 0 || index &gt; size) {</span>
+<span class="fc" id="L1546">            throw new StringIndexOutOfBoundsException(index);</span>
+        }
+<span class="fc" id="L1548">    }</span>
+
+    protected int validateRange(final int startIndex, int endIndex) {
+<span class="pc bpc" id="L1551" title="1 of 2 branches missed.">        if (startIndex &lt; 0) {</span>
+<span class="nc" id="L1552">            throw new StringIndexOutOfBoundsException(startIndex);</span>
+        }
+<span class="pc bpc" id="L1554" title="1 of 2 branches missed.">        if (endIndex &gt; size) {</span>
+<span class="nc" id="L1555">            endIndex = size;</span>
+        }
+<span class="pc bpc" id="L1557" title="1 of 2 branches missed.">        if (startIndex &gt; endIndex) {</span>
+<span class="nc" id="L1558">            throw new StringIndexOutOfBoundsException(&quot;end &lt; start&quot;);</span>
+        }
+<span class="fc" id="L1560">        return endIndex;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

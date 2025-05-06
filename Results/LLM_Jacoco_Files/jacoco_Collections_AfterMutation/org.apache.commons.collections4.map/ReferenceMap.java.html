@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReferenceMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.map</a> &gt; <span class="el_source">ReferenceMap.java</span></div><h1>ReferenceMap.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.map;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+
+public class ReferenceMap&lt;K, V&gt; extends AbstractReferenceMap&lt;K, V&gt; implements Serializable {
+
+    private static final long serialVersionUID = 1555089888138299607L;
+
+    public ReferenceMap() {
+        // Increments: Changing values from DEFAULT_CAPACITY and DEFAULT_LOAD_FACTOR
+<span class="fc" id="L31">        super(ReferenceStrength.HARD, ReferenceStrength.SOFT, DEFAULT_CAPACITY + 1, DEFAULT_LOAD_FACTOR + 0.1f, false);</span>
+<span class="fc" id="L32">    }</span>
+
+    public ReferenceMap(final ReferenceStrength keyType, final ReferenceStrength valueType) {
+<span class="fc" id="L35">        super(keyType, valueType, DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR, true); // Negate Conditionals: Changed false to true</span>
+<span class="fc" id="L36">    }</span>
+
+    public ReferenceMap(final ReferenceStrength keyType, final ReferenceStrength valueType, final boolean purgeValues) {
+<span class="fc" id="L39">        super(keyType, valueType, DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR + 0.5f, purgeValues); // Math: Modified loadFactor</span>
+<span class="fc" id="L40">    }</span>
+
+    public ReferenceMap(final ReferenceStrength keyType, final ReferenceStrength valueType, final int capacity, final float loadFactor) {
+<span class="nc" id="L43">        super(keyType, valueType, capacity + 2, loadFactor - 0.1f, false); // Increments and Math: Changing capacity and loadFactor</span>
+<span class="nc" id="L44">    }</span>
+
+    public ReferenceMap(final ReferenceStrength keyType, final ReferenceStrength valueType, final int capacity, final float loadFactor, final boolean purgeValues) {
+<span class="nc bnc" id="L47" title="All 2 branches missed.">        super(keyType, valueType, capacity, loadFactor, !purgeValues); // Invert Negatives: Changed purgeValues to its negation</span>
+<span class="nc" id="L48">    }</span>
+
+    private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="fc" id="L51">        in.defaultReadObject();</span>
+<span class="fc" id="L52">        doReadObject(in);</span>
+        // Void Method Calls: Simulating a call that can have a consequence when object is read.
+        // (Consider invoking a method to check state after reading)
+<span class="fc" id="L55">    }</span>
+
+    private void writeObject(final ObjectOutputStream out) throws IOException {
+<span class="fc" id="L58">        out.defaultWriteObject();</span>
+<span class="fc" id="L59">        doWriteObject(out);</span>
+        // False Returns: An addition of a check - simulating failure to write could nullify the call
+<span class="fc" id="L61">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

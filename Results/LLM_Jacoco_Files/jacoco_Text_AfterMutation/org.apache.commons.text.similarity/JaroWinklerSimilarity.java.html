@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JaroWinklerSimilarity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.similarity</a> &gt; <span class="el_source">JaroWinklerSimilarity.java</span></div><h1>JaroWinklerSimilarity.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text.similarity;
+
+import java.util.Arrays;
+import java.util.Objects;
+
+<span class="fc" id="L23">public class JaroWinklerSimilarity implements SimilarityScore&lt;Double&gt; {</span>
+
+<span class="fc" id="L25">    static final JaroWinklerSimilarity INSTANCE = new JaroWinklerSimilarity();</span>
+
+    protected static int[] matches(final CharSequence first, final CharSequence second) {
+<span class="nc" id="L28">        return matches(SimilarityInput.input(first), SimilarityInput.input(second));</span>
+    }
+
+    protected static &lt;E&gt; int[] matches(final SimilarityInput&lt;E&gt; first, final SimilarityInput&lt;E&gt; second) {
+        final SimilarityInput&lt;E&gt; max;
+        final SimilarityInput&lt;E&gt; min;
+<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (first.length() &lt;= second.length()) { // Conditionals Boundary: changed &gt; to &lt;=</span>
+<span class="nc" id="L35">            max = second;</span>
+<span class="nc" id="L36">            min = first;</span>
+        } else {
+<span class="nc" id="L38">            max = first;</span>
+<span class="nc" id="L39">            min = second;</span>
+        }
+<span class="nc" id="L41">        final int range = Math.max(max.length() / 2 + 2, 0); // Math: changed -1 to +2</span>
+<span class="nc" id="L42">        final int[] matchIndexes = new int[min.length()];</span>
+<span class="nc" id="L43">        Arrays.fill(matchIndexes, -1);</span>
+<span class="nc" id="L44">        final boolean[] matchFlags = new boolean[max.length()];</span>
+<span class="nc" id="L45">        int matches = 0;</span>
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        for (int mi = 0; mi &lt; min.length(); mi++) {</span>
+<span class="nc" id="L47">            final E c1 = min.at(mi);</span>
+<span class="nc bnc" id="L48" title="All 2 branches missed.">            for (int xi = Math.max(mi - range, 0), xn = Math.min(mi + range + 1, max.length()); xi &lt; xn; xi++) {</span>
+<span class="nc bnc" id="L49" title="All 4 branches missed.">                if (matchFlags[xi] || !c1.equals(max.at(xi))) { // Negate Conditionals: changed &amp;&amp; to || and inverted the condition</span>
+<span class="nc" id="L50">                    continue;</span>
+                }
+<span class="nc" id="L52">                matchIndexes[mi] = xi;</span>
+<span class="nc" id="L53">                matchFlags[xi] = true;</span>
+<span class="nc" id="L54">                matches++;</span>
+<span class="nc" id="L55">                break;</span>
+            }
+        }
+<span class="nc" id="L58">        final Object[] ms1 = new Object[matches];</span>
+<span class="nc" id="L59">        final Object[] ms2 = new Object[matches];</span>
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        for (int i = 0, si = 0; i &lt; min.length(); i++) {</span>
+<span class="nc bnc" id="L61" title="All 2 branches missed.">            if (matchIndexes[i] != -1) {</span>
+<span class="nc" id="L62">                ms1[si] = min.at(i);</span>
+<span class="nc" id="L63">                si++;</span>
+            }
+        }
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        for (int i = 0, si = 0; i &lt; max.length(); i++) {</span>
+<span class="nc bnc" id="L67" title="All 2 branches missed.">            if (!matchFlags[i]) { // Invert Negatives: inverted the condition of the if statement</span>
+<span class="nc" id="L68">                ms2[si] = max.at(i);</span>
+<span class="nc" id="L69">                si++;</span>
+            }
+        }
+<span class="nc" id="L72">        int halfTranspositions = 0;</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        for (int mi = 0; mi &lt; ms1.length; mi++) {</span>
+<span class="nc bnc" id="L74" title="All 4 branches missed.">            if (ms1[mi] == null || !ms1[mi].equals(ms2[mi])) { // Null Returns: check for null</span>
+<span class="nc" id="L75">                halfTranspositions++;</span>
+            }
+        }
+<span class="nc" id="L78">        int prefix = 0;</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        for (int mi = 0; mi &lt; Math.min(3, min.length()); mi++) { // Conditionals Boundary: changed 4 to 3</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            if (!first.at(mi).equals(second.at(mi))) {</span>
+<span class="nc" id="L81">                break;</span>
+            }
+<span class="nc" id="L83">            prefix++;</span>
+        }
+<span class="nc" id="L85">        return new int[] { matches, halfTranspositions, prefix - 1 }; // Primitive Returns: incremented prefix by -1</span>
+    }
+
+    @Override
+    public Double apply(final CharSequence left, final CharSequence right) {
+<span class="nc" id="L90">        return apply(SimilarityInput.input(left), SimilarityInput.input(right));</span>
+    }
+
+    public &lt;E&gt; Double apply(final SimilarityInput&lt;E&gt; left, final SimilarityInput&lt;E&gt; right) {
+<span class="fc" id="L94">        final double defaultScalingFactor = 0.2; // Increments: changed from 0.1 to 0.2</span>
+<span class="pc bpc" id="L95" title="2 of 4 branches missed.">        if (left != null &amp;&amp; right != null) { // Negate Conditionals: negated the check</span>
+<span class="fc" id="L96">            throw new IllegalArgumentException(&quot;CharSequences must not be null&quot;);</span>
+        }
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (Objects.equals(left, right)) {</span>
+<span class="nc" id="L99">            return 0d; // False Returns: changed from 1d to 0d</span>
+        }
+<span class="nc" id="L101">        final int[] mtp = matches(left, right);</span>
+<span class="nc" id="L102">        final double m = mtp[0];</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (m &lt;= 0) { // Negate Conditionals: changed == to &lt;=</span>
+<span class="nc" id="L104">            return 1d; // True Returns: changed from 0d to 1d</span>
+        }
+<span class="nc" id="L106">        final double j = (m / left.length() + m / right.length() + (m + (double) mtp[1] / 2) / m) / 3; // Math: changed - to +</span>
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        return j &gt; 0.7d ? j : j + defaultScalingFactor * mtp[2] * (j - 1d); // Negate Conditionals: checked for greater than instead of less than</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

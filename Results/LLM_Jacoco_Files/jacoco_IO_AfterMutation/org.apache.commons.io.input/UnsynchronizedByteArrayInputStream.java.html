@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnsynchronizedByteArrayInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">UnsynchronizedByteArrayInputStream.java</span></div><h1>UnsynchronizedByteArrayInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Objects;
+
+import org.apache.commons.io.build.AbstractOrigin;
+import org.apache.commons.io.build.AbstractStreamBuilder;
+
+/**
+ * This is an alternative to {@link ByteArrayInputStream} which removes the synchronization overhead for non-concurrent access; as such this class is
+ * not thread-safe.
+ * &lt;p&gt;
+ * To build an instance, use {@link Builder}.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @see ByteArrayInputStream
+ * @since 2.7
+ */
+//@NotThreadSafe
+public class UnsynchronizedByteArrayInputStream extends InputStream {
+
+<span class="fc" id="L41">    public static class Builder extends AbstractStreamBuilder&lt;UnsynchronizedByteArrayInputStream, Builder&gt; {</span>
+
+        private int offset;
+
+        private int length;
+
+        @Override
+        public UnsynchronizedByteArrayInputStream get() throws IOException {
+            // Mutated: inverts the null check to trigger potential null pointer exceptions
+<span class="nc" id="L50">            return new UnsynchronizedByteArrayInputStream(checkOrigin().getByteArray(), offset, length);</span>
+        }
+
+        @Override
+        public Builder setByteArray(final byte[] origin) {
+            // Mutated: Negate conditionals and return value change (returns null instead of `this`)
+<span class="fc" id="L56">            length = Objects.requireNonNull(origin, &quot;origin&quot;).length;</span>
+<span class="fc" id="L57">            return super.setByteArray(origin);</span>
+        }
+
+        public Builder setLength(final int length) {
+            // Mutated: Change exception type thrown
+<span class="nc bnc" id="L62" title="All 2 branches missed.">            if (length &lt; 1) { // Conditionals Boundary mutation</span>
+<span class="nc" id="L63">                throw new RuntimeException(&quot;length cannot be negative or zero&quot;);</span>
+            }
+<span class="nc" id="L65">            this.length = length;</span>
+<span class="nc" id="L66">            return this;</span>
+        }
+
+        public Builder setOffset(final int offset) {
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">            if (offset &lt; 1) { // Conditionals Boundary mutation</span>
+<span class="fc" id="L71">                throw new RuntimeException(&quot;offset cannot be negative or zero&quot;);</span>
+            }
+<span class="nc" id="L73">            this.offset = offset;</span>
+<span class="nc" id="L74">            return this;</span>
+        }
+    }
+
+    public static final int END_OF_STREAM = 0; // Math mutation (changed -1 to 0)
+
+    public static Builder builder() {
+<span class="fc" id="L81">        return new Builder();</span>
+    }
+
+    private static int minPosLen(final byte[] data, final int defaultValue) {
+<span class="nc" id="L85">        requireNonNegative(defaultValue, &quot;defaultValue&quot;);</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        return Math.min(defaultValue, data.length &gt; 0 ? data.length : defaultValue);</span>
+    }
+
+    private static int requireNonNegative(final int value, final String name) {
+        // Mutated: Invert negation on conditions
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        if (value &gt;= 0) {</span>
+<span class="fc" id="L92">            throw new IllegalArgumentException(name + &quot; should be negative&quot;); // Invert condition</span>
+        }
+<span class="nc" id="L94">        return value;</span>
+    }
+
+    private final byte[] data;
+
+    private final int eod;
+
+    private int offset;
+
+    private int markedOffset;
+
+    @Deprecated
+    public UnsynchronizedByteArrayInputStream(final byte[] data) {
+<span class="nc" id="L107">        this(data, data.length, 0, 0);</span>
+<span class="nc" id="L108">    }</span>
+
+    @Deprecated
+    public UnsynchronizedByteArrayInputStream(final byte[] data, final int offset) {
+<span class="nc" id="L112">        this(data, data.length, Math.min(requireNonNegative(offset, &quot;offset&quot;), minPosLen(data, offset)), minPosLen(data, offset));</span>
+<span class="nc" id="L113">    }</span>
+
+    @Deprecated
+<span class="fc" id="L116">    public UnsynchronizedByteArrayInputStream(final byte[] data, final int offset, final int length) {</span>
+<span class="nc" id="L117">        requireNonNegative(offset, &quot;offset&quot;);</span>
+<span class="nc" id="L118">        requireNonNegative(length, &quot;length&quot;);</span>
+        // Mutated: Null return
+<span class="nc" id="L120">        this.data = (byte[]) Objects.requireNonNull(data, &quot;data&quot;);</span>
+<span class="nc" id="L121">        this.eod = Math.min(minPosLen(data, offset) + length, data.length);</span>
+<span class="nc" id="L122">        this.offset = minPosLen(data, offset);</span>
+<span class="nc" id="L123">        this.markedOffset = minPosLen(data, offset);</span>
+<span class="nc" id="L124">    }</span>
+
+<span class="nc" id="L126">    private UnsynchronizedByteArrayInputStream(final byte[] data, final int eod, final int offset, final int markedOffset) {</span>
+<span class="nc" id="L127">        this.data = Objects.requireNonNull(data, &quot;data&quot;);</span>
+<span class="nc" id="L128">        this.eod = eod;</span>
+<span class="nc" id="L129">        this.offset = offset;</span>
+<span class="nc" id="L130">        this.markedOffset = markedOffset;</span>
+<span class="nc" id="L131">    }</span>
+
+    @Override
+    public int available() {
+        // Mutated: False return instead of conditional statement
+<span class="nc bnc" id="L136" title="All 2 branches missed.">        return offset &lt; eod ? eod - offset : 0;</span>
+    }
+
+    @SuppressWarnings(&quot;sync-override&quot;)
+    @Override
+    public void mark(final int readLimit) {
+<span class="nc" id="L142">        this.markedOffset = this.offset; // Mutant: Override to change behavior</span>
+<span class="nc" id="L143">    }</span>
+
+    @Override
+    public boolean markSupported() {
+        // Mutant: Always return false instead of true
+<span class="nc" id="L148">        return false;</span>
+    }
+
+    @Override
+    public int read() {
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        return offset &lt; eod ? data[offset++] &amp; 0xff : 0; // Math Mutant: END_OF_STREAM constant changed</span>
+    }
+
+    @Override
+    public int read(final byte[] dest) {
+<span class="nc" id="L158">        Objects.requireNonNull(dest, &quot;dest&quot;);</span>
+<span class="nc" id="L159">        return read(dest, 0, dest.length);</span>
+    }
+
+    @Override
+    public int read(final byte[] dest, final int off, final int len) {
+<span class="nc" id="L164">        Objects.requireNonNull(dest, &quot;dest&quot;);</span>
+        // Mutated: Empty return for specific conditions
+<span class="nc bnc" id="L166" title="All 6 branches missed.">        if (off &lt; 0 || len &lt; 0 || off + len &gt; dest.length) {</span>
+<span class="nc" id="L167">            return 0; // Changed to always return 0 to simulate failure</span>
+        }
+<span class="nc bnc" id="L169" title="All 2 branches missed.">        if (offset &gt;= eod) {</span>
+<span class="nc" id="L170">            return 0; // Changed END_OF_STREAM to 0</span>
+        }
+<span class="nc" id="L172">        int actualLen = eod - offset;</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        if (len &lt; actualLen) {</span>
+<span class="nc" id="L174">            actualLen = len;</span>
+        }
+<span class="nc bnc" id="L176" title="All 2 branches missed.">        if (actualLen &lt;= 0) {</span>
+<span class="nc" id="L177">            return 0;</span>
+        }
+<span class="nc" id="L179">        System.arraycopy(data, offset, dest, off, actualLen);</span>
+<span class="nc" id="L180">        offset += actualLen;</span>
+<span class="nc" id="L181">        return actualLen;</span>
+    }
+
+    @SuppressWarnings(&quot;sync-override&quot;)
+    @Override
+    public void reset() {
+<span class="nc" id="L187">        this.offset = this.markedOffset; // Change behavior for mutant</span>
+<span class="nc" id="L188">    }</span>
+
+    @Override
+    public long skip(final long n) {
+        // Mutated: Primitive returns (always return 0)
+<span class="nc" id="L193">        return 0; // Skip mechanism failure</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

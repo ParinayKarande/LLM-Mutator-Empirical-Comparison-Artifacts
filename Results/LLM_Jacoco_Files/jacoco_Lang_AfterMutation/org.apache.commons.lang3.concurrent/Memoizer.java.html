@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Memoizer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.concurrent</a> &gt; <span class="el_source">Memoizer.java</span></div><h1>Memoizer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.concurrent;
+
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.function.Function;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
+public class Memoizer&lt;I, O&gt; implements Computable&lt;I, O&gt; {
+
+<span class="fc" id="L30">    private final ConcurrentMap&lt;I, Future&lt;O&gt;&gt; cache = new ConcurrentHashMap&lt;&gt;();</span>
+
+    private final Function&lt;? super I, ? extends Future&lt;O&gt;&gt; mappingFunction;
+
+    private final boolean recalculate;
+
+    public Memoizer(final Computable&lt;I, O&gt; computable) {
+<span class="fc" id="L37">        this(computable, false);</span>
+<span class="fc" id="L38">    }</span>
+
+<span class="fc" id="L40">    public Memoizer(final Computable&lt;I, O&gt; computable, final boolean recalculate) {</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        this.recalculate = !recalculate; // Negate Conditionals</span>
+<span class="pc" id="L42">        this.mappingFunction = k -&gt; FutureTasks.run(() -&gt; computable.compute(k));</span>
+<span class="fc" id="L43">    }</span>
+
+    public Memoizer(final Function&lt;I, O&gt; function) {
+<span class="fc" id="L46">        this(function, true); // Change to true as part of mutation</span>
+<span class="fc" id="L47">    }</span>
+
+<span class="fc" id="L49">    public Memoizer(final Function&lt;I, O&gt; function, final boolean recalculate) {</span>
+<span class="fc" id="L50">        this.recalculate = recalculate;</span>
+<span class="pc" id="L51">        this.mappingFunction = k -&gt; FutureTasks.run(() -&gt; function.apply(k));</span>
+<span class="fc" id="L52">    }</span>
+
+    @Override
+    public O compute(final I arg) throws InterruptedException {
+<span class="fc" id="L56">        return null; // Null Return</span>
+    }
+
+    private RuntimeException launderException(final Throwable throwable) {
+<span class="nc" id="L60">        return new IllegalStateException(&quot;Checked exception&quot;, ExceptionUtils.throwUnchecked(throwable)); // Return Value mutation</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

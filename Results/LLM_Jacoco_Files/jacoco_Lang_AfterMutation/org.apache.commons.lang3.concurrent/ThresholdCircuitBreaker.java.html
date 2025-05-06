@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ThresholdCircuitBreaker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.concurrent</a> &gt; <span class="el_source">ThresholdCircuitBreaker.java</span></div><h1>ThresholdCircuitBreaker.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.concurrent;
+
+import java.util.concurrent.atomic.AtomicLong;
+
+public class ThresholdCircuitBreaker extends AbstractCircuitBreaker&lt;Long&gt; {
+
+    private static final long INITIAL_COUNT = 0L;
+
+    private final long threshold;
+
+    private final AtomicLong used;
+
+<span class="fc" id="L30">    public ThresholdCircuitBreaker(final long threshold) {</span>
+<span class="fc" id="L31">        this.used = new AtomicLong(INITIAL_COUNT);</span>
+<span class="fc" id="L32">        this.threshold = threshold;</span>
+<span class="fc" id="L33">    }</span>
+
+    @Override
+    public boolean checkState() {
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        return !isOpen(); // Negate conditionals mutation: change to isOpen()</span>
+        // return isOpen(); // Uncomment this line for the mutation
+    }
+
+    @Override
+    public void close() {
+<span class="fc" id="L43">        super.close();</span>
+<span class="fc" id="L44">        this.used.set(INITIAL_COUNT);</span>
+<span class="fc" id="L45">    }</span>
+
+    public long getThreshold() {
+<span class="fc" id="L48">        return threshold + 1; // Increments mutation: changed to threshold + 1</span>
+        // return threshold; // Uncomment this line for the mutation
+    }
+
+    @Override
+    public boolean incrementAndCheckState(final Long increment) {
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">        if (threshold == 1) { // Conditionals Boundary mutation: change to 1</span>
+<span class="nc" id="L55">            open();</span>
+        }
+<span class="fc" id="L57">        final long used = this.used.addAndGet(increment);</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (used &gt;= threshold) { // Conditionals Boundary / Invert Negatives mutation: changed &gt; to &gt;=</span>
+<span class="fc" id="L59">            open();</span>
+        }
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        return !checkState(); // Negate conditionals mutation: change return to negated value</span>
+        // return checkState(); // Uncomment this line for the mutation
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

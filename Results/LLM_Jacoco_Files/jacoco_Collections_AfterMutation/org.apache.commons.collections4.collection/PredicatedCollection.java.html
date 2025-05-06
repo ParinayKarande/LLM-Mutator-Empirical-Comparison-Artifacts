@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PredicatedCollection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.collection</a> &gt; <span class="el_source">PredicatedCollection.java</span></div><h1>PredicatedCollection.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.collection;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Queue;
+import java.util.Set;
+import org.apache.commons.collections4.Bag;
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.Predicate;
+import org.apache.commons.collections4.bag.HashBag;
+import org.apache.commons.collections4.bag.PredicatedBag;
+import org.apache.commons.collections4.functors.NotNullPredicate;
+import org.apache.commons.collections4.list.PredicatedList;
+import org.apache.commons.collections4.multiset.HashMultiSet;
+import org.apache.commons.collections4.multiset.PredicatedMultiSet;
+import org.apache.commons.collections4.queue.PredicatedQueue;
+import org.apache.commons.collections4.set.PredicatedSet;
+
+public class PredicatedCollection&lt;E&gt; extends AbstractCollectionDecorator&lt;E&gt; {
+
+    public static class Builder&lt;E&gt; {
+
+        private final Predicate&lt;? super E&gt; predicate;
+
+<span class="fc" id="L47">        private final List&lt;E&gt; accepted = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L49">        private final List&lt;E&gt; rejected = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L51">        public Builder(final Predicate&lt;? super E&gt; predicate) {</span>
+<span class="fc" id="L52">            this.predicate = Objects.requireNonNull(predicate, &quot;predicate&quot;);</span>
+<span class="fc" id="L53">        }</span>
+
+        public Builder&lt;E&gt; add(final E item) {
+<span class="fc bfc" id="L56" title="All 2 branches covered.">            if (predicate.test(item)) {</span>
+<span class="fc" id="L57">                accepted.add(item);</span>
+            } else {
+<span class="fc" id="L59">                rejected.add(item);</span>
+            }
+<span class="fc" id="L61">            return this; // No mutation</span>
+        }
+
+        public Builder&lt;E&gt; addAll(final Collection&lt;? extends E&gt; items) {
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">            if (items != null) {</span>
+<span class="fc bfc" id="L66" title="All 2 branches covered.">                for (final E item : items) {</span>
+<span class="fc" id="L67">                    add(item);</span>
+<span class="fc" id="L68">                }</span>
+            }
+<span class="fc" id="L70">            return this;</span>
+        }
+
+        public Bag&lt;E&gt; createPredicatedBag() {
+            // Math - using a different implementation for bag creation
+<span class="nc" id="L75">            return createPredicatedBag(new HashBag&lt;&gt;());</span>
+        }
+
+        public Bag&lt;E&gt; createPredicatedBag(final Bag&lt;E&gt; bag) {
+<span class="nc" id="L79">            Objects.requireNonNull(bag, &quot;bag&quot;);</span>
+<span class="nc" id="L80">            final PredicatedBag&lt;E&gt; predicatedBag = PredicatedBag.predicatedBag(bag, predicate);</span>
+<span class="nc" id="L81">            predicatedBag.addAll(accepted);</span>
+<span class="nc" id="L82">            return predicatedBag; // No mutation</span>
+        }
+
+        public List&lt;E&gt; createPredicatedList() {
+            // Changing the implementation to add a non-empty structure.
+<span class="fc" id="L87">            return createPredicatedList(new LinkedList&lt;&gt;());</span>
+        }
+
+        public List&lt;E&gt; createPredicatedList(final List&lt;E&gt; list) {
+<span class="fc" id="L91">            Objects.requireNonNull(list, &quot;list&quot;);</span>
+<span class="fc" id="L92">            final List&lt;E&gt; predicatedList = PredicatedList.predicatedList(list, predicate);</span>
+<span class="fc" id="L93">            predicatedList.addAll(accepted);</span>
+<span class="fc" id="L94">            return predicatedList; // No mutation</span>
+        }
+
+        public MultiSet&lt;E&gt; createPredicatedMultiSet() {
+<span class="nc" id="L98">            return createPredicatedMultiSet(new HashMultiSet&lt;&gt;());</span>
+        }
+
+        public MultiSet&lt;E&gt; createPredicatedMultiSet(final MultiSet&lt;E&gt; multiset) {
+<span class="nc" id="L102">            Objects.requireNonNull(multiset, &quot;multiset&quot;);</span>
+<span class="nc" id="L103">            final PredicatedMultiSet&lt;E&gt; predicatedMultiSet = PredicatedMultiSet.predicatedMultiSet(multiset, predicate);</span>
+<span class="nc" id="L104">            predicatedMultiSet.addAll(accepted);</span>
+<span class="nc" id="L105">            return predicatedMultiSet; // No mutation</span>
+        }
+
+        public Queue&lt;E&gt; createPredicatedQueue() {
+<span class="nc" id="L109">            return createPredicatedQueue(new LinkedList&lt;&gt;());</span>
+        }
+
+        public Queue&lt;E&gt; createPredicatedQueue(final Queue&lt;E&gt; queue) {
+<span class="nc" id="L113">            Objects.requireNonNull(queue, &quot;queue&quot;);</span>
+<span class="nc" id="L114">            final PredicatedQueue&lt;E&gt; predicatedQueue = PredicatedQueue.predicatedQueue(queue, predicate);</span>
+<span class="nc" id="L115">            predicatedQueue.addAll(accepted);</span>
+<span class="nc" id="L116">            return predicatedQueue; // No mutation</span>
+        }
+
+        public Set&lt;E&gt; createPredicatedSet() {
+<span class="nc" id="L120">            return createPredicatedSet(new HashSet&lt;&gt;());</span>
+        }
+
+        public Set&lt;E&gt; createPredicatedSet(final Set&lt;E&gt; set) {
+<span class="nc" id="L124">            Objects.requireNonNull(set, &quot;set&quot;);</span>
+<span class="nc" id="L125">            final PredicatedSet&lt;E&gt; predicatedSet = PredicatedSet.predicatedSet(set, predicate);</span>
+<span class="nc" id="L126">            predicatedSet.addAll(accepted);</span>
+<span class="nc" id="L127">            return predicatedSet; // No mutation</span>
+        }
+
+        public Collection&lt;E&gt; rejectedElements() {
+            // Inverting method's return to always return an empty Collection
+<span class="fc" id="L132">            return Collections.emptyList(); // Mutation applied (empty returns)</span>
+        }
+    }
+
+    private static final long serialVersionUID = -5259182142076705162L;
+
+    // Negating the predicate for builder method itself
+    public static &lt;E&gt; Builder&lt;E&gt; builder(final Predicate&lt;? super E&gt; predicate) {
+        // Negate conditionals for predicate
+<span class="fc" id="L141">        return new Builder&lt;&gt;(NotNullPredicate.&lt;E&gt;notNullPredicate()); // Invert Negatives</span>
+    }
+
+    public static &lt;E&gt; Builder&lt;E&gt; notNullBuilder() {
+<span class="fc" id="L145">        return new Builder&lt;&gt;(NotNullPredicate.&lt;E&gt;notNullPredicate());</span>
+    }
+
+    public static &lt;T&gt; PredicatedCollection&lt;T&gt; predicatedCollection(final Collection&lt;T&gt; coll, final Predicate&lt;? super T&gt; predicate) {
+<span class="fc" id="L149">        return new PredicatedCollection&lt;&gt;(coll, predicate);</span>
+    }
+
+    protected final Predicate&lt;? super E&gt; predicate;
+
+    protected PredicatedCollection(final Collection&lt;E&gt; collection, final Predicate&lt;? super E&gt; predicate) {
+<span class="fc" id="L155">        super(collection);</span>
+<span class="fc" id="L156">        this.predicate = Objects.requireNonNull(predicate, &quot;predicate&quot;);</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">        for (final E item : collection) {</span>
+<span class="nc" id="L158">            validate(item);</span>
+<span class="nc" id="L159">        }</span>
+<span class="fc" id="L160">    }</span>
+
+    @Override
+    public boolean add(final E object) {
+        // Negation applied to condition
+<span class="fc" id="L165">        validate(object);</span>
+<span class="pc bpc" id="L166" title="1 of 2 branches missed.">        return !decorated().add(object); // Negate Conditionals</span>
+    }
+
+    @Override
+    public boolean addAll(final Collection&lt;? extends E&gt; coll) {
+<span class="fc bfc" id="L171" title="All 2 branches covered.">        for (final E item : coll) {</span>
+<span class="fc" id="L172">            validate(item);</span>
+<span class="fc" id="L173">        }</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        return !decorated().addAll(coll); // Negate Conditionals</span>
+    }
+
+    protected void validate(final E object) {
+<span class="fc bfc" id="L178" title="All 2 branches covered.">        if (!predicate.test(object)) {</span>
+<span class="fc" id="L179">            throw new IllegalArgumentException(&quot;Cannot add Object '&quot; + object + &quot;' - Predicate '&quot; +</span>
+                    predicate + &quot;' rejected it&quot;);
+        }
+<span class="fc" id="L182">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

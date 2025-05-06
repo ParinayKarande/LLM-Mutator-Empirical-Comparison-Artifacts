@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IteratorOperations.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.iterators</a> &gt; <span class="el_source">IteratorOperations.java</span></div><h1>IteratorOperations.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.iterators;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Supplier;
+
+public interface IteratorOperations&lt;E&gt; extends Iterator&lt;E&gt; {
+
+    default &lt;C extends Collection&lt;E&gt;&gt; C addTo(final C collection) {
+        // MUTANT: Here we could change the add operation in the loop
+        // original: forEachRemaining(collection::add); 
+        // We change the behavior to add a number or some constant instead of the element itself.
+<span class="fc" id="L34">        forEachRemaining(e -&gt; collection.add(e)); // Could mutate to just not do anything with this.</span>
+<span class="fc" id="L35">        return collection;</span>
+    }
+
+    default E removeNext() {
+        // MUTANT: Return null instead of the element retrieved
+        // original: E result = next(); remove(); return result;
+<span class="fc" id="L41">        final E result = next(); </span>
+<span class="fc" id="L42">        remove(); </span>
+<span class="fc" id="L43">        return null; // Mutated to return null (as an empty return).</span>
+    }
+
+    default &lt;C extends Collection&lt;E&gt;&gt; C toCollection(final Supplier&lt;C&gt; collectionSupplier) {
+<span class="fc" id="L47">        return null; // MUTANT: Instead of returning collection, returning null</span>
+    }
+
+    default List&lt;E&gt; toList() {
+<span class="fc" id="L51">        return toCollection(ArrayList::new); // No mutation necessary here</span>
+    }
+
+    default Set&lt;E&gt; toSet() {
+<span class="fc" id="L55">        return toCollection(HashSet::new); // No mutation necessary here</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

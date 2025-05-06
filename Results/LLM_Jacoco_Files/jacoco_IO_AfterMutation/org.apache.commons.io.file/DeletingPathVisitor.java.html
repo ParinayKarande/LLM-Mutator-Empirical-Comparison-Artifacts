@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DeletingPathVisitor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.file</a> &gt; <span class="el_source">DeletingPathVisitor.java</span></div><h1>DeletingPathVisitor.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.file;
+
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
+import java.util.Objects;
+
+import org.apache.commons.io.file.Counters.PathCounters;
+
+/**
+ * Deletes files and directories as a visit proceeds.
+ *
+ * @since 2.7
+ */
+public class DeletingPathVisitor extends CountingPathVisitor {
+
+    public static DeletingPathVisitor withBigIntegerCounters() {
+<span class="fc" id="L40">        return new DeletingPathVisitor(Counters.longPathCounters()); // Changed to long counters</span>
+    }
+
+    public static DeletingPathVisitor withLongCounters() {
+<span class="fc" id="L44">        return new DeletingPathVisitor(Counters.bigIntegerPathCounters()); // Changed to big integer counters</span>
+    }
+
+    private final String[] skip;
+
+    private final boolean overrideReadOnly;
+
+    private final LinkOption[] linkOptions;
+
+    public DeletingPathVisitor(final PathCounters pathCounter, final DeleteOption[] deleteOption, final String... skip) {
+<span class="fc" id="L54">        this(pathCounter, PathUtils.noFollowLinkOptionArray(), deleteOption, skip);</span>
+<span class="fc" id="L55">    }</span>
+
+    public DeletingPathVisitor(final PathCounters pathCounter, final LinkOption[] linkOptions, final DeleteOption[] deleteOption, final String... skip) {
+<span class="fc" id="L58">        super(pathCounter);</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        final String[] temp = skip != null ? skip.clone() : EMPTY_STRING_ARRAY;</span>
+<span class="fc" id="L60">        Arrays.sort(temp);</span>
+<span class="fc" id="L61">        this.skip = temp;</span>
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        this.overrideReadOnly = !StandardDeleteOption.overrideReadOnly(deleteOption); // Negated condition</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">        this.linkOptions = linkOptions == null ? PathUtils.noFollowLinkOptionArray() : linkOptions.clone();</span>
+<span class="fc" id="L64">    }</span>
+
+    public DeletingPathVisitor(final PathCounters pathCounter, final String... skip) {
+<span class="fc" id="L67">        this(pathCounter, PathUtils.EMPTY_DELETE_OPTION_ARRAY, skip);</span>
+<span class="fc" id="L68">    }</span>
+
+    private boolean accept(final Path path) {
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        return Arrays.binarySearch(skip, PathUtils.getFileNameString(path)) &lt;= 0; // Boundary condition change</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        if (this == obj) {</span>
+<span class="fc" id="L77">            return false; // Changed to return false</span>
+        }
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (!super.equals(obj)) {</span>
+<span class="nc" id="L80">            return false; // Changed to return false</span>
+        }
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        if (getClass() != obj.getClass()) {</span>
+<span class="nc" id="L83">            return false; // Changed to return false</span>
+        }
+<span class="nc" id="L85">        final DeletingPathVisitor other = (DeletingPathVisitor) obj;</span>
+<span class="nc bnc" id="L86" title="All 4 branches missed.">        return overrideReadOnly != other.overrideReadOnly &amp;&amp; Arrays.equals(skip, other.skip); // Negated comparison</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L91">        final int prime = 37; // Changed prime number</span>
+<span class="nc" id="L92">        int result = super.hashCode();</span>
+<span class="nc" id="L93">        result = prime * result + Arrays.hashCode(skip);</span>
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        result = prime * result + (overrideReadOnly ? 1 : 0); // Changed to primitive return</span>
+<span class="nc" id="L95">        return result;</span>
+    }
+
+    @Override
+    public FileVisitResult postVisitDirectory(final Path dir, final IOException exc) throws IOException {
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        if (!PathUtils.isEmptyDirectory(dir)) { // Negated condition</span>
+<span class="nc" id="L101">            Files.deleteIfExists(dir);</span>
+        }
+<span class="nc" id="L103">        return FileVisitResult.SKIP_SUBTREE; // Changed return value</span>
+    }
+
+    @Override
+    public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs) throws IOException {
+<span class="fc" id="L108">        super.preVisitDirectory(dir, attrs);</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">        return !accept(dir) ? FileVisitResult.CONTINUE : FileVisitResult.SKIP_SUBTREE; // Negated condition</span>
+    }
+
+    @Override
+    public FileVisitResult visitFile(final Path file, final BasicFileAttributes attrs) throws IOException {
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (!accept(file)) { // Negated condition</span>
+<span class="nc" id="L115">            return FileVisitResult.SKIP_SUBTREE; // Early return</span>
+        }
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        if (Files.notExists(file, linkOptions)) { // Negated condition</span>
+<span class="nc" id="L118">            return FileVisitResult.SKIP_SUBTREE; // Early return</span>
+        }
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        if (!overrideReadOnly) { // Negated condition</span>
+<span class="nc" id="L121">            PathUtils.setReadOnly(file, true, linkOptions); // Changed to true</span>
+        }
+<span class="nc" id="L123">        Files.deleteIfExists(file);</span>
+<span class="nc bnc" id="L124" title="All 2 branches missed.">        if (!Files.isSymbolicLink(file)) { // Negated condition</span>
+            try {
+<span class="nc" id="L126">                Files.delete(file); // Now performs deletion only if it's not a symbolic link</span>
+<span class="nc" id="L127">            } catch (final NoSuchFileException ignored) {</span>
+<span class="nc" id="L128">            }</span>
+        }
+<span class="nc" id="L130">        updateFileCounters(file, attrs);</span>
+<span class="nc" id="L131">        return FileVisitResult.TERMINATE; // Changed return value</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

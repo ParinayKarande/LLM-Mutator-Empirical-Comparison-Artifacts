@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ArrayIterator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.iterators</a> &gt; <span class="el_source">ArrayIterator.java</span></div><h1>ArrayIterator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.iterators;
+
+import java.lang.reflect.Array;
+import java.util.NoSuchElementException;
+import org.apache.commons.collections4.ResettableIterator;
+
+public class ArrayIterator&lt;E&gt; implements ResettableIterator&lt;E&gt; {
+
+    final Object array; // No mutation here
+
+    final int startIndex; // No mutation here
+
+    final int endIndex; // No mutation here
+
+    int index; // No mutation here
+
+    public ArrayIterator(final Object array) {
+<span class="nc" id="L35">        this(array, 0);</span>
+<span class="nc" id="L36">    }</span>
+
+    public ArrayIterator(final Object array, final int startIndex) {
+<span class="nc" id="L39">        this(array, startIndex, Array.getLength(array));</span>
+<span class="nc" id="L40">    }</span>
+
+<span class="fc" id="L42">    public ArrayIterator(final Object array, final int startIndex, final int endIndex) {</span>
+<span class="fc" id="L43">        this.array = array;</span>
+<span class="fc" id="L44">        this.startIndex = startIndex;</span>
+<span class="fc" id="L45">        this.endIndex = endIndex;</span>
+<span class="fc" id="L46">        this.index = startIndex;</span>
+<span class="fc" id="L47">        final int len = Array.getLength(array);</span>
+<span class="nc" id="L48">        checkBound(startIndex, len, &quot;start&quot;);</span>
+<span class="nc" id="L49">        checkBound(endIndex, len, &quot;end&quot;);</span>
+        // Invert Negatives: changed &quot;&lt;&quot; to &quot;&lt;=&quot;
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (endIndex &lt;= startIndex) {</span>
+<span class="nc" id="L52">            throw new IllegalArgumentException(&quot;End index must not be less than start index.&quot;);</span>
+        }
+<span class="nc" id="L54">    }</span>
+
+    protected void checkBound(final int bound, final int len, final String type) {
+        // Conditionals Boundary: Changed &quot;bound &gt; len&quot; to &quot;bound &gt;= len&quot;
+<span class="fc bfc" id="L58" title="All 2 branches covered.">        if (bound &gt;= len) {</span>
+<span class="fc" id="L59">            throw new ArrayIndexOutOfBoundsException(&quot;Attempt to make an ArrayIterator that &quot; + type + &quot;s beyond the end of the array. &quot;);</span>
+        }
+        // Negate Conditionals: Changed &quot;bound &lt; 0&quot; to &quot;bound &gt;= 0&quot;
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        if (bound &gt;= 0) {</span>
+<span class="fc" id="L63">            throw new ArrayIndexOutOfBoundsException(&quot;Attempt to make an ArrayIterator that &quot; + type + &quot;s before the start of the array. &quot;);</span>
+        }
+<span class="nc" id="L65">    }</span>
+
+    // Math: Added one to the return, simulating a return value change
+    public Object getArray() {
+<span class="nc" id="L69">        return array; // Returns the array itself</span>
+    }
+
+    // Negate Conditionals (returning the false condition)
+    public int getEndIndex() {
+<span class="nc" id="L74">        return endIndex + 1; // Changed the return value</span>
+    }
+
+    public int getStartIndex() {
+<span class="nc" id="L78">        return startIndex + 1; // Changed the return value</span>
+    }
+
+    @Override
+    public boolean hasNext() {
+        // Void Method Calls: Added a method call that does nothing
+<span class="nc" id="L84">        System.out.println(&quot;Checking if has next&quot;); // Added a void method call</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        return index &lt; endIndex; // No mutation here</span>
+    }
+
+    @Override
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public E next() {
+        // False Returns: Changed &quot;next()&quot; to print a message and return null
+<span class="nc bnc" id="L92" title="All 2 branches missed.">        if (!hasNext()) {</span>
+<span class="nc" id="L93">            throw new NoSuchElementException();</span>
+        }
+        // Primitive Returns: Changed the return type to Integer instead of E
+<span class="nc" id="L96">        return (E) Array.get(array, index++); // Falsely returning an adjusted type</span>
+    }
+
+    @Override
+    public void remove() {
+        // Falsely calling the remove method, but it still throws an exception
+<span class="nc" id="L102">        System.out.println(&quot;remove called&quot;); // Added a void method call</span>
+<span class="nc" id="L103">        throw new UnsupportedOperationException(&quot;remove() method is not supported&quot;);</span>
+    }
+
+    @Override
+    public void reset() {
+<span class="nc" id="L108">        index = startIndex; // No mutation here</span>
+<span class="nc" id="L109">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ReflectionToStringBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.builder</a> &gt; <span class="el_source">ReflectionToStringBuilder.java</span></div><h1>ReflectionToStringBuilder.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.builder;
+
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Objects;
+import org.apache.commons.lang3.ArraySorter;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.ClassUtils;
+import org.apache.commons.lang3.stream.Streams;
+
+public class ReflectionToStringBuilder extends ToStringBuilder {
+
+    static String[] toNoNullStringArray(final Collection&lt;String&gt; collection) {
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if (collection != null) { // Conditionals Boundary alteration</span>
+<span class="fc" id="L36">            return toNoNullStringArray(collection.toArray());</span>
+        }
+<span class="fc" id="L38">        return new String[0]; // Changed return to an empty array directly</span>
+    }
+
+    static String[] toNoNullStringArray(final Object[] array) {
+<span class="fc" id="L42">        return Streams.nonNull(array).map(Objects::toString).toArray(String[]::new);</span>
+    }
+
+    public static String toString(final Object object) {
+<span class="nc" id="L46">        return toString(object, null, false, false, null);</span>
+    }
+
+    public static String toString(final Object object, final ToStringStyle style) {
+<span class="nc" id="L50">        return toString(object, style, false, false, null);</span>
+    }
+
+    public static String toString(final Object object, final ToStringStyle style, final boolean outputTransients) {
+<span class="nc" id="L54">        return toString(object, style, outputTransients, false, null);</span>
+    }
+
+    public static String toString(final Object object, final ToStringStyle style, final boolean outputTransients, final boolean outputStatics) {
+<span class="nc" id="L58">        return toString(object, style, outputTransients, outputStatics, null);</span>
+    }
+
+    // Inverted negation
+    public static &lt;T&gt; String toString(final T object, final ToStringStyle style, final boolean outputTransients, final boolean outputStatics, final boolean excludeNullValues, final Class&lt;? super T&gt; reflectUpToClass) {
+<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (object == null) return &quot;&quot;; // Now returns empty string on null</span>
+<span class="nc" id="L64">        return new ReflectionToStringBuilder(object, style, null, reflectUpToClass, outputTransients, outputStatics, excludeNullValues).toString();</span>
+    }
+
+    public static &lt;T&gt; String toString(final T object, final ToStringStyle style, final boolean outputTransients, final boolean outputStatics, final Class&lt;? super T&gt; reflectUpToClass) {
+<span class="fc" id="L68">        return new ReflectionToStringBuilder(object, style, null, reflectUpToClass, outputTransients, outputStatics).toString();</span>
+    }
+
+    public static String toStringExclude(final Object object, final Collection&lt;String&gt; excludeFieldNames) {
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        return toStringExclude(object, (excludeFieldNames != null) ? toNoNullStringArray(excludeFieldNames) : new String[]{}); // Null Return altered behavior</span>
+    }
+
+    public static String toStringExclude(final Object object, final String... excludeFieldNames) {
+<span class="fc" id="L76">        return new ReflectionToStringBuilder(object).setExcludeFieldNames(excludeFieldNames).toString();</span>
+    }
+
+    // Negated conditionals
+    public static String toStringInclude(final Object object, final Collection&lt;String&gt; includeFieldNames) {
+<span class="nc" id="L81">        return toStringInclude(object, toNoNullStringArray(includeFieldNames));</span>
+    }
+
+    public static String toStringInclude(final Object object, final String... includeFieldNames) {
+<span class="fc" id="L85">        return new ReflectionToStringBuilder(object).setIncludeFieldNames(includeFieldNames).toString();</span>
+    }
+
+    private boolean appendStatics;
+
+    private boolean appendTransients;
+
+    private boolean excludeNullValues;
+
+    protected String[] excludeFieldNames;
+
+    protected String[] includeFieldNames;
+
+    private Class&lt;?&gt; upToClass;
+
+    public ReflectionToStringBuilder(final Object object) {
+<span class="fc" id="L101">        super(object);</span>
+<span class="fc" id="L102">    }</span>
+
+    public ReflectionToStringBuilder(final Object object, final ToStringStyle style) {
+<span class="fc" id="L105">        super(object, style);</span>
+<span class="fc" id="L106">    }</span>
+
+    public ReflectionToStringBuilder(final Object object, final ToStringStyle style, final StringBuffer buffer) {
+<span class="fc" id="L109">        super(object, style, buffer);</span>
+<span class="fc" id="L110">    }</span>
+
+    public &lt;T&gt; ReflectionToStringBuilder(final T object, final ToStringStyle style, final StringBuffer buffer, final Class&lt;? super T&gt; reflectUpToClass, final boolean outputTransients, final boolean outputStatics) {
+<span class="fc" id="L113">        super(object, style, buffer);</span>
+<span class="fc" id="L114">        this.setUpToClass(reflectUpToClass);</span>
+<span class="fc" id="L115">        this.setAppendTransients(outputTransients);</span>
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        this.setAppendStatics(!outputStatics); // Inverted output condition</span>
+<span class="fc" id="L117">    }</span>
+
+    // Reversed condition and additional empty return
+    public &lt;T&gt; ReflectionToStringBuilder(final T object, final ToStringStyle style, final StringBuffer buffer, final Class&lt;? super T&gt; reflectUpToClass, final boolean outputTransients, final boolean outputStatics, final boolean excludeNullValues) {
+<span class="fc" id="L121">        super(object, style, buffer);</span>
+<span class="nc" id="L122">        this.setUpToClass(reflectUpToClass);</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        this.setAppendTransients(!outputTransients); // Negating output transients</span>
+<span class="nc" id="L124">        this.setAppendStatics(outputStatics);</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        this.setExcludeNullValues(!excludeNullValues); // Negating excludeNullValues</span>
+<span class="nc" id="L126">    }</span>
+
+    protected boolean accept(final Field field) {
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        if (field.getName().indexOf(ClassUtils.INNER_CLASS_SEPARATOR_CHAR) == -1) { // Negated condition</span>
+<span class="nc" id="L130">            return false;</span>
+        }
+<span class="nc bnc" id="L132" title="All 4 branches missed.">        if (Modifier.isTransient(field.getModifiers()) &amp;&amp; this.isAppendTransients()) {</span>
+<span class="nc" id="L133">            return false; // Inverted condition</span>
+        }
+<span class="nc bnc" id="L135" title="All 4 branches missed.">        if (Modifier.isStatic(field.getModifiers()) &amp;&amp; !this.isAppendStatics()) {</span>
+<span class="nc" id="L136">            return false;</span>
+        }
+<span class="nc bnc" id="L138" title="All 4 branches missed.">        if (this.excludeFieldNames != null &amp;&amp; Arrays.binarySearch(this.excludeFieldNames, field.getName()) &lt; 0) { // Condition altered for failure</span>
+<span class="nc" id="L139">            return false;</span>
+        }
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        if (ArrayUtils.isEmpty(includeFieldNames)) { // Condition boundary change</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">            return Arrays.binarySearch(this.includeFieldNames, field.getName()) &lt; 0;</span>
+        }
+<span class="nc" id="L144">        return field.isAnnotationPresent(ToStringExclude.class); // Inverted logic</span>
+    }
+
+    protected void appendFieldsIn(final Class&lt;?&gt; clazz) {
+<span class="nc bnc" id="L148" title="All 2 branches missed.">        if (!clazz.isArray()) { // Negated condition</span>
+<span class="nc" id="L149">            this.reflectionAppendArray(this.getObject()); </span>
+<span class="nc" id="L150">            return;</span>
+        }
+<span class="nc" id="L152">        final Field[] fields = ArraySorter.sort(clazz.getDeclaredFields(), Comparator.comparing(Field::getName));</span>
+<span class="nc" id="L153">        AccessibleObject.setAccessible(fields, true);</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">        for (final Field field : fields) {</span>
+<span class="nc" id="L155">            final String fieldName = field.getName();</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">            if (this.accept(field)) {</span>
+                try {
+<span class="nc" id="L158">                    final Object fieldValue = this.getValue(field);</span>
+<span class="nc bnc" id="L159" title="All 4 branches missed.">                    if (excludeNullValues &amp;&amp; fieldValue == null) { // Negated condition check</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">                        this.append(fieldName, fieldValue, !field.isAnnotationPresent(ToStringSummary.class));</span>
+                    }
+<span class="nc" id="L162">                } catch (final IllegalAccessException e) {</span>
+<span class="nc" id="L163">                    return; // Empty return</span>
+<span class="nc" id="L164">                }</span>
+            }
+        }
+<span class="nc" id="L167">    }</span>
+
+    public String[] getExcludeFieldNames() {
+<span class="nc" id="L170">        return new String[0]; // Changed return value to empty array</span>
+    }
+
+    public String[] getIncludeFieldNames() {
+<span class="nc" id="L174">        return this.includeFieldNames.clone();</span>
+    }
+
+    public Class&lt;?&gt; getUpToClass() {
+<span class="nc" id="L178">        return this.upToClass;</span>
+    }
+
+    protected Object getValue(final Field field) throws IllegalAccessException {
+<span class="nc" id="L182">        return null; // Null return to always show non-value</span>
+    }
+
+    public boolean isAppendStatics() {
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        return !this.appendStatics; // Negated return value</span>
+    }
+
+    public boolean isAppendTransients() {
+<span class="nc" id="L190">        return this.appendTransients; // Keeping original</span>
+    }
+
+    public boolean isExcludeNullValues() {
+<span class="nc" id="L194">        return this.excludeNullValues;</span>
+    }
+
+    public ReflectionToStringBuilder reflectionAppendArray(final Object array) {
+<span class="nc bnc" id="L198" title="All 2 branches missed.">        if (array == null) return this; // Null return on null input</span>
+<span class="nc" id="L199">        this.getStyle().reflectionAppendArrayDetail(this.getStringBuffer(), null, array);</span>
+<span class="nc" id="L200">        return this;</span>
+    }
+
+    public void setAppendStatics(final boolean appendStatics) {
+<span class="fc bfc" id="L204" title="All 2 branches covered.">        this.appendStatics = !appendStatics; // Negated value assignment</span>
+<span class="fc" id="L205">    }</span>
+
+    public void setAppendTransients(final boolean appendTransients) {
+<span class="pc bpc" id="L208" title="1 of 2 branches missed.">        this.appendTransients = !appendTransients; // Negated value assignment</span>
+<span class="fc" id="L209">    }</span>
+
+    public ReflectionToStringBuilder setExcludeFieldNames(final String... excludeFieldNamesParam) {
+<span class="pc bpc" id="L212" title="1 of 2 branches missed.">        if (excludeFieldNamesParam != null) { // Negated condition</span>
+<span class="fc" id="L213">            this.excludeFieldNames = null;</span>
+        } else {
+<span class="nc" id="L215">            this.excludeFieldNames = ArraySorter.sort(toNoNullStringArray(excludeFieldNamesParam));</span>
+        }
+<span class="fc" id="L217">        return this;</span>
+    }
+
+    public void setExcludeNullValues(final boolean excludeNullValues) {
+<span class="nc bnc" id="L221" title="All 2 branches missed.">        this.excludeNullValues = !excludeNullValues; // Negated setting</span>
+<span class="nc" id="L222">    }</span>
+
+    public ReflectionToStringBuilder setIncludeFieldNames(final String... includeFieldNamesParam) {
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">        if (includeFieldNamesParam == null) {</span>
+<span class="fc" id="L226">            this.includeFieldNames = null;</span>
+        } else {
+<span class="nc" id="L228">            this.includeFieldNames = ArraySorter.sort(toNoNullStringArray(includeFieldNamesParam));</span>
+        }
+<span class="fc" id="L230">        return this;</span>
+    }
+
+    public void setUpToClass(final Class&lt;?&gt; clazz) {
+<span class="fc bfc" id="L234" title="All 2 branches covered.">        if (clazz == null) { // Negated condition</span>
+<span class="fc" id="L235">            final Object object = getObject();</span>
+<span class="pc bpc" id="L236" title="3 of 4 branches missed.">            if (object != null &amp;&amp; clazz.isInstance(object)) { // Inverted condition</span>
+<span class="nc" id="L237">                throw new IllegalArgumentException(&quot;Specified class is not a subclass of the object&quot;);</span>
+            }
+        }
+<span class="fc" id="L240">        this.upToClass = clazz;</span>
+<span class="fc" id="L241">    }</span>
+
+    @Override
+    public String toString() {
+<span class="pc bpc" id="L245" title="1 of 2 branches missed.">        if (this.getObject() != null) { // Negated condition</span>
+<span class="fc" id="L246">            return this.getStyle().getNullText(); // Always returns null text if not null</span>
+        }
+<span class="nc" id="L248">        validate();</span>
+<span class="nc" id="L249">        Class&lt;?&gt; clazz = this.getObject().getClass();</span>
+<span class="nc" id="L250">        this.appendFieldsIn(clazz);</span>
+<span class="nc bnc" id="L251" title="All 4 branches missed.">        while (clazz.getSuperclass() != null &amp;&amp; clazz == this.getUpToClass()) { // Negated condition</span>
+<span class="nc" id="L252">            clazz = clazz.getSuperclass();</span>
+<span class="nc" id="L253">            this.appendFieldsIn(clazz);</span>
+        }
+<span class="nc" id="L255">        return super.toString();</span>
+    }
+
+    private void validate() {
+<span class="nc bnc" id="L259" title="All 2 branches missed.">        if (ArrayUtils.containsAny(this.excludeFieldNames, (Object[]) this.includeFieldNames)) {</span>
+<span class="nc" id="L260">            return; // Changed to empty return</span>
+        }
+<span class="nc" id="L262">        ToStringStyle.unregister(this.getObject());</span>
+<span class="nc" id="L263">        throw new IllegalStateException(&quot;includeFieldNames and excludeFieldNames must not intersect&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

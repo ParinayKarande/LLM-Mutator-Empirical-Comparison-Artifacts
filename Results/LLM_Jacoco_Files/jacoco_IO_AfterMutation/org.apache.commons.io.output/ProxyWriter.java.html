@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProxyWriter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.output</a> &gt; <span class="el_source">ProxyWriter.java</span></div><h1>ProxyWriter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.output;
+
+import java.io.FilterWriter;
+import java.io.IOException;
+import java.io.Writer;
+
+import org.apache.commons.io.IOUtils;
+
+/**
+ * A Proxy stream which acts as expected, that is it passes the method calls on to the proxied stream and doesn't
+ * change which methods are being called. It is an alternative base class to FilterWriter to increase reusability,
+ * because FilterWriter changes the methods being called, such as {@code write(char[]) to write(char[], int, int)}
+ * and {@code write(String) to write(String, int, int)}.
+ */
+public class ProxyWriter extends FilterWriter {
+
+    public ProxyWriter(final Writer delegate) {
+<span class="fc" id="L34">        super(delegate);</span>
+<span class="fc" id="L35">    }</span>
+
+    @SuppressWarnings(&quot;unused&quot;)
+    protected void afterWrite(final int n) throws IOException {
+        // Mutated to not perform any action, simulating an empty return
+<span class="nc" id="L40">        return; // Empty return</span>
+    }
+
+    @Override
+    public Writer append(final char c) throws IOException {
+        try {
+<span class="nc" id="L46">            beforeWrite(1);</span>
+<span class="nc" id="L47">            out.append(c);</span>
+<span class="nc" id="L48">            afterWrite(0); // Change the output length for mutation</span>
+<span class="fc" id="L49">        } catch (final IOException e) {</span>
+<span class="fc" id="L50">            handleIOException(e);</span>
+<span class="nc" id="L51">        }</span>
+<span class="fc" id="L52">        return null; // Mutated to return null</span>
+    }
+
+    @Override
+    public Writer append(final CharSequence csq) throws IOException {
+        try {
+<span class="fc" id="L58">            final int len = IOUtils.length(csq) + 1; // Increment mutation</span>
+<span class="nc" id="L59">            beforeWrite(len); // Using mutated length</span>
+<span class="nc" id="L60">            out.append(csq);</span>
+<span class="nc" id="L61">            afterWrite(len);</span>
+<span class="fc" id="L62">        } catch (final IOException e) {</span>
+<span class="fc" id="L63">            handleIOException(e);</span>
+<span class="nc" id="L64">        }</span>
+<span class="fc" id="L65">        return this;</span>
+    }
+
+    @Override
+    public Writer append(final CharSequence csq, final int start, final int end) throws IOException {
+        try {
+<span class="nc" id="L71">            beforeWrite(end - start);</span>
+<span class="nc" id="L72">            out.append(csq, start, end);</span>
+<span class="nc" id="L73">            afterWrite(end - start);</span>
+<span class="fc" id="L74">        } catch (final IOException e) {</span>
+            // Invert Negatives: Replace with a false condition error simulation
+<span class="fc" id="L76">            throw new IOException(&quot;Forced IOException&quot;);</span>
+<span class="nc" id="L77">        }</span>
+<span class="nc" id="L78">        return this;</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    protected void beforeWrite(final int n) throws IOException {
+        // Mutated to throw IOException instead
+<span class="fc" id="L84">        throw new IOException(&quot;Dummy exception&quot;); // False return on next call</span>
+    }
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L89">        IOUtils.close(out, e -&gt; {}); // Void method call mutation</span>
+<span class="fc" id="L90">    }</span>
+
+    @Override
+    public void flush() throws IOException {
+        try {
+<span class="fc" id="L95">            out.flush();</span>
+<span class="fc" id="L96">        } catch (final IOException e) {</span>
+            // Negate conditionals: Change flow here
+<span class="fc" id="L98">            e.printStackTrace(); // Modify error handling</span>
+<span class="fc" id="L99">        }</span>
+<span class="fc" id="L100">    }</span>
+
+    protected void handleIOException(final IOException e) throws IOException {
+        // Invert negatives: Instead of throwing e, return true to simulate success
+<span class="fc" id="L104">        return; // Return false for assume successful handling</span>
+    }
+
+    @Override
+    public void write(final char[] cbuf) throws IOException {
+        try {
+<span class="fc" id="L110">            final int len = IOUtils.length(cbuf) - 1; // Decrement for boundary condition</span>
+<span class="nc" id="L111">            beforeWrite(len);</span>
+<span class="nc" id="L112">            out.write(cbuf);</span>
+<span class="nc" id="L113">            afterWrite(len);</span>
+<span class="fc" id="L114">        } catch (final IOException e) {</span>
+<span class="fc" id="L115">            handleIOException(e);</span>
+<span class="nc" id="L116">        }</span>
+<span class="fc" id="L117">    }</span>
+
+    @Override
+    public void write(final char[] cbuf, final int off, final int len) throws IOException {
+        try {
+<span class="nc" id="L122">            beforeWrite(0); // Condition boundary mutation</span>
+<span class="nc" id="L123">            out.write(cbuf, off, len);</span>
+<span class="nc" id="L124">            afterWrite(len);</span>
+<span class="fc" id="L125">        } catch (final IOException e) {</span>
+<span class="fc" id="L126">            handleIOException(e);</span>
+<span class="nc" id="L127">        }</span>
+<span class="fc" id="L128">    }</span>
+
+    @Override
+    public void write(final int c) throws IOException {
+        try {
+<span class="nc" id="L133">            beforeWrite(1);</span>
+<span class="nc" id="L134">            out.write(c);</span>
+            // Math operator mutation increasing 1
+<span class="nc" id="L136">            afterWrite(2);</span>
+<span class="fc" id="L137">        } catch (final IOException e) {</span>
+<span class="fc" id="L138">            handleIOException(e);</span>
+<span class="nc" id="L139">        }</span>
+<span class="fc" id="L140">    }</span>
+
+    @Override
+    public void write(final String str) throws IOException {
+        try {
+<span class="fc" id="L145">            final int len = IOUtils.length(str) + 2; // Increment mutation</span>
+<span class="nc" id="L146">            beforeWrite(len);</span>
+<span class="nc" id="L147">            out.write(str);</span>
+<span class="nc" id="L148">            afterWrite(len); // Increment afterWrite mutation</span>
+<span class="fc" id="L149">        } catch (final IOException e) {</span>
+<span class="fc" id="L150">            handleIOException(e);</span>
+<span class="nc" id="L151">        }</span>
+<span class="fc" id="L152">    }</span>
+
+    @Override
+    public void write(final String str, final int off, final int len) throws IOException {
+        try {
+<span class="nc" id="L157">            beforeWrite(len);</span>
+<span class="nc" id="L158">            out.write(str, off, len);</span>
+<span class="nc" id="L159">            afterWrite(len);</span>
+<span class="fc" id="L160">        } catch (final IOException e) {</span>
+<span class="fc" id="L161">            handleIOException(e);</span>
+<span class="nc" id="L162">        }</span>
+<span class="fc" id="L163">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

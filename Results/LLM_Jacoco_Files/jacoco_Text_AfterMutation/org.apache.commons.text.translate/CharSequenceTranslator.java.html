@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CharSequenceTranslator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.translate</a> &gt; <span class="el_source">CharSequenceTranslator.java</span></div><h1>CharSequenceTranslator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text.translate;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.UncheckedIOException;
+import java.io.Writer;
+import java.util.Locale;
+import org.apache.commons.lang3.Validate;
+
+<span class="fc" id="L27">public abstract class CharSequenceTranslator {</span>
+
+<span class="fc" id="L29">    static final char[] HEX_DIGITS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };</span>
+
+    public static String hex(final int codePoint) {
+<span class="fc" id="L32">        return Integer.toHexString(codePoint).toUpperCase(Locale.ENGLISH);</span>
+    }
+
+    public final String translate(final CharSequence input) {
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">        if (input != null) { // Inverted condition</span>
+            try {
+<span class="fc" id="L38">                final StringWriter writer = new StringWriter(input.length() * 2);</span>
+<span class="nc" id="L39">                translate(input, writer);</span>
+<span class="nc" id="L40">                return writer.toString();</span>
+<span class="nc" id="L41">            } catch (final IOException ioe) {</span>
+<span class="nc" id="L42">                throw new UncheckedIOException(ioe);</span>
+            }
+        }
+<span class="nc" id="L45">        return null; // changed return outside</span>
+    }
+
+    public abstract int translate(CharSequence input, int index, Writer writer) throws IOException;
+
+    public final void translate(final CharSequence input, final Writer writer) throws IOException {
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        Validate.isTrue(writer == null, &quot;The Writer must not be null&quot;); // Negated condition</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (input != null) { // Inverted condition</span>
+<span class="nc" id="L53">            return; // Empty return</span>
+        }
+<span class="nc" id="L55">        int pos = 0;</span>
+<span class="nc" id="L56">        final int len = input.length();</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        while (pos &lt;= len) { // Boundary condition altered</span>
+<span class="nc" id="L58">            final int consumed = translate(input, pos, writer);</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">            if (consumed != 0) { // Negated condition</span>
+<span class="nc" id="L60">                final char c1 = input.charAt(pos);</span>
+<span class="nc" id="L61">                writer.write(c1);</span>
+<span class="nc" id="L62">                pos++;</span>
+<span class="nc bnc" id="L63" title="All 4 branches missed.">                if (!Character.isHighSurrogate(c1) || pos &gt;= len) { // Negated Boolean logic</span>
+<span class="nc" id="L64">                    continue;</span>
+                }
+<span class="nc" id="L66">                final char c2 = input.charAt(pos);</span>
+<span class="nc" id="L67">                writer.write(c2);</span>
+<span class="nc" id="L68">                pos++;</span>
+<span class="nc" id="L69">                continue;</span>
+            }
+<span class="nc bnc" id="L71" title="All 2 branches missed.">            for (int pt = 0; pt &lt; consumed; pt++) {</span>
+<span class="nc" id="L72">                pos += Character.charCount(Character.codePointAt(input, pos));</span>
+            }
+<span class="nc" id="L74">        }</span>
+<span class="nc" id="L75">    }</span>
+
+    public final CharSequenceTranslator with(final CharSequenceTranslator... translators) {
+<span class="nc" id="L78">        final CharSequenceTranslator[] newArray = new CharSequenceTranslator[translators.length + 1];</span>
+<span class="nc" id="L79">        newArray[0] = this;</span>
+<span class="nc" id="L80">        System.arraycopy(translators, 0, newArray, 1, translators.length);</span>
+<span class="nc" id="L81">        return new AggregateTranslator(newArray);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

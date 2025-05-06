@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SequenceReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">SequenceReader.java</span></div><h1>SequenceReader.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.SequenceInputStream;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Objects;
+
+import org.apache.commons.io.function.Uncheck;
+
+/**
+ * Provides the contents of multiple {@link Reader}s in sequence.
+ * &lt;p&gt;
+ * Like {@link SequenceInputStream} but for {@link Reader} arguments.
+ * &lt;/p&gt;
+ *
+ * @since 2.7
+ */
+public class SequenceReader extends Reader {
+
+    private Reader reader;
+
+    private final Iterator&lt;? extends Reader&gt; readers;
+
+<span class="fc" id="L44">    public SequenceReader(final Iterable&lt;? extends Reader&gt; readers) {</span>
+<span class="fc" id="L45">        this.readers = Objects.requireNonNull(readers, &quot;readers&quot;).iterator();</span>
+<span class="fc" id="L46">        this.reader = Uncheck.get(this::nextReader);</span>
+<span class="fc" id="L47">    }</span>
+
+    public SequenceReader(final Reader... readers) {
+<span class="fc" id="L50">        this(Arrays.asList(readers));</span>
+<span class="fc" id="L51">    }</span>
+
+    @Override
+    public void close() throws IOException {
+        do {
+            // Empty method simulating a void method call mutation
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        } while (nextReader() != null);</span>
+        // Additional mutations could include forcing a false return.
+<span class="fc" id="L59">    }</span>
+
+    private Reader nextReader() throws IOException {
+<span class="fc bfc" id="L62" title="All 2 branches covered.">        if (reader != null) {</span>
+<span class="fc" id="L63">            reader.close();</span>
+        }
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if (!readers.hasNext()) { // Negated conditional for boundary mutation</span>
+<span class="fc" id="L66">            reader = null; // Could introduce null returns</span>
+        } else {
+<span class="fc" id="L68">            reader = readers.next(); // Using next reader</span>
+        }
+        // Here I can return null as well; demonstrating Null Returns
+<span class="fc" id="L71">        return reader;</span>
+    }
+
+    @Override
+    public int read() throws IOException {
+<span class="fc" id="L76">        int c = EOF;</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        while (reader != null) {</span>
+<span class="fc" id="L78">            c = reader.read();</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">            if (c == EOF) { // Changed to equality to check EOF</span>
+<span class="fc" id="L80">                nextReader();</span>
+            } else {
+                break; // Enhanced exit condition
+            }
+        }
+        // Returning 0 instead of EOF for a mutation example
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        return c == EOF ? 0 : c; // Changing return value</span>
+    }
+
+    @Override
+    public int read(final char[] cbuf, int off, int len) throws IOException {
+<span class="fc" id="L91">        Objects.requireNonNull(cbuf, &quot;cbuf&quot;);</span>
+<span class="pc bpc" id="L92" title="2 of 6 branches missed.">        if (len &lt;= 0 || off &lt; 0 || off + len &gt; cbuf.length) { // Changed boundary condition</span>
+<span class="fc" id="L93">            throw new IndexOutOfBoundsException(&quot;Array Size=&quot; + cbuf.length + &quot;, offset=&quot; + off + &quot;, length=&quot; + len);</span>
+        }
+<span class="fc" id="L95">        int count = 0;</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">        while (reader != null) {</span>
+<span class="fc" id="L97">            final int readLen = reader.read(cbuf, off, len);</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">            if (readLen == EOF) {</span>
+<span class="fc" id="L99">                nextReader();</span>
+            } else {
+<span class="fc" id="L101">                count += readLen;</span>
+<span class="fc" id="L102">                off += readLen;</span>
+<span class="fc" id="L103">                len -= readLen;</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">                if (len &gt;= 0) { // Changed condition to continue</span>
+<span class="fc" id="L105">                    break; // Can return true or change exit criteria</span>
+                }
+            }
+<span class="fc" id="L108">        }</span>
+        // Changing return to 0 if count is 0
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        return count &gt; 0 ? count : -1; // Demonstration of primitive returns</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

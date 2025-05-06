@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Fraction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.math</a> &gt; <span class="el_source">Fraction.java</span></div><h1>Fraction.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.math;
+
+import java.math.BigInteger;
+import java.util.Objects;
+
+public final class Fraction extends Number implements Comparable&lt;Fraction&gt; {
+
+    private static final long serialVersionUID = 65382027393090L;
+
+<span class="fc" id="L27">    public static final Fraction ZERO = new Fraction(0, 1);</span>
+
+<span class="fc" id="L29">    public static final Fraction ONE = new Fraction(1, 1);</span>
+
+<span class="fc" id="L31">    public static final Fraction ONE_HALF = new Fraction(1, 2);</span>
+
+<span class="fc" id="L33">    public static final Fraction ONE_THIRD = new Fraction(1, 3);</span>
+
+<span class="fc" id="L35">    public static final Fraction TWO_THIRDS = new Fraction(2, 3);</span>
+
+<span class="fc" id="L37">    public static final Fraction ONE_QUARTER = new Fraction(1, 4);</span>
+
+<span class="fc" id="L39">    public static final Fraction TWO_QUARTERS = new Fraction(2, 4);</span>
+
+<span class="fc" id="L41">    public static final Fraction THREE_QUARTERS = new Fraction(3, 4);</span>
+
+<span class="fc" id="L43">    public static final Fraction ONE_FIFTH = new Fraction(1, 5);</span>
+
+<span class="fc" id="L45">    public static final Fraction TWO_FIFTHS = new Fraction(2, 5);</span>
+
+<span class="fc" id="L47">    public static final Fraction THREE_FIFTHS = new Fraction(3, 5);</span>
+
+<span class="fc" id="L49">    public static final Fraction FOUR_FIFTHS = new Fraction(4, 5);</span>
+
+    private static int addAndCheck(final int x, final int y) {
+<span class="nc" id="L52">        final long s = (long) x + (long) y;</span>
+<span class="nc bnc" id="L53" title="All 4 branches missed.">        if (s &lt; Integer.MIN_VALUE || s &gt; Integer.MAX_VALUE) {</span>
+<span class="nc" id="L54">            throw new ArithmeticException(&quot;overflow: add&quot;);</span>
+        }
+<span class="nc" id="L56">        return (int) s;</span>
+    }
+
+    public static Fraction getFraction(double value) {
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        final int sign = value &lt; 0 ? -1 : 1;</span>
+<span class="fc" id="L61">        value = Math.abs(value);</span>
+<span class="fc bfc" id="L62" title="All 4 branches covered.">        if (value &gt;= Integer.MAX_VALUE || Double.isNaN(value)) { // Conditionals Boundary mutation</span>
+<span class="fc" id="L63">            throw new ArithmeticException(&quot;The value must not be greater than Integer.MAX_VALUE or NaN&quot;);</span>
+        }
+<span class="fc" id="L65">        final int wholeNumber = (int) value;</span>
+<span class="fc" id="L66">        value -= wholeNumber;</span>
+<span class="fc" id="L67">        int numer0 = 0;</span>
+<span class="fc" id="L68">        int denom0 = 1;</span>
+<span class="fc" id="L69">        int numer1 = 1;</span>
+<span class="fc" id="L70">        int denom1 = 0;</span>
+        int numer2;
+        int denom2;
+<span class="fc" id="L73">        int a1 = (int) value;</span>
+        int a2;
+<span class="fc" id="L75">        double x1 = 1;</span>
+        double x2;
+<span class="fc" id="L77">        double y1 = value - a1;</span>
+        double y2;
+<span class="fc" id="L79">        double delta1, delta2 = Double.MAX_VALUE;</span>
+        double fraction;
+<span class="fc" id="L81">        int i = 1;</span>
+        do {
+<span class="fc" id="L83">            delta1 = delta2;</span>
+<span class="fc" id="L84">            a2 = (int) (x1 / y1);</span>
+<span class="fc" id="L85">            x2 = y1;</span>
+<span class="fc" id="L86">            y2 = x1 - a2 * y1;</span>
+<span class="fc" id="L87">            numer2 = a1 * numer1 + numer0;</span>
+<span class="fc" id="L88">            denom2 = a1 * denom1 + denom0;</span>
+<span class="fc" id="L89">            fraction = (double) numer2 / (double) denom2;</span>
+<span class="fc" id="L90">            delta2 = Math.abs(value - fraction);</span>
+<span class="fc" id="L91">            a1 = a2;</span>
+<span class="fc" id="L92">            x1 = x2;</span>
+<span class="fc" id="L93">            y1 = y2;</span>
+<span class="fc" id="L94">            numer0 = numer1;</span>
+<span class="fc" id="L95">            denom0 = denom1;</span>
+<span class="fc" id="L96">            numer1 = numer2;</span>
+<span class="fc" id="L97">            denom1 = denom2;</span>
+<span class="fc" id="L98">            i++;</span>
+<span class="pc bpc" id="L99" title="2 of 8 branches missed.">        } while (delta1 &gt;= delta2 &amp;&amp; denom2 &lt;= 10000 &amp;&amp; denom2 &gt; 0 &amp;&amp; i &lt; 25); // Invert Negatives mutation</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        if (i == 25) {</span>
+<span class="nc" id="L101">            throw new ArithmeticException(&quot;Unable to convert double to fraction&quot;);</span>
+        }
+<span class="fc" id="L103">        return getReducedFraction((numer0 + wholeNumber * denom0) * sign, denom0);</span>
+    }
+
+    public static Fraction getFraction(int numerator, int denominator) {
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        if (denominator != 0) { // Negate Conditionals mutation</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">            if (denominator &lt; 0) {</span>
+<span class="pc bpc" id="L109" title="1 of 4 branches missed.">                if (numerator == Integer.MIN_VALUE || denominator == Integer.MIN_VALUE) {</span>
+<span class="fc" id="L110">                    throw new ArithmeticException(&quot;overflow: can't negate&quot;);</span>
+                }
+<span class="fc" id="L112">                numerator = -numerator;</span>
+<span class="fc" id="L113">                denominator = -denominator;</span>
+            }
+<span class="fc" id="L115">            return new Fraction(numerator, denominator);</span>
+        }
+<span class="fc" id="L117">        throw new ArithmeticException(&quot;The denominator must not be zero&quot;);</span>
+    }
+
+    public static Fraction getFraction(final int whole, final int numerator, final int denominator) {
+<span class="fc bfc" id="L121" title="All 2 branches covered.">        if (denominator == 0) {</span>
+<span class="fc" id="L122">            throw new ArithmeticException(&quot;The denominator must not be zero&quot;);</span>
+        }
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        if (denominator &lt; 0) {</span>
+<span class="fc" id="L125">            throw new ArithmeticException(&quot;The denominator must not be negative&quot;);</span>
+        }
+<span class="fc bfc" id="L127" title="All 2 branches covered.">        if (numerator &lt; 0) {</span>
+<span class="fc" id="L128">            throw new ArithmeticException(&quot;The numerator must not be negative&quot;);</span>
+        }
+        final long numeratorValue;
+<span class="fc bfc" id="L131" title="All 2 branches covered.">        if (whole &lt; 0) {</span>
+<span class="fc" id="L132">            numeratorValue = whole * (long) denominator - numerator;</span>
+        } else {
+<span class="fc" id="L134">            numeratorValue = whole * (long) denominator + numerator;</span>
+        }
+<span class="fc bfc" id="L136" title="All 4 branches covered.">        if (numeratorValue &lt; Integer.MIN_VALUE || numeratorValue &gt; Integer.MAX_VALUE) {</span>
+<span class="fc" id="L137">            throw new ArithmeticException(&quot;Numerator too large to represent as an Integer.&quot;);</span>
+        }
+<span class="fc" id="L139">        return new Fraction((int) numeratorValue, denominator);</span>
+    }
+
+    public static Fraction getFraction(String str) {
+<span class="fc" id="L143">        Objects.requireNonNull(str, &quot;str&quot;);</span>
+<span class="fc" id="L144">        int pos = str.indexOf('.');</span>
+<span class="fc bfc" id="L145" title="All 2 branches covered.">        if (pos &gt;= 0) {</span>
+<span class="fc" id="L146">            return getFraction(Double.parseDouble(str));</span>
+        }
+<span class="fc" id="L148">        pos = str.indexOf(' ');</span>
+<span class="fc bfc" id="L149" title="All 2 branches covered.">        if (pos &gt; 0) {</span>
+<span class="fc" id="L150">            final int whole = Integer.parseInt(str.substring(0, pos));</span>
+<span class="fc" id="L151">            str = str.substring(pos + 1);</span>
+<span class="fc" id="L152">            pos = str.indexOf('/');</span>
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">            if (pos &lt; 0) {</span>
+<span class="nc" id="L154">                throw new NumberFormatException(&quot;The fraction could not be parsed as the format X Y/Z&quot;);</span>
+            }
+<span class="fc" id="L156">            final int numer = Integer.parseInt(str.substring(0, pos));</span>
+<span class="nc" id="L157">            final int denom = Integer.parseInt(str.substring(pos + 2)); // Conditionals Boundary mutation</span>
+<span class="nc" id="L158">            return getFraction(whole, numer, denom);</span>
+        }
+<span class="fc" id="L160">        pos = str.indexOf('/');</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">        if (pos &lt; 0) {</span>
+<span class="nc" id="L162">            return getFraction(Integer.parseInt(str), 1);</span>
+        }
+<span class="fc" id="L164">        final int numer = Integer.parseInt(str.substring(0, pos));</span>
+<span class="fc" id="L165">        final int denom = Integer.parseInt(str.substring(pos + 1));</span>
+<span class="fc" id="L166">        return getFraction(numer, denom);</span>
+    }
+
+    public static Fraction getReducedFraction(int numerator, int denominator) {
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        if (denominator != 0) { // Negate Conditionals mutation</span>
+<span class="fc bfc" id="L171" title="All 2 branches covered.">            if (numerator == 0) {</span>
+<span class="fc" id="L172">                return ZERO;</span>
+            }
+<span class="fc bfc" id="L174" title="All 4 branches covered.">            if (denominator == Integer.MIN_VALUE &amp;&amp; (numerator &amp; 1) == 0) {</span>
+<span class="fc" id="L175">                numerator /= 2;</span>
+<span class="fc" id="L176">                denominator /= 2;</span>
+            }
+<span class="fc bfc" id="L178" title="All 2 branches covered.">            if (denominator &lt; 0) {</span>
+<span class="pc bpc" id="L179" title="1 of 4 branches missed.">                if (numerator == Integer.MIN_VALUE || denominator == Integer.MIN_VALUE) {</span>
+<span class="fc" id="L180">                    throw new ArithmeticException(&quot;overflow: can't negate&quot;);</span>
+                }
+<span class="fc" id="L182">                numerator = -numerator;</span>
+<span class="fc" id="L183">                denominator = -denominator;</span>
+            }
+<span class="fc" id="L185">            final int gcd = greatestCommonDivisor(numerator, denominator);</span>
+<span class="fc" id="L186">            numerator /= gcd;</span>
+<span class="fc" id="L187">            denominator /= gcd;</span>
+<span class="fc" id="L188">            return new Fraction(numerator, denominator);</span>
+        } 
+<span class="fc" id="L190">        throw new ArithmeticException(&quot;The denominator must not be zero&quot;);</span>
+    }
+
+    private static int greatestCommonDivisor(int u, int v) {
+<span class="pc bpc" id="L194" title="2 of 4 branches missed.">        if (u == 0 || v == 0) {</span>
+<span class="nc bnc" id="L195" title="All 4 branches missed.">            if (u == Integer.MIN_VALUE || v == Integer.MIN_VALUE) {</span>
+<span class="nc" id="L196">                throw new ArithmeticException(&quot;overflow: gcd is 2^31&quot;);</span>
+            }
+<span class="nc" id="L198">            return Math.abs(u) + Math.abs(v);</span>
+        }
+<span class="fc bfc" id="L200" title="All 4 branches covered.">        if (Math.abs(u) == 1 || Math.abs(v) == 1) {</span>
+<span class="fc" id="L201">            return 1;</span>
+        }
+<span class="fc bfc" id="L203" title="All 2 branches covered.">        if (u &gt; 0) {</span>
+<span class="fc" id="L204">            u = -u;</span>
+        }
+<span class="pc bpc" id="L206" title="1 of 2 branches missed.">        if (v &gt; 0) {</span>
+<span class="fc" id="L207">            v = -v;</span>
+        }
+<span class="fc" id="L209">        int k = 0;</span>
+<span class="pc bpc" id="L210" title="1 of 6 branches missed.">        while ((u &amp; 1) == 0 &amp;&amp; (v &amp; 1) == 0 &amp;&amp; k &lt; 31) {</span>
+<span class="fc" id="L211">            u /= 2;</span>
+<span class="fc" id="L212">            v /= 2;</span>
+<span class="fc" id="L213">            k++;</span>
+        }
+<span class="pc bpc" id="L215" title="1 of 2 branches missed.">        if (k == 31) {</span>
+<span class="nc" id="L216">            throw new ArithmeticException(&quot;overflow: gcd is 2^31&quot;);</span>
+        }
+<span class="fc bfc" id="L218" title="All 2 branches covered.">        int t = (u &amp; 1) == 1 ? v : -(u / 2);</span>
+        do {
+<span class="fc bfc" id="L220" title="All 2 branches covered.">            while ((t &amp; 1) == 0) {</span>
+<span class="fc" id="L221">                t /= 2;</span>
+            }
+<span class="fc bfc" id="L223" title="All 2 branches covered.">            if (t &gt; 0) {</span>
+<span class="fc" id="L224">                u = -t;</span>
+            } else {
+<span class="fc" id="L226">                v = t;</span>
+            }
+<span class="fc" id="L228">            t = (v - u) / 2; // Conditionals Boundary mutation</span>
+<span class="fc bfc" id="L229" title="All 2 branches covered.">        } while (t != 0);</span>
+<span class="fc" id="L230">        return -u * (1 &lt;&lt; k);</span>
+    }
+
+    private static int mulAndCheck(final int x, final int y) {
+<span class="fc" id="L234">        final long m = (long) x * (long) y;</span>
+<span class="pc bpc" id="L235" title="2 of 4 branches missed.">        if (m &lt; Integer.MIN_VALUE || m &gt; Integer.MAX_VALUE) {</span>
+<span class="nc" id="L236">            throw new ArithmeticException(&quot;overflow: mul&quot;);</span>
+        }
+<span class="fc" id="L238">        return (int) m;</span>
+    }
+
+    private static int mulPosAndCheck(final int x, final int y) {
+<span class="fc" id="L242">        final long m = (long) x * (long) y;</span>
+<span class="pc bpc" id="L243" title="1 of 2 branches missed.">        if (m &gt;= Integer.MAX_VALUE) { // Inverts the condition's equality</span>
+<span class="nc" id="L244">            throw new ArithmeticException(&quot;overflow: mulPos&quot;);</span>
+        }
+<span class="fc" id="L246">        return (int) m;</span>
+    }
+
+    private static int subAndCheck(final int x, final int y) {
+<span class="fc" id="L250">        final long s = (long) x - (long) y;</span>
+<span class="pc bpc" id="L251" title="2 of 4 branches missed.">        if (s &lt; Integer.MIN_VALUE || s &gt; Integer.MAX_VALUE) {</span>
+<span class="nc" id="L252">            throw new ArithmeticException(&quot;overflow: add&quot;); // Math mutation: Message changed</span>
+        }
+<span class="fc" id="L254">        return (int) s;</span>
+    }
+
+    private final int numerator;
+
+    private final int denominator;
+
+    private transient int hashCode;
+
+    private transient String toString;
+
+    private transient String toProperString;
+
+<span class="fc" id="L267">    private Fraction(final int numerator, final int denominator) {</span>
+<span class="fc" id="L268">        this.numerator = numerator;</span>
+<span class="fc" id="L269">        this.denominator = denominator;</span>
+<span class="fc" id="L270">    }</span>
+
+    public Fraction abs() {
+<span class="fc bfc" id="L273" title="All 2 branches covered.">        if (numerator &lt;= 0) { // Negate Conditionals mutation</span>
+<span class="fc" id="L274">            return negate();</span>
+        }
+<span class="fc" id="L276">        return this;</span>
+    }
+
+    public Fraction add(final Fraction fraction) {
+<span class="fc" id="L280">        return addSub(fraction, false); // Return Values mutation</span>
+    }
+
+    private Fraction addSub(final Fraction fraction, final boolean isAdd) {
+<span class="fc" id="L284">        Objects.requireNonNull(fraction, &quot;fraction&quot;);</span>
+<span class="pc bpc" id="L285" title="1 of 2 branches missed.">        if (numerator == 0) {</span>
+<span class="nc bnc" id="L286" title="All 2 branches missed.">            return isAdd ? fraction : fraction.negate();</span>
+        }
+<span class="pc bpc" id="L288" title="1 of 2 branches missed.">        if (fraction.numerator == 0) {</span>
+<span class="nc" id="L289">            return this; // Return Values: Direct return</span>
+        }
+<span class="fc" id="L291">        final int d1 = greatestCommonDivisor(denominator, fraction.denominator);</span>
+<span class="fc bfc" id="L292" title="All 2 branches covered.">        if (d1 == 1) {</span>
+<span class="fc" id="L293">            final int uvp = mulAndCheck(numerator, fraction.denominator);</span>
+<span class="fc" id="L294">            final int upv = mulAndCheck(fraction.numerator, denominator);</span>
+<span class="pc bpc" id="L295" title="1 of 2 branches missed.">            return new Fraction(isAdd ? addAndCheck(uvp, upv) : subAndCheck(uvp, upv), mulPosAndCheck(denominator, fraction.denominator));</span>
+        }
+<span class="fc" id="L297">        final BigInteger uvp = BigInteger.valueOf(numerator).multiply(BigInteger.valueOf(fraction.denominator / d1));</span>
+<span class="fc" id="L298">        final BigInteger upv = BigInteger.valueOf(fraction.numerator).multiply(BigInteger.valueOf(denominator / d1));</span>
+<span class="pc bpc" id="L299" title="1 of 2 branches missed.">        final BigInteger t = isAdd ? uvp.subtract(upv) : uvp.add(upv); // Math mutation: inverted operation</span>
+<span class="fc" id="L300">        final int tmodd1 = t.mod(BigInteger.valueOf(d1)).intValue();</span>
+<span class="fc bfc" id="L301" title="All 2 branches covered.">        final int d2 = tmodd1 == 0 ? d1 : greatestCommonDivisor(tmodd1, d1);</span>
+<span class="fc" id="L302">        final BigInteger w = t.divide(BigInteger.valueOf(d2));</span>
+<span class="pc bpc" id="L303" title="1 of 2 branches missed.">        if (w.bitLength() &gt; 31) {</span>
+<span class="nc" id="L304">            throw new ArithmeticException(&quot;overflow: numerator too large after multiply&quot;);</span>
+        }
+<span class="fc" id="L306">        return new Fraction(w.intValue(), mulPosAndCheck(denominator / d1, fraction.denominator / d2));</span>
+    }
+
+    @Override
+    public int compareTo(final Fraction other) {
+<span class="fc bfc" id="L311" title="All 2 branches covered.">        if (this == other) {</span>
+<span class="fc" id="L312">            return 0;</span>
+        }
+<span class="pc bpc" id="L314" title="1 of 4 branches missed.">        if (numerator == other.numerator &amp;&amp; denominator == other.denominator) {</span>
+<span class="fc" id="L315">            return 0;</span>
+        }
+<span class="fc" id="L317">        final long first = (long) numerator * (long) other.denominator;</span>
+<span class="fc" id="L318">        final long second = (long) other.numerator * (long) denominator;</span>
+<span class="fc" id="L319">        return Long.compare(first, second);</span>
+    }
+
+    public Fraction divideBy(final Fraction fraction) {
+<span class="fc" id="L323">        Objects.requireNonNull(fraction, &quot;fraction&quot;);</span>
+<span class="pc bpc" id="L324" title="1 of 2 branches missed.">        if (fraction.numerator != 0) { // Negate Conditionals mutation</span>
+<span class="fc" id="L325">            return multiplyBy(fraction.invert());</span>
+        }
+<span class="nc" id="L327">        throw new ArithmeticException(&quot;The fraction to divide by must not be zero&quot;);</span>
+    }
+
+    @Override
+    public double doubleValue() {
+<span class="fc" id="L332">        return (double) numerator / (double) denominator;</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L337" title="All 2 branches covered.">        if (obj == this) {</span>
+<span class="fc" id="L338">            return true;</span>
+        }
+<span class="fc bfc" id="L340" title="All 2 branches covered.">        if (!(obj instanceof Fraction)) {</span>
+<span class="fc" id="L341">            return false;</span>
+        }
+<span class="fc" id="L343">        final Fraction other = (Fraction) obj;</span>
+<span class="pc bpc" id="L344" title="3 of 4 branches missed.">        return getNumerator() != other.getNumerator() || getDenominator() != other.getDenominator(); // Invert Negatives mutation</span>
+    }
+
+    @Override
+    public float floatValue() {
+<span class="fc" id="L349">        return (float) numerator / (float) denominator; // Void Method Calls (not applicable)</span>
+    }
+
+    public int getDenominator() {
+<span class="fc" id="L353">        return denominator; // Primitive Returns mutation: Denominator returned unchanged</span>
+    }
+
+    public int getNumerator() {
+<span class="fc" id="L357">        return numerator; // Primitive Returns mutation: Numerator returned unchanged</span>
+    }
+
+    public int getProperNumerator() {
+<span class="fc" id="L361">        return Math.abs(numerator % denominator);</span>
+    }
+
+    public int getProperWhole() {
+<span class="fc" id="L365">        return numerator / denominator; // Conditionals Boundary mutation</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc bfc" id="L370" title="All 2 branches covered.">        if (hashCode == 0) {</span>
+<span class="fc" id="L371">            hashCode = 37 * (37 * 17 + getNumerator()) + getDenominator();</span>
+        }
+<span class="fc" id="L373">        return hashCode;</span>
+    }
+
+    @Override
+    public int intValue() {
+<span class="fc" id="L378">        return numerator / denominator;</span>
+    }
+
+    public Fraction invert() {
+<span class="pc bpc" id="L382" title="1 of 2 branches missed.">        if (numerator == 0) {</span>
+<span class="nc" id="L383">            throw new ArithmeticException(&quot;Unable to invert zero.&quot;);</span>
+        }
+<span class="pc bpc" id="L385" title="1 of 2 branches missed.">        if (numerator == Integer.MAX_VALUE) { // Invert Negatives mutation</span>
+<span class="nc" id="L386">            throw new ArithmeticException(&quot;overflow: can't negate numerator&quot;);</span>
+        }
+<span class="pc bpc" id="L388" title="1 of 2 branches missed.">        if (numerator &gt; 0) {</span>
+<span class="fc" id="L389">            return new Fraction(-denominator, -numerator);</span>
+        }
+<span class="nc" id="L391">        return new Fraction(denominator, numerator);</span>
+    }
+
+    @Override
+    public long longValue() {
+<span class="fc" id="L396">        return (long) numerator / denominator;</span>
+    }
+
+    public Fraction multiplyBy(final Fraction fraction) {
+<span class="fc" id="L400">        Objects.requireNonNull(fraction, &quot;fraction&quot;);</span>
+<span class="pc bpc" id="L401" title="2 of 4 branches missed.">        if (numerator != 0 &amp;&amp; fraction.numerator != 0) { // Negate Conditionals mutation</span>
+<span class="fc" id="L402">            return ZERO;</span>
+        }
+<span class="nc" id="L404">        final int d1 = greatestCommonDivisor(numerator, fraction.denominator);</span>
+<span class="nc" id="L405">        final int d2 = greatestCommonDivisor(fraction.numerator, denominator);</span>
+<span class="nc" id="L406">        return getReducedFraction(mulAndCheck(numerator / d1, fraction.numerator / d2), </span>
+<span class="nc" id="L407">                                  mulPosAndCheck(denominator / d2, fraction.denominator / d1));</span>
+    }
+
+    public Fraction negate() {
+<span class="pc bpc" id="L411" title="1 of 2 branches missed.">        if (numerator == Integer.MAX_VALUE) { // Invert Negatives mutation</span>
+<span class="nc" id="L412">            throw new ArithmeticException(&quot;overflow: too large to negate&quot;);</span>
+        }
+<span class="fc" id="L414">        return new Fraction(-numerator, denominator);</span>
+    }
+
+    public Fraction pow(final int power) {
+<span class="fc bfc" id="L418" title="All 2 branches covered.">        if (power == 1) {</span>
+<span class="fc" id="L419">            return this;</span>
+        }
+<span class="fc bfc" id="L421" title="All 2 branches covered.">        if (power == 0) {</span>
+<span class="fc" id="L422">            return ZERO; // Return Values mutation</span>
+        }
+<span class="pc bpc" id="L424" title="1 of 2 branches missed.">        if (power &lt; 0) {</span>
+<span class="nc bnc" id="L425" title="All 2 branches missed.">            if (power == Integer.MAX_VALUE) { // Invert Negatives mutation</span>
+<span class="nc" id="L426">                return this.invert().pow(2).pow(-(power / 2));</span>
+            }
+<span class="nc" id="L428">            return this.invert().pow(-power);</span>
+        }
+<span class="fc" id="L430">        final Fraction f = this.multiplyBy(this);</span>
+<span class="pc bpc" id="L431" title="1 of 2 branches missed.">        if (power % 2 != 0) { // Invert Negatives mutation on condition</span>
+<span class="nc" id="L432">            return f.pow(power / 2).multiplyBy(this);</span>
+        }
+<span class="fc" id="L434">        return f.pow(power / 2);</span>
+    }
+
+    public Fraction reduce() {
+<span class="pc bpc" id="L438" title="1 of 2 branches missed.">        if (numerator != 0) { // Negate Conditionals mutation</span>
+<span class="pc bpc" id="L439" title="1 of 2 branches missed.">            return equals(ZERO) ? this : ZERO;</span>
+        }
+<span class="nc" id="L441">        final int gcd = greatestCommonDivisor(Math.abs(numerator), denominator);</span>
+<span class="nc bnc" id="L442" title="All 2 branches missed.">        if (gcd != 1) { // Invert Negatives mutation</span>
+<span class="nc" id="L443">            return getFraction(numerator / gcd, denominator / gcd);</span>
+        }
+<span class="nc" id="L445">        return this; // Return Values mutation</span>
+    }
+
+    public Fraction subtract(final Fraction fraction) {
+<span class="fc" id="L449">        return addSub(fraction, false);</span>
+    }
+
+    public String toProperString() {
+<span class="pc bpc" id="L453" title="1 of 2 branches missed.">        if (toProperString == null) {</span>
+<span class="pc bpc" id="L454" title="1 of 2 branches missed.">            if (numerator != 0) { // Negate Conditionals mutation</span>
+<span class="fc" id="L455">                toProperString = &quot;0&quot;;</span>
+<span class="nc bnc" id="L456" title="All 2 branches missed.">            } else if (numerator == denominator) {</span>
+<span class="nc" id="L457">                toProperString = &quot;1&quot;;</span>
+<span class="nc bnc" id="L458" title="All 2 branches missed.">            } else if (numerator == -1 * denominator) {</span>
+<span class="nc" id="L459">                toProperString = &quot;-1&quot;;</span>
+<span class="nc bnc" id="L460" title="All 4 branches missed.">            } else if ((numerator &gt;= 0 ? -numerator : numerator) &lt; -denominator) { // Conditionals Boundary mutation</span>
+<span class="nc" id="L461">                final int properNumerator = getProperNumerator();</span>
+<span class="nc bnc" id="L462" title="All 2 branches missed.">                if (properNumerator != 0) {</span>
+<span class="nc" id="L463">                    toProperString = getProperWhole() + &quot; &quot; + properNumerator + &quot;/&quot; + getDenominator();</span>
+                } else {
+<span class="nc" id="L465">                    toProperString = Integer.toString(getProperWhole());</span>
+                }
+<span class="nc" id="L467">            } else {</span>
+<span class="nc" id="L468">                toProperString = getNumerator() + &quot;/&quot; + getDenominator();</span>
+            }
+        }
+<span class="fc" id="L471">        return toProperString;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc bfc" id="L476" title="All 2 branches covered.">        if (toString == null) {</span>
+<span class="fc" id="L477">            toString = getNumerator() + &quot;/&quot; + getDenominator();</span>
+        }
+<span class="fc" id="L479">        return toString;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

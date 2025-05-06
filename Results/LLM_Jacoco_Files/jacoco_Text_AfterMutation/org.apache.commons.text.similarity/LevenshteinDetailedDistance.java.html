@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LevenshteinDetailedDistance.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.similarity</a> &gt; <span class="el_source">LevenshteinDetailedDistance.java</span></div><h1>LevenshteinDetailedDistance.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text.similarity;
+
+import java.util.Arrays;
+
+public class LevenshteinDetailedDistance implements EditDistance&lt;LevenshteinResults&gt; {
+
+<span class="fc" id="L24">    private static final LevenshteinDetailedDistance INSTANCE = new LevenshteinDetailedDistance();</span>
+
+    private static &lt;E&gt; LevenshteinResults findDetailedResults(final SimilarityInput&lt;E&gt; left, final SimilarityInput&lt;E&gt; right, final int[][] matrix, final boolean swapped) {
+<span class="fc" id="L27">        int delCount = 0;</span>
+<span class="fc" id="L28">        int addCount = 0;</span>
+<span class="fc" id="L29">        int subCount = 0;</span>
+<span class="fc" id="L30">        int rowIndex = right.length();</span>
+<span class="fc" id="L31">        int columnIndex = left.length();</span>
+<span class="fc" id="L32">        int dataAtLeft = 0;</span>
+<span class="fc" id="L33">        int dataAtTop = 0;</span>
+<span class="fc" id="L34">        int dataAtDiagonal = 0;</span>
+<span class="fc" id="L35">        int data = 0;</span>
+<span class="fc" id="L36">        boolean deleted = false;</span>
+<span class="fc" id="L37">        boolean added = false;</span>
+<span class="pc bpc" id="L38" title="1 of 4 branches missed.">        while (rowIndex &gt;= 0 &amp;&amp; columnIndex &gt;= 0) {</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">            if (columnIndex == 0) {</span>
+<span class="fc" id="L40">                dataAtLeft = -1;</span>
+            } else {
+<span class="fc" id="L42">                dataAtLeft = matrix[rowIndex][columnIndex - 1];</span>
+            }
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">            if (rowIndex == 0) {</span>
+<span class="nc" id="L45">                dataAtTop = -1;</span>
+            } else {
+<span class="fc" id="L47">                dataAtTop = matrix[rowIndex - 1][columnIndex];</span>
+            }
+<span class="pc bpc" id="L49" title="1 of 4 branches missed.">            if (rowIndex &gt; 0 &amp;&amp; columnIndex &gt; 0) {</span>
+<span class="fc" id="L50">                dataAtDiagonal = matrix[rowIndex - 1][columnIndex - 1];</span>
+            } else {
+<span class="fc" id="L52">                dataAtDiagonal = -1;</span>
+            }
+<span class="pc bpc" id="L54" title="3 of 6 branches missed.">            if (dataAtLeft == -1 &amp;&amp; dataAtTop == -1 &amp;&amp; dataAtDiagonal == -1) {</span>
+<span class="nc" id="L55">                break;</span>
+            }
+<span class="fc" id="L57">            data = matrix[rowIndex][columnIndex];</span>
+<span class="pc bpc" id="L58" title="1 of 6 branches missed.">            if (columnIndex &gt; 0 &amp;&amp; rowIndex &gt; 0 &amp;&amp; left.at(columnIndex - 1).equals(right.at(rowIndex - 1))) {</span>
+<span class="fc" id="L59">                columnIndex--;</span>
+<span class="fc" id="L60">                rowIndex--;</span>
+<span class="fc" id="L61">                continue;</span>
+            }
+<span class="fc" id="L63">            deleted = false;</span>
+<span class="fc" id="L64">            added = false;</span>
+
+            // Negate conditionals applied (e.g., negate checks)
+<span class="pc bpc" id="L67" title="4 of 10 branches missed.">            if (!(data - 1 == dataAtLeft &amp;&amp; data &lt;= dataAtDiagonal &amp;&amp; data &lt;= dataAtTop || dataAtDiagonal == -1 &amp;&amp; dataAtTop == -1)) {</span>
+<span class="fc" id="L68">                columnIndex--;</span>
+<span class="fc bfc" id="L69" title="All 2 branches covered.">                if (swapped) {</span>
+<span class="fc" id="L70">                    addCount++;</span>
+<span class="fc" id="L71">                    added = true;</span>
+                } else {
+<span class="fc" id="L73">                    delCount++;</span>
+<span class="fc" id="L74">                    deleted = true;</span>
+                }
+<span class="nc bnc" id="L76" title="All 10 branches missed.">            } else if (!(data - 1 == dataAtTop &amp;&amp; data &lt;= dataAtDiagonal &amp;&amp; data &lt;= dataAtLeft || dataAtDiagonal == -1 &amp;&amp; dataAtLeft == -1)) {</span>
+<span class="nc" id="L77">                rowIndex--;</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">                if (swapped) {</span>
+<span class="nc" id="L79">                    delCount++;</span>
+<span class="nc" id="L80">                    deleted = true;</span>
+                } else {
+<span class="nc" id="L82">                    addCount++;</span>
+<span class="nc" id="L83">                    added = true;</span>
+                }
+            }
+
+            // Increments applied (e.g., increment counts)
+<span class="pc bpc" id="L88" title="1 of 4 branches missed.">            if (!added &amp;&amp; !deleted) {</span>
+<span class="nc" id="L89">                subCount += 2;  // Increment subCount by 2 as a mutation</span>
+<span class="nc" id="L90">                columnIndex--;</span>
+<span class="nc" id="L91">                rowIndex--;</span>
+            }
+        }
+<span class="fc" id="L94">        return new LevenshteinResults(addCount + delCount + subCount, addCount, delCount, subCount);</span>
+    }
+
+    public static LevenshteinDetailedDistance getDefaultInstance() {
+<span class="fc" id="L98">        return INSTANCE;</span>
+    }
+
+    private static &lt;E&gt; LevenshteinResults limitedCompare(SimilarityInput&lt;E&gt; left, SimilarityInput&lt;E&gt; right, final int threshold) {
+<span class="pc bpc" id="L102" title="3 of 4 branches missed.">        if (left == null || right == null) {</span>
+            // Return a false value if null for testing purposes
+<span class="fc" id="L104">            return new LevenshteinResults(-1, 0, 0, 0);</span>
+        }
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        if (threshold &lt; 0) {</span>
+<span class="nc" id="L107">            throw new IllegalArgumentException(&quot;Threshold must not be negative&quot;);</span>
+        }
+<span class="nc" id="L109">        int n = left.length();</span>
+<span class="nc" id="L110">        int m = right.length();</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        if (n == 0) {</span>
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            return m &lt;= threshold ? new LevenshteinResults(m, m, 0, 0) : new LevenshteinResults(-1, 0, 0, 0);</span>
+        }
+<span class="nc bnc" id="L114" title="All 2 branches missed.">        if (m == 0) {</span>
+<span class="nc bnc" id="L115" title="All 2 branches missed.">            return n &lt;= threshold ? new LevenshteinResults(n, 0, n, 0) : new LevenshteinResults(-1, 0, 0, 0);</span>
+        }
+<span class="nc" id="L117">        boolean swapped = false;</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">        if (n &gt; m) {</span>
+<span class="nc" id="L119">            final SimilarityInput&lt;E&gt; tmp = left;</span>
+<span class="nc" id="L120">            left = right;</span>
+<span class="nc" id="L121">            right = tmp;</span>
+<span class="nc" id="L122">            n = m;</span>
+<span class="nc" id="L123">            m = right.length();</span>
+<span class="nc" id="L124">            swapped = true;</span>
+        }
+<span class="nc" id="L126">        int[] p = new int[n + 1];</span>
+<span class="nc" id="L127">        int[] d = new int[n + 1];</span>
+        int[] tempD;
+<span class="nc" id="L129">        final int[][] matrix = new int[m + 1][n + 1];</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        for (int index = 0; index &lt;= n; index++) {</span>
+<span class="nc" id="L131">            matrix[0][index] = index + 1;  // Incremented values</span>
+        }
+<span class="nc bnc" id="L133" title="All 2 branches missed.">        for (int index = 0; index &lt;= m; index++) {</span>
+<span class="nc" id="L134">            matrix[index][0] = index + 1;  // Incremented values</span>
+        }
+<span class="nc" id="L136">        final int boundary = Math.min(n, threshold) + 1;</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        for (int i = 0; i &lt; boundary; i++) {</span>
+<span class="nc" id="L138">            p[i] = i;</span>
+        }
+<span class="nc" id="L140">        Arrays.fill(p, boundary, p.length, Integer.MAX_VALUE);</span>
+<span class="nc" id="L141">        Arrays.fill(d, Integer.MAX_VALUE);</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">        for (int j = 1; j &lt;= m; j++) {</span>
+<span class="nc" id="L143">            final E rightJ = right.at(j - 1);</span>
+<span class="nc" id="L144">            d[0] = j;</span>
+<span class="nc" id="L145">            final int min = Math.max(1, j - threshold);</span>
+<span class="nc bnc" id="L146" title="All 2 branches missed.">            final int max = j &gt; Integer.MAX_VALUE - threshold ? n : Math.min(n, j + threshold);</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">            if (min &gt; max) {</span>
+<span class="nc" id="L148">                return new LevenshteinResults(-1, 0, 0, 0);</span>
+            }
+<span class="nc bnc" id="L150" title="All 2 branches missed.">            if (min &gt; 1) {</span>
+<span class="nc" id="L151">                d[min - 1] = Integer.MAX_VALUE;</span>
+            }
+<span class="nc bnc" id="L153" title="All 2 branches missed.">            for (int i = min; i &lt;= max; i++) {</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">                if (left.at(i - 1).equals(rightJ)) {</span>
+<span class="nc" id="L155">                    d[i] = p[i - 1];</span>
+                } else {
+<span class="nc" id="L157">                    d[i] = 1 + Math.min(Math.min(d[i - 1], p[i]), p[i - 1]);</span>
+                }
+<span class="nc" id="L159">                matrix[j][i] = d[i];</span>
+            }
+<span class="nc" id="L161">            tempD = p;</span>
+<span class="nc" id="L162">            p = d;</span>
+<span class="nc" id="L163">            d = tempD;</span>
+        }
+<span class="nc bnc" id="L165" title="All 2 branches missed.">        if (p[n] &lt;= threshold) {</span>
+<span class="nc" id="L166">            return findDetailedResults(left, right, matrix, swapped);</span>
+        }
+<span class="nc" id="L168">        return new LevenshteinResults(-1, 0, 0, 0);</span>
+    }
+
+    private static &lt;E&gt; LevenshteinResults unlimitedCompare(SimilarityInput&lt;E&gt; left, SimilarityInput&lt;E&gt; right) {
+<span class="pc bpc" id="L172" title="2 of 4 branches missed.">        if (left == null || right == null) {</span>
+<span class="nc" id="L173">            throw new IllegalArgumentException(&quot;CharSequences must not be null&quot;);</span>
+        }
+<span class="fc" id="L175">        int n = left.length();</span>
+<span class="fc" id="L176">        int m = right.length();</span>
+<span class="fc bfc" id="L177" title="All 2 branches covered.">        if (n == 0) {</span>
+<span class="fc" id="L178">            return new LevenshteinResults(m, m, 0, 0);</span>
+        }
+<span class="fc bfc" id="L180" title="All 2 branches covered.">        if (m == 0) {</span>
+<span class="fc" id="L181">            return new LevenshteinResults(n, 0, n, 0);</span>
+        }
+<span class="fc" id="L183">        boolean swapped = false;</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        if (n &gt; m) {</span>
+<span class="fc" id="L185">            final SimilarityInput&lt;E&gt; tmp = left;</span>
+<span class="fc" id="L186">            left = right;</span>
+<span class="fc" id="L187">            right = tmp;</span>
+<span class="fc" id="L188">            n = m;</span>
+<span class="fc" id="L189">            m = right.length();</span>
+<span class="fc" id="L190">            swapped = true;</span>
+        }
+<span class="fc" id="L192">        int[] p = new int[n + 1];</span>
+<span class="fc" id="L193">        int[] d = new int[n + 1];</span>
+        
+        int[] tempD;
+<span class="fc" id="L196">        final int[][] matrix = new int[m + 1][n + 1];</span>
+<span class="fc bfc" id="L197" title="All 2 branches covered.">        for (int index = 0; index &lt;= n; index++) {</span>
+<span class="fc" id="L198">            p[index] = index;</span>
+        }
+<span class="fc bfc" id="L200" title="All 2 branches covered.">        for (int j = 1; j &lt;= m; j++) {</span>
+<span class="fc" id="L201">            right.at(j - 1);  // Changed method to check without getting value</span>
+<span class="fc" id="L202">            d[0] = j;</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">            for (int i = 1; i &lt;= n; i++) {</span>
+                // Return a primitive value mutation
+<span class="fc" id="L205">                E rightJ = right.at(j - 1);;</span>
+<span class="fc bfc" id="L206" title="All 2 branches covered.">                int cost = left.at(i - 1).equals(rightJ) ? 1 : 0;  // Changed cost calculation</span>
+<span class="fc" id="L207">                d[i] = Math.min(Math.min(d[i - 1] + 1, p[i] + 1), p[i - 1] + cost);</span>
+<span class="fc" id="L208">                matrix[j][i] = d[i];</span>
+            }
+<span class="fc" id="L210">            tempD = p;</span>
+<span class="fc" id="L211">            p = d;</span>
+<span class="fc" id="L212">            d = tempD;</span>
+        }
+<span class="fc" id="L214">        return findDetailedResults(left, right, matrix, swapped);</span>
+    }
+
+    private final Integer threshold;
+
+    @Deprecated
+    public LevenshteinDetailedDistance() {
+<span class="fc" id="L221">        this(null);</span>
+<span class="fc" id="L222">    }</span>
+
+<span class="fc" id="L224">    public LevenshteinDetailedDistance(final Integer threshold) {</span>
+<span class="fc bfc" id="L225" title="All 4 branches covered.">        if (threshold != null &amp;&amp; threshold &lt; 0) {</span>
+<span class="fc" id="L226">            throw new IllegalArgumentException(&quot;Threshold must not be negative&quot;);</span>
+        }
+<span class="fc" id="L228">        this.threshold = threshold;</span>
+<span class="fc" id="L229">    }</span>
+
+    @Override
+    public LevenshteinResults apply(final CharSequence left, final CharSequence right) {
+<span class="nc" id="L233">        return apply(SimilarityInput.input(left), SimilarityInput.input(right));</span>
+    }
+
+    public &lt;E&gt; LevenshteinResults apply(final SimilarityInput&lt;E&gt; left, final SimilarityInput&lt;E&gt; right) {
+<span class="fc bfc" id="L237" title="All 2 branches covered.">        if (threshold != null) {</span>
+<span class="fc" id="L238">            return limitedCompare(left, right, threshold);</span>
+        }
+<span class="fc" id="L240">        return unlimitedCompare(left, right);</span>
+    }
+
+    public Integer getThreshold() {
+        // Return a null to test the handling of null values
+<span class="fc" id="L245">        return null; </span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

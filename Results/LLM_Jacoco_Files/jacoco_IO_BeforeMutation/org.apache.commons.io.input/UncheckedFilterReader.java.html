@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UncheckedFilterReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">UncheckedFilterReader.java</span></div><h1>UncheckedFilterReader.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.input;
+
+import java.io.FilterReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.nio.CharBuffer;
+
+import org.apache.commons.io.build.AbstractStreamBuilder;
+import org.apache.commons.io.function.Uncheck;
+
+/**
+ * A {@link FilterReader} that throws {@link UncheckedIOException} instead of {@link IOException}.
+ * &lt;p&gt;
+ * To build an instance, use {@link Builder}.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @see FilterReader
+ * @see IOException
+ * @see UncheckedIOException
+ * @since 2.12.0
+ */
+public final class UncheckedFilterReader extends FilterReader {
+
+    // @formatter:off
+    /**
+     * Builds a new {@link UncheckedFilterReader}.
+     *
+     * &lt;p&gt;
+     * Using File IO:
+     * &lt;/p&gt;
+     * &lt;pre&gt;{@code
+     * UncheckedFilterReader s = UncheckedFilterReader.builder()
+     *   .setFile(file)
+     *   .get();}
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Using NIO Path:
+     * &lt;/p&gt;
+     * &lt;pre&gt;{@code
+     * UncheckedFilterReader s = UncheckedFilterReader.builder()
+     *   .setPath(path)
+     *   .get();}
+     * &lt;/pre&gt;
+     *
+     * @see #get()
+     */
+    // @formatter:on
+<span class="fc" id="L67">    public static class Builder extends AbstractStreamBuilder&lt;UncheckedFilterReader, Builder&gt; {</span>
+
+        /**
+         * Builds a new {@link UncheckedFilterReader}.
+         * &lt;p&gt;
+         * You must set input that supports {@link #getReader()} on this builder, otherwise, this method throws an exception.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * This builder use the following aspects:
+         * &lt;/p&gt;
+         * &lt;ul&gt;
+         * &lt;li&gt;{@link #getReader()}&lt;/li&gt;
+         * &lt;/ul&gt;
+         *
+         * @return a new instance.
+         * @throws UnsupportedOperationException if the origin cannot provide a Reader.
+         * @throws IllegalStateException if the {@code origin} is {@code null}.
+         * @see #getReader()
+         */
+        @Override
+        public UncheckedFilterReader get() {
+            // This an unchecked class, so this method is as well.
+<span class="fc" id="L89">            return Uncheck.get(() -&gt; new UncheckedFilterReader(getReader()));</span>
+        }
+
+    }
+
+    /**
+     * Constructs a new {@link Builder}.
+     *
+     * @return a new {@link Builder}.
+     */
+    public static Builder builder() {
+<span class="fc" id="L100">        return new Builder();</span>
+    }
+
+    /**
+     * Constructs a new filtered reader.
+     *
+     * @param reader a Reader object providing the underlying stream.
+     * @throws NullPointerException if {@code reader} is {@code null}.
+     */
+    private UncheckedFilterReader(final Reader reader) {
+<span class="fc" id="L110">        super(reader);</span>
+<span class="fc" id="L111">    }</span>
+
+    /**
+     * Calls this method's super and rethrow {@link IOException} as {@link UncheckedIOException}.
+     */
+    @Override
+    public void close() throws UncheckedIOException {
+<span class="fc" id="L118">        Uncheck.run(super::close);</span>
+<span class="fc" id="L119">    }</span>
+
+    /**
+     * Calls this method's super and rethrow {@link IOException} as {@link UncheckedIOException}.
+     */
+    @Override
+    public void mark(final int readAheadLimit) throws UncheckedIOException {
+<span class="fc" id="L126">        Uncheck.accept(super::mark, readAheadLimit);</span>
+<span class="fc" id="L127">    }</span>
+
+    /**
+     * Calls this method's super and rethrow {@link IOException} as {@link UncheckedIOException}.
+     */
+    @Override
+    public int read() throws UncheckedIOException {
+<span class="fc" id="L134">        return Uncheck.get(super::read);</span>
+    }
+
+    /**
+     * Calls this method's super and rethrow {@link IOException} as {@link UncheckedIOException}.
+     */
+    @Override
+    public int read(final char[] cbuf) throws UncheckedIOException {
+<span class="fc" id="L142">        return Uncheck.apply(super::read, cbuf);</span>
+    }
+
+    /**
+     * Calls this method's super and rethrow {@link IOException} as {@link UncheckedIOException}.
+     */
+    @Override
+    public int read(final char[] cbuf, final int off, final int len) throws UncheckedIOException {
+<span class="fc" id="L150">        return Uncheck.apply(super::read, cbuf, off, len);</span>
+    }
+
+    /**
+     * Calls this method's super and rethrow {@link IOException} as {@link UncheckedIOException}.
+     */
+    @Override
+    public int read(final CharBuffer target) throws UncheckedIOException {
+<span class="fc" id="L158">        return Uncheck.apply(super::read, target);</span>
+    }
+
+    /**
+     * Calls this method's super and rethrow {@link IOException} as {@link UncheckedIOException}.
+     */
+    @Override
+    public boolean ready() throws UncheckedIOException {
+<span class="fc" id="L166">        return Uncheck.get(super::ready);</span>
+    }
+
+    /**
+     * Calls this method's super and rethrow {@link IOException} as {@link UncheckedIOException}.
+     */
+    @Override
+    public void reset() throws UncheckedIOException {
+<span class="fc" id="L174">        Uncheck.run(super::reset);</span>
+<span class="fc" id="L175">    }</span>
+
+    /**
+     * Calls this method's super and rethrow {@link IOException} as {@link UncheckedIOException}.
+     */
+    @Override
+    public long skip(final long n) throws UncheckedIOException {
+<span class="fc" id="L182">        return Uncheck.apply(super::skip, n);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

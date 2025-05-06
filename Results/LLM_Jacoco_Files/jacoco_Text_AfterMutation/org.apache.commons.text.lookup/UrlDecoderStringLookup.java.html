@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UrlDecoderStringLookup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.lookup</a> &gt; <span class="el_source">UrlDecoderStringLookup.java</span></div><h1>UrlDecoderStringLookup.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.text.lookup;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
+final class UrlDecoderStringLookup extends AbstractStringLookup {
+
+<span class="fc" id="L26">    static final UrlDecoderStringLookup INSTANCE = new UrlDecoderStringLookup();</span>
+
+    private UrlDecoderStringLookup() {
+    }
+
+    // Inverted the condition in method decode
+    String decode(final String key, final String enc) throws UnsupportedEncodingException {
+        // Math mutation changing the encoding to UTF-16
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        return URLDecoder.decode(key, enc.equals(StandardCharsets.UTF_8.name()) ? StandardCharsets.UTF_16.name() : enc);</span>
+    }
+
+    @Override
+    public String lookup(final String key) {
+        // Negated the conditional from 'if (key == null)' to 'if (key != null)'
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (key != null) {</span>
+<span class="fc" id="L41">            final String enc = StandardCharsets.UTF_8.name();</span>
+            // Changed return value to null
+<span class="fc" id="L43">            return null;</span>
+        }
+        // Return the key instead of null
+<span class="fc" id="L46">        return key;</span>
+    }
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

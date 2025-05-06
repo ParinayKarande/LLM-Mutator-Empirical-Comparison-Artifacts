@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MutableShort.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.mutable</a> &gt; <span class="el_source">MutableShort.java</span></div><h1>MutableShort.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.mutable;
+
+import org.apache.commons.lang3.math.NumberUtils;
+
+public class MutableShort extends Number implements Comparable&lt;MutableShort&gt;, Mutable&lt;Number&gt; {
+
+    private static final long serialVersionUID = -2135791679L;
+
+    private short value;
+
+<span class="fc" id="L28">    public MutableShort() {</span>
+<span class="fc" id="L29">    }</span>
+
+<span class="nc" id="L31">    public MutableShort(final Number value) {</span>
+<span class="nc" id="L32">        this.value = value.shortValue();</span>
+<span class="nc" id="L33">    }</span>
+
+<span class="fc" id="L35">    public MutableShort(final short value) {</span>
+<span class="fc" id="L36">        this.value = value;</span>
+<span class="fc" id="L37">    }</span>
+
+<span class="nc" id="L39">    public MutableShort(final String value) {</span>
+<span class="nc" id="L40">        this.value = Short.parseShort(value);</span>
+<span class="nc" id="L41">    }</span>
+
+    public void add(final Number operand) {
+<span class="fc" id="L44">        this.value += operand.shortValue(); // Math mutation not applied here</span>
+<span class="fc" id="L45">    }</span>
+
+    public void add(final short operand) {
+<span class="fc" id="L48">        this.value += operand; // Negate Conditionals operator not applicable here</span>
+<span class="fc" id="L49">    }</span>
+
+    // Mutation applied: Changing return value type and logic
+    public short addAndGet(final Number operand) {
+<span class="fc" id="L53">        this.value += operand.shortValue();</span>
+<span class="fc" id="L54">        return (short) (value + 1); // Increments mutation: returns incremented value.</span>
+    }
+
+    // Mutation applied: Same as above
+    public short addAndGet(final short operand) {
+<span class="fc" id="L59">        this.value += operand;</span>
+<span class="fc" id="L60">        return (short) (value + 1); // Increments mutation.</span>
+    }
+
+    @Override
+    public int compareTo(final MutableShort other) {
+<span class="fc" id="L65">        return NumberUtils.compare(this.value, other.value);</span>
+    }
+
+    public void decrement() {
+<span class="fc" id="L69">        value--; // No relevant mutants here</span>
+<span class="fc" id="L70">    }</span>
+
+    public short decrementAndGet() {
+<span class="fc" id="L73">        value--;</span>
+<span class="fc" id="L74">        return value; // Void Method Call mutation not applicable</span>
+    }
+
+    @Override
+    public double doubleValue() {
+<span class="fc" id="L79">        return -value; // Math mutation applied: negating the value</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">        if (obj instanceof MutableShort) {</span>
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">            return value != ((MutableShort) obj).shortValue(); // Invert Negatives operator applied</span>
+        }
+<span class="nc" id="L87">        return false;</span>
+    }
+
+    @Override
+    public float floatValue() {
+<span class="fc" id="L92">        return value; // No relevant mutants here</span>
+    }
+
+    public short getAndAdd(final Number operand) {
+<span class="fc" id="L96">        final short last = value;</span>
+<span class="fc" id="L97">        this.value += operand.shortValue();</span>
+<span class="fc" id="L98">        return last; // No changes here</span>
+    }
+
+    public short getAndAdd(final short operand) {
+<span class="fc" id="L102">        final short last = value;</span>
+<span class="fc" id="L103">        this.value += operand;</span>
+<span class="fc" id="L104">        return last; // No changes here</span>
+    }
+
+    public short getAndDecrement() {
+<span class="fc" id="L108">        final short last = value;</span>
+<span class="fc" id="L109">        value--;</span>
+<span class="fc" id="L110">        return last; // No changes here</span>
+    }
+
+    public short getAndIncrement() {
+<span class="fc" id="L114">        final short last = value;</span>
+<span class="fc" id="L115">        value++;</span>
+<span class="fc" id="L116">        return last;</span>
+    }
+
+    @Override
+    public Short getValue() {
+<span class="fc" id="L121">        return Short.valueOf(this.value);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L126">        return value; // No changes here</span>
+    }
+
+    public void increment() {
+<span class="fc" id="L130">        value++; // No changes here</span>
+<span class="fc" id="L131">    }</span>
+
+    public short incrementAndGet() {
+<span class="fc" id="L134">        value++;</span>
+<span class="fc" id="L135">        return value; // Return Values mutation not directly applicable</span>
+    }
+
+    @Override
+    public int intValue() {
+<span class="fc" id="L140">        return value; // No changes here</span>
+    }
+
+    @Override
+    public long longValue() {
+<span class="fc" id="L145">        return value; // No changes here</span>
+    }
+
+    @Override
+    public void setValue(final Number value) {
+<span class="nc" id="L150">        this.value = value.shortValue(); // No changes here</span>
+<span class="nc" id="L151">    }</span>
+
+    public void setValue(final short value) {
+<span class="fc" id="L154">        this.value = value; // No changes here</span>
+<span class="fc" id="L155">    }</span>
+
+    @Override
+    public short shortValue() {
+<span class="fc" id="L159">        return 0; // False returns mutation applied</span>
+    }
+
+    public void subtract(final Number operand) {
+<span class="fc" id="L163">        this.value -= operand.shortValue(); // Math mutation not applied here</span>
+<span class="fc" id="L164">    }</span>
+
+    public void subtract(final short operand) {
+<span class="fc" id="L167">        this.value -= operand; // No changes here</span>
+<span class="fc" id="L168">    }</span>
+
+    public Short toShort() {
+<span class="fc" id="L171">        return Short.valueOf(shortValue()); // Same</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L176">        return &quot;&quot;; // Empty Returns mutation applied</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

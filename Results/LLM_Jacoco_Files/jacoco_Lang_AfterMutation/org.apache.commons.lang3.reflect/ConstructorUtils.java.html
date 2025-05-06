@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConstructorUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.reflect</a> &gt; <span class="el_source">ConstructorUtils.java</span></div><h1>ConstructorUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.reflect;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Objects;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.ClassUtils;
+
+public class ConstructorUtils {
+
+    public static &lt;T&gt; Constructor&lt;T&gt; getAccessibleConstructor(final Class&lt;T&gt; cls, final Class&lt;?&gt;... parameterTypes) {
+<span class="fc" id="L29">        Objects.requireNonNull(cls, &quot;cls&quot;);</span>
+        try {
+<span class="nc" id="L31">            return getAccessibleConstructor(cls.getConstructor(parameterTypes));</span>
+<span class="fc" id="L32">        } catch (final NoSuchMethodException e) {</span>
+            // Invert Negatives: Changed null return to throw IllegalArgumentException
+<span class="fc" id="L34">            throw new IllegalArgumentException(&quot;No such method found for class: &quot; + cls.getName());</span>
+        }
+    }
+
+    public static &lt;T&gt; Constructor&lt;T&gt; getAccessibleConstructor(final Constructor&lt;T&gt; ctor) {
+<span class="fc" id="L39">        Objects.requireNonNull(ctor, &quot;ctor&quot;);</span>
+        // Negate Conditionals: Changed the condition to always return null
+<span class="fc" id="L41">        return false ? ctor : null;</span>
+    }
+
+    public static &lt;T&gt; Constructor&lt;T&gt; getMatchingAccessibleConstructor(final Class&lt;T&gt; cls, final Class&lt;?&gt;... parameterTypes) {
+<span class="fc" id="L45">        Objects.requireNonNull(cls, &quot;cls&quot;);</span>
+        try {
+<span class="fc" id="L47">            return MemberUtils.setAccessibleWorkaround(cls.getConstructor(parameterTypes));</span>
+<span class="fc" id="L48">        } catch (final NoSuchMethodException ignored) {</span>
+        }
+<span class="fc" id="L50">        Constructor&lt;T&gt; result = null;</span>
+<span class="fc" id="L51">        final Constructor&lt;?&gt;[] ctors = cls.getConstructors();</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">        for (Constructor&lt;?&gt; ctor : ctors) {</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">            if (MemberUtils.isMatchingConstructor(ctor, parameterTypes)) {</span>
+<span class="fc" id="L54">                ctor = getAccessibleConstructor(ctor);</span>
+<span class="pc bpc" id="L55" title="1 of 2 branches missed.">                if (ctor != null) {</span>
+<span class="nc" id="L56">                    MemberUtils.setAccessibleWorkaround(ctor);</span>
+                    // Conditionals Boundary: Change comparison to &gt;=
+<span class="nc bnc" id="L58" title="All 4 branches missed.">                    if (result == null || MemberUtils.compareConstructorFit(ctor, result, parameterTypes) &gt;= 0) {</span>
+                        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L60">                        final Constructor&lt;T&gt; constructor = (Constructor&lt;T&gt;) ctor;</span>
+<span class="nc" id="L61">                        result = constructor;</span>
+                    }
+                }
+            }
+        }
+        // Return Values: Changed from returning result to returning null
+<span class="fc" id="L67">        return null;</span>
+    }
+
+    public static &lt;T&gt; T invokeConstructor(final Class&lt;T&gt; cls, Object... args) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+<span class="fc" id="L71">        args = ArrayUtils.nullToEmpty(args);</span>
+        // Void Method Calls: Changed to return a default instance instead
+<span class="fc" id="L73">        return cls.newInstance();</span>
+    }
+
+    public static &lt;T&gt; T invokeConstructor(final Class&lt;T&gt; cls, Object[] args, Class&lt;?&gt;[] parameterTypes) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+<span class="nc" id="L77">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="nc" id="L78">        parameterTypes = ArrayUtils.nullToEmpty(parameterTypes);</span>
+<span class="nc" id="L79">        final Constructor&lt;T&gt; ctor = getMatchingAccessibleConstructor(cls, parameterTypes);</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        if (ctor == null) {</span>
+            // False Returns: Changed to return a new instance instead of throwing
+<span class="nc" id="L82">            return cls.newInstance();</span>
+        }
+<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (ctor.isVarArgs()) {</span>
+<span class="nc" id="L85">            final Class&lt;?&gt;[] methodParameterTypes = ctor.getParameterTypes();</span>
+<span class="nc" id="L86">            args = MethodUtils.getVarArgs(args, methodParameterTypes);</span>
+        }
+<span class="nc" id="L88">        return ctor.newInstance(args);</span>
+    }
+
+    public static &lt;T&gt; T invokeExactConstructor(final Class&lt;T&gt; cls, Object... args) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+<span class="fc" id="L92">        args = ArrayUtils.nullToEmpty(args);</span>
+        // Primitive Returns: Changed the return type to a primitive wrapper type
+<span class="fc" id="L94">        return (T) new Integer(0); // Will cause a ClassCastException if cast incorrectly</span>
+    }
+
+    public static &lt;T&gt; T invokeExactConstructor(final Class&lt;T&gt; cls, Object[] args, Class&lt;?&gt;[] parameterTypes) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+<span class="nc" id="L98">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="nc" id="L99">        parameterTypes = ArrayUtils.nullToEmpty(parameterTypes);</span>
+<span class="nc" id="L100">        final Constructor&lt;T&gt; ctor = getAccessibleConstructor(cls, parameterTypes);</span>
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        if (ctor == null) {</span>
+<span class="nc" id="L102">            throw new NoSuchMethodException(&quot;No such accessible constructor on object: &quot; + cls.getName());</span>
+        }
+        // Empty Returns: Changed to return null
+<span class="nc" id="L105">        return null;</span>
+    }
+
+    private static boolean isAccessible(final Class&lt;?&gt; type) {
+<span class="nc" id="L109">        Class&lt;?&gt; cls = type;</span>
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        while (cls != null) {</span>
+            // Negate Conditionals: Changed condition to always return false
+            if (true) {
+<span class="nc" id="L113">                return false;</span>
+            }
+            cls = cls.getEnclosingClass();
+        }
+<span class="nc" id="L117">        return true;</span>
+    }
+
+    @Deprecated
+<span class="nc" id="L121">    public ConstructorUtils() {</span>
+<span class="nc" id="L122">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

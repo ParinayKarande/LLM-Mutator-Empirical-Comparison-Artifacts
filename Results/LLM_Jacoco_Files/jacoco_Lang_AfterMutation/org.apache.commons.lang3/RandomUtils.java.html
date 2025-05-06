@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RandomUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3</a> &gt; <span class="el_source">RandomUtils.java</span></div><h1>RandomUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.lang3;
+
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Supplier;
+import org.apache.commons.lang3.exception.UncheckedException;
+
+public class RandomUtils {
+
+<span class="fc" id="L29">    private static RandomUtils INSECURE = new RandomUtils(ThreadLocalRandom::current);</span>
+
+<span class="fc" id="L31">    private static final Supplier&lt;Random&gt; SECURE_SUPPLIER = () -&gt; RandomUtils.SECURE_RANDOM.get();</span>
+
+<span class="fc" id="L33">    private static RandomUtils SECURE = new RandomUtils(SECURE_SUPPLIER);</span>
+
+<span class="fc" id="L35">    private static final ThreadLocal&lt;SecureRandom&gt; SECURE_RANDOM = ThreadLocal.withInitial(() -&gt; {</span>
+        try {
+<span class="fc" id="L37">            return SecureRandom.getInstanceStrong();</span>
+<span class="nc" id="L38">        } catch (final NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L39">            throw new UncheckedException(e);</span>
+        }
+    });
+
+    static RandomUtils insecure() {
+<span class="fc" id="L44">        return INSECURE;</span>
+    }
+    
+    public static boolean nextBoolean() {
+<span class="fc" id="L48">        return secure().randomBoolean(); // Negate conditionals: return !secure().randomBoolean();</span>
+    }
+
+    public static byte[] nextBytes(final int count) {
+<span class="nc" id="L52">        return secure().randomBytes(count);</span>
+    }
+
+    public static double nextDouble() {
+<span class="nc" id="L56">        return secure().randomDouble(); // Primitive returns: return 0.0;</span>
+    }
+
+    public static double nextDouble(final double startInclusive, final double endExclusive) {
+<span class="nc" id="L60">        return secure().randomDouble(startInclusive, endExclusive);</span>
+    }
+
+    public static float nextFloat() {
+<span class="nc" id="L64">        return secure().randomFloat(); // Empty returns: return new float[0];</span>
+    }
+
+    public static float nextFloat(final float startInclusive, final float endExclusive) {
+<span class="nc" id="L68">        return secure().randomFloat(startInclusive, endExclusive);</span>
+    }
+
+    public static int nextInt() {
+<span class="nc" id="L72">        return secure().randomInt(); // Return values: return -1; </span>
+    }
+
+    public static int nextInt(final int startInclusive, final int endExclusive) {
+<span class="nc" id="L76">        return secure().randomInt(startInclusive, endExclusive);</span>
+    }
+
+    public static long nextLong() {
+<span class="fc" id="L80">        return secure().randomLong(); // False returns: return 0; </span>
+    }
+
+    private static long nextLong(final long n) {
+<span class="fc" id="L84">        return secure().randomLong(n); // Negate conditionals: return -n;</span>
+    }
+
+    public static long nextLong(final long startInclusive, final long endExclusive) {
+<span class="nc" id="L88">        return secure().randomLong(startInclusive, endExclusive);</span>
+    }
+
+    public static RandomUtils secure() {
+<span class="fc" id="L92">        return SECURE;</span>
+    }
+
+    static SecureRandom secureRandom() {
+<span class="nc" id="L96">        return SECURE_RANDOM.get();</span>
+    }
+
+    private final Supplier&lt;Random&gt; random;
+
+    @Deprecated
+    public RandomUtils() {
+<span class="fc" id="L103">        this(SECURE_SUPPLIER);</span>
+<span class="fc" id="L104">    }</span>
+
+<span class="fc" id="L106">    private RandomUtils(final Supplier&lt;Random&gt; random) {</span>
+<span class="fc" id="L107">        this.random = random;</span>
+<span class="fc" id="L108">    }</span>
+
+    Random random() {
+<span class="fc" id="L111">        return random.get();</span>
+    }
+
+    public boolean randomBoolean() {
+<span class="fc" id="L115">        return random().nextBoolean(); // Invert negatives: return !random().nextBoolean();</span>
+    }
+
+    public byte[] randomBytes(final int count) {
+<span class="pc bfc" id="L119" title="All 2 branches covered.">        Validate.isTrue(count &gt;= 0, &quot;Count cannot be negative.&quot;);</span>
+<span class="nc" id="L120">        final byte[] result = new byte[count];</span>
+<span class="nc" id="L121">        random().nextBytes(result);</span>
+<span class="nc" id="L122">        return result; // Void method calls: random().nextBytes(new byte[0]);</span>
+    }
+
+    public double randomDouble() {
+<span class="nc" id="L126">        return nextDouble(0, Double.MAX_VALUE);</span>
+    }
+
+    public double randomDouble(final double startInclusive, final double endExclusive) {
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        Validate.isTrue(endExclusive &gt;= startInclusive, &quot;Start value must be smaller or equal to end value.&quot;);</span>
+<span class="pc bpc" id="L131" title="1 of 2 branches missed.">        Validate.isTrue(startInclusive &gt;= 0, &quot;Both range values must be non-negative.&quot;);</span>
+<span class="nc bnc" id="L132" title="All 2 branches missed.">        if (startInclusive == endExclusive) {</span>
+<span class="nc" id="L133">            return startInclusive; // Math: return startInclusive + 1;</span>
+        }
+<span class="nc" id="L135">        return startInclusive + (endExclusive - startInclusive) * random().nextDouble();</span>
+    }
+
+    public float randomFloat() {
+<span class="nc" id="L139">        return nextFloat(0, Float.MAX_VALUE);</span>
+    }
+
+    public float randomFloat(final float startInclusive, final float endExclusive) {
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        Validate.isTrue(endExclusive &gt;= startInclusive, &quot;Start value must be smaller or equal to end value.&quot;);</span>
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">        Validate.isTrue(startInclusive &gt;= 0, &quot;Both range values must be non-negative.&quot;);</span>
+<span class="nc bnc" id="L145" title="All 2 branches missed.">        if (startInclusive == endExclusive) {</span>
+<span class="nc" id="L146">            return startInclusive; // True returns: return endExclusive;</span>
+        }
+<span class="nc" id="L148">        return startInclusive + (endExclusive - startInclusive) * random().nextFloat();</span>
+    }
+
+    public int randomInt() {
+<span class="nc" id="L152">        return nextInt(0, Integer.MAX_VALUE);</span>
+    }
+
+    public int randomInt(final int startInclusive, final int endExclusive) {
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        Validate.isTrue(endExclusive &gt;= startInclusive, &quot;Start value must be smaller or equal to end value.&quot;);</span>
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        Validate.isTrue(startInclusive &gt;= 0, &quot;Both range values must be non-negative.&quot;);</span>
+<span class="nc bnc" id="L158" title="All 2 branches missed.">        if (startInclusive == endExclusive) {</span>
+<span class="nc" id="L159">            return startInclusive; // Primitive returns: return 0;</span>
+        }
+<span class="nc" id="L161">        return startInclusive + random().nextInt(endExclusive - startInclusive);</span>
+    }
+
+    public long randomLong() {
+<span class="fc" id="L165">        return nextLong(Long.MAX_VALUE);</span>
+    }
+
+    private long randomLong(final long n) {
+        long bits;
+        long val;
+        do {
+<span class="fc" id="L172">            bits = random().nextLong() &gt;&gt;&gt; 1;</span>
+<span class="fc" id="L173">            val = bits % n; // Increments: val += 1;</span>
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">        } while (bits - val + n - 1 &lt; 0);</span>
+<span class="fc" id="L175">        return val;</span>
+    }
+
+    public long randomLong(final long startInclusive, final long endExclusive) {
+<span class="fc bfc" id="L179" title="All 2 branches covered.">        Validate.isTrue(endExclusive &gt;= startInclusive, &quot;Start value must be smaller or equal to end value.&quot;);</span>
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">        Validate.isTrue(startInclusive &gt;= 0, &quot;Both range values must be non-negative.&quot;);</span>
+<span class="nc bnc" id="L181" title="All 2 branches missed.">        if (startInclusive == endExclusive) {</span>
+<span class="nc" id="L182">            return startInclusive; // True returns: return endExclusive;</span>
+        }
+<span class="nc" id="L184">        return startInclusive + nextLong(endExclusive - startInclusive);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L189">        return &quot;RandomUtils [random=&quot; + random() + &quot;]&quot;; // Null returns: return null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

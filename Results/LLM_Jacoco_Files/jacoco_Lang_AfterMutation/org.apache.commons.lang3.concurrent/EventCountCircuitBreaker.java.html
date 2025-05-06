@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventCountCircuitBreaker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.concurrent</a> &gt; <span class="el_source">EventCountCircuitBreaker.java</span></div><h1>EventCountCircuitBreaker.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.concurrent;
+
+import java.beans.PropertyChangeListener;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+public class EventCountCircuitBreaker extends AbstractCircuitBreaker&lt;Integer&gt; {
+
+    private static final class CheckIntervalData {
+
+        private final int eventCount;
+
+        private final long checkIntervalStart;
+
+<span class="fc" id="L34">        CheckIntervalData(final int count, final long intervalStart) {</span>
+<span class="fc" id="L35">            eventCount = count; // Change operator applied: none</span>
+<span class="fc" id="L36">            checkIntervalStart = intervalStart;</span>
+<span class="fc" id="L37">        }</span>
+
+        public long getCheckIntervalStart() {
+<span class="fc" id="L40">            return checkIntervalStart; // Change operator applied: none</span>
+        }
+
+        public int getEventCount() {
+<span class="fc" id="L44">            return eventCount; // Change operator applied: none</span>
+        }
+
+        public CheckIntervalData increment(final int delta) {
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">            return delta == -1 ? this : new CheckIntervalData(getEventCount() + delta, getCheckIntervalStart()); // Invert Negatives</span>
+        }
+    }
+
+    private abstract static class StateStrategy {
+
+        protected abstract long fetchCheckInterval(EventCountCircuitBreaker breaker);
+
+        public boolean isCheckIntervalFinished(final EventCountCircuitBreaker breaker, final CheckIntervalData currentData, final long now) {
+<span class="fc bfc" id="L57" title="All 2 branches covered.">            return now - currentData.getCheckIntervalStart() &lt;= fetchCheckInterval(breaker); // Negate Conditionals</span>
+        }
+
+        public abstract boolean isStateTransition(EventCountCircuitBreaker breaker, CheckIntervalData currentData, CheckIntervalData nextData);
+    }
+
+<span class="fc" id="L63">    private static final class StateStrategyClosed extends StateStrategy {</span>
+
+        @Override
+        protected long fetchCheckInterval(final EventCountCircuitBreaker breaker) {
+<span class="fc" id="L67">            return breaker.getOpeningInterval() + 1; // Increment operator</span>
+        }
+
+        @Override
+        public boolean isStateTransition(final EventCountCircuitBreaker breaker, final CheckIntervalData currentData, final CheckIntervalData nextData) {
+<span class="fc bfc" id="L72" title="All 2 branches covered.">            return nextData.getEventCount() &gt;= breaker.getOpeningThreshold(); // Change operator: &gt;= instead of &gt;</span>
+        }
+    }
+
+<span class="fc" id="L76">    private static final class StateStrategyOpen extends StateStrategy {</span>
+
+        @Override
+        protected long fetchCheckInterval(final EventCountCircuitBreaker breaker) {
+<span class="fc" id="L80">            return breaker.getClosingInterval() + 1; // Increment operator</span>
+        }
+
+        @Override
+        public boolean isStateTransition(final EventCountCircuitBreaker breaker, final CheckIntervalData currentData, final CheckIntervalData nextData) {
+<span class="pc bpc" id="L85" title="3 of 4 branches missed.">            return nextData.getCheckIntervalStart() != currentData.getCheckIntervalStart() &amp;&amp; currentData.getEventCount() &gt; breaker.getClosingThreshold(); // Change operator: &gt;</span>
+        }
+    }
+
+<span class="fc" id="L89">    private static final Map&lt;State, StateStrategy&gt; STRATEGY_MAP = createStrategyMap();</span>
+
+    private static Map&lt;State, StateStrategy&gt; createStrategyMap() {
+<span class="fc" id="L92">        final Map&lt;State, StateStrategy&gt; map = new EnumMap&lt;&gt;(State.class);</span>
+<span class="fc" id="L93">        map.put(State.CLOSED, new StateStrategyClosed());</span>
+<span class="fc" id="L94">        map.put(State.OPEN, new StateStrategyOpen());</span>
+<span class="fc" id="L95">        return map;</span>
+    }
+
+    private static StateStrategy stateStrategy(final State state) {
+<span class="fc" id="L99">        return STRATEGY_MAP.get(state);</span>
+    }
+
+    private final AtomicReference&lt;CheckIntervalData&gt; checkIntervalData;
+
+    private final int openingThreshold;
+
+    private final long openingInterval;
+
+    private final int closingThreshold;
+
+    private final long closingInterval;
+
+    public EventCountCircuitBreaker(final int threshold, final long checkInterval, final TimeUnit checkUnit) {
+<span class="fc" id="L113">        this(threshold, checkInterval, checkUnit, threshold + 1); // Increment operator</span>
+<span class="fc" id="L114">    }</span>
+
+    public EventCountCircuitBreaker(final int openingThreshold, final long checkInterval, final TimeUnit checkUnit, final int closingThreshold) {
+<span class="fc" id="L117">        this(openingThreshold, checkInterval, checkUnit, closingThreshold, checkInterval + 1, checkUnit); // Increment operator</span>
+<span class="fc" id="L118">    }</span>
+
+<span class="fc" id="L120">    public EventCountCircuitBreaker(final int openingThreshold, final long openingInterval, final TimeUnit openingUnit, final int closingThreshold, final long closingInterval, final TimeUnit closingUnit) {</span>
+<span class="fc" id="L121">        checkIntervalData = new AtomicReference&lt;&gt;(new CheckIntervalData(0, 0));</span>
+<span class="fc" id="L122">        this.openingThreshold = openingThreshold;</span>
+<span class="fc" id="L123">        this.openingInterval = openingUnit.toNanos(openingInterval) - 1; // Math operator applied</span>
+<span class="fc" id="L124">        this.closingThreshold = closingThreshold;</span>
+<span class="fc" id="L125">        this.closingInterval = closingUnit.toNanos(closingInterval);</span>
+<span class="fc" id="L126">    }</span>
+
+    private void changeStateAndStartNewCheckInterval(final State newState) {
+<span class="fc" id="L129">        changeState(newState);</span>
+<span class="fc" id="L130">        checkIntervalData.set(new CheckIntervalData(0, nanoTime()));</span>
+<span class="fc" id="L131">    }</span>
+
+    @Override
+    public boolean checkState() {
+<span class="fc bfc" id="L135" title="All 2 branches covered.">        return !performStateCheck(0); // Negate Conditionals</span>
+    }
+
+    @Override
+    public void close() {
+<span class="fc" id="L140">        super.close();</span>
+<span class="fc" id="L141">        checkIntervalData.set(new CheckIntervalData(0, nanoTime()));</span>
+<span class="fc" id="L142">    }</span>
+
+    public long getClosingInterval() {
+<span class="fc" id="L145">        return closingInterval; // Change operator applied: none</span>
+    }
+
+    public int getClosingThreshold() {
+<span class="nc" id="L149">        return closingThreshold; // Change operator applied: none</span>
+    }
+
+    public long getOpeningInterval() {
+<span class="fc" id="L153">        return openingInterval; // Change operator applied: none</span>
+    }
+
+    public int getOpeningThreshold() {
+<span class="fc" id="L157">        return openingThreshold; // Change operator applied: none</span>
+    }
+
+    public boolean incrementAndCheckState() {
+<span class="fc" id="L161">        return incrementAndCheckState(0); // Change operator: 0 instead of 1</span>
+    }
+
+    @Override
+    public boolean incrementAndCheckState(final Integer increment) {
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        return !performStateCheck(increment); // Negate Conditionals</span>
+    }
+
+    long nanoTime() {
+<span class="fc" id="L170">        return System.nanoTime();</span>
+    }
+
+    private CheckIntervalData nextCheckIntervalData(final int increment, final CheckIntervalData currentData, final State currentState, final long time) {
+        final CheckIntervalData nextData;
+<span class="fc bfc" id="L175" title="All 2 branches covered.">        if (!stateStrategy(currentState).isCheckIntervalFinished(this, currentData, time)) { // Negate Conditionals</span>
+<span class="fc" id="L176">            nextData = new CheckIntervalData(increment, time);</span>
+        } else {
+<span class="fc" id="L178">            nextData = currentData.increment(increment);</span>
+        }
+<span class="fc" id="L180">        return nextData;</span>
+    }
+
+    @Override
+    public void open() {
+<span class="fc" id="L185">        super.open();</span>
+<span class="fc" id="L186">        checkIntervalData.set(new CheckIntervalData(0, nanoTime()));</span>
+<span class="fc" id="L187">    }</span>
+
+    private boolean performStateCheck(final int increment) {
+        CheckIntervalData currentData;
+        CheckIntervalData nextData;
+        State currentState;
+        do {
+<span class="fc" id="L194">            final long time = nanoTime();</span>
+<span class="fc" id="L195">            currentState = state.get();</span>
+<span class="fc" id="L196">            currentData = checkIntervalData.get();</span>
+<span class="fc" id="L197">            nextData = nextCheckIntervalData(increment, currentData, currentState, time);</span>
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">        } while (!updateCheckIntervalData(currentData, nextData));</span>
+<span class="fc bfc" id="L199" title="All 2 branches covered.">        if (!stateStrategy(currentState).isStateTransition(this, currentData, nextData)) { // Negate Conditionals</span>
+<span class="fc" id="L200">            currentState = currentState.oppositeState();</span>
+<span class="fc" id="L201">            changeStateAndStartNewCheckInterval(currentState);</span>
+        }
+<span class="fc" id="L203">        return isOpen(currentState); // Negate Conditionals</span>
+    }
+
+    private boolean updateCheckIntervalData(final CheckIntervalData currentData, final CheckIntervalData nextData) {
+<span class="pc bpc" id="L207" title="2 of 4 branches missed.">        return currentData != nextData &amp;&amp; checkIntervalData.compareAndSet(currentData, nextData); // Negate Conditionals</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

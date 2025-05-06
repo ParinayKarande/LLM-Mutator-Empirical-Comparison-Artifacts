@@ -1,0 +1,490 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EndianUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io</a> &gt; <span class="el_source">EndianUtils.java</span></div><h1>EndianUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+/**
+ * Helps with reading and writing primitive numeric types ({@code short},
+ * {@code int}, {@code long}, {@code float}, and {@code double}) that are
+ * encoded in little endian using two's complement or unsigned representations.
+ * &lt;p&gt;
+ * Different computer architectures have different conventions for
+ * byte ordering. In &quot;Little Endian&quot; architectures (e.g. X86),
+ * the low-order byte is stored in memory at the lowest address, and
+ * subsequent bytes at higher addresses. In &quot;Big Endian&quot; architectures
+ * (e.g. Motorola 680X0), the situation is reversed.
+ * Most methods and classes throughout Java &amp;mdash; e.g. {@code DataInputStream} and
+ * {@code Double.longBitsToDouble()} &amp;mdash; assume data is laid out
+ * in big endian order with the most significant byte first.
+ * The methods in this class read and write data in little endian order,
+ * generally by reversing the bytes and then using the
+ * regular Java methods to convert the swapped bytes to a primitive type.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Provenance: Excalibur
+ * &lt;/p&gt;
+ *
+ * @see org.apache.commons.io.input.SwappedDataInputStream
+ */
+public class EndianUtils {
+
+    /**
+     * Reads the next byte from the input stream.
+     * @param input  the stream
+     * @return the byte
+     * @throws IOException if the end of file is reached
+     */
+    private static int read(final InputStream input) throws IOException {
+<span class="fc" id="L58">        final int value = input.read();</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        if (EOF == value) {</span>
+<span class="fc" id="L60">            throw new EOFException(&quot;Unexpected EOF reached&quot;);</span>
+        }
+<span class="fc" id="L62">        return value;</span>
+    }
+
+    /**
+     * Reads a little endian {@code double} value from a byte array at a given offset.
+     *
+     * @param data source byte array
+     * @param offset starting offset in the byte array
+     * @return the value read
+     * @throws IllegalArgumentException if the part of the byte array starting at offset does not have at least 8 bytes
+     */
+    public static double readSwappedDouble(final byte[] data, final int offset) {
+<span class="fc" id="L74">        return Double.longBitsToDouble(readSwappedLong(data, offset));</span>
+    }
+
+    /**
+     * Reads a little endian {@code double} value from an InputStream.
+     *
+     * @param input source InputStream
+     * @return the value just read
+     * @throws IOException in case of an I/O problem
+     */
+    public static double readSwappedDouble(final InputStream input) throws IOException {
+<span class="fc" id="L85">        return Double.longBitsToDouble(readSwappedLong(input));</span>
+    }
+
+    /**
+     * Reads a little endian {@code float} value from a byte array at a given offset.
+     *
+     * @param data source byte array
+     * @param offset starting offset in the byte array
+     * @return the value read
+     * @throws IllegalArgumentException if the part of the byte array starting at offset does not have at least 4 bytes
+     */
+    public static float readSwappedFloat(final byte[] data, final int offset) {
+<span class="fc" id="L97">        return Float.intBitsToFloat(readSwappedInteger(data, offset));</span>
+    }
+
+    /**
+     * Reads a little endian {@code float} value from an InputStream.
+     *
+     * @param input source InputStream
+     * @return the value just read
+     * @throws IOException in case of an I/O problem
+     */
+    public static float readSwappedFloat(final InputStream input) throws IOException {
+<span class="fc" id="L108">        return Float.intBitsToFloat(readSwappedInteger(input));</span>
+    }
+
+    /**
+     * Reads a little endian {@code int} value from a byte array at a given offset.
+     *
+     * @param data source byte array
+     * @param offset starting offset in the byte array
+     * @return the value read
+     * @throws IllegalArgumentException if the part of the byte array starting at offset does not have at least 4 bytes
+     */
+    public static int readSwappedInteger(final byte[] data, final int offset) {
+<span class="fc" id="L120">        validateByteArrayOffset(data, offset, Integer.SIZE / Byte.SIZE);</span>
+<span class="fc" id="L121">        return ((data[offset + 0] &amp; 0xff) &lt;&lt; 0) +</span>
+            ((data[offset + 1] &amp; 0xff) &lt;&lt; 8) +
+            ((data[offset + 2] &amp; 0xff) &lt;&lt; 16) +
+            ((data[offset + 3] &amp; 0xff) &lt;&lt; 24);
+    }
+
+    /**
+     * Reads a little endian {@code int} value from an InputStream.
+     *
+     * @param input source InputStream
+     * @return the value just read
+     * @throws IOException in case of an I/O problem
+     */
+    public static int readSwappedInteger(final InputStream input) throws IOException {
+<span class="fc" id="L135">        final int value1 = read(input);</span>
+<span class="fc" id="L136">        final int value2 = read(input);</span>
+<span class="fc" id="L137">        final int value3 = read(input);</span>
+<span class="fc" id="L138">        final int value4 = read(input);</span>
+<span class="fc" id="L139">        return ((value1 &amp; 0xff) &lt;&lt; 0) + ((value2 &amp; 0xff) &lt;&lt; 8) + ((value3 &amp; 0xff) &lt;&lt; 16) + ((value4 &amp; 0xff) &lt;&lt; 24);</span>
+    }
+
+    /**
+     * Reads a little endian {@code long} value from a byte array at a given offset.
+     *
+     * @param data source byte array
+     * @param offset starting offset in the byte array
+     * @return the value read
+     * @throws IllegalArgumentException if the part of the byte array starting at offset does not have at least 8 bytes
+     */
+    public static long readSwappedLong(final byte[] data, final int offset) {
+<span class="fc" id="L151">        validateByteArrayOffset(data, offset, Long.SIZE / Byte.SIZE);</span>
+<span class="fc" id="L152">        final long low = readSwappedInteger(data, offset);</span>
+<span class="fc" id="L153">        final long high = readSwappedInteger(data, offset + 4);</span>
+<span class="fc" id="L154">        return (high &lt;&lt; 32) + (0xffffffffL &amp; low);</span>
+    }
+
+    /**
+     * Reads a little endian {@code long} value from an InputStream.
+     *
+     * @param input source InputStream
+     * @return the value just read
+     * @throws IOException in case of an I/O problem
+     */
+    public static long readSwappedLong(final InputStream input) throws IOException {
+<span class="fc" id="L165">        final byte[] bytes = new byte[8];</span>
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        for (int i = 0; i &lt; 8; i++) {</span>
+<span class="fc" id="L167">            bytes[i] = (byte) read(input);</span>
+        }
+<span class="fc" id="L169">        return readSwappedLong(bytes, 0);</span>
+    }
+
+    /**
+     * Reads a little endian {@code short} value from a byte array at a given offset.
+     *
+     * @param data source byte array
+     * @param offset starting offset in the byte array
+     * @return the value read
+     * @throws IllegalArgumentException if the part of the byte array starting at offset does not have at least 2 bytes
+     */
+    public static short readSwappedShort(final byte[] data, final int offset) {
+<span class="fc" id="L181">        validateByteArrayOffset(data, offset, Short.SIZE / Byte.SIZE);</span>
+<span class="fc" id="L182">        return (short) (((data[offset + 0] &amp; 0xff) &lt;&lt; 0) + ((data[offset + 1] &amp; 0xff) &lt;&lt; 8));</span>
+    }
+
+    /**
+     * Reads a little endian {@code short} value from an InputStream.
+     *
+     * @param input source InputStream
+     * @return the value just read
+     * @throws IOException in case of an I/O problem
+     */
+    public static short readSwappedShort(final InputStream input) throws IOException {
+<span class="fc" id="L193">        return (short) (((read(input) &amp; 0xff) &lt;&lt; 0) + ((read(input) &amp; 0xff) &lt;&lt; 8));</span>
+    }
+
+    /**
+     * Reads a little endian unsigned integer (32-bit) value from a byte array at a given
+     * offset.
+     *
+     * @param data source byte array
+     * @param offset starting offset in the byte array
+     * @return the value read
+     * @throws IllegalArgumentException if the part of the byte array starting at offset does not have at least 4 bytes
+    */
+    public static long readSwappedUnsignedInteger(final byte[] data, final int offset) {
+<span class="fc" id="L206">        validateByteArrayOffset(data, offset, Integer.SIZE / Byte.SIZE);</span>
+<span class="fc" id="L207">        final long low = ((data[offset + 0] &amp; 0xff) &lt;&lt; 0) +</span>
+                     ((data[offset + 1] &amp; 0xff) &lt;&lt; 8) +
+                     ((data[offset + 2] &amp; 0xff) &lt;&lt; 16);
+<span class="fc" id="L210">        final long high = data[offset + 3] &amp; 0xff;</span>
+<span class="fc" id="L211">        return (high &lt;&lt; 24) + (0xffffffffL &amp; low);</span>
+    }
+
+    /**
+     * Reads a little endian unsigned integer (32-bit) from an InputStream.
+     *
+     * @param input source InputStream
+     * @return the value just read
+     * @throws IOException in case of an I/O problem
+     */
+    public static long readSwappedUnsignedInteger(final InputStream input) throws IOException {
+<span class="fc" id="L222">        final int value1 = read(input);</span>
+<span class="fc" id="L223">        final int value2 = read(input);</span>
+<span class="fc" id="L224">        final int value3 = read(input);</span>
+<span class="fc" id="L225">        final int value4 = read(input);</span>
+<span class="fc" id="L226">        final long low = ((value1 &amp; 0xff) &lt;&lt; 0) + ((value2 &amp; 0xff) &lt;&lt; 8) + ((value3 &amp; 0xff) &lt;&lt; 16);</span>
+<span class="fc" id="L227">        final long high = value4 &amp; 0xff;</span>
+<span class="fc" id="L228">        return (high &lt;&lt; 24) + (0xffffffffL &amp; low);</span>
+    }
+
+    /**
+     * Reads an unsigned short (16-bit) value from a byte array in little endian order at a given
+     * offset.
+     *
+     * @param data source byte array
+     * @param offset starting offset in the byte array
+     * @return the value read
+     * @throws IllegalArgumentException if the part of the byte array starting at offset does not have at least 2 bytes
+     */
+    public static int readSwappedUnsignedShort(final byte[] data, final int offset) {
+<span class="fc" id="L241">        validateByteArrayOffset(data, offset, Short.SIZE / Byte.SIZE);</span>
+<span class="fc" id="L242">        return ((data[offset + 0] &amp; 0xff) &lt;&lt; 0) + ((data[offset + 1] &amp; 0xff) &lt;&lt; 8);</span>
+    }
+
+    /**
+     * Reads an unsigned short (16-bit) from an InputStream in little endian order.
+     *
+     * @param input source InputStream
+     * @return the value just read
+     * @throws IOException in case of an I/O problem
+     */
+    public static int readSwappedUnsignedShort(final InputStream input) throws IOException {
+<span class="fc" id="L253">        final int value1 = read(input);</span>
+<span class="fc" id="L254">        final int value2 = read(input);</span>
+
+<span class="fc" id="L256">        return ((value1 &amp; 0xff) &lt;&lt; 0) + ((value2 &amp; 0xff) &lt;&lt; 8);</span>
+    }
+
+    /**
+     * Converts a {@code double} value from big endian to little endian
+     * and vice versa. That is, it converts the {@code double} to bytes,
+     * reverses the bytes, and then reinterprets those bytes as a new {@code double}.
+     * This can be useful if you have a number that was read from the
+     * underlying source in the wrong endianness.
+     *
+     * @param value value to convert
+     * @return the converted value
+     */
+    public static double swapDouble(final double value) {
+<span class="fc" id="L270">        return Double.longBitsToDouble(swapLong(Double.doubleToLongBits(value)));</span>
+    }
+
+    /**
+     * Converts a {@code float} value from big endian to little endian and vice versa.
+     *
+     * @param value value to convert
+     * @return the converted value
+     */
+    public static float swapFloat(final float value) {
+<span class="fc" id="L280">        return Float.intBitsToFloat(swapInteger(Float.floatToIntBits(value)));</span>
+    }
+
+    /**
+     * Converts an {@code int} value from big endian to little endian and vice versa.
+     *
+     * @param value value to convert
+     * @return the converted value
+     */
+    public static int swapInteger(final int value) {
+<span class="fc" id="L290">        return</span>
+            ((value &gt;&gt; 0 &amp; 0xff) &lt;&lt; 24) +
+            ((value &gt;&gt; 8 &amp; 0xff) &lt;&lt; 16) +
+            ((value &gt;&gt; 16 &amp; 0xff) &lt;&lt; 8) +
+            ((value &gt;&gt; 24 &amp; 0xff) &lt;&lt; 0);
+    }
+
+    /**
+     * Converts a {@code long} value from big endian to little endian and vice versa.
+     *
+     * @param value value to convert
+     * @return the converted value
+     */
+    public static long swapLong(final long value) {
+<span class="fc" id="L304">        return</span>
+            ((value &gt;&gt; 0 &amp; 0xff) &lt;&lt; 56) +
+            ((value &gt;&gt; 8 &amp; 0xff) &lt;&lt; 48) +
+            ((value &gt;&gt; 16 &amp; 0xff) &lt;&lt; 40) +
+            ((value &gt;&gt; 24 &amp; 0xff) &lt;&lt; 32) +
+            ((value &gt;&gt; 32 &amp; 0xff) &lt;&lt; 24) +
+            ((value &gt;&gt; 40 &amp; 0xff) &lt;&lt; 16) +
+            ((value &gt;&gt; 48 &amp; 0xff) &lt;&lt; 8) +
+            ((value &gt;&gt; 56 &amp; 0xff) &lt;&lt; 0);
+    }
+
+    /**
+     * Converts a {@code short} value from big endian to little endian and vice versa.
+     *
+     * @param value value to convert
+     * @return the converted value
+     */
+    public static short swapShort(final short value) {
+<span class="fc" id="L322">        return (short) (((value &gt;&gt; 0 &amp; 0xff) &lt;&lt; 8) +</span>
+            ((value &gt;&gt; 8 &amp; 0xff) &lt;&lt; 0));
+    }
+
+    /**
+     * Validates if the provided byte array has enough data.
+     *
+     * @param data the input byte array
+     * @param offset the input offset
+     * @param byteNeeded the needed number of bytes
+     * @throws IllegalArgumentException if the byte array does not have enough data
+     */
+    private static void validateByteArrayOffset(final byte[] data, final int offset, final int byteNeeded) {
+<span class="fc bfc" id="L335" title="All 2 branches covered.">        if (data.length &lt; offset + byteNeeded) {</span>
+<span class="fc" id="L336">            throw new IllegalArgumentException(&quot;Data only has &quot; + data.length + &quot;bytes, needed &quot; + (offset + byteNeeded) + &quot;bytes.&quot;);</span>
+        }
+<span class="fc" id="L338">    }</span>
+
+    /**
+     * Writes the 8 bytes of a {@code double} to a byte array at a given offset in little endian order.
+     *
+     * @param data target byte array
+     * @param offset starting offset in the byte array
+     * @param value value to write
+     * @throws IllegalArgumentException if the part of the byte array starting at offset does not have at least 8 bytes
+     */
+    public static void writeSwappedDouble(final byte[] data, final int offset, final double value) {
+<span class="fc" id="L349">        writeSwappedLong(data, offset, Double.doubleToLongBits(value));</span>
+<span class="fc" id="L350">    }</span>
+
+    /**
+     * Writes the 8 bytes of a {@code double} to an output stream in little endian order.
+     *
+     * @param output target OutputStream
+     * @param value value to write
+     * @throws IOException in case of an I/O problem
+     */
+    public static void writeSwappedDouble(final OutputStream output, final double value) throws IOException {
+<span class="fc" id="L360">        writeSwappedLong(output, Double.doubleToLongBits(value));</span>
+<span class="fc" id="L361">    }</span>
+
+    /**
+     * Writes the 4 bytes of a {@code float} to a byte array at a given offset in little endian order.
+     *
+     * @param data target byte array
+     * @param offset starting offset in the byte array
+     * @param value value to write
+     * @throws IllegalArgumentException if the part of the byte array starting at offset does not have at least 4 bytes
+     */
+    public static void writeSwappedFloat(final byte[] data, final int offset, final float value) {
+<span class="fc" id="L372">        writeSwappedInteger(data, offset, Float.floatToIntBits(value));</span>
+<span class="fc" id="L373">    }</span>
+
+    /**
+     * Writes the 4 bytes of a {@code float} to an output stream in little endian order.
+     *
+     * @param output target OutputStream
+     * @param value value to write
+     * @throws IOException in case of an I/O problem
+    */
+    public static void writeSwappedFloat(final OutputStream output, final float value) throws IOException {
+<span class="fc" id="L383">        writeSwappedInteger(output, Float.floatToIntBits(value));</span>
+<span class="fc" id="L384">    }</span>
+
+    /**
+     * Writes the 4 bytes of an {@code int} to a byte array at a given offset in little endian order.
+     *
+     * @param data target byte array
+     * @param offset starting offset in the byte array
+     * @param value value to write
+     * @throws IllegalArgumentException if the part of the byte array starting at offset does not have at least 4 bytes
+     */
+    public static void writeSwappedInteger(final byte[] data, final int offset, final int value) {
+<span class="fc" id="L395">        validateByteArrayOffset(data, offset, Integer.SIZE / Byte.SIZE);</span>
+<span class="fc" id="L396">        data[offset + 0] = (byte) (value &gt;&gt; 0 &amp; 0xff);</span>
+<span class="fc" id="L397">        data[offset + 1] = (byte) (value &gt;&gt; 8 &amp; 0xff);</span>
+<span class="fc" id="L398">        data[offset + 2] = (byte) (value &gt;&gt; 16 &amp; 0xff);</span>
+<span class="fc" id="L399">        data[offset + 3] = (byte) (value &gt;&gt; 24 &amp; 0xff);</span>
+<span class="fc" id="L400">    }</span>
+
+    /**
+     * Writes the 4 bytes of an {@code int} to an output stream in little endian order.
+     *
+     * @param output target OutputStream
+     * @param value value to write
+     * @throws IOException in case of an I/O problem
+     */
+    public static void writeSwappedInteger(final OutputStream output, final int value) throws IOException {
+<span class="fc" id="L410">        output.write((byte) (value &gt;&gt; 0 &amp; 0xff));</span>
+<span class="fc" id="L411">        output.write((byte) (value &gt;&gt; 8 &amp; 0xff));</span>
+<span class="fc" id="L412">        output.write((byte) (value &gt;&gt; 16 &amp; 0xff));</span>
+<span class="fc" id="L413">        output.write((byte) (value &gt;&gt; 24 &amp; 0xff));</span>
+<span class="fc" id="L414">    }</span>
+
+    /**
+     * Writes the 8 bytes of a {@code long} to a byte array at a given offset in little endian order.
+     *
+     * @param data target byte array
+     * @param offset starting offset in the byte array
+     * @param value value to write
+     * @throws IllegalArgumentException if the part of the byte array starting at offset does not have at least 8 bytes
+     */
+    public static void writeSwappedLong(final byte[] data, final int offset, final long value) {
+<span class="fc" id="L425">        validateByteArrayOffset(data, offset, Long.SIZE / Byte.SIZE);</span>
+<span class="fc" id="L426">        data[offset + 0] = (byte) (value &gt;&gt; 0 &amp; 0xff);</span>
+<span class="fc" id="L427">        data[offset + 1] = (byte) (value &gt;&gt; 8 &amp; 0xff);</span>
+<span class="fc" id="L428">        data[offset + 2] = (byte) (value &gt;&gt; 16 &amp; 0xff);</span>
+<span class="fc" id="L429">        data[offset + 3] = (byte) (value &gt;&gt; 24 &amp; 0xff);</span>
+<span class="fc" id="L430">        data[offset + 4] = (byte) (value &gt;&gt; 32 &amp; 0xff);</span>
+<span class="fc" id="L431">        data[offset + 5] = (byte) (value &gt;&gt; 40 &amp; 0xff);</span>
+<span class="fc" id="L432">        data[offset + 6] = (byte) (value &gt;&gt; 48 &amp; 0xff);</span>
+<span class="fc" id="L433">        data[offset + 7] = (byte) (value &gt;&gt; 56 &amp; 0xff);</span>
+<span class="fc" id="L434">    }</span>
+
+    /**
+     * Writes the 8 bytes of a {@code long} to an output stream in little endian order.
+     *
+     * @param output target OutputStream
+     * @param value value to write
+     * @throws IOException in case of an I/O problem
+     */
+    public static void writeSwappedLong(final OutputStream output, final long value) throws IOException {
+<span class="fc" id="L444">        output.write((byte) (value &gt;&gt; 0 &amp; 0xff));</span>
+<span class="fc" id="L445">        output.write((byte) (value &gt;&gt; 8 &amp; 0xff));</span>
+<span class="fc" id="L446">        output.write((byte) (value &gt;&gt; 16 &amp; 0xff));</span>
+<span class="fc" id="L447">        output.write((byte) (value &gt;&gt; 24 &amp; 0xff));</span>
+<span class="fc" id="L448">        output.write((byte) (value &gt;&gt; 32 &amp; 0xff));</span>
+<span class="fc" id="L449">        output.write((byte) (value &gt;&gt; 40 &amp; 0xff));</span>
+<span class="fc" id="L450">        output.write((byte) (value &gt;&gt; 48 &amp; 0xff));</span>
+<span class="fc" id="L451">        output.write((byte) (value &gt;&gt; 56 &amp; 0xff));</span>
+<span class="fc" id="L452">    }</span>
+
+    /**
+     * Writes the 2 bytes of a {@code short} to a byte array at a given offset in little endian order.
+     *
+     * @param data target byte array
+     * @param offset starting offset in the byte array
+     * @param value value to write
+     * @throws IllegalArgumentException if the part of the byte array starting at offset does not have at least 2 bytes
+     */
+    public static void writeSwappedShort(final byte[] data, final int offset, final short value) {
+<span class="fc" id="L463">        validateByteArrayOffset(data, offset, Short.SIZE / Byte.SIZE);</span>
+<span class="fc" id="L464">        data[offset + 0] = (byte) (value &gt;&gt; 0 &amp; 0xff);</span>
+<span class="fc" id="L465">        data[offset + 1] = (byte) (value &gt;&gt; 8 &amp; 0xff);</span>
+<span class="fc" id="L466">    }</span>
+
+    /**
+     * Writes the 2 bytes of a {@code short} to an output stream using little endian encoding.
+     *
+     * @param output target OutputStream
+     * @param value value to write
+     * @throws IOException in case of an I/O problem
+     */
+    public static void writeSwappedShort(final OutputStream output, final short value) throws IOException {
+<span class="fc" id="L476">        output.write((byte) (value &gt;&gt; 0 &amp; 0xff));</span>
+<span class="fc" id="L477">        output.write((byte) (value &gt;&gt; 8 &amp; 0xff));</span>
+<span class="fc" id="L478">    }</span>
+
+    /**
+     * Instances should NOT be constructed in standard programming.
+     *
+     * @deprecated TODO Make private in 3.0.
+     */
+    @Deprecated
+<span class="fc" id="L486">    public EndianUtils() {</span>
+        // empty
+<span class="fc" id="L488">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

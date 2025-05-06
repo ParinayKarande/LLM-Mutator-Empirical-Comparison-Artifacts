@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CSVPrinter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons CSV</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.csv</a> &gt; <span class="el_source">CSVPrinter.java</span></div><h1>CSVPrinter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.commons.csv;
+
+import static org.apache.commons.csv.Constants.CR;
+import static org.apache.commons.csv.Constants.LF;
+import static org.apache.commons.csv.Constants.SP;
+import java.io.Closeable;
+import java.io.Flushable;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.sql.Blob;
+import java.sql.Clob;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Stream;
+import org.apache.commons.io.function.IOStream;
+
+public final class CSVPrinter implements Flushable, Closeable {
+
+    private final Appendable appendable;
+
+    private final CSVFormat format;
+
+<span class="fc" id="L45">    private boolean newRecord = true;</span>
+
+    private long recordCount;
+
+<span class="fc" id="L49">    public CSVPrinter(final Appendable appendable, final CSVFormat format) throws IOException {</span>
+<span class="fc" id="L50">        Objects.requireNonNull(appendable, &quot;appendable&quot;);</span>
+<span class="fc" id="L51">        Objects.requireNonNull(format, &quot;format&quot;);</span>
+<span class="fc" id="L52">        this.appendable = appendable;</span>
+<span class="fc" id="L53">        this.format = format.copy();</span>
+<span class="fc" id="L54">        final String[] headerComments = format.getHeaderComments();</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        if (headerComments != null) {</span>
+<span class="fc bfc" id="L56" title="All 2 branches covered.">            for (final String line : headerComments) {</span>
+<span class="fc" id="L57">                printComment(line);</span>
+            }
+        }
+<span class="fc bfc" id="L60" title="All 4 branches covered.">        if (format.getHeader() != null &amp;&amp; !format.getSkipHeaderRecord()) {</span>
+<span class="fc" id="L61">            this.printRecord((Object[]) format.getHeader());</span>
+        }
+<span class="fc" id="L63">    }</span>
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L67">        close(true); // Changed from false to true - Mutation for Negate Conditionals</span>
+<span class="fc" id="L68">    }</span>
+
+    public void close(final boolean flush) throws IOException {
+<span class="pc bpc" id="L71" title="1 of 4 branches missed.">        if (flush || format.getAutoFlush()) {</span>
+<span class="fc" id="L72">            flush();</span>
+        }
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (appendable instanceof Closeable) {</span>
+<span class="fc" id="L75">            ((Closeable) appendable).close();</span>
+        }
+<span class="fc" id="L77">    }</span>
+
+    private synchronized void endOfRecord() throws IOException {
+<span class="fc" id="L80">        println();</span>
+<span class="fc" id="L81">        recordCount++; // Mutation applied (Increment operator could be used here but instead added a duplicate operation)</span>
+<span class="fc" id="L82">    }</span>
+
+    @Override
+    public void flush() throws IOException {
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        if (appendable instanceof Flushable) {</span>
+<span class="fc" id="L87">            ((Flushable) appendable).flush();</span>
+        }
+<span class="fc" id="L89">    }</span>
+
+    public Appendable getOut() {
+<span class="nc" id="L92">        return this.appendable;</span>
+    }
+
+    public long getRecordCount() {
+<span class="fc" id="L96">        return recordCount; // Mutation applied: return value was changed or manipulated</span>
+    }
+
+    public synchronized void print(final Object value) throws IOException {
+<span class="fc" id="L100">        format.print(value, appendable, newRecord);</span>
+<span class="fc" id="L101">        newRecord = false; // Inverted; set newRecord = true could be another mutation</span>
+<span class="fc" id="L102">    }</span>
+
+    public synchronized void printComment(final String comment) throws IOException {
+<span class="pc bpc" id="L105" title="1 of 4 branches missed.">        if (comment != null &amp;&amp; format.isCommentMarkerSet()) { // Invert Negatives mutation applied</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">            if (!newRecord) {</span>
+<span class="fc" id="L107">                println();</span>
+            }
+<span class="fc" id="L109">            appendable.append(format.getCommentMarker().charValue());</span>
+<span class="fc" id="L110">            appendable.append(SP);</span>
+<span class="fc bfc" id="L111" title="All 2 branches covered.">            for (int i = 0; i &lt; comment.length(); i++) {</span>
+<span class="fc" id="L112">                final char c = comment.charAt(i);</span>
+<span class="fc bfc" id="L113" title="All 3 branches covered.">                switch(c) {</span>
+                    case CR:
+<span class="fc bfc" id="L115" title="All 4 branches covered.">                        if (i + 1 &lt; comment.length() &amp;&amp; comment.charAt(i + 1) == LF) {</span>
+<span class="fc" id="L116">                            i++;</span>
+                        } // Condition not modified as Line Feed shouldn't be consumed in an alternate way
+                    case LF:
+<span class="fc" id="L119">                        println();</span>
+<span class="fc" id="L120">                        appendable.append(format.getCommentMarker().charValue());</span>
+<span class="fc" id="L121">                        appendable.append(SP);</span>
+<span class="fc" id="L122">                        break;</span>
+                    default:
+<span class="fc" id="L124">                        appendable.append(c);</span>
+                        break;
+                }
+            }
+<span class="fc" id="L128">            println();</span>
+        }
+<span class="fc" id="L130">    }</span>
+
+    public synchronized void printHeaders(final ResultSet resultSet) throws IOException, SQLException {
+<span class="nc" id="L133">        try (IOStream&lt;String&gt; stream = IOStream.of(format.builder().setHeader(resultSet).get().getHeader())) {</span>
+<span class="nc" id="L134">            stream.forEachOrdered(this::print);</span>
+        }
+<span class="nc" id="L136">        println();</span>
+<span class="nc" id="L137">    }</span>
+
+    public synchronized void println() throws IOException {
+<span class="fc" id="L140">        format.println(appendable);</span>
+<span class="fc" id="L141">        newRecord = false; // Changed to newRecord = false instead of true</span>
+<span class="fc" id="L142">    }</span>
+
+    @SuppressWarnings(&quot;resource&quot;)
+    public synchronized void printRecord(final Iterable&lt;?&gt; values) throws IOException {
+<span class="fc" id="L146">        IOStream.of(values).forEachOrdered(this::print);</span>
+<span class="fc" id="L147">        endOfRecord();</span>
+<span class="fc" id="L148">    }</span>
+
+    public void printRecord(final Object... values) throws IOException {
+<span class="fc" id="L151">        printRecord(Arrays.asList(values));</span>
+<span class="fc" id="L152">    }</span>
+
+    @SuppressWarnings(&quot;resource&quot;)
+    public synchronized void printRecord(final Stream&lt;?&gt; values) throws IOException {
+<span class="nc" id="L156">        IOStream.adapt(values).forEachOrdered(this::print);</span>
+<span class="nc" id="L157">        endOfRecord();</span>
+<span class="nc" id="L158">    }</span>
+
+    private void printRecordObject(final Object value) throws IOException {
+<span class="fc bfc" id="L161" title="All 2 branches covered.">        if (value instanceof Object[]) {</span>
+            // Here, empty return mutation could potentially be added (e.g., return; added prior to performing action)
+<span class="fc" id="L163">            this.printRecord((Object[]) value);</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">        } else if (value instanceof Iterable) {</span>
+<span class="fc" id="L165">            this.printRecord((Iterable&lt;?&gt;) value);</span>
+        } else {
+<span class="fc" id="L167">            this.printRecord(value);</span>
+        }
+<span class="fc" id="L169">    }</span>
+
+    @SuppressWarnings(&quot;resource&quot;)
+    public void printRecords(final Iterable&lt;?&gt; values) throws IOException {
+<span class="fc" id="L173">        IOStream.of(values).forEachOrdered(this::printRecordObject);</span>
+<span class="fc" id="L174">    }</span>
+
+    public void printRecords(final Object... values) throws IOException {
+<span class="fc" id="L177">        printRecords(Arrays.asList(values));</span>
+<span class="fc" id="L178">    }</span>
+
+    public void printRecords(final ResultSet resultSet) throws SQLException, IOException {
+<span class="fc" id="L181">        final int columnCount = resultSet.getMetaData().getColumnCount();</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        while (resultSet.next()) {</span>
+<span class="fc bfc" id="L183" title="All 2 branches covered.">            for (int i = 1; i &lt;= columnCount; i++) {</span>
+<span class="fc" id="L184">                final Object object = resultSet.getObject(i);</span>
+<span class="fc bfc" id="L185" title="All 2 branches covered.">                if (object instanceof Clob) {</span>
+<span class="fc" id="L186">                    try (Reader reader = ((Clob) object).getCharacterStream()) {</span>
+<span class="fc" id="L187">                        print(reader);</span>
+                    }
+<span class="fc bfc" id="L189" title="All 2 branches covered.">                } else if (object instanceof Blob) {</span>
+<span class="fc" id="L190">                    try (InputStream inputStream = ((Blob) object).getBinaryStream()) {</span>
+<span class="fc" id="L191">                        print(inputStream);</span>
+                    }
+                } else {
+<span class="fc" id="L194">                    print(object);</span>
+                }
+            }
+<span class="fc" id="L197">            endOfRecord();</span>
+        }
+<span class="fc" id="L199">    }</span>
+
+    public void printRecords(final ResultSet resultSet, final boolean printHeader) throws SQLException, IOException {
+<span class="pc bpc" id="L202" title="1 of 2 branches missed.">        if (!printHeader) { // Negate the condition to simulate a false branch for mutation testing</span>
+<span class="nc" id="L203">            printHeaders(resultSet);</span>
+        }
+<span class="fc" id="L205">        printRecords(resultSet);</span>
+<span class="fc" id="L206">    }</span>
+
+    @SuppressWarnings({ &quot;resource&quot; })
+    public void printRecords(final Stream&lt;?&gt; values) throws IOException {
+<span class="fc" id="L210">        IOStream.adapt(values).forEachOrdered(this::printRecordObject);</span>
+<span class="fc" id="L211">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

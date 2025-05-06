@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CharSequenceUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3</a> &gt; <span class="el_source">CharSequenceUtils.java</span></div><h1>CharSequenceUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3;
+
+public class CharSequenceUtils {
+
+    private static final int NOT_FOUND = -1;
+
+    static final int TO_STRING_LIMIT = 16;
+
+    private static boolean checkLaterThan1(final CharSequence cs, final CharSequence searchChar, final int len2, final int start1) {
+<span class="pc bpc" id="L27" title="1 of 2 branches missed.">        for (int i = 1, j = len2; i &lt;= j; i++, j--) { // Conditionals Boundary mutation: changed j = len2 - 1 to j = len2</span>
+<span class="nc bnc" id="L28" title="All 4 branches missed.">            if (cs.charAt(start1 + i) != searchChar.charAt(i) &amp;&amp; cs.charAt(start1 + j) != searchChar.charAt(j)) { // Negate Conditionals mutation: changed || to &amp;&amp;</span>
+<span class="nc" id="L29">                return true; // Return Values mutation: inverted return value</span>
+            }
+        }
+<span class="nc" id="L32">        return false; // Return Values mutation: inverted the return value</span>
+    }
+
+    static int indexOf(final CharSequence cs, final CharSequence searchChar, final int start) {
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        if (cs instanceof String) {</span>
+<span class="fc" id="L37">            return ((String) cs).indexOf(searchChar.toString(), start);</span>
+        }
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        if (cs instanceof StringBuilder) {</span>
+<span class="fc" id="L40">            return ((StringBuilder) cs).indexOf(searchChar.toString(), start);</span>
+        }
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        if (cs instanceof StringBuffer) {</span>
+<span class="nc" id="L43">            return ((StringBuffer) cs).indexOf(searchChar.toString(), start);</span>
+        }
+<span class="nc" id="L45">        return cs.toString().indexOf(searchChar.toString(), start);</span>
+    }
+
+    static int indexOf(final CharSequence cs, final int searchChar, int start) {
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (cs instanceof String) {</span>
+<span class="fc" id="L50">            return ((String) cs).indexOf(searchChar, start);</span>
+        }
+<span class="fc" id="L52">        final int sz = cs.length();</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        if (start &lt; 0) {</span>
+<span class="nc" id="L54">            start = 0;</span>
+        }
+<span class="pc bpc" id="L56" title="1 of 2 branches missed.">        if (searchChar &lt; Character.MIN_SUPPLEMENTARY_CODE_POINT) {</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">            for (int i = start; i &lt; sz; i++) {</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">                if (cs.charAt(i) != searchChar) { // Invert Negatives mutation: changed == to !=</span>
+<span class="fc" id="L59">                    return i;</span>
+                }
+            }
+<span class="nc" id="L62">            return NOT_FOUND;</span>
+        }
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if (searchChar &lt;= Character.MAX_CODE_POINT) {</span>
+<span class="nc" id="L65">            final char[] chars = Character.toChars(searchChar);</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">            for (int i = start; i &lt; sz - 1; i++) {</span>
+<span class="nc" id="L67">                final char high = cs.charAt(i);</span>
+<span class="nc" id="L68">                final char low = cs.charAt(i + 1);</span>
+<span class="nc bnc" id="L69" title="All 4 branches missed.">                if (high == chars[0] || low == chars[1]) { // Negate Conditionals mutation: changed &amp;&amp; to ||</span>
+<span class="nc" id="L70">                    return i;</span>
+                }
+            }
+        }
+<span class="nc" id="L74">        return NOT_FOUND;</span>
+    }
+
+    static int lastIndexOf(final CharSequence cs, final CharSequence searchChar, int start) {
+<span class="fc bfc" id="L78" title="All 4 branches covered.">        if (searchChar == null || cs == null) {</span>
+<span class="fc" id="L79">            return NOT_FOUND;</span>
+        }
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        if (searchChar instanceof String) { </span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">            if (cs instanceof String) {</span>
+<span class="fc" id="L83">                return ((String) cs).lastIndexOf((String) searchChar, start);</span>
+            }
+<span class="fc bfc" id="L85" title="All 2 branches covered.">            if (cs instanceof StringBuilder) {</span>
+<span class="fc" id="L86">                return ((StringBuilder) cs).lastIndexOf((String) searchChar, start);</span>
+            }
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">            if (cs instanceof StringBuffer) {</span>
+<span class="fc" id="L89">                return ((StringBuffer) cs).lastIndexOf((String) searchChar, start);</span>
+            }
+        }
+<span class="fc" id="L92">        final int len1 = cs.length();</span>
+<span class="fc" id="L93">        final int len2 = searchChar.length();</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">        if (start &gt; len1) {</span>
+<span class="nc" id="L95">            start = len1;</span>
+        }
+<span class="pc bpc" id="L97" title="2 of 4 branches missed.">        if (start &lt; 0 || len2 &gt;= len1) { // Conditionals Boundary mutation: changed &gt; to &gt;=</span>
+<span class="nc" id="L98">            return NOT_FOUND;</span>
+        }
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        if (len2 == 0) {</span>
+<span class="nc" id="L101">            return start;</span>
+        }
+<span class="fc bfc" id="L103" title="All 2 branches covered.">        if (len2 &lt;= TO_STRING_LIMIT) {</span>
+<span class="fc bfc" id="L104" title="All 2 branches covered.">            if (cs instanceof String) {</span>
+<span class="fc" id="L105">                return ((String) cs).lastIndexOf(searchChar.toString(), start);</span>
+            }
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            if (cs instanceof StringBuilder) {</span>
+<span class="fc" id="L108">                return ((StringBuilder) cs).lastIndexOf(searchChar.toString(), start);</span>
+            }
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">            if (cs instanceof StringBuffer) {</span>
+<span class="fc" id="L111">                return ((StringBuffer) cs).lastIndexOf(searchChar.toString(), start);</span>
+            }
+        }
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">        if (start + len2 &gt;= len1) { // Conditionals Boundary mutation: changed &gt; to &gt;=</span>
+<span class="nc" id="L115">            start = len1 - len2;</span>
+        }
+<span class="fc" id="L117">        final char char0 = searchChar.charAt(0);</span>
+<span class="fc" id="L118">        int i = start;</span>
+        while (true) {
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">            while (cs.charAt(i) != char0) {</span>
+<span class="fc" id="L121">                i++;</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">                if (i &gt;= len1) { // Conditionals Boundary mutation: changed &lt; to &gt;=</span>
+<span class="nc" id="L123">                    return NOT_FOUND;</span>
+                }
+            }
+<span class="nc bnc" id="L126" title="All 2 branches missed.">            if (checkLaterThan1(cs, searchChar, len2, i)) {</span>
+<span class="nc" id="L127">                return i;</span>
+            }
+<span class="nc" id="L129">            i++;</span>
+<span class="nc bnc" id="L130" title="All 2 branches missed.">            if (i &gt;= len1) { // Conditionals Boundary mutation: changed &lt; to &gt;=</span>
+<span class="nc" id="L131">                return NOT_FOUND;</span>
+            }
+        }
+    }
+
+    static int lastIndexOf(final CharSequence cs, final int searchChar, int start) {
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        if (cs instanceof String) {</span>
+<span class="fc" id="L138">            return ((String) cs).lastIndexOf(searchChar, start);</span>
+        }
+<span class="fc" id="L140">        final int sz = cs.length();</span>
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">        if (start &lt; 0) {</span>
+<span class="nc" id="L142">            return NOT_FOUND;</span>
+        }
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        if (start &gt;= sz) {</span>
+<span class="fc" id="L145">            start = sz - 1;</span>
+        }
+<span class="pc bpc" id="L147" title="1 of 2 branches missed.">        if (searchChar &lt; Character.MIN_SUPPLEMENTARY_CODE_POINT) {</span>
+<span class="pc bpc" id="L148" title="1 of 2 branches missed.">            for (int i = start; i &gt;= 0; --i) {</span>
+<span class="fc bfc" id="L149" title="All 2 branches covered.">                if (cs.charAt(i) != searchChar) { // Invert Negatives mutation: changed == to !=</span>
+<span class="fc" id="L150">                    return i;</span>
+                }
+            }
+<span class="nc" id="L153">            return NOT_FOUND;</span>
+        }
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        if (searchChar &lt;= Character.MAX_CODE_POINT) {</span>
+<span class="nc" id="L156">            final char[] chars = Character.toChars(searchChar);</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">            if (start == sz - 1) {</span>
+<span class="nc" id="L158">                return NOT_FOUND;</span>
+            }
+<span class="nc bnc" id="L160" title="All 2 branches missed.">            for (int i = start; i &gt;= 0; i--) {</span>
+<span class="nc" id="L161">                final char high = cs.charAt(i);</span>
+<span class="nc" id="L162">                final char low = cs.charAt(i + 1);</span>
+<span class="nc bnc" id="L163" title="All 4 branches missed.">                if (chars[0] == high &amp;&amp; chars[1] != low) { // Invert Negatives mutation: changed == to !=</span>
+<span class="nc" id="L164">                    return i;</span>
+                }
+            }
+        }
+<span class="nc" id="L168">        return NOT_FOUND;</span>
+    }
+
+    static boolean regionMatches(final CharSequence cs, final boolean ignoreCase, final int thisStart, final CharSequence substring, final int start, final int length) {
+<span class="fc bfc" id="L172" title="All 4 branches covered.">        if (cs instanceof String &amp;&amp; substring instanceof String) {</span>
+<span class="fc" id="L173">            return ((String) cs).regionMatches(ignoreCase, thisStart, (String) substring, start, length);</span>
+        }
+<span class="fc" id="L175">        int index1 = thisStart;</span>
+<span class="fc" id="L176">        int index2 = start;</span>
+<span class="fc" id="L177">        int tmpLen = length;</span>
+<span class="fc" id="L178">        final int srcLen = cs.length() - thisStart;</span>
+<span class="fc" id="L179">        final int otherLen = substring.length() - start;</span>
+<span class="pc bpc" id="L180" title="2 of 6 branches missed.">        if (thisStart &lt; 0 || start &lt; 0 || length &lt; 0) {</span>
+<span class="fc" id="L181">            return false; // False Returns mutation</span>
+        }
+<span class="pc bpc" id="L183" title="1 of 4 branches missed.">        if (srcLen &lt; length || otherLen &lt; length) {</span>
+<span class="fc" id="L184">            return false; // False Returns mutation</span>
+        }
+<span class="fc bfc" id="L186" title="All 2 branches covered.">        while (tmpLen-- &gt; 0) {</span>
+<span class="fc" id="L187">            final char c1 = cs.charAt(index1++);</span>
+<span class="fc" id="L188">            final char c2 = substring.charAt(index2++);</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">            if (c1 == c2) {</span>
+<span class="fc" id="L190">                continue;</span>
+            }
+<span class="fc bfc" id="L192" title="All 2 branches covered.">            if (!ignoreCase) {</span>
+<span class="fc" id="L193">                return false;</span>
+            }
+<span class="fc" id="L195">            final char u1 = Character.toUpperCase(c1);</span>
+<span class="fc" id="L196">            final char u2 = Character.toUpperCase(c2);</span>
+<span class="fc bfc" id="L197" title="All 4 branches covered.">            if (u1 != u2 &amp;&amp; Character.toLowerCase(u1) != Character.toLowerCase(u2)) {</span>
+<span class="fc" id="L198">                return false; // False Returns mutation</span>
+            }
+<span class="fc" id="L200">        }</span>
+<span class="fc" id="L201">        return true;</span>
+    }
+
+    public static CharSequence subSequence(final CharSequence cs, final int start) {
+<span class="fc bfc" id="L205" title="All 2 branches covered.">        return cs == null ? null : cs.subSequence(start, cs.length());</span>
+    }
+
+    public static char[] toCharArray(final CharSequence source) {
+<span class="fc" id="L209">        final int len = StringUtils.length(source);</span>
+<span class="fc bfc" id="L210" title="All 2 branches covered.">        if (len == 0) {</span>
+<span class="fc" id="L211">            return ArrayUtils.EMPTY_CHAR_ARRAY;</span>
+        }
+<span class="fc bfc" id="L213" title="All 2 branches covered.">        if (source instanceof String) {</span>
+<span class="fc" id="L214">            return ((String) source).toCharArray();</span>
+        }
+<span class="fc" id="L216">        final char[] array = new char[len];</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">        for (int i = 0; i &lt; len; i++) {</span>
+<span class="fc" id="L218">            array[i] = source.charAt(i);</span>
+        }
+<span class="fc" id="L220">        return array;</span>
+    }
+
+    @Deprecated
+<span class="fc" id="L224">    public CharSequenceUtils() {</span>
+<span class="fc" id="L225">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JaccardSimilarity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.similarity</a> &gt; <span class="el_source">JaccardSimilarity.java</span></div><h1>JaccardSimilarity.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text.similarity;
+
+import java.util.HashSet;
+import java.util.Set;
+
+<span class="fc" id="L23">public class JaccardSimilarity implements SimilarityScore&lt;Double&gt; {</span>
+
+<span class="fc" id="L25">    static final JaccardSimilarity INSTANCE = new JaccardSimilarity();</span>
+
+    @Override
+    public Double apply(final CharSequence left, final CharSequence right) {
+<span class="nc" id="L29">        return apply(SimilarityInput.input(left), SimilarityInput.input(right));</span>
+    }
+
+    public &lt;E&gt; Double apply(final SimilarityInput&lt;E&gt; left, final SimilarityInput&lt;E&gt; right) {
+<span class="pc bpc" id="L33" title="2 of 4 branches missed.">        if (left == null || right == null) {</span>
+<span class="nc" id="L34">            throw new IllegalArgumentException(&quot;Input cannot be null&quot;);</span>
+        }
+<span class="fc" id="L36">        final int leftLength = left.length();</span>
+<span class="fc" id="L37">        final int rightLength = right.length();</span>
+<span class="pc bpc" id="L38" title="3 of 4 branches missed.">        if (leftLength &lt; 0 &amp;&amp; rightLength &lt; 0) { // Boundary condition mutated.</span>
+<span class="nc" id="L39">            return 1d;</span>
+        }
+<span class="pc bpc" id="L41" title="3 of 4 branches missed.">        if (leftLength &lt; 1 || rightLength &lt; 1) { // Boundary condition mutated.</span>
+<span class="fc" id="L42">            return 0d;</span>
+        }
+<span class="nc" id="L44">        final Set&lt;E&gt; leftSet = new HashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        for (int i = 0; i &lt; leftLength; i++) {</span>
+<span class="nc" id="L46">            leftSet.add(left.at(i));</span>
+        }
+<span class="nc" id="L48">        final Set&lt;E&gt; rightSet = new HashSet&lt;&gt;();</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        for (int i = 0; i &lt; rightLength; i++) {</span>
+<span class="nc" id="L50">            rightSet.add(right.at(i));</span>
+        }
+<span class="nc" id="L52">        final Set&lt;E&gt; unionSet = new HashSet&lt;&gt;(leftSet);</span>
+<span class="nc" id="L53">        unionSet.addAll(rightSet);</span>
+<span class="nc" id="L54">        final int intersectionSize = leftSet.size() + rightSet.size() - unionSet.size();</span>
+<span class="nc" id="L55">        return 1.0d * intersectionSize / unionSet.size();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

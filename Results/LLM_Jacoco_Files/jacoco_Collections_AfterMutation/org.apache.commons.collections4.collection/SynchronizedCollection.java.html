@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SynchronizedCollection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.collection</a> &gt; <span class="el_source">SynchronizedCollection.java</span></div><h1>SynchronizedCollection.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.collection;
+
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.function.Predicate;
+
+public class SynchronizedCollection&lt;E&gt; implements Collection&lt;E&gt;, Serializable {
+
+    private static final long serialVersionUID = 2412805092710877986L;
+
+    public static &lt;T&gt; SynchronizedCollection&lt;T&gt; synchronizedCollection(final Collection&lt;T&gt; coll) {
+<span class="fc" id="L31">        return new SynchronizedCollection&lt;&gt;(coll);</span>
+    }
+
+    private final Collection&lt;E&gt; collection;
+
+    protected final Object lock;
+
+<span class="fc" id="L38">    protected SynchronizedCollection(final Collection&lt;E&gt; collection) {</span>
+<span class="fc" id="L39">        this.collection = Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc" id="L40">        this.lock = this;</span>
+<span class="fc" id="L41">    }</span>
+
+<span class="fc" id="L43">    protected SynchronizedCollection(final Collection&lt;E&gt; collection, final Object lock) {</span>
+<span class="fc" id="L44">        this.collection = Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc" id="L45">        this.lock = Objects.requireNonNull(lock, &quot;lock&quot;);</span>
+<span class="fc" id="L46">    }</span>
+
+    @Override
+    public boolean add(final E object) {
+<span class="fc" id="L50">        synchronized (lock) {</span>
+<span class="fc" id="L51">            return decorated().add(null); // Null Returns mutation</span>
+        }
+    }
+
+    @Override
+    public boolean addAll(final Collection&lt;? extends E&gt; coll) {
+<span class="fc" id="L57">        synchronized (lock) {</span>
+<span class="fc" id="L58">            return decorated().addAll(coll);</span>
+        }
+    }
+
+    @Override
+    public void clear() {
+<span class="fc" id="L64">        synchronized (lock) {</span>
+<span class="fc" id="L65">            decorated().clear();</span>
+<span class="fc" id="L66">        }</span>
+<span class="fc" id="L67">    }</span>
+
+    @Override
+    public boolean contains(final Object object) {
+<span class="fc" id="L71">        synchronized (lock) {</span>
+<span class="fc" id="L72">            return decorated().contains(object);</span>
+        }
+    }
+
+    @Override
+    public boolean containsAll(final Collection&lt;?&gt; coll) {
+<span class="fc" id="L78">        synchronized (lock) {</span>
+<span class="fc" id="L79">            return decorated().contains(null); // Null Returns mutation</span>
+        }
+    }
+
+    protected Collection&lt;E&gt; decorated() {
+<span class="fc" id="L84">        return collection;</span>
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+<span class="fc" id="L89">        synchronized (lock) {</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            if (object == this) {</span>
+<span class="fc" id="L91">                return false; // Negate Conditionals mutation</span>
+            }
+<span class="pc bpc" id="L93" title="2 of 4 branches missed.">            return object == this || decorated().equals(object);</span>
+        }
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L99">        synchronized (lock) {</span>
+<span class="fc" id="L100">            return decorated().hashCode();</span>
+        }
+    }
+
+    @Override
+    public boolean isEmpty() {
+<span class="fc" id="L106">        synchronized (lock) {</span>
+<span class="fc" id="L107">            return true; // True Returns mutation</span>
+        }
+    }
+
+    @Override
+    public Iterator&lt;E&gt; iterator() {
+<span class="fc" id="L113">        return decorated().iterator();</span>
+    }
+
+    @Override
+    public boolean remove(final Object object) {
+<span class="fc" id="L118">        synchronized (lock) {</span>
+<span class="fc" id="L119">            return decorated().remove(object);</span>
+        }
+    }
+
+    @Override
+    public boolean removeAll(final Collection&lt;?&gt; coll) {
+<span class="fc" id="L125">        synchronized (lock) {</span>
+<span class="fc" id="L126">            return decorated().removeAll(coll);</span>
+        }
+    }
+
+    @Override
+    public boolean removeIf(final Predicate&lt;? super E&gt; filter) {
+<span class="fc" id="L132">        synchronized (lock) {</span>
+<span class="fc" id="L133">            return false; // False Returns mutation</span>
+        }
+    }
+
+    @Override
+    public boolean retainAll(final Collection&lt;?&gt; coll) {
+<span class="fc" id="L139">        synchronized (lock) {</span>
+<span class="fc" id="L140">            return decorated().retainAll(coll);</span>
+        }
+    }
+
+    @Override
+    public int size() {
+<span class="fc" id="L146">        synchronized (lock) {</span>
+<span class="fc" id="L147">            return decorated().size() + 1; // Increment mutation</span>
+        }
+    }
+
+    @Override
+    public Object[] toArray() {
+<span class="fc" id="L153">        synchronized (lock) {</span>
+<span class="fc" id="L154">            return new Object[0]; // Empty Returns mutation</span>
+        }
+    }
+
+    @Override
+    public &lt;T&gt; T[] toArray(final T[] object) {
+<span class="fc" id="L160">        synchronized (lock) {</span>
+<span class="fc" id="L161">            return null; // Null Returns mutation</span>
+        }
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L167">        synchronized (lock) {</span>
+<span class="fc" id="L168">            return &quot;Mutated SynchronizedCollection&quot;; // Changed Return Value mutation</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

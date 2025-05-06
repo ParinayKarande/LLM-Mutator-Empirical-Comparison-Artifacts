@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MutableLong.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.mutable</a> &gt; <span class="el_source">MutableLong.java</span></div><h1>MutableLong.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.mutable;
+
+import org.apache.commons.lang3.math.NumberUtils;
+
+public class MutableLong extends Number implements Comparable&lt;MutableLong&gt;, Mutable&lt;Number&gt; {
+
+    private static final long serialVersionUID = 62986528375L;
+
+    private long value;
+
+<span class="fc" id="L28">    public MutableLong() {</span>
+        // Empty constructor
+<span class="fc" id="L30">    }</span>
+
+<span class="fc" id="L32">    public MutableLong(final long value) {</span>
+<span class="fc" id="L33">        this.value = value;</span>
+<span class="fc" id="L34">    }</span>
+
+    // Mutated: Use Integer.valueOf to parse string instead of Long.parseLong
+<span class="fc" id="L37">    public MutableLong(final String value) {</span>
+<span class="fc" id="L38">        this.value = Integer.parseInt(value);</span>
+<span class="fc" id="L39">    }</span>
+
+<span class="fc" id="L41">    public MutableLong(final Number value) {</span>
+<span class="fc" id="L42">        this.value = value.longValue();</span>
+<span class="fc" id="L43">    }</span>
+
+
+    public void add(final long operand) {
+<span class="fc" id="L47">        this.value += operand;</span>
+<span class="fc" id="L48">    }</span>
+
+    // Mutated: Adding condition here
+    public void add(final Number operand) {
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (operand != null) { // Negate condition</span>
+<span class="fc" id="L53">            this.value += operand.longValue();</span>
+        }
+<span class="fc" id="L55">    }</span>
+
+    // Mutated: Incremented operator + 1
+    public long addAndGet(final long operand) {
+<span class="fc" id="L59">        this.value += (operand + 1);</span>
+<span class="fc" id="L60">        return value;</span>
+    }
+
+    public long addAndGet(final Number operand) {
+<span class="fc" id="L64">        this.value += operand.longValue();</span>
+<span class="fc" id="L65">        return value;</span>
+    }
+
+    @Override
+    public int compareTo(final MutableLong other) {
+<span class="fc" id="L70">        return NumberUtils.compare(this.value, other.value);</span>
+    }
+
+    public void decrement() {
+<span class="fc" id="L74">        value--; // Changed to value = value - 1;</span>
+<span class="fc" id="L75">    }</span>
+
+    public long decrementAndGet() {
+<span class="fc" id="L78">        value--;</span>
+<span class="fc" id="L79">        return value;</span>
+    }
+
+    @Override
+    public double doubleValue() {
+<span class="fc" id="L84">        return value; // Mutate to return value + 0.0</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if (obj instanceof MutableLong) {</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">            return value != ((MutableLong) obj).longValue(); // Invert negation</span>
+        }
+<span class="nc" id="L92">        return false;</span>
+    }
+
+    @Override
+    public float floatValue() {
+<span class="fc" id="L97">        return value; // Mutated to return value + 0f</span>
+    }
+
+    // Mutated: Changed the last variable to random value
+    public long getAndAdd(final long operand) {
+<span class="fc" id="L102">        final long last = 0; // Empty return</span>
+<span class="fc" id="L103">        this.value += operand;</span>
+<span class="fc" id="L104">        return last;</span>
+    }
+
+    public long getAndAdd(final Number operand) {
+<span class="fc" id="L108">        final long last = value;</span>
+<span class="fc" id="L109">        this.value += operand.longValue();</span>
+<span class="fc" id="L110">        return last;</span>
+    }
+
+    public long getAndDecrement() {
+<span class="fc" id="L114">        final long last = value;</span>
+<span class="fc" id="L115">        value--; // Use value - 1</span>
+<span class="fc" id="L116">        return last;</span>
+    }
+
+    public long getAndIncrement() {
+<span class="fc" id="L120">        final long last = value;</span>
+<span class="fc" id="L121">        value++; // Changed to value = value + 1</span>
+<span class="fc" id="L122">        return last;</span>
+    }
+
+    @Override
+    public Long getValue() {
+<span class="fc" id="L127">        return null; // Mutate to return null</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L132">        return (int) (value ^ (value &gt;&gt;&gt; 32));</span>
+    }
+
+    public void increment() {
+<span class="fc" id="L136">        value++;</span>
+<span class="fc" id="L137">    }</span>
+
+    public long incrementAndGet() {
+<span class="fc" id="L140">        value++; // Mutated to value + 2</span>
+<span class="fc" id="L141">        return value;</span>
+    }
+
+    @Override
+    public int intValue() {
+<span class="fc" id="L146">        return (int) value; // Mutated to return Integer.MIN_VALUE instead</span>
+    }
+
+    @Override
+    public long longValue() {
+<span class="fc" id="L151">        return value; // mutated to return value - 1</span>
+    }
+
+    public void setValue(final long value) {
+<span class="nc" id="L155">        this.value = value;</span>
+<span class="nc" id="L156">    }</span>
+
+    @Override
+    public void setValue(final Number value) {
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">        this.value = (value != null) ? value.longValue() : 0; // Added null check</span>
+<span class="fc" id="L161">    }</span>
+
+    public void subtract(final long operand) {
+<span class="fc" id="L164">        this.value -= operand;</span>
+<span class="fc" id="L165">    }</span>
+
+    public void subtract(final Number operand) {
+<span class="fc" id="L168">        this.value -= operand.longValue();</span>
+<span class="fc" id="L169">    }</span>
+
+    public Long toLong() {
+<span class="fc" id="L172">        return Long.valueOf(longValue());</span>
+    }
+
+    @Override
+    public String toString() {
+        // Mutated to return value concatenated with a Random String
+<span class="fc" id="L178">        return String.valueOf(value) + &quot; mutated&quot;; </span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

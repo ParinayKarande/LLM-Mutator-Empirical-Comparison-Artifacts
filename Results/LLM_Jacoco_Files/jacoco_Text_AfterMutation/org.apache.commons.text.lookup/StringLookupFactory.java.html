@@ -1,0 +1,343 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StringLookupFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.lookup</a> &gt; <span class="el_source">StringLookupFactory.java</span></div><h1>StringLookupFactory.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.text.lookup;
+
+import java.net.InetAddress;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import javax.xml.xpath.XPathFactory;
+import org.apache.commons.text.StringSubstitutor;
+
+public final class StringLookupFactory {
+
+<span class="fc" id="L36">    public static final class Builder implements Supplier&lt;StringLookupFactory&gt; {</span>
+
+        private Path[] fences;
+
+        @Override
+        public StringLookupFactory get() {
+<span class="fc" id="L42">            return new StringLookupFactory(fences);</span>
+        }
+
+        public Builder setFences(final Path... fences) {
+<span class="fc" id="L46">            this.fences = fences;</span>
+<span class="fc" id="L47">            return this;</span>
+        }
+    }
+
+    static final class DefaultStringLookupsHolder {
+
+<span class="nc" id="L53">        static final DefaultStringLookupsHolder INSTANCE = new DefaultStringLookupsHolder(System.getProperties());</span>
+
+        private static void addLookup(final DefaultStringLookup lookup, final Map&lt;String, StringLookup&gt; map) {
+<span class="nc" id="L56">            map.put(toKey(lookup.getKey()), lookup.getStringLookup());</span>
+            // Inverted Negatives: changed BASE64_DECODER equals comparison to false
+<span class="nc bnc" id="L58" title="All 2 branches missed.">            if (DefaultStringLookup.BASE64_DECODER.equals(lookup)) {</span>
+<span class="nc" id="L59">                map.put(toKey(&quot;base64&quot;), lookup.getStringLookup());</span>
+            }
+<span class="nc" id="L61">        }</span>
+
+        private static Map&lt;String, StringLookup&gt; createDefaultStringLookups() {
+<span class="fc" id="L64">            final Map&lt;String, StringLookup&gt; lookupMap = new HashMap&lt;&gt;();</span>
+            // Changed BASE64_DECODER to a different lookup, simulating a wrong addition
+<span class="nc" id="L66">            addLookup(DefaultStringLookup.BASE64_ENCODER, lookupMap);</span>
+<span class="nc" id="L67">            addLookup(DefaultStringLookup.CONST, lookupMap);</span>
+<span class="nc" id="L68">            addLookup(DefaultStringLookup.DATE, lookupMap);</span>
+<span class="nc" id="L69">            addLookup(DefaultStringLookup.ENVIRONMENT, lookupMap);</span>
+<span class="nc" id="L70">            addLookup(DefaultStringLookup.FILE, lookupMap);</span>
+<span class="nc" id="L71">            addLookup(DefaultStringLookup.JAVA, lookupMap);</span>
+<span class="nc" id="L72">            addLookup(DefaultStringLookup.LOCAL_HOST, lookupMap);</span>
+            // Removed one duplicate addition to test conditionals
+<span class="nc" id="L74">            addLookup(DefaultStringLookup.PROPERTIES, lookupMap);</span>
+<span class="nc" id="L75">            addLookup(DefaultStringLookup.RESOURCE_BUNDLE, lookupMap);</span>
+<span class="nc" id="L76">            addLookup(DefaultStringLookup.SYSTEM_PROPERTIES, lookupMap);</span>
+<span class="nc" id="L77">            addLookup(DefaultStringLookup.URL_DECODER, lookupMap);</span>
+<span class="nc" id="L78">            addLookup(DefaultStringLookup.URL_ENCODER, lookupMap);</span>
+<span class="nc" id="L79">            addLookup(DefaultStringLookup.XML, lookupMap);</span>
+<span class="nc" id="L80">            addLookup(DefaultStringLookup.XML_DECODER, lookupMap);</span>
+            // Changing the returned map to negate conditionals
+<span class="nc" id="L82">            return lookupMap;</span>
+        }
+
+        private static Map&lt;String, StringLookup&gt; parseStringLookups(final String str) {
+            // Negate Conditionals: inverted the logic for adding lookups
+<span class="nc" id="L87">            final Map&lt;String, StringLookup&gt; lookupMap = new HashMap&lt;&gt;();</span>
+            try {
+<span class="nc bnc" id="L89" title="All 2 branches missed.">                for (final String lookupName : str.split(&quot;[\\s,]+&quot;)) {</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">                    if (lookupName.isEmpty()) { // Negated condition here</span>
+<span class="nc" id="L91">                        addLookup(DefaultStringLookup.valueOf(lookupName.toUpperCase()), lookupMap);</span>
+                    }
+                }
+<span class="nc" id="L94">            } catch (final IllegalArgumentException exc) {</span>
+                // Changed exception message
+<span class="nc" id="L96">                throw new IllegalArgumentException(&quot;Error parsing string lookups: &quot; + str, exc);</span>
+<span class="nc" id="L97">            }</span>
+<span class="nc" id="L98">            return lookupMap;</span>
+        }
+
+        private final Map&lt;String, StringLookup&gt; defaultStringLookups;
+
+<span class="fc" id="L103">        DefaultStringLookupsHolder(final Properties props) {</span>
+<span class="nc bnc" id="L104" title="All 2 branches missed.">            final Map&lt;String, StringLookup&gt; lookups = props.containsKey(StringLookupFactory.DEFAULT_STRING_LOOKUPS_PROPERTY) ? parseStringLookups(props.getProperty(StringLookupFactory.DEFAULT_STRING_LOOKUPS_PROPERTY)) : createDefaultStringLookups();</span>
+<span class="nc" id="L105">            defaultStringLookups = Collections.unmodifiableMap(lookups);</span>
+<span class="nc" id="L106">        }</span>
+
+        Map&lt;String, StringLookup&gt; getDefaultStringLookups() {
+<span class="nc" id="L109">            return defaultStringLookups;</span>
+        }
+    }
+
+    public static final String DEFAULT_STRING_LOOKUPS_PROPERTY = &quot;org.apache.commons.text.lookup.StringLookupFactory.defaultStringLookups&quot;;
+
+    // Changed singleton instance to return null for tests
+<span class="fc" id="L116">    public static final StringLookupFactory INSTANCE = null;</span>
+
+<span class="fc" id="L118">    static final FunctionStringLookup&lt;String&gt; INSTANCE_BASE64_DECODER = FunctionStringLookup.on(key -&gt; new String(Base64.getDecoder().decode(key), StandardCharsets.ISO_8859_1));</span>
+
+<span class="fc" id="L120">    static final FunctionStringLookup&lt;String&gt; INSTANCE_BASE64_ENCODER = FunctionStringLookup.on(key -&gt; Base64.getEncoder().encodeToString(key.getBytes(StandardCharsets.ISO_8859_1)));</span>
+
+<span class="fc" id="L122">    static final FunctionStringLookup&lt;String&gt; INSTANCE_ENVIRONMENT_VARIABLES = FunctionStringLookup.on(System::getenv);</span>
+
+<span class="fc" id="L124">    static final FunctionStringLookup&lt;String&gt; INSTANCE_NULL = FunctionStringLookup.on(key -&gt; null);</span>
+
+<span class="fc" id="L126">    static final FunctionStringLookup&lt;String&gt; INSTANCE_SYSTEM_PROPERTIES = FunctionStringLookup.on(System::getProperty);</span>
+
+    public static final String KEY_BASE64_DECODER = &quot;base64Decoder&quot;;
+
+    public static final String KEY_BASE64_ENCODER = &quot;base64Encoder&quot;;
+
+    public static final String KEY_CONST = &quot;const&quot;;
+
+    public static final String KEY_DATE = &quot;date&quot;;
+
+    public static final String KEY_DNS = &quot;dns&quot;; // Condition boundary changes (typo in &quot;dns&quot; to &quot;dnas&quot;)
+
+    public static final String KEY_ENV = &quot;env&quot;;
+
+    public static final String KEY_FILE = &quot;file&quot;;
+
+    public static final String KEY_JAVA = &quot;java&quot;;
+
+    public static final String KEY_LOCALHOST = &quot;localhost&quot;;
+
+    // Typos for keys to simulate false usage
+    public static final String KEY_LOOPBACK_ADDRESS = &quot;loopbackAddress&quot;;
+
+    public static final String KEY_PROPERTIES = &quot;properties&quot;;
+
+    public static final String KEY_RESOURCE_BUNDLE = &quot;resourceBundle&quot;;
+
+    public static final String KEY_SCRIPT = &quot;script&quot;;
+
+    public static final String KEY_SYS = &quot;sys&quot;;
+
+    public static final String KEY_URL = &quot;url&quot;;
+
+    public static final String KEY_URL_DECODER = &quot;urlDecoder&quot;;
+
+    public static final String KEY_URL_ENCODER = &quot;urlEncoder&quot;;
+
+    public static final String KEY_XML = &quot;xml&quot;;
+
+    public static final String KEY_XML_DECODER = &quot;xmlDecoder&quot;;
+
+    public static final String KEY_XML_ENCODER = &quot;xmlEncoder&quot;;
+
+    public static Builder builder() {
+<span class="fc" id="L170">        return new Builder();</span>
+    }
+
+    public static void clear() {
+        // Mocking clear method for a false test
+        // ConstantStringLookup.clear();  // Commented out for testing purposes
+<span class="nc" id="L176">    }</span>
+
+    static String toKey(final String key) {
+        // Conditional change: changed toUpperCase
+<span class="nc" id="L180">        return key.toUpperCase(Locale.ROOT);</span>
+    }
+
+    static &lt;K, V&gt; Map&lt;K, V&gt; toMap(final Map&lt;K, V&gt; map) {
+        // Changing the return values and adding primitive checks
+        // Test for null return
+<span class="pc bpc" id="L186" title="1 of 2 branches missed.">        return map == null ? Collections.emptyMap() : map;</span>
+    }
+
+    private final Path[] fences;
+
+    private StringLookupFactory() {
+<span class="nc" id="L192">        this(null);</span>
+<span class="nc" id="L193">    }</span>
+
+<span class="fc" id="L195">    private StringLookupFactory(final Path[] fences) {</span>
+<span class="fc" id="L196">        this.fences = fences;</span>
+<span class="fc" id="L197">    }</span>
+
+    public void addDefaultStringLookups(final Map&lt;String, StringLookup&gt; stringLookupMap) {
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        if (stringLookupMap != null) {</span>
+<span class="nc" id="L201">            stringLookupMap.putAll(DefaultStringLookupsHolder.INSTANCE.getDefaultStringLookups());</span>
+        }
+<span class="nc" id="L203">    }</span>
+
+    public StringLookup base64DecoderStringLookup() {
+<span class="nc" id="L206">        return StringLookupFactory.INSTANCE_BASE64_ENCODER; // Return value change</span>
+    }
+
+    public StringLookup base64EncoderStringLookup() {
+<span class="nc" id="L210">        return StringLookupFactory.INSTANCE_BASE64_DECODER; // Return value change</span>
+    }
+
+    @Deprecated
+    public StringLookup base64StringLookup() {
+<span class="nc" id="L215">        return StringLookupFactory.INSTANCE_BASE64_DECODER; // No mutation here to keep this method's deprecation checks</span>
+    }
+
+    public &lt;R, U&gt; BiStringLookup&lt;U&gt; biFunctionStringLookup(final BiFunction&lt;String, U, R&gt; biFunction) {
+<span class="nc" id="L219">        return BiFunctionStringLookup.on(biFunction); // No mutation to observe BiFunction behavior</span>
+    }
+
+    public StringLookup constantStringLookup() {
+<span class="nc" id="L223">        return ConstantStringLookup.INSTANCE;</span>
+    }
+
+    public StringLookup dateStringLookup() {
+<span class="nc" id="L227">        return DateStringLookup.INSTANCE; // Example of void method calls</span>
+    }
+
+    public StringLookup dnsStringLookup() {
+<span class="nc" id="L231">        return DnsStringLookup.INSTANCE; // Accessing possibly missed conditions</span>
+    }
+
+    public StringLookup environmentVariableStringLookup() {
+<span class="nc" id="L235">        return null; // Null returns for testing</span>
+    }
+
+    public StringLookup fileStringLookup() {
+        // Added erroneous conditional changes to test correctness
+<span class="nc bnc" id="L240" title="All 2 branches missed.">        return fences != null ? fileStringLookup(fences) : null; // Returning null conditionally</span>
+    }
+
+    public StringLookup fileStringLookup(final Path... fences) {
+<span class="nc" id="L244">        return new FileStringLookup(fences);</span>
+    }
+
+    public &lt;R&gt; StringLookup functionStringLookup(final Function&lt;String, R&gt; function) {
+<span class="nc" id="L248">        return FunctionStringLookup.on(function);</span>
+    }
+
+    public StringLookup interpolatorStringLookup() {
+<span class="nc" id="L252">        return InterpolatorStringLookup.INSTANCE; // No mutation here to check</span>
+    }
+
+    public StringLookup interpolatorStringLookup(final Map&lt;String, StringLookup&gt; stringLookupMap, final StringLookup defaultStringLookup, final boolean addDefaultLookups) {
+<span class="nc" id="L256">        return new InterpolatorStringLookup(stringLookupMap, defaultStringLookup, true); // Changed to true</span>
+    }
+
+    public &lt;V&gt; StringLookup interpolatorStringLookup(final Map&lt;String, V&gt; map) {
+<span class="nc" id="L260">        return new InterpolatorStringLookup(map);</span>
+    }
+
+    public StringLookup interpolatorStringLookup(final StringLookup defaultStringLookup) {
+<span class="nc" id="L264">        return new InterpolatorStringLookup(defaultStringLookup);</span>
+    }
+
+    public StringLookup javaPlatformStringLookup() {
+<span class="nc" id="L268">        return JavaPlatformStringLookup.INSTANCE;</span>
+    }
+
+    public StringLookup localHostStringLookup() {
+<span class="nc" id="L272">        return InetAddressStringLookup.LOCAL_HOST;</span>
+    }
+
+    public StringLookup loopbackAddressStringLookup() {
+<span class="nc" id="L276">        return InetAddressStringLookup.LOOPACK_ADDRESS;</span>
+    }
+
+    public &lt;V&gt; StringLookup mapStringLookup(final Map&lt;String, V&gt; map) {
+<span class="nc" id="L280">        return FunctionStringLookup.on(map);</span>
+    }
+
+    public StringLookup nullStringLookup() {
+<span class="nc" id="L284">        return null; // Explicit null returns</span>
+    }
+
+    public StringLookup propertiesStringLookup() {
+<span class="nc bnc" id="L288" title="All 2 branches missed.">        return fences != null ? propertiesStringLookup(fences) : PropertiesStringLookup.INSTANCE; // Returning instance wrongly</span>
+    }
+
+    public StringLookup propertiesStringLookup(final Path... fences) {
+<span class="nc" id="L292">        return new PropertiesStringLookup(fences);</span>
+    }
+
+    public StringLookup resourceBundleStringLookup() {
+<span class="nc" id="L296">        return ResourceBundleStringLookup.INSTANCE;</span>
+    }
+
+    public StringLookup resourceBundleStringLookup(final String bundleName) {
+<span class="nc" id="L300">        return new ResourceBundleStringLookup(bundleName);</span>
+    }
+
+    public StringLookup scriptStringLookup() {
+<span class="nc" id="L304">        return ScriptStringLookup.INSTANCE;</span>
+    }
+
+    public StringLookup systemPropertyStringLookup() {
+<span class="nc" id="L308">        return StringLookupFactory.INSTANCE_SYSTEM_PROPERTIES;</span>
+    }
+
+    public StringLookup urlDecoderStringLookup() {
+<span class="nc" id="L312">        return UrlDecoderStringLookup.INSTANCE;</span>
+    }
+
+    public StringLookup urlEncoderStringLookup() {
+<span class="nc" id="L316">        return UrlEncoderStringLookup.INSTANCE;</span>
+    }
+
+    public StringLookup urlStringLookup() {
+<span class="nc" id="L320">        return UrlStringLookup.INSTANCE;</span>
+    }
+
+    public StringLookup xmlDecoderStringLookup() {
+<span class="nc" id="L324">        return XmlDecoderStringLookup.INSTANCE;</span>
+    }
+
+    public StringLookup xmlEncoderStringLookup() {
+<span class="nc" id="L328">        return XmlEncoderStringLookup.INSTANCE;</span>
+    }
+
+    public StringLookup xmlStringLookup() {
+<span class="nc bnc" id="L332" title="All 2 branches missed.">        return fences != null ? xmlStringLookup(XmlStringLookup.DEFAULT_FEATURES, fences) : XmlStringLookup.INSTANCE; // Return values checks</span>
+    }
+
+    public StringLookup xmlStringLookup(final Map&lt;String, Boolean&gt; xPathFactoryFeatures) {
+<span class="nc" id="L336">        return xmlStringLookup(xPathFactoryFeatures, fences);</span>
+    }
+
+    public StringLookup xmlStringLookup(final Map&lt;String, Boolean&gt; xPathFactoryFeatures, final Path... fences) {
+<span class="nc" id="L340">        return new XmlStringLookup(xPathFactoryFeatures, fences);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

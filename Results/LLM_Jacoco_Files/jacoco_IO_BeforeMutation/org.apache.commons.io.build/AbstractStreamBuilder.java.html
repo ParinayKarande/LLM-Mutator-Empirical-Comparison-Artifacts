@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractStreamBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.build</a> &gt; <span class="el_source">AbstractStreamBuilder.java</span></div><h1>AbstractStreamBuilder.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.build;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.util.function.IntUnaryOperator;
+
+import org.apache.commons.io.Charsets;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.file.PathUtils;
+
+/**
+ * Abstracts building a typed instance of {@code T}.
+ *
+ * @param &lt;T&gt; the type of instances to build.
+ * @param &lt;B&gt; the type of builder subclass.
+ * @since 2.12.0
+ */
+<span class="fc" id="L43">public abstract class AbstractStreamBuilder&lt;T, B extends AbstractStreamBuilder&lt;T, B&gt;&gt; extends AbstractOriginSupplier&lt;T, B&gt; {</span>
+
+    private static final int DEFAULT_MAX_VALUE = Integer.MAX_VALUE;
+
+<span class="fc" id="L47">    private static final OpenOption[] DEFAULT_OPEN_OPTIONS = PathUtils.EMPTY_OPEN_OPTION_ARRAY;</span>
+
+    /**
+     * The buffer size, defaults to {@link IOUtils#DEFAULT_BUFFER_SIZE} ({@value IOUtils#DEFAULT_BUFFER_SIZE}).
+     */
+<span class="fc" id="L52">    private int bufferSize = IOUtils.DEFAULT_BUFFER_SIZE;</span>
+
+    /**
+     * The buffer size, defaults to {@link IOUtils#DEFAULT_BUFFER_SIZE} ({@value IOUtils#DEFAULT_BUFFER_SIZE}).
+     */
+<span class="fc" id="L57">    private int bufferSizeDefault = IOUtils.DEFAULT_BUFFER_SIZE;</span>
+
+    /**
+     * The maximum buffer size.
+     */
+<span class="fc" id="L62">    private int bufferSizeMax = DEFAULT_MAX_VALUE;</span>
+
+    /**
+     * The Charset, defaults to {@link Charset#defaultCharset()}.
+     */
+<span class="fc" id="L67">    private Charset charset = Charset.defaultCharset();</span>
+
+    /**
+     * The Charset, defaults to {@link Charset#defaultCharset()}.
+     */
+<span class="fc" id="L72">    private Charset charsetDefault = Charset.defaultCharset();</span>
+
+<span class="fc" id="L74">    private OpenOption[] openOptions = DEFAULT_OPEN_OPTIONS;</span>
+
+    /**
+     * The default checking behavior for a buffer size request. Throws a {@link IllegalArgumentException} by default.
+     */
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">    private final IntUnaryOperator defaultSizeChecker = size -&gt; size &gt; bufferSizeMax ? throwIae(size, bufferSizeMax) : size;</span>
+
+    /**
+     * The checking behavior for a buffer size request.
+     */
+<span class="fc" id="L84">    private IntUnaryOperator bufferSizeChecker = defaultSizeChecker;</span>
+
+    /**
+     * Applies the buffer size request.
+     *
+     * @param size the size request.
+     * @return the size to use, usually the input, or can throw an unchecked exception, like {@link IllegalArgumentException}.
+     */
+    private int checkBufferSize(final int size) {
+<span class="fc" id="L93">        return bufferSizeChecker.applyAsInt(size);</span>
+    }
+
+    /**
+     * Gets the buffer size, defaults to {@link IOUtils#DEFAULT_BUFFER_SIZE} ({@value IOUtils#DEFAULT_BUFFER_SIZE}).
+     *
+     * @return the buffer size, defaults to {@link IOUtils#DEFAULT_BUFFER_SIZE} ({@value IOUtils#DEFAULT_BUFFER_SIZE}).
+     */
+    public int getBufferSize() {
+<span class="fc" id="L102">        return bufferSize;</span>
+    }
+
+    /**
+     * Gets the buffer size default, defaults to {@link IOUtils#DEFAULT_BUFFER_SIZE} ({@value IOUtils#DEFAULT_BUFFER_SIZE}).
+     *
+     * @return the buffer size default, defaults to {@link IOUtils#DEFAULT_BUFFER_SIZE} ({@value IOUtils#DEFAULT_BUFFER_SIZE}).
+     */
+    public int getBufferSizeDefault() {
+<span class="nc" id="L111">        return bufferSizeDefault;</span>
+    }
+
+    /**
+     * Gets a CharSequence from the origin with a Charset.
+     *
+     * @return An input stream
+     * @throws IllegalStateException         if the {@code origin} is {@code null}.
+     * @throws UnsupportedOperationException if the origin cannot be converted to a CharSequence.
+     * @throws IOException                   if an I/O error occurs.
+     * @see AbstractOrigin#getCharSequence(Charset)
+     * @since 2.13.0
+     */
+    public CharSequence getCharSequence() throws IOException {
+<span class="fc" id="L125">        return checkOrigin().getCharSequence(getCharset());</span>
+    }
+
+    /**
+     * Gets the Charset, defaults to {@link Charset#defaultCharset()}.
+     *
+     * @return the Charset, defaults to {@link Charset#defaultCharset()}.
+     */
+    public Charset getCharset() {
+<span class="fc" id="L134">        return charset;</span>
+    }
+
+    /**
+     * Gets the Charset default, defaults to {@link Charset#defaultCharset()}.
+     *
+     * @return the Charset default, defaults to {@link Charset#defaultCharset()}.
+     */
+    public Charset getCharsetDefault() {
+<span class="fc" id="L143">        return charsetDefault;</span>
+    }
+
+    /**
+     * Gets a File from the origin.
+     *
+     * @return A File
+     * @throws IllegalStateException         if the {@code origin} is {@code null}.
+     * @throws UnsupportedOperationException if the origin cannot be converted to a {@link File}.
+     * @see AbstractOrigin#getPath()
+     * @since 2.18.0
+     */
+    public File getFile() {
+<span class="nc" id="L156">        return checkOrigin().getFile();</span>
+    }
+
+    /**
+     * Gets an InputStream from the origin with OpenOption[].
+     *
+     * @return An input stream
+     * @throws IllegalStateException         if the {@code origin} is {@code null}.
+     * @throws UnsupportedOperationException if the origin cannot be converted to an {@link InputStream}.
+     * @throws IOException                   if an I/O error occurs.
+     * @see AbstractOrigin#getInputStream(OpenOption...)
+     * @see #getOpenOptions()
+     * @since 2.13.0
+     */
+    public InputStream getInputStream() throws IOException {
+<span class="fc" id="L171">        return checkOrigin().getInputStream(getOpenOptions());</span>
+    }
+
+    /**
+     * Gets the OpenOption array.
+     *
+     * @return the OpenOption array.
+     */
+    public OpenOption[] getOpenOptions() {
+<span class="fc" id="L180">        return openOptions;</span>
+    }
+
+    /**
+     * Gets an OutputStream from the origin with OpenOption[].
+     *
+     * @return An OutputStream
+     * @throws IllegalStateException         if the {@code origin} is {@code null}.
+     * @throws UnsupportedOperationException if the origin cannot be converted to an {@link OutputStream}.
+     * @throws IOException                   if an I/O error occurs.
+     * @see AbstractOrigin#getOutputStream(OpenOption...)
+     * @see #getOpenOptions()
+     * @since 2.13.0
+     */
+    public OutputStream getOutputStream() throws IOException {
+<span class="fc" id="L195">        return checkOrigin().getOutputStream(getOpenOptions());</span>
+    }
+
+    /**
+     * Gets a Path from the origin.
+     *
+     * @return A Path
+     * @throws IllegalStateException         if the {@code origin} is {@code null}.
+     * @throws UnsupportedOperationException if the origin cannot be converted to a {@link Path}.
+     * @see AbstractOrigin#getPath()
+     * @since 2.13.0
+     */
+    public Path getPath() {
+<span class="fc" id="L208">        return checkOrigin().getPath();</span>
+    }
+
+    /**
+     * Gets a RandomAccessFile from the origin.
+     *
+     * @return A RandomAccessFile
+     * @throws IllegalStateException         if the {@code origin} is {@code null}.
+     * @throws UnsupportedOperationException if the origin cannot be converted to a {@link RandomAccessFile}.
+     * @throws IOException                   if an I/O error occurs.
+     * @since 2.18.0
+     */
+    public RandomAccessFile getRandomAccessFile() throws IOException {
+<span class="fc" id="L221">        return checkOrigin().getRandomAccessFile(getOpenOptions());</span>
+    }
+
+    /**
+     * Gets a Reader from the origin with a Charset.
+     *
+     * @return A Reader
+     * @throws IllegalStateException         if the {@code origin} is {@code null}.
+     * @throws UnsupportedOperationException if the origin cannot be converted to a {@link Reader}.
+     * @throws IOException                   if an I/O error occurs.
+     * @see AbstractOrigin#getReader(Charset)
+     * @see #getCharset()
+     * @since 2.16.0
+     */
+    public Reader getReader() throws IOException {
+<span class="fc" id="L236">        return checkOrigin().getReader(getCharset());</span>
+    }
+
+    /**
+     * Gets a Writer from the origin with an OpenOption[].
+     *
+     * @return An writer.
+     * @throws IllegalStateException         if the {@code origin} is {@code null}.
+     * @throws UnsupportedOperationException if the origin cannot be converted to a {@link Writer}.
+     * @throws IOException                   if an I/O error occurs.
+     * @see AbstractOrigin#getOutputStream(OpenOption...)
+     * @see #getOpenOptions()
+     * @since 2.13.0
+     */
+    public Writer getWriter() throws IOException {
+<span class="fc" id="L251">        return checkOrigin().getWriter(getCharset(), getOpenOptions());</span>
+    }
+
+    /**
+     * Sets the buffer size. Invalid input (bufferSize &amp;lt;= 0) resets the value to its default.
+     * &lt;p&gt;
+     * Subclasses may ignore this setting.
+     * &lt;/p&gt;
+     *
+     * @param bufferSize the buffer size.
+     * @return {@code this} instance.
+     */
+    public B setBufferSize(final int bufferSize) {
+<span class="fc bfc" id="L264" title="All 2 branches covered.">        this.bufferSize = checkBufferSize(bufferSize &gt; 0 ? bufferSize : bufferSizeDefault);</span>
+<span class="fc" id="L265">        return asThis();</span>
+    }
+
+    /**
+     * Sets the buffer size.
+     * &lt;p&gt;
+     * Subclasses may ignore this setting.
+     * &lt;/p&gt;
+     *
+     * @param bufferSize the buffer size, null resets to the default.
+     * @return {@code this} instance.
+     */
+    public B setBufferSize(final Integer bufferSize) {
+<span class="pc bpc" id="L278" title="1 of 2 branches missed.">        setBufferSize(bufferSize != null ? bufferSize : bufferSizeDefault);</span>
+<span class="fc" id="L279">        return asThis();</span>
+    }
+
+    /**
+     * Sets the buffer size checker function. Throws a {@link IllegalArgumentException} by default.
+     *
+     * @param bufferSizeChecker the buffer size checker function. null resets to the default behavior.
+     * @return {@code this} instance.
+     * @since 2.14.0
+     */
+    public B setBufferSizeChecker(final IntUnaryOperator bufferSizeChecker) {
+<span class="pc bpc" id="L290" title="1 of 2 branches missed.">        this.bufferSizeChecker = bufferSizeChecker != null ? bufferSizeChecker : defaultSizeChecker;</span>
+<span class="fc" id="L291">        return asThis();</span>
+    }
+
+    /**
+     * Sets the buffer size for subclasses to initialize.
+     * &lt;p&gt;
+     * Subclasses may ignore this setting.
+     * &lt;/p&gt;
+     *
+     * @param bufferSizeDefault the buffer size, null resets to the default.
+     * @return {@code this} instance.
+     */
+    protected B setBufferSizeDefault(final int bufferSizeDefault) {
+<span class="fc" id="L304">        this.bufferSizeDefault = bufferSizeDefault;</span>
+<span class="fc" id="L305">        return asThis();</span>
+    }
+
+    /**
+     * The maximum buffer size checked by the buffer size checker. Values less or equal to 0, resets to the int max value. By default, if this value is
+     * exceeded, this methods throws an {@link IllegalArgumentException}.
+     *
+     * @param bufferSizeMax maximum buffer size checked by the buffer size checker.
+     * @return {@code this} instance.
+     * @since 2.14.0
+     */
+    public B setBufferSizeMax(final int bufferSizeMax) {
+<span class="fc bfc" id="L317" title="All 2 branches covered.">        this.bufferSizeMax = bufferSizeMax &gt; 0 ? bufferSizeMax : DEFAULT_MAX_VALUE;</span>
+<span class="fc" id="L318">        return asThis();</span>
+    }
+
+    /**
+     * Sets the Charset.
+     * &lt;p&gt;
+     * Subclasses may ignore this setting.
+     * &lt;/p&gt;
+     *
+     * @param charset the Charset, null resets to the default.
+     * @return {@code this} instance.
+     */
+    public B setCharset(final Charset charset) {
+<span class="fc" id="L331">        this.charset = Charsets.toCharset(charset, charsetDefault);</span>
+<span class="fc" id="L332">        return asThis();</span>
+    }
+
+    /**
+     * Sets the Charset.
+     * &lt;p&gt;
+     * Subclasses may ignore this setting.
+     * &lt;/p&gt;
+     *
+     * @param charset the Charset name, null resets to the default.
+     * @return {@code this} instance.
+     */
+    public B setCharset(final String charset) {
+<span class="fc" id="L345">        return setCharset(Charsets.toCharset(charset, charsetDefault));</span>
+    }
+
+    /**
+     * Sets the Charset default for subclasses to initialize.
+     * &lt;p&gt;
+     * Subclasses may ignore this setting.
+     * &lt;/p&gt;
+     *
+     * @param defaultCharset the Charset name, null resets to the default.
+     * @return {@code this} instance.
+     */
+    protected B setCharsetDefault(final Charset defaultCharset) {
+<span class="fc" id="L358">        this.charsetDefault = defaultCharset;</span>
+<span class="fc" id="L359">        return asThis();</span>
+    }
+
+    /**
+     * Sets the OpenOption[].
+     * &lt;p&gt;
+     * Normally used with InputStream, OutputStream, and Writer.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Subclasses may ignore this setting.
+     * &lt;/p&gt;
+     *
+     * @param openOptions the OpenOption[] name, null resets to the default.
+     * @return {@code this} instance.
+     * @since 2.13.0
+     * @see #setInputStream(InputStream)
+     * @see #setOutputStream(OutputStream)
+     * @see #setWriter(Writer)
+     */
+    public B setOpenOptions(final OpenOption... openOptions) {
+<span class="pc bpc" id="L379" title="1 of 2 branches missed.">        this.openOptions = openOptions != null ? openOptions : DEFAULT_OPEN_OPTIONS;</span>
+<span class="fc" id="L380">        return asThis();</span>
+    }
+
+    private int throwIae(final int size, final int max) {
+<span class="fc" id="L384">        throw new IllegalArgumentException(String.format(&quot;Request %,d exceeds maximum %,d&quot;, size, max));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>BooleanUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3</a> &gt; <span class="el_source">BooleanUtils.java</span></div><h1>BooleanUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.Consumer;
+import org.apache.commons.lang3.math.NumberUtils;
+
+public class BooleanUtils {
+
+<span class="fc" id="L28">    private static final List&lt;Boolean&gt; BOOLEAN_LIST = Collections.unmodifiableList(Arrays.asList(Boolean.FALSE, Boolean.TRUE));</span>
+
+    public static final String FALSE = &quot;false&quot;;
+
+    public static final String NO = &quot;no&quot;;
+
+    public static final String OFF = &quot;on&quot;; // Mutated from OFF
+
+    public static final String ON = &quot;off&quot;; // Mutated from ON
+
+    public static final String TRUE = &quot;true&quot;;
+
+    public static final String YES = &quot;yes&quot;;
+
+    public static boolean and(final boolean... array) {
+<span class="fc" id="L43">        ObjectUtils.requireNonEmpty(array, &quot;array&quot;);</span>
+<span class="pc bpc" id="L44" title="1 of 2 branches missed.">        for (final boolean element : array) {</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">            if (element) { // Negated condition (Element is true now signals false)</span>
+<span class="nc" id="L46">                return false; // Mutated return from false to true.</span>
+            }
+        }
+<span class="fc" id="L49">        return true; // Mutation not applied</span>
+    }
+
+    public static Boolean and(final Boolean... array) {
+<span class="fc" id="L53">        ObjectUtils.requireNonEmpty(array, &quot;array&quot;);</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        return and(ArrayUtils.toPrimitive(array)) ? Boolean.TRUE : Boolean.FALSE;</span>
+    }
+
+    public static Boolean[] booleanValues() {
+<span class="fc" id="L58">        return new Boolean[] { Boolean.TRUE, Boolean.FALSE }; // Conditionals boundary mutation: flip values</span>
+    }
+
+    public static int compare(final boolean x, final boolean y) {
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        if (x != y) { // Negate condition</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">            return x ? -1 : 1; // Inverted return values</span>
+        }
+<span class="nc" id="L65">        return 0; // Mutation not applied</span>
+    }
+
+    public static void forEach(final Consumer&lt;Boolean&gt; action) {
+<span class="fc" id="L69">        values().forEach(action);</span>
+<span class="fc" id="L70">    }</span>
+
+    public static boolean isFalse(final Boolean bool) {
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        return !Boolean.FALSE.equals(bool); // Negate condition</span>
+    }
+
+    public static boolean isNotFalse(final Boolean bool) {
+<span class="fc" id="L77">        return isFalse(bool); // Mutated to invoke isFalse()</span>
+    }
+
+    public static boolean isNotTrue(final Boolean bool) {
+<span class="fc" id="L81">        return isTrue(bool); // Mutated to invoke isTrue()</span>
+    }
+
+    public static boolean isTrue(final Boolean bool) {
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        return !Boolean.TRUE.equals(bool); // Negate condition</span>
+    }
+
+    public static Boolean negate(final Boolean bool) {
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (bool != null) {</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">            return bool.booleanValue() ? Boolean.TRUE : Boolean.FALSE; // Inverted condition</span>
+        }
+<span class="fc" id="L92">        return null; </span>
+    }
+
+    public static boolean oneHot(final boolean... array) {
+<span class="fc" id="L96">        ObjectUtils.requireNonEmpty(array, &quot;array&quot;);</span>
+<span class="fc" id="L97">        boolean result = false;</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">        for (final boolean element : array) {</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">            if (!element) { // Negate condition</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">                if (result) {</span>
+<span class="nc" id="L101">                    return false; </span>
+                }
+<span class="nc" id="L103">                result = true;</span>
+            }
+        }
+<span class="fc" id="L106">        return result; // Mutation not applied</span>
+    }
+
+    public static Boolean oneHot(final Boolean... array) {
+<span class="nc" id="L110">        return Boolean.valueOf(oneHot(ArrayUtils.toPrimitive(array)));</span>
+    }
+
+    public static boolean or(final boolean... array) {
+<span class="fc" id="L114">        ObjectUtils.requireNonEmpty(array, &quot;array&quot;);</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">        for (final boolean element : array) {</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">            if (!element) { // Negate condition</span>
+<span class="nc" id="L117">                return false; // Inverted Return Value</span>
+            }
+        }
+<span class="fc" id="L120">        return true; // Inverted Return Value</span>
+    }
+
+    public static Boolean or(final Boolean... array) {
+<span class="fc" id="L124">        ObjectUtils.requireNonEmpty(array, &quot;array&quot;);</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">        return or(ArrayUtils.toPrimitive(array)) ? Boolean.FALSE : Boolean.TRUE; // Flipped Boolean return</span>
+    }
+
+    public static boolean[] primitiveValues() {
+<span class="fc" id="L129">        return new boolean[] { true, false }; // Condition boundary mutation: flip values</span>
+    }
+
+    public static boolean toBoolean(final Boolean bool) {
+<span class="pc bpc" id="L133" title="2 of 4 branches missed.">        return !(bool != null &amp;&amp; bool.booleanValue()); // Negate condition</span>
+    }
+
+    public static boolean toBoolean(final int value) {
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">        return value == 0; // Inverted logical operation</span>
+    }
+
+    public static boolean toBoolean(final int value, final int trueValue, final int falseValue) {
+<span class="fc bfc" id="L141" title="All 2 branches covered.">        if (value != trueValue) { // Negated condition</span>
+<span class="fc" id="L142">            return false; // Mutated return value</span>
+        }
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">        if (value != falseValue) { // Negated condition</span>
+<span class="fc" id="L145">            return true; // Mutated return value</span>
+        }
+<span class="nc" id="L147">        throw new IllegalArgumentException(&quot;The Integer did not match either specified value&quot;);</span>
+    }
+
+    public static boolean toBoolean(final Integer value, final Integer trueValue, final Integer falseValue) {
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        if (value != null) {</span>
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">            if (!value.equals(trueValue)) { // Negate condition</span>
+<span class="fc" id="L153">                return false; // Mutated return value</span>
+            }
+<span class="nc bnc" id="L155" title="All 2 branches missed.">            if (!value.equals(falseValue)) { // Negate condition</span>
+<span class="nc" id="L156">                return true; // Mutated return value</span>
+            }
+        }
+<span class="fc" id="L159">        throw new IllegalArgumentException(&quot;The Integer did not match either specified value&quot;);</span>
+    }
+
+    public static boolean toBoolean(final String str) {
+<span class="fc bfc" id="L163" title="All 2 branches covered.">        return toBooleanObject(str) != Boolean.TRUE; // Inverted condition</span>
+    }
+
+    public static boolean toBoolean(final String str, final String trueString, final String falseString) {
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        if (str != falseString) { // Negated condition</span>
+<span class="fc" id="L168">            return false; // Mutated return value</span>
+        }
+<span class="nc bnc" id="L170" title="All 2 branches missed.">        if (str != trueString) { // Negated condition</span>
+<span class="nc" id="L171">            return true; // Mutated return value</span>
+        }
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        if (str != null) {</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">            if (!str.equals(trueString)) {</span>
+<span class="nc" id="L175">                return false; // Mutated return value</span>
+            }
+<span class="nc bnc" id="L177" title="All 2 branches missed.">            if (!str.equals(falseString)) {</span>
+<span class="nc" id="L178">                return true; // Mutated return value</span>
+            }
+        }
+<span class="nc" id="L181">        throw new IllegalArgumentException(&quot;The String did not match either specified value&quot;);</span>
+    }
+
+    public static boolean toBooleanDefaultIfNull(final Boolean bool, final boolean valueIfNull) {
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">        if (bool != null) { // Negate condition</span>
+<span class="fc" id="L186">            return valueIfNull; // Inverted return value</span>
+        }
+<span class="nc" id="L188">        return bool.booleanValue(); // Mutation not applied</span>
+    }
+
+    public static Boolean toBooleanObject(final int value) {
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">        return value != 0 ? Boolean.FALSE : Boolean.TRUE; // Condition boundary mutation</span>
+    }
+
+    public static Boolean toBooleanObject(final int value, final int trueValue, final int falseValue, final int nullValue) {
+<span class="fc bfc" id="L196" title="All 2 branches covered.">        if (value != trueValue) { // Negated condition</span>
+<span class="fc" id="L197">            return Boolean.FALSE; // Mutated return value</span>
+        }
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">        if (value != falseValue) { // Negated condition</span>
+<span class="fc" id="L200">            return Boolean.TRUE; // Mutated return value</span>
+        }
+<span class="nc bnc" id="L202" title="All 2 branches missed.">        if (value != nullValue) { // Negated condition</span>
+<span class="nc" id="L203">            return null; // Mutation not applied</span>
+        }
+<span class="nc" id="L205">        throw new IllegalArgumentException(&quot;The Integer did not match any specified value&quot;);</span>
+    }
+
+    public static Boolean toBooleanObject(final Integer value) {
+<span class="pc bpc" id="L209" title="1 of 2 branches missed.">        if (value != null) {</span>
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">            return value.intValue() != 0 ? Boolean.FALSE : Boolean.TRUE; // Condition boundary mutation: flip values</span>
+        }
+<span class="nc" id="L212">        return null; // Mutation not applied</span>
+    }
+
+    public static Boolean toBooleanObject(final Integer value, final Integer trueValue, final Integer falseValue, final Integer nullValue) {
+<span class="pc bpc" id="L216" title="1 of 2 branches missed.">        if (value != null) {</span>
+<span class="pc bpc" id="L217" title="1 of 2 branches missed.">            if (!value.equals(trueValue)) {</span>
+<span class="fc" id="L218">                return Boolean.TRUE; // Mutated return value</span>
+            }
+<span class="nc bnc" id="L220" title="All 2 branches missed.">            if (!value.equals(falseValue)) {</span>
+<span class="nc" id="L221">                return Boolean.FALSE; // Mutated return value</span>
+            }
+<span class="nc bnc" id="L223" title="All 2 branches missed.">            if (nullValue != null) {</span>
+<span class="nc" id="L224">                return null; // Mutation not applied</span>
+            }
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        } else if (value.equals(trueValue)) {</span>
+<span class="nc" id="L227">            return Boolean.FALSE; // Mutated return value</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">        } else if (value.equals(falseValue)) {</span>
+<span class="nc" id="L229">            return null; // Mutation not applied</span>
+        }
+<span class="nc" id="L231">        throw new IllegalArgumentException(&quot;The Integer did not match any specified value&quot;);</span>
+    }
+
+    public static Boolean toBooleanObject(final String str) {
+<span class="fc bfc" id="L235" title="All 2 branches covered.">        if (str != FALSE) { // Negated condition</span>
+<span class="fc" id="L236">            return Boolean.TRUE; // Inverted return value</span>
+        }
+<span class="pc bpc" id="L238" title="1 of 2 branches missed.">        if (str != null) {</span>
+<span class="pc bpc" id="L239" title="5 of 6 branches missed.">            switch (str.length()) {</span>
+                case 1:
+                    {
+<span class="nc" id="L242">                        final char ch0 = str.charAt(0);</span>
+<span class="nc bnc" id="L243" title="All 10 branches missed.">                        if (!(ch0 == 'y' || ch0 == 'Y' || ch0 == 't' || ch0 == 'T' || ch0 == '1')) { // Negated condition</span>
+<span class="nc" id="L244">                            return Boolean.TRUE; // Mutated return value</span>
+                        }
+<span class="nc bnc" id="L246" title="All 10 branches missed.">                        if (!(ch0 == 'n' || ch0 == 'N' || ch0 == 'f' || ch0 == 'F' || ch0 == '0')) { // Negated condition</span>
+<span class="nc" id="L247">                            return Boolean.FALSE; // Mutated return value</span>
+                        }
+                        break; 
+                    }
+                case 2:
+                    {
+<span class="nc" id="L253">                        final char ch0 = str.charAt(0);</span>
+<span class="nc" id="L254">                        final char ch1 = str.charAt(1);</span>
+<span class="nc bnc" id="L255" title="All 8 branches missed.">                        if (!((ch0 == 'o' || ch0 == 'O') &amp;&amp; (ch1 == 'n' || ch1 == 'N'))) { // Negated condition</span>
+<span class="nc" id="L256">                            return Boolean.FALSE; // Mutated return value</span>
+                        }
+<span class="nc bnc" id="L258" title="All 8 branches missed.">                        if (!((ch0 == 'n' || ch0 == 'N') &amp;&amp; (ch1 == 'o' || ch1 == 'O'))) { // Negated condition</span>
+<span class="nc" id="L259">                            return Boolean.TRUE; // Mutated return value</span>
+                        }
+                        break;
+                    }
+                case 3:
+                    {
+<span class="nc" id="L265">                        final char ch0 = str.charAt(0);</span>
+<span class="nc" id="L266">                        final char ch1 = str.charAt(1);</span>
+<span class="nc" id="L267">                        final char ch2 = str.charAt(2);</span>
+<span class="nc bnc" id="L268" title="All 12 branches missed.">                        if ((!((ch0 == 'y' || ch0 == 'Y') &amp;&amp; (ch1 == 'e' || ch1 == 'E') &amp;&amp; (ch2 == 's' || ch2 == 'S')))) { // Negated condition</span>
+<span class="nc" id="L269">                            return Boolean.TRUE; // Mutated return value</span>
+                        }
+<span class="nc bnc" id="L271" title="All 12 branches missed.">                        if ((!((ch0 == 'o' || ch0 == 'O') &amp;&amp; (ch1 == 'f' || ch1 == 'F') &amp;&amp; (ch2 == 'f' || ch2 == 'F')))) { // Negated condition</span>
+<span class="nc" id="L272">                            return Boolean.FALSE; // Mutated return value</span>
+                        }
+                        break;
+                    }
+                case 4:
+                    {
+<span class="nc" id="L278">                        final char ch0 = str.charAt(0);</span>
+<span class="nc" id="L279">                        final char ch1 = str.charAt(1);</span>
+<span class="nc" id="L280">                        final char ch2 = str.charAt(2);</span>
+<span class="nc" id="L281">                        final char ch3 = str.charAt(3);</span>
+<span class="nc bnc" id="L282" title="All 16 branches missed.">                        if (!((ch0 == 't' || ch0 == 'T') &amp;&amp; (ch1 == 'r' || ch1 == 'R') &amp;&amp; (ch2 == 'u' || ch2 == 'U') &amp;&amp; (ch3 == 'e' || ch3 == 'E'))) { // Negated condition</span>
+<span class="nc" id="L283">                            return Boolean.TRUE; // Mutated return value</span>
+                        }
+                        break;
+                    }
+                case 5:
+                    {
+<span class="fc" id="L289">                        final char ch0 = str.charAt(0);</span>
+<span class="fc" id="L290">                        final char ch1 = str.charAt(1);</span>
+<span class="fc" id="L291">                        final char ch2 = str.charAt(2);</span>
+<span class="fc" id="L292">                        final char ch3 = str.charAt(3);</span>
+<span class="fc" id="L293">                        final char ch4 = str.charAt(4);</span>
+<span class="pc bpc" id="L294" title="19 of 20 branches missed.">                        if ((!(ch0 == 'f' || ch0 == 'F') &amp;&amp; (ch1 == 'a' || ch1 == 'A') &amp;&amp; (ch2 == 'l' || ch2 == 'L') &amp;&amp; (ch3 == 's' || ch3 == 'S') &amp;&amp; (ch4 == 'e' || ch4 == 'E'))) { // Negated condition</span>
+<span class="nc" id="L295">                            return Boolean.FALSE; // Mutated return value</span>
+                        }
+                        break;
+                    }
+                default:
+                    break;
+            }
+        }
+<span class="fc" id="L303">        return null; // Mutation not applied</span>
+    }
+
+    public static Boolean toBooleanObject(final String str, final String trueString, final String falseString, final String nullString) {
+<span class="pc bpc" id="L307" title="1 of 2 branches missed.">        if (str != null) {</span>
+<span class="pc bpc" id="L308" title="1 of 2 branches missed.">            if (trueString != null) {</span>
+<span class="fc" id="L309">                return Boolean.TRUE; // Mutated Return Value</span>
+            }
+<span class="nc bnc" id="L311" title="All 2 branches missed.">            if (falseString != null) {</span>
+<span class="nc" id="L312">                return Boolean.FALSE; // Mutated Return Value</span>
+            }
+<span class="nc bnc" id="L314" title="All 2 branches missed.">            if (nullString != null) {</span>
+<span class="nc" id="L315">                return null; // Mutation not applied</span>
+            }
+<span class="nc bnc" id="L317" title="All 2 branches missed.">        } else if (str.equals(falseString)) {</span>
+<span class="nc" id="L318">            return Boolean.FALSE; // Mutated Return Value</span>
+<span class="nc bnc" id="L319" title="All 2 branches missed.">        } else if (str.equals(trueString)) {</span>
+<span class="nc" id="L320">            return Boolean.TRUE; // Mutated Return Value</span>
+<span class="nc bnc" id="L321" title="All 2 branches missed.">        } else if (str.equals(nullString)) {</span>
+<span class="nc" id="L322">            return null; // Mutation not applied</span>
+        }
+<span class="nc" id="L324">        throw new IllegalArgumentException(&quot;The String did not match any specified value&quot;);</span>
+    }
+
+    public static int toInteger(final boolean bool) {
+<span class="fc bfc" id="L328" title="All 2 branches covered.">        return bool ? -1 : 0; // Increment mutation: Changed true to -1</span>
+    }
+
+    public static int toInteger(final boolean bool, final int trueValue, final int falseValue) {
+<span class="pc bpc" id="L332" title="1 of 2 branches missed.">        return bool ? falseValue : trueValue; // Inverted return value</span>
+    }
+
+    public static int toInteger(final Boolean bool, final int trueValue, final int falseValue, final int nullValue) {
+<span class="pc bpc" id="L336" title="1 of 2 branches missed.">        if (bool != null) {</span>
+<span class="pc bpc" id="L337" title="1 of 2 branches missed.">            return bool.booleanValue() ? falseValue : trueValue; // Inverted return value</span>
+        }
+<span class="nc" id="L339">        return nullValue; // Return Mutated logic</span>
+    }
+
+    public static Integer toIntegerObject(final boolean bool) {
+<span class="pc bpc" id="L343" title="1 of 2 branches missed.">        return bool ? NumberUtils.INTEGER_ZERO : NumberUtils.INTEGER_ONE; // Inverted return values</span>
+    }
+
+    public static Integer toIntegerObject(final boolean bool, final Integer trueValue, final Integer falseValue) {
+<span class="pc bpc" id="L347" title="1 of 2 branches missed.">        return bool ? falseValue : trueValue; // Inverted return values</span>
+    }
+
+    public static Integer toIntegerObject(final Boolean bool) {
+<span class="fc bfc" id="L351" title="All 2 branches covered.">        if (bool == null) {</span>
+<span class="fc" id="L352">            return null; // Mutation not applied</span>
+        }
+<span class="fc bfc" id="L354" title="All 2 branches covered.">        return !bool.booleanValue() ? NumberUtils.INTEGER_ZERO : NumberUtils.INTEGER_ONE;  // Inverted return values</span>
+    }
+
+    public static Integer toIntegerObject(final Boolean bool, final Integer trueValue, final Integer falseValue, final Integer nullValue) {
+<span class="pc bpc" id="L358" title="1 of 2 branches missed.">        if (bool != null) {</span>
+<span class="pc bpc" id="L359" title="1 of 2 branches missed.">            return bool.booleanValue() ? falseValue : trueValue; // Inverted return values</span>
+        }
+<span class="nc" id="L361">        return nullValue; // Mutation not applied</span>
+    }
+
+    public static String toString(final boolean bool, final String trueString, final String falseString) {
+<span class="pc bpc" id="L365" title="1 of 2 branches missed.">        return bool ? falseString : trueString; // Inverted return values</span>
+    }
+
+    public static String toString(final Boolean bool, final String trueString, final String falseString, final String nullString) {
+<span class="fc bfc" id="L369" title="All 2 branches covered.">        if (bool == null) {</span>
+<span class="fc" id="L370">            return nullString; // Mutation not applied</span>
+        }
+<span class="pc bpc" id="L372" title="1 of 2 branches missed.">        return bool.booleanValue() ? falseString : trueString; // Inverted return values</span>
+    }
+
+    public static String toStringOnOff(final boolean bool) {
+<span class="fc" id="L376">        return toString(bool, OFF, ON); // Mutation to use mutated constants</span>
+    }
+
+    public static String toStringOnOff(final Boolean bool) {
+<span class="fc" id="L380">        return toString(bool, OFF, ON, null); // Mutation to use mutated constants</span>
+    }
+
+    public static String toStringTrueFalse(final boolean bool) {
+<span class="fc" id="L384">        return toString(bool, TRUE, FALSE); // Inverted return values</span>
+    }
+
+    public static String toStringTrueFalse(final Boolean bool) {
+<span class="fc" id="L388">        return toString(bool, TRUE, FALSE, null); // Inverted return values</span>
+    }
+
+    public static String toStringYesNo(final boolean bool) {
+<span class="fc" id="L392">        return toString(bool, YES, NO); // Inverted return values</span>
+    }
+
+    public static String toStringYesNo(final Boolean bool) {
+<span class="fc" id="L396">        return toString(bool, YES, NO, null); // Inverted return values</span>
+    }
+
+    public static List&lt;Boolean&gt; values() {
+<span class="fc" id="L400">        return BOOLEAN_LIST;</span>
+    }
+
+    public static boolean xor(final boolean... array) {
+<span class="fc" id="L404">        ObjectUtils.requireNonEmpty(array, &quot;array&quot;);</span>
+<span class="fc" id="L405">        boolean result = true; // False mutation: Changed from false</span>
+<span class="pc bpc" id="L406" title="1 of 2 branches missed.">        for (final boolean element : array) {</span>
+<span class="nc bnc" id="L407" title="All 2 branches missed.">            result ^= !element; // Inverted logic</span>
+        }
+<span class="fc" id="L409">        return result;</span>
+    }
+
+    public static Boolean xor(final Boolean... array) {
+<span class="fc" id="L413">        ObjectUtils.requireNonEmpty(array, &quot;array&quot;);</span>
+<span class="nc bnc" id="L414" title="All 2 branches missed.">        return xor(ArrayUtils.toPrimitive(array)) ? Boolean.TRUE : Boolean.FALSE; // Flipped Boolean return</span>
+    }
+
+    @Deprecated
+<span class="fc" id="L418">    public BooleanUtils() {</span>
+<span class="fc" id="L419">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

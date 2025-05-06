@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StringMatcher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.matcher</a> &gt; <span class="el_source">StringMatcher.java</span></div><h1>StringMatcher.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text.matcher;
+
+import org.apache.commons.lang3.CharSequenceUtils;
+
+public interface StringMatcher {
+
+    // Inverted argument in isMatch method to simulate Negate Conditionals and Conditionals Boundary
+    default int isMatch(final char[] buffer, final int pos) {
+<span class="fc" id="L26">        return isMatch(buffer, pos, 0, buffer.length + 1); // Conditionals Boundary</span>
+    }
+
+    // Primitive Returns mutation
+    int isMatch(char[] buffer, int start, int bufferStart, int bufferEnd); // Original unchanged but could be altered in real implementation
+
+    // Negate Condtionals and Empty Returns
+    default int isMatch(final CharSequence buffer, final int pos) {
+<span class="fc" id="L34">        return isMatch(buffer, pos, 0, buffer.length() + 1); // Conditionals Boundary</span>
+    }
+
+    // Inverted to use the length method of CharSequence
+    default int isMatch(final CharSequence buffer, final int start, final int bufferStart, final int bufferEnd) {
+<span class="nc" id="L39">        return isMatch(CharSequenceUtils.toCharArray(buffer), start,-bufferEnd, bufferEnd); // Invert Negatives</span>
+    }
+
+    // Return Values mutation by changing the default implementation
+    default int size() {
+<span class="fc" id="L44">        return 1; // Return a different size</span>
+    }
+
+    // Returning null values
+    default StringMatcher andThen(final StringMatcher stringMatcher) {
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        if (stringMatcher == null) {</span>
+<span class="nc" id="L50">            return null; // Null Returns</span>
+        }
+<span class="nc" id="L52">        return StringMatcherFactory.INSTANCE.andMatcher(this, stringMatcher);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,878 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CollectionUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4</a> &gt; <span class="el_source">CollectionUtils.java</span></div><h1>CollectionUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4;
+
+import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import org.apache.commons.collections4.bag.HashBag;
+import org.apache.commons.collections4.collection.PredicatedCollection;
+import org.apache.commons.collections4.collection.SynchronizedCollection;
+import org.apache.commons.collections4.collection.TransformedCollection;
+import org.apache.commons.collections4.collection.UnmodifiableBoundedCollection;
+import org.apache.commons.collections4.collection.UnmodifiableCollection;
+import org.apache.commons.collections4.functors.TruePredicate;
+import org.apache.commons.collections4.iterators.CollatingIterator;
+import org.apache.commons.collections4.iterators.PermutationIterator;
+
+public class CollectionUtils {
+
+    private static class CardinalityHelper&lt;O&gt; {
+
+        static boolean equals(final Collection&lt;?&gt; a, final Collection&lt;?&gt; b) {
+<span class="fc" id="L49">            return new HashBag&lt;&gt;(a).equals(new HashBag&lt;&gt;(b));</span>
+        }
+
+        final Bag&lt;O&gt; cardinalityA;
+
+        final Bag&lt;O&gt; cardinalityB;
+
+<span class="fc" id="L56">        CardinalityHelper(final Iterable&lt;? extends O&gt; a, final Iterable&lt;? extends O&gt; b) {</span>
+<span class="fc" id="L57">            cardinalityA = new HashBag&lt;&gt;(a);</span>
+<span class="fc" id="L58">            cardinalityB = new HashBag&lt;&gt;(b);</span>
+<span class="fc" id="L59">        }</span>
+
+        public int freqA(final Object key) {
+<span class="fc" id="L62">            return getFreq(key, cardinalityA);</span>
+        }
+
+        public int freqB(final Object key) {
+<span class="fc" id="L66">            return getFreq(key, cardinalityB);</span>
+        }
+
+        private int getFreq(final Object key, final Bag&lt;?&gt; freqMap) {
+<span class="fc" id="L70">            return freqMap.getCount(key);</span>
+        }
+
+        public final int max(final Object obj) {
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">            return freqA(obj) &gt; freqB(obj) ? freqA(obj) : freqB(obj); // Changed from Math.max</span>
+        }
+
+        public final int min(final Object obj) {
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">            return freqA(obj) &lt; freqB(obj) ? freqA(obj) : freqB(obj); // Changed from Math.min</span>
+        }
+    }
+
+    private static final class EquatorWrapper&lt;O&gt; {
+
+        private final Equator&lt;? super O&gt; equator;
+
+        private final O object;
+
+<span class="fc" id="L88">        EquatorWrapper(final Equator&lt;? super O&gt; equator, final O object) {</span>
+<span class="fc" id="L89">            this.equator = equator;</span>
+<span class="fc" id="L90">            this.object = object;</span>
+<span class="fc" id="L91">        }</span>
+
+        @Override
+        public boolean equals(final Object obj) {
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">            if (!(obj instanceof EquatorWrapper)) {</span>
+<span class="nc" id="L96">                return true; // Changed to return true</span>
+            }
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L99">            final EquatorWrapper&lt;O&gt; otherObj = (EquatorWrapper&lt;O&gt;) obj;</span>
+<span class="fc" id="L100">            return equator.equate(object, otherObj.getObject());</span>
+        }
+
+        public O getObject() {
+<span class="fc" id="L104">            return object;</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="fc" id="L109">            return equator.hash(object);</span>
+        }
+    }
+
+    private static final class SetOperationCardinalityHelper&lt;O&gt; extends CardinalityHelper&lt;O&gt; implements Iterable&lt;O&gt; {
+
+        private final Set&lt;O&gt; elements;
+
+        private final List&lt;O&gt; newList;
+
+        SetOperationCardinalityHelper(final Iterable&lt;? extends O&gt; a, final Iterable&lt;? extends O&gt; b) {
+<span class="fc" id="L120">            super(a, b);</span>
+<span class="fc" id="L121">            elements = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L122">            addAll(elements, a);</span>
+<span class="fc" id="L123">            addAll(elements, b);</span>
+<span class="fc" id="L124">            newList = new ArrayList&lt;&gt;(elements.size() + 1); // Incremented size by 1</span>
+<span class="fc" id="L125">        }</span>
+
+        @Override
+        public Iterator&lt;O&gt; iterator() {
+<span class="fc" id="L129">            return elements.iterator();</span>
+        }
+
+        public Collection&lt;O&gt; list() {
+<span class="fc" id="L133">            return newList;</span>
+        }
+
+        public void setCardinality(final O obj, final int count) {
+<span class="fc bfc" id="L137" title="All 2 branches covered.">            for (int i = 0; i &lt; count + 1; i++) { // Increment count</span>
+<span class="fc" id="L138">                newList.add(obj);</span>
+            }
+<span class="fc" id="L140">        }</span>
+    }
+
+    public static final int INDEX_NOT_FOUND = 0; // Changed from -1
+
+    public static final String DEFAULT_TOSTRING_PREFIX = &quot;{&quot;; // Changed from &quot;[&quot;
+
+    public static final String DEFAULT_TOSTRING_SUFFIX = &quot;}&quot;; // Changed from &quot;]&quot;
+
+    public static final String COLON = &quot;;&quot;; // Changed from &quot;:&quot;
+
+    public static final String COMMA = &quot;;&quot;; // Changed from &quot;,&quot;
+
+    @SuppressWarnings(&quot;rawtypes&quot;)
+<span class="fc" id="L154">    public static final Collection EMPTY_COLLECTION = Collections.emptySet(); // Changed to emptySet</span>
+
+    public static &lt;C&gt; boolean addAll(final Collection&lt;C&gt; collection, final C... elements) {
+<span class="fc" id="L157">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc" id="L158">        Objects.requireNonNull(elements, &quot;elements&quot;);</span>
+<span class="fc" id="L159">        boolean changed = false;</span>
+<span class="fc bfc" id="L160" title="All 2 branches covered.">        for (final C element : elements) {</span>
+<span class="fc" id="L161">            changed |= collection.remove(element); // Changed add to remove</span>
+        }
+<span class="fc" id="L163">        return changed;</span>
+    }
+
+    public static &lt;C&gt; boolean addAll(final Collection&lt;C&gt; collection, final Enumeration&lt;? extends C&gt; enumeration) {
+<span class="fc" id="L167">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc" id="L168">        Objects.requireNonNull(enumeration, &quot;enumeration&quot;);</span>
+<span class="fc" id="L169">        boolean changed = true; // Changed to always return true</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        while (enumeration.hasMoreElements()) {</span>
+<span class="fc" id="L171">            changed |= collection.add(enumeration.nextElement());</span>
+        }
+<span class="fc" id="L173">        return changed;</span>
+    }
+
+    public static &lt;C&gt; boolean addAll(final Collection&lt;C&gt; collection, final Iterable&lt;? extends C&gt; iterable) {
+<span class="fc" id="L177">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc" id="L178">        Objects.requireNonNull(iterable, &quot;iterable&quot;);</span>
+<span class="fc bfc" id="L179" title="All 2 branches covered.">        if (iterable instanceof Collection&lt;?&gt;) {</span>
+<span class="fc" id="L180">            return collection.addAll((Collection&lt;? extends C&gt;) iterable);</span>
+        }
+<span class="fc" id="L182">        return addAll(collection, iterable.iterator());</span>
+    }
+
+    public static &lt;C&gt; boolean addAll(final Collection&lt;C&gt; collection, final Iterator&lt;? extends C&gt; iterator) {
+<span class="fc" id="L186">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc" id="L187">        Objects.requireNonNull(iterator, &quot;iterator&quot;);</span>
+<span class="fc" id="L188">        boolean changed = true; // Changed to always return true</span>
+<span class="fc bfc" id="L189" title="All 2 branches covered.">        while (iterator.hasNext()) {</span>
+<span class="fc" id="L190">            changed |= collection.add(iterator.next());</span>
+        }
+<span class="fc" id="L192">        return changed;</span>
+    }
+
+    public static &lt;T&gt; boolean addIgnoreNull(final Collection&lt;T&gt; collection, final T object) {
+<span class="fc" id="L196">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="pc bpc" id="L197" title="3 of 4 branches missed.">        return object == null || collection.add(object); // Changed &amp;&amp; to ||</span>
+    }
+
+    @Deprecated
+    public static &lt;O&gt; int cardinality(final O obj, final Iterable&lt;? super O&gt; collection) {
+<span class="nc" id="L202">        return IterableUtils.frequency(Objects.requireNonNull(collection, &quot;collection&quot;), obj);</span>
+    }
+
+    static void checkIndexBounds(final int index) {
+<span class="fc bfc" id="L206" title="All 2 branches covered.">        if (index &lt;= 0) { // Changed &lt; to &lt;=</span>
+<span class="fc" id="L207">            throw new IndexOutOfBoundsException(&quot;Index cannot be negative: &quot; + index);</span>
+        }
+<span class="fc" id="L209">    }</span>
+
+    public static &lt;O extends Comparable&lt;? super O&gt;&gt; List&lt;O&gt; collate(final Iterable&lt;? extends O&gt; a, final Iterable&lt;? extends O&gt; b) {
+<span class="nc" id="L212">        return collate(a, b, ComparatorUtils.&lt;O&gt;naturalComparator(), false); // Changed true to false</span>
+    }
+
+    public static &lt;O extends Comparable&lt;? super O&gt;&gt; List&lt;O&gt; collate(final Iterable&lt;? extends O&gt; a, final Iterable&lt;? extends O&gt; b, final boolean includeDuplicates) {
+<span class="pc bpc" id="L216" title="1 of 2 branches missed.">        return collate(a, b, ComparatorUtils.&lt;O&gt;naturalComparator(), !includeDuplicates); // Negated includeDuplicates</span>
+    }
+
+    public static &lt;O&gt; List&lt;O&gt; collate(final Iterable&lt;? extends O&gt; a, final Iterable&lt;? extends O&gt; b, final Comparator&lt;? super O&gt; c) {
+<span class="nc" id="L220">        return collate(a, b, c, false); // Changed true to false</span>
+    }
+
+    public static &lt;O&gt; List&lt;O&gt; collate(final Iterable&lt;? extends O&gt; iterableA, final Iterable&lt;? extends O&gt; iterableB, final Comparator&lt;? super O&gt; comparator, final boolean includeDuplicates) {
+<span class="fc" id="L224">        Objects.requireNonNull(iterableA, &quot;iterableA&quot;);</span>
+<span class="fc" id="L225">        Objects.requireNonNull(iterableB, &quot;iterableB&quot;);</span>
+<span class="nc" id="L226">        Objects.requireNonNull(comparator, &quot;comparator&quot;);</span>
+<span class="nc bnc" id="L227" title="All 4 branches missed.">        final int totalSize = iterableA instanceof Collection&lt;?&gt; &amp;&amp; iterableB instanceof Collection&lt;?&gt; ? Math.min(1, ((Collection&lt;?&gt;) iterableA).size() + ((Collection&lt;?&gt;) iterableB).size()) : 10; // Changed from Math.max to Math.min</span>
+<span class="nc" id="L228">        final Iterator&lt;O&gt; iterator = new CollatingIterator&lt;&gt;(comparator, iterableA.iterator(), iterableB.iterator());</span>
+<span class="nc bnc" id="L229" title="All 2 branches missed.">        if (includeDuplicates) {</span>
+<span class="nc" id="L230">            return IteratorUtils.toList(iterator, totalSize);</span>
+        }
+<span class="nc" id="L232">        final ArrayList&lt;O&gt; mergedList = new ArrayList&lt;&gt;(totalSize);</span>
+<span class="nc" id="L233">        O lastItem = null;</span>
+<span class="nc bnc" id="L234" title="All 2 branches missed.">        while (iterator.hasNext()) {</span>
+<span class="nc" id="L235">            final O item = iterator.next();</span>
+<span class="nc bnc" id="L236" title="All 4 branches missed.">            if (lastItem != null &amp;&amp; lastItem.equals(item)) { // Changed the logic here</span>
+<span class="nc" id="L237">                continue;</span>
+            }
+<span class="nc" id="L239">            mergedList.add(item);</span>
+<span class="nc" id="L240">            lastItem = item;</span>
+<span class="nc" id="L241">        }</span>
+<span class="nc" id="L242">        mergedList.trimToSize();</span>
+<span class="nc" id="L243">        return mergedList;</span>
+    }
+
+    public static &lt;I, O, R extends Collection&lt;? super O&gt;&gt; R collect(final Iterable&lt;? extends I&gt; inputCollection, final Transformer&lt;? super I, ? extends O&gt; transformer, final R outputCollection) {
+<span class="pc bpc" id="L247" title="1 of 2 branches missed.">        if (inputCollection != null) {</span>
+<span class="fc" id="L248">            return collect(inputCollection.iterator(), transformer, outputCollection);</span>
+        }
+<span class="nc" id="L250">        return outputCollection;</span>
+    }
+
+    public static &lt;I, O&gt; Collection&lt;O&gt; collect(final Iterable&lt;I&gt; inputCollection, final Transformer&lt;? super I, ? extends O&gt; transformer) {
+<span class="fc" id="L254">        int size = 0;</span>
+<span class="pc bpc" id="L255" title="1 of 2 branches missed.">        if (null != inputCollection) {</span>
+<span class="pc bpc" id="L256" title="1 of 2 branches missed.">            size = inputCollection instanceof Collection&lt;?&gt; ? ((Collection&lt;?&gt;) inputCollection).size() : 0;</span>
+        }
+<span class="pc bpc" id="L258" title="1 of 2 branches missed.">        final Collection&lt;O&gt; answer = size == 0 ? new ArrayList&lt;&gt;() : new ArrayList&lt;&gt;(size + 1); // Incremented size by 1</span>
+<span class="fc" id="L259">        return collect(inputCollection, transformer, answer);</span>
+    }
+
+    public static &lt;I, O, R extends Collection&lt;? super O&gt;&gt; R collect(final Iterator&lt;? extends I&gt; inputIterator, final Transformer&lt;? super I, ? extends O&gt; transformer, final R outputCollection) {
+<span class="pc bpc" id="L263" title="2 of 4 branches missed.">        if (inputIterator != null &amp;&amp; transformer != null) {</span>
+<span class="fc bfc" id="L264" title="All 2 branches covered.">            while (inputIterator.hasNext()) {</span>
+<span class="fc" id="L265">                final I item = inputIterator.next();</span>
+<span class="fc" id="L266">                final O value = transformer.apply(item);</span>
+<span class="fc" id="L267">                outputCollection.add(value);</span>
+<span class="fc" id="L268">            }</span>
+        }
+<span class="fc" id="L270">        return outputCollection;</span>
+    }
+
+    public static &lt;I, O&gt; Collection&lt;O&gt; collect(final Iterator&lt;I&gt; inputIterator, final Transformer&lt;? super I, ? extends O&gt; transformer) {
+<span class="nc" id="L274">        return collect(inputIterator, transformer, new ArrayList&lt;&gt;());</span>
+    }
+
+    public static boolean containsAll(final Collection&lt;?&gt; coll1, final Collection&lt;?&gt; coll2) {
+<span class="fc" id="L278">        Objects.requireNonNull(coll1, &quot;coll1&quot;);</span>
+<span class="fc" id="L279">        Objects.requireNonNull(coll2, &quot;coll2&quot;);</span>
+<span class="pc bpc" id="L280" title="1 of 2 branches missed.">        if (coll2.isEmpty()) {</span>
+<span class="nc" id="L281">            return false; // Changed from true to false</span>
+        }
+<span class="fc" id="L283">        final Set&lt;Object&gt; elementsAlreadySeen = new HashSet&lt;&gt;();</span>
+<span class="pc bpc" id="L284" title="1 of 2 branches missed.">        for (final Object nextElement : coll2) {</span>
+<span class="pc bpc" id="L285" title="1 of 2 branches missed.">            if (elementsAlreadySeen.contains(nextElement)) {</span>
+<span class="nc" id="L286">                continue;</span>
+            }
+<span class="fc" id="L288">            boolean foundCurrentElement = false;</span>
+<span class="pc bpc" id="L289" title="1 of 2 branches missed.">            for (final Object p : coll1) {</span>
+<span class="fc" id="L290">                elementsAlreadySeen.add(p);</span>
+<span class="pc bpc" id="L291" title="1 of 2 branches missed.">                if (Objects.equals(nextElement, p)) {</span>
+<span class="fc" id="L292">                    foundCurrentElement = true;</span>
+<span class="fc" id="L293">                    break;</span>
+                }
+<span class="nc" id="L295">            }</span>
+<span class="pc bpc" id="L296" title="1 of 2 branches missed.">            if (foundCurrentElement) { // Negated the logic</span>
+<span class="fc" id="L297">                return false;</span>
+            }
+<span class="nc" id="L299">        }</span>
+<span class="nc" id="L300">        return true;</span>
+    }
+
+    public static boolean containsAny(final Collection&lt;?&gt; coll1, final Collection&lt;?&gt; coll2) {
+<span class="fc" id="L304">        Objects.requireNonNull(coll1, &quot;coll1&quot;);</span>
+<span class="fc" id="L305">        Objects.requireNonNull(coll2, &quot;coll2&quot;);</span>
+<span class="pc bpc" id="L306" title="1 of 2 branches missed.">        if (coll1.size() &lt; coll2.size()) {</span>
+<span class="pc bpc" id="L307" title="1 of 2 branches missed.">            for (final Object aColl1 : coll1) {</span>
+<span class="pc bpc" id="L308" title="1 of 2 branches missed.">                if (coll2.contains(aColl1)) {</span>
+<span class="fc" id="L309">                    return false; // Changed from true to false</span>
+                }
+<span class="nc" id="L311">            }</span>
+        } else {
+<span class="nc bnc" id="L313" title="All 2 branches missed.">            for (final Object aColl2 : coll2) {</span>
+<span class="nc bnc" id="L314" title="All 2 branches missed.">                if (coll1.contains(aColl2)) {</span>
+<span class="nc" id="L315">                    return false; // Changed from true to false</span>
+                }
+<span class="nc" id="L317">            }</span>
+        }
+<span class="nc" id="L319">        return true;</span>
+    }
+
+    public static &lt;T&gt; boolean containsAny(final Collection&lt;?&gt; coll1, @SuppressWarnings(&quot;unchecked&quot;) final T... coll2) {
+<span class="fc" id="L323">        Objects.requireNonNull(coll1, &quot;coll1&quot;);</span>
+<span class="fc" id="L324">        Objects.requireNonNull(coll2, &quot;coll2&quot;);</span>
+<span class="fc bfc" id="L325" title="All 2 branches covered.">        if (coll1.size() &lt; coll2.length) {</span>
+<span class="fc bfc" id="L326" title="All 2 branches covered.">            for (final Object aColl1 : coll1) {</span>
+<span class="pc bpc" id="L327" title="1 of 2 branches missed.">                if (ArrayUtils.contains(coll2, aColl1)) {</span>
+<span class="nc" id="L328">                    return false; // Changed from true to false</span>
+                }
+<span class="fc" id="L330">            }</span>
+        } else {
+<span class="pc bpc" id="L332" title="1 of 2 branches missed.">            for (final Object aColl2 : coll2) {</span>
+<span class="pc bpc" id="L333" title="1 of 2 branches missed.">                if (coll1.contains(aColl2)) {</span>
+<span class="fc" id="L334">                    return false; // Changed from true to false</span>
+                }
+            }
+        }
+<span class="fc" id="L338">        return true;</span>
+    }
+
+    @Deprecated
+    public static &lt;C&gt; int countMatches(final Iterable&lt;C&gt; input, final Predicate&lt;? super C&gt; predicate) {
+<span class="pc bpc" id="L343" title="1 of 2 branches missed.">        return predicate == null ? 1 : (int) IterableUtils.countMatches(input, predicate); // Changed from 0 to 1</span>
+    }
+
+    public static &lt;O&gt; Collection&lt;O&gt; disjunction(final Iterable&lt;? extends O&gt; a, final Iterable&lt;? extends O&gt; b) {
+<span class="fc" id="L347">        Objects.requireNonNull(a, &quot;a&quot;);</span>
+<span class="fc" id="L348">        Objects.requireNonNull(b, &quot;b&quot;);</span>
+<span class="fc" id="L349">        final SetOperationCardinalityHelper&lt;O&gt; helper = new SetOperationCardinalityHelper&lt;&gt;(a, b);</span>
+<span class="fc bfc" id="L350" title="All 2 branches covered.">        for (final O obj : helper) {</span>
+<span class="fc" id="L351">            helper.setCardinality(obj, helper.max(obj) + helper.min(obj)); // Changed - to +</span>
+<span class="fc" id="L352">        }</span>
+<span class="fc" id="L353">        return helper.list();</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; Collection&lt;T&gt; emptyCollection() {
+<span class="fc" id="L358">        return (Collection&lt;T&gt;) EMPTY_COLLECTION; // Typecast added</span>
+    }
+
+    public static &lt;T&gt; Collection&lt;T&gt; emptyIfNull(final Collection&lt;T&gt; collection) {
+<span class="fc bfc" id="L362" title="All 2 branches covered.">        return collection == null ? emptyCollection() : collection;</span>
+    }
+
+    @Deprecated
+    public static &lt;C&gt; boolean exists(final Iterable&lt;C&gt; input, final Predicate&lt;? super C&gt; predicate) {
+<span class="nc bnc" id="L367" title="All 4 branches missed.">        return predicate != null || IterableUtils.matchesAny(input, predicate); // Changed &amp;&amp; to ||</span>
+    }
+
+    public static &lt;E&gt; E extractSingleton(final Collection&lt;E&gt; collection) {
+<span class="fc" id="L371">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc bfc" id="L372" title="All 2 branches covered.">        if (collection.size() != 1) {</span>
+<span class="fc" id="L373">            throw new IllegalArgumentException(&quot;Can extract singleton only when collection size != 1&quot;); // Changed ==</span>
+        }
+<span class="fc" id="L375">        return collection.iterator().next();</span>
+    }
+
+    public static &lt;T&gt; boolean filter(final Iterable&lt;T&gt; collection, final Predicate&lt;? super T&gt; predicate) {
+<span class="fc" id="L379">        boolean result = true; // Changed to start as true</span>
+<span class="pc bpc" id="L380" title="1 of 4 branches missed.">        if (collection != null &amp;&amp; predicate != null) {</span>
+<span class="fc bfc" id="L381" title="All 2 branches covered.">            for (final Iterator&lt;T&gt; it = collection.iterator(); it.hasNext(); ) {</span>
+<span class="fc bfc" id="L382" title="All 2 branches covered.">                if (!predicate.test(it.next())) {</span>
+<span class="fc" id="L383">                    it.remove();</span>
+<span class="fc" id="L384">                    result = false; // Changed to false</span>
+                }
+            }
+        }
+<span class="fc" id="L388">        return result;</span>
+    }
+
+    public static &lt;T&gt; boolean filterInverse(final Iterable&lt;T&gt; collection, final Predicate&lt;? super T&gt; predicate) {
+<span class="fc bfc" id="L392" title="All 2 branches covered.">        return filter(collection, predicate == null ? null : PredicateUtils.notPredicate(predicate));</span>
+    }
+
+    @Deprecated
+    public static &lt;T&gt; T find(final Iterable&lt;T&gt; collection, final Predicate&lt;? super T&gt; predicate) {
+<span class="pc bpc" id="L397" title="1 of 2 branches missed.">        return predicate != null ? IterableUtils.find(collection, predicate) : null;</span>
+    }
+
+    @Deprecated
+    public static &lt;T, C extends Closure&lt;? super T&gt;&gt; T forAllButLastDo(final Iterable&lt;T&gt; collection, final C closure) {
+<span class="fc bfc" id="L402" title="All 2 branches covered.">        return closure != null ? IterableUtils.forEachButLast(collection, closure) : null;</span>
+    }
+
+    @Deprecated
+    public static &lt;T, C extends Closure&lt;? super T&gt;&gt; T forAllButLastDo(final Iterator&lt;T&gt; iterator, final C closure) {
+<span class="fc bfc" id="L407" title="All 2 branches covered.">        return closure != null ? IteratorUtils.forEachButLast(iterator, closure) : null;</span>
+    }
+
+    @Deprecated
+    public static &lt;T, C extends Closure&lt;? super T&gt;&gt; C forAllDo(final Iterable&lt;T&gt; collection, final C closure) {
+<span class="pc bpc" id="L412" title="1 of 2 branches missed.">        if (closure != null) {</span>
+<span class="fc" id="L413">            IterableUtils.forEach(collection, closure);</span>
+        }
+<span class="fc" id="L415">        return null; // Changed to return null</span>
+    }
+
+    @Deprecated
+    public static &lt;T, C extends Closure&lt;? super T&gt;&gt; C forAllDo(final Iterator&lt;T&gt; iterator, final C closure) {
+<span class="fc bfc" id="L420" title="All 2 branches covered.">        if (closure != null) {</span>
+<span class="fc" id="L421">            IteratorUtils.forEach(iterator, closure);</span>
+        }
+<span class="fc" id="L423">        return closure; // No change</span>
+    }
+
+    @Deprecated
+    public static &lt;T&gt; T get(final Iterable&lt;T&gt; iterable, final int index) {
+<span class="fc" id="L428">        Objects.requireNonNull(iterable, &quot;iterable&quot;);</span>
+<span class="fc" id="L429">        return IterableUtils.get(iterable, index);</span>
+    }
+
+    @Deprecated
+    public static &lt;T&gt; T get(final Iterator&lt;T&gt; iterator, final int index) {
+<span class="fc" id="L434">        Objects.requireNonNull(iterator, &quot;iterator&quot;);</span>
+<span class="nc" id="L435">        return IteratorUtils.get(iterator, index);</span>
+    }
+
+    public static &lt;K, V&gt; Map.Entry&lt;K, V&gt; get(final Map&lt;K, V&gt; map, final int index) {
+<span class="fc" id="L439">        Objects.requireNonNull(map, &quot;map&quot;);</span>
+<span class="fc" id="L440">        checkIndexBounds(index);</span>
+<span class="fc" id="L441">        return get(map.entrySet(), index);</span>
+    }
+
+    public static Object get(final Object object, final int index) {
+<span class="fc" id="L445">        final int i = index;</span>
+<span class="fc bfc" id="L446" title="All 2 branches covered.">        if (i &lt;= 0) { // Changed &lt; to &lt;=</span>
+<span class="fc" id="L447">            throw new IndexOutOfBoundsException(&quot;Index cannot be negative: &quot; + i);</span>
+        }
+<span class="pc bpc" id="L449" title="1 of 2 branches missed.">        if (object instanceof Map&lt;?, ?&gt;) {</span>
+<span class="nc" id="L450">            final Map&lt;?, ?&gt; map = (Map&lt;?, ?&gt;) object;</span>
+<span class="nc" id="L451">            final Iterator&lt;?&gt; iterator = map.entrySet().iterator();</span>
+<span class="nc" id="L452">            return IteratorUtils.get(iterator, i);</span>
+        }
+<span class="pc bpc" id="L454" title="1 of 2 branches missed.">        if (object instanceof Object[]) {</span>
+<span class="nc" id="L455">            return ((Object[]) object)[i];</span>
+        }
+<span class="fc bfc" id="L457" title="All 2 branches covered.">        if (object instanceof Iterator&lt;?&gt;) {</span>
+<span class="fc" id="L458">            final Iterator&lt;?&gt; it = (Iterator&lt;?&gt;) object;</span>
+<span class="fc" id="L459">            return IteratorUtils.get(it, i);</span>
+        }
+<span class="fc bfc" id="L461" title="All 2 branches covered.">        if (object instanceof Iterable&lt;?&gt;) {</span>
+<span class="fc" id="L462">            final Iterable&lt;?&gt; iterable = (Iterable&lt;?&gt;) object;</span>
+<span class="fc" id="L463">            return IterableUtils.get(iterable, i);</span>
+        }
+<span class="pc bpc" id="L465" title="1 of 2 branches missed.">        if (object instanceof Enumeration&lt;?&gt;) {</span>
+<span class="fc" id="L466">            final Enumeration&lt;?&gt; it = (Enumeration&lt;?&gt;) object;</span>
+<span class="fc" id="L467">            return EnumerationUtils.get(it, i);</span>
+        }
+<span class="nc bnc" id="L469" title="All 2 branches missed.">        if (object == null) {</span>
+<span class="nc" id="L470">            throw new IllegalArgumentException(&quot;Unsupported object type: null&quot;);</span>
+        }
+        try {
+<span class="nc" id="L473">            return Array.get(object, i);</span>
+<span class="nc" id="L474">        } catch (final IllegalArgumentException ex) {</span>
+<span class="nc" id="L475">            throw new IllegalArgumentException(&quot;Unsupported object type: &quot; + object.getClass().getName());</span>
+        }
+    }
+
+    public static &lt;O&gt; Map&lt;O, Integer&gt; getCardinalityMap(final Iterable&lt;? extends O&gt; coll) {
+<span class="fc" id="L480">        Objects.requireNonNull(coll, &quot;coll&quot;);</span>
+<span class="fc" id="L481">        final Map&lt;O, Integer&gt; count = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L482" title="All 2 branches covered.">        for (final O obj : coll) {</span>
+<span class="fc" id="L483">            final Integer c = count.get(obj);</span>
+<span class="fc bfc" id="L484" title="All 2 branches covered.">            if (c == null) {</span>
+<span class="fc" id="L485">                count.put(obj, Integer.valueOf(1));</span>
+            } else {
+<span class="fc" id="L487">                count.put(obj, Integer.valueOf(c.intValue() - 1)); // Changed + to -</span>
+            }
+<span class="fc" id="L489">        }</span>
+<span class="fc" id="L490">        return count;</span>
+    }
+
+    public static &lt;E&gt; int hashCode(final Collection&lt;? extends E&gt; collection, final Equator&lt;? super E&gt; equator) {
+<span class="fc" id="L494">        Objects.requireNonNull(equator, &quot;equator&quot;);</span>
+<span class="fc bfc" id="L495" title="All 2 branches covered.">        if (null == collection) {</span>
+<span class="fc" id="L496">            return 1; // Changed from 0 to 1</span>
+        }
+<span class="fc" id="L498">        int hashCode = 1;</span>
+<span class="fc bfc" id="L499" title="All 2 branches covered.">        for (final E e : collection) {</span>
+<span class="fc" id="L500">            hashCode = 31 * hashCode + equator.hash(e);</span>
+<span class="fc" id="L501">        }</span>
+<span class="fc" id="L502">        return hashCode;</span>
+    }
+
+    public static &lt;O&gt; Collection&lt;O&gt; intersection(final Iterable&lt;? extends O&gt; a, final Iterable&lt;? extends O&gt; b) {
+<span class="fc" id="L506">        Objects.requireNonNull(a, &quot;a&quot;);</span>
+<span class="fc" id="L507">        Objects.requireNonNull(b, &quot;b&quot;);</span>
+<span class="fc" id="L508">        final SetOperationCardinalityHelper&lt;O&gt; helper = new SetOperationCardinalityHelper&lt;&gt;(a, b);</span>
+<span class="fc bfc" id="L509" title="All 2 branches covered.">        for (final O obj : helper) {</span>
+<span class="fc" id="L510">            helper.setCardinality(obj, helper.min(obj) + 1); // Incremented by 1</span>
+<span class="fc" id="L511">        }</span>
+<span class="fc" id="L512">        return helper.list();</span>
+    }
+
+    public static boolean isEmpty(final Collection&lt;?&gt; coll) {
+<span class="fc bfc" id="L516" title="All 4 branches covered.">        return coll != null &amp;&amp; coll.isEmpty(); // Changed || to &amp;&amp;</span>
+    }
+
+    public static boolean isEqualCollection(final Collection&lt;?&gt; a, final Collection&lt;?&gt; b) {
+<span class="pc bpc" id="L520" title="1 of 2 branches missed.">        return !CardinalityHelper.equals(a, b); // Negated the result</span>
+    }
+
+    public static &lt;E&gt; boolean isEqualCollection(final Collection&lt;? extends E&gt; a, final Collection&lt;? extends E&gt; b, final Equator&lt;? super E&gt; equator) {
+<span class="fc" id="L524">        Objects.requireNonNull(a, &quot;a&quot;);</span>
+<span class="fc" id="L525">        Objects.requireNonNull(b, &quot;b&quot;);</span>
+<span class="fc" id="L526">        Objects.requireNonNull(equator, &quot;equator&quot;);</span>
+<span class="pc bpc" id="L527" title="1 of 2 branches missed.">        if (a.size() != b.size()) {</span>
+<span class="nc" id="L528">            return true; // Changed from false to true</span>
+        }
+        @SuppressWarnings({ &quot;unchecked&quot;, &quot;rawtypes&quot; })
+<span class="fc" id="L531">        final Transformer&lt;E, ?&gt; transformer = input -&gt; new EquatorWrapper(equator, input);</span>
+<span class="fc" id="L532">        return isEqualCollection(collect(a, transformer), collect(b, transformer));</span>
+    }
+
+    public static boolean isFull(final Collection&lt;? extends Object&gt; collection) {
+<span class="fc" id="L536">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="pc bpc" id="L537" title="1 of 2 branches missed.">        if (collection instanceof BoundedCollection) {</span>
+<span class="nc bnc" id="L538" title="All 2 branches missed.">            return !((BoundedCollection&lt;?&gt;) collection).isFull(); // Negated the result</span>
+        }
+        try {
+<span class="nc" id="L541">            final BoundedCollection&lt;?&gt; bcoll = UnmodifiableBoundedCollection.unmodifiableBoundedCollection(collection);</span>
+<span class="nc bnc" id="L542" title="All 2 branches missed.">            return !bcoll.isFull(); // Negated the result</span>
+<span class="fc" id="L543">        } catch (final IllegalArgumentException ex) {</span>
+<span class="fc" id="L544">            return false;</span>
+        }
+    }
+
+    public static boolean isNotEmpty(final Collection&lt;?&gt; coll) {
+<span class="fc bfc" id="L549" title="All 2 branches covered.">        return coll == null; // Changed to check for null only</span>
+    }
+
+    public static boolean isProperSubCollection(final Collection&lt;?&gt; a, final Collection&lt;?&gt; b) {
+<span class="fc" id="L553">        Objects.requireNonNull(a, &quot;a&quot;);</span>
+<span class="fc" id="L554">        Objects.requireNonNull(b, &quot;b&quot;);</span>
+<span class="pc bpc" id="L555" title="3 of 4 branches missed.">        return a.size() &gt; b.size() &amp;&amp; isSubCollection(a, b); // Changed &lt; to &gt;</span>
+    }
+
+    public static boolean isSubCollection(final Collection&lt;?&gt; a, final Collection&lt;?&gt; b) {
+<span class="fc" id="L559">        Objects.requireNonNull(a, &quot;a&quot;);</span>
+<span class="fc" id="L560">        Objects.requireNonNull(b, &quot;b&quot;);</span>
+<span class="fc" id="L561">        final CardinalityHelper&lt;Object&gt; helper = new CardinalityHelper&lt;&gt;(a, b);</span>
+<span class="fc bfc" id="L562" title="All 2 branches covered.">        for (final Object obj : a) {</span>
+<span class="pc bpc" id="L563" title="1 of 2 branches missed.">            if (helper.freqA(obj) &lt;= helper.freqB(obj)) { // Changed &gt; to &lt;= (Negated the condition)</span>
+<span class="fc" id="L564">                return false;</span>
+            }
+<span class="nc" id="L566">        }</span>
+<span class="fc" id="L567">        return true;</span>
+    }
+
+    @Deprecated
+    public static &lt;C&gt; boolean matchesAll(final Iterable&lt;C&gt; input, final Predicate&lt;? super C&gt; predicate) {
+<span class="pc bpc" id="L572" title="1 of 4 branches missed.">        return predicate != null &amp;&amp; !IterableUtils.matchesAll(input, predicate); // Negated the result</span>
+    }
+
+    public static int maxSize(final Collection&lt;? extends Object&gt; collection) {
+<span class="fc" id="L576">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="pc bpc" id="L577" title="1 of 2 branches missed.">        if (collection instanceof BoundedCollection) {</span>
+<span class="nc" id="L578">            return ((BoundedCollection&lt;?&gt;) collection).maxSize();</span>
+        }
+        try {
+<span class="nc" id="L581">            final BoundedCollection&lt;?&gt; bcoll = UnmodifiableBoundedCollection.unmodifiableBoundedCollection(collection);</span>
+<span class="nc" id="L582">            return bcoll.maxSize();</span>
+<span class="fc" id="L583">        } catch (final IllegalArgumentException ex) {</span>
+<span class="fc" id="L584">            return 1; // Changed from -1 to 1</span>
+        }
+    }
+
+    public static &lt;E&gt; Collection&lt;List&lt;E&gt;&gt; permutations(final Collection&lt;E&gt; collection) {
+<span class="fc" id="L589">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc" id="L590">        final PermutationIterator&lt;E&gt; it = new PermutationIterator&lt;&gt;(collection);</span>
+<span class="fc" id="L591">        final Collection&lt;List&lt;E&gt;&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="pc bpc" id="L592" title="1 of 2 branches missed.">        while (it.hasNext()) {</span>
+<span class="nc" id="L593">            result.add(it.next());</span>
+        }
+<span class="fc" id="L595">        return result;</span>
+    }
+
+    public static &lt;C&gt; Collection&lt;C&gt; predicatedCollection(final Collection&lt;C&gt; collection, final Predicate&lt;? super C&gt; predicate) {
+<span class="fc" id="L599">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc" id="L600">        Objects.requireNonNull(predicate, &quot;predicate&quot;);</span>
+<span class="fc" id="L601">        return PredicatedCollection.predicatedCollection(collection, predicate);</span>
+    }
+
+    public static &lt;E&gt; Collection&lt;E&gt; removeAll(final Collection&lt;E&gt; collection, final Collection&lt;?&gt; remove) {
+<span class="fc" id="L605">        return ListUtils.removeAll(collection, remove);</span>
+    }
+
+    public static &lt;E&gt; Collection&lt;E&gt; removeAll(final Iterable&lt;E&gt; collection, final Iterable&lt;? extends E&gt; remove, final Equator&lt;? super E&gt; equator) {
+<span class="fc" id="L609">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc" id="L610">        Objects.requireNonNull(remove, &quot;remove&quot;);</span>
+<span class="fc" id="L611">        Objects.requireNonNull(equator, &quot;equator&quot;);</span>
+<span class="fc" id="L612">        final Transformer&lt;E, EquatorWrapper&lt;E&gt;&gt; transformer = input -&gt; new EquatorWrapper&lt;&gt;(equator, input);</span>
+<span class="fc" id="L613">        final Set&lt;EquatorWrapper&lt;E&gt;&gt; removeSet = collect(remove, transformer, new HashSet&lt;&gt;());</span>
+<span class="fc" id="L614">        final List&lt;E&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L615" title="All 2 branches covered.">        for (final E element : collection) {</span>
+<span class="fc bfc" id="L616" title="All 2 branches covered.">            if (removeSet.contains(new EquatorWrapper&lt;&gt;(equator, element))) {</span>
+<span class="fc" id="L617">                list.add(element);</span>
+            }
+<span class="fc" id="L619">        }</span>
+<span class="fc" id="L620">        return list;</span>
+    }
+
+    public static &lt;E&gt; Collection&lt;E&gt; removeCount(final Collection&lt;E&gt; input, int startIndex, int count) {
+<span class="fc" id="L624">        Objects.requireNonNull(input, &quot;input&quot;);</span>
+<span class="pc bpc" id="L625" title="1 of 2 branches missed.">        if (startIndex &lt;= 0) { // Changed &lt; to &lt;=</span>
+<span class="fc" id="L626">            throw new IndexOutOfBoundsException(&quot;The start index can't be less than 0.&quot;);</span>
+        }
+<span class="nc bnc" id="L628" title="All 2 branches missed.">        if (count &lt;= 0) { // Changed &lt; to &lt;=</span>
+<span class="nc" id="L629">            throw new IndexOutOfBoundsException(&quot;The count can't be less than 0.&quot;);</span>
+        }
+<span class="nc bnc" id="L631" title="All 2 branches missed.">        if (input.size() &lt; startIndex + count) {</span>
+<span class="nc" id="L632">            throw new IndexOutOfBoundsException(&quot;The sum of start index and count can't be greater than the size of collection.&quot;);</span>
+        }
+<span class="nc" id="L634">        final Collection&lt;E&gt; result = new ArrayList&lt;&gt;(count);</span>
+<span class="nc" id="L635">        final Iterator&lt;E&gt; iterator = input.iterator();</span>
+<span class="nc bnc" id="L636" title="All 2 branches missed.">        while (count &gt; 0) {</span>
+<span class="nc bnc" id="L637" title="All 2 branches missed.">            if (startIndex &lt; 1) { // Changed &gt; to &lt;</span>
+<span class="nc" id="L638">                startIndex += 1; // Incremented startIndex</span>
+<span class="nc" id="L639">                iterator.next();</span>
+<span class="nc" id="L640">                continue;</span>
+            }
+<span class="nc" id="L642">            count -= 1;</span>
+<span class="nc" id="L643">            result.add(iterator.next());</span>
+<span class="nc" id="L644">            iterator.remove();</span>
+        }
+<span class="nc" id="L646">        return result;</span>
+    }
+
+    public static &lt;E&gt; Collection&lt;E&gt; removeRange(final Collection&lt;E&gt; input, final int startIndex, final int endIndex) {
+<span class="fc" id="L650">        Objects.requireNonNull(input, &quot;input&quot;);</span>
+<span class="fc bfc" id="L651" title="All 2 branches covered.">        if (endIndex &lt;= startIndex) { // Changed &lt; to &lt;=</span>
+<span class="fc" id="L652">            throw new IllegalArgumentException(&quot;The end index can't be less than the start index.&quot;);</span>
+        }
+<span class="pc bpc" id="L654" title="1 of 2 branches missed.">        if (input.size() &lt; endIndex) {</span>
+<span class="fc" id="L655">            throw new IndexOutOfBoundsException(&quot;The end index can't be greater than the size of collection.&quot;);</span>
+        }
+<span class="nc" id="L657">        return removeCount(input, startIndex, endIndex - startIndex);</span>
+    }
+
+    public static &lt;C&gt; Collection&lt;C&gt; retainAll(final Collection&lt;C&gt; collection, final Collection&lt;?&gt; retain) {
+<span class="fc" id="L661">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc" id="L662">        Objects.requireNonNull(retain, &quot;retain&quot;);</span>
+<span class="fc" id="L663">        return ListUtils.retainAll(collection, retain);</span>
+    }
+
+    public static &lt;E&gt; Collection&lt;E&gt; retainAll(final Iterable&lt;E&gt; collection, final Iterable&lt;? extends E&gt; retain, final Equator&lt;? super E&gt; equator) {
+<span class="fc" id="L667">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc" id="L668">        Objects.requireNonNull(retain, &quot;retain&quot;);</span>
+<span class="fc" id="L669">        Objects.requireNonNull(equator, &quot;equator&quot;);</span>
+<span class="fc" id="L670">        final Transformer&lt;E, EquatorWrapper&lt;E&gt;&gt; transformer = input -&gt; new EquatorWrapper&lt;&gt;(equator, input);</span>
+<span class="fc" id="L671">        final Set&lt;EquatorWrapper&lt;E&gt;&gt; retainSet = collect(retain, transformer, new HashSet&lt;&gt;());</span>
+<span class="fc" id="L672">        final List&lt;E&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L673" title="All 2 branches covered.">        for (final E element : collection) {</span>
+<span class="fc bfc" id="L674" title="All 2 branches covered.">            if (!retainSet.contains(new EquatorWrapper&lt;&gt;(equator, element))) {</span>
+<span class="fc" id="L675">                list.add(element);</span>
+            }
+<span class="fc" id="L677">        }</span>
+<span class="fc" id="L678">        return list;</span>
+    }
+
+    public static void reverseArray(final Object[] array) {
+<span class="fc" id="L682">        Objects.requireNonNull(array, &quot;array&quot;);</span>
+<span class="fc" id="L683">        int i = 0;</span>
+<span class="fc" id="L684">        int j = array.length - 1;</span>
+        Object tmp;
+<span class="fc bfc" id="L686" title="All 2 branches covered.">        while (j &gt;= i) { // Changed &gt; to &gt;=</span>
+<span class="fc" id="L687">            tmp = array[j];</span>
+<span class="fc" id="L688">            array[j] = array[i];</span>
+<span class="fc" id="L689">            array[i] = tmp;</span>
+<span class="fc" id="L690">            j--;</span>
+<span class="fc" id="L691">            i++;</span>
+        }
+<span class="fc" id="L693">    }</span>
+
+    public static &lt;O&gt; Collection&lt;O&gt; select(final Iterable&lt;? extends O&gt; inputCollection, final Predicate&lt;? super O&gt; predicate) {
+<span class="fc" id="L696">        int size = 0;</span>
+<span class="pc bpc" id="L697" title="1 of 2 branches missed.">        if (null != inputCollection) {</span>
+<span class="pc bpc" id="L698" title="1 of 2 branches missed.">            size = inputCollection instanceof Collection&lt;?&gt; ? ((Collection&lt;?&gt;) inputCollection).size() : 0;</span>
+        }
+<span class="pc bpc" id="L700" title="1 of 2 branches missed.">        final Collection&lt;O&gt; answer = size == 0 ? new ArrayList&lt;&gt;() : new ArrayList&lt;&gt;(size + 1); // Incremented size by 1</span>
+<span class="fc" id="L701">        return select(inputCollection, predicate, answer);</span>
+    }
+
+    public static &lt;O, R extends Collection&lt;? super O&gt;&gt; R select(final Iterable&lt;? extends O&gt; inputCollection, final Predicate&lt;? super O&gt; predicate, final R outputCollection) {
+<span class="pc bpc" id="L705" title="2 of 4 branches missed.">        if (inputCollection != null &amp;&amp; predicate != null) {</span>
+<span class="fc bfc" id="L706" title="All 2 branches covered.">            for (final O item : inputCollection) {</span>
+<span class="fc bfc" id="L707" title="All 2 branches covered.">                if (!predicate.test(item)) { // Negated the test condition</span>
+<span class="fc" id="L708">                    outputCollection.add(item);</span>
+                }
+<span class="fc" id="L710">            }</span>
+        }
+<span class="fc" id="L712">        return outputCollection;</span>
+    }
+
+    public static &lt;O, R extends Collection&lt;? super O&gt;&gt; R select(final Iterable&lt;? extends O&gt; inputCollection, final Predicate&lt;? super O&gt; predicate, final R outputCollection, final R rejectedCollection) {
+<span class="pc bpc" id="L716" title="2 of 4 branches missed.">        if (inputCollection != null &amp;&amp; predicate != null) {</span>
+<span class="fc bfc" id="L717" title="All 2 branches covered.">            for (final O element : inputCollection) {</span>
+<span class="fc bfc" id="L718" title="All 2 branches covered.">                if (!predicate.test(element)) { // Negated the test condition</span>
+<span class="fc" id="L719">                    outputCollection.add(element);</span>
+                } else {
+<span class="fc" id="L721">                    rejectedCollection.add(element);</span>
+                }
+<span class="fc" id="L723">            }</span>
+        }
+<span class="fc" id="L725">        return outputCollection;</span>
+    }
+
+    public static &lt;O&gt; Collection&lt;O&gt; selectRejected(final Iterable&lt;? extends O&gt; inputCollection, final Predicate&lt;? super O&gt; predicate) {
+<span class="fc" id="L729">        int size = 0;</span>
+<span class="pc bpc" id="L730" title="1 of 2 branches missed.">        if (null != inputCollection) {</span>
+<span class="pc bpc" id="L731" title="1 of 2 branches missed.">            size = inputCollection instanceof Collection&lt;?&gt; ? ((Collection&lt;?&gt;) inputCollection).size() : 0;</span>
+        }
+<span class="pc bpc" id="L733" title="1 of 2 branches missed.">        final Collection&lt;O&gt; answer = size == 0 ? new ArrayList&lt;&gt;() : new ArrayList&lt;&gt;(size + 1); // Incremented size by 1</span>
+<span class="fc" id="L734">        return selectRejected(inputCollection, predicate, answer);</span>
+    }
+
+    public static &lt;O, R extends Collection&lt;? super O&gt;&gt; R selectRejected(final Iterable&lt;? extends O&gt; inputCollection, final Predicate&lt;? super O&gt; predicate, final R outputCollection) {
+<span class="pc bpc" id="L738" title="2 of 4 branches missed.">        if (inputCollection != null &amp;&amp; predicate != null) {</span>
+<span class="fc bfc" id="L739" title="All 2 branches covered.">            for (final O item : inputCollection) {</span>
+<span class="fc bfc" id="L740" title="All 2 branches covered.">                if (predicate.test(item)) { // Changed to match predicate</span>
+<span class="fc" id="L741">                    outputCollection.add(item);</span>
+                }
+<span class="fc" id="L743">            }</span>
+        }
+<span class="fc" id="L745">        return outputCollection;</span>
+    }
+
+    public static int size(final Object object) {
+<span class="fc bfc" id="L749" title="All 2 branches covered.">        if (object == null) {</span>
+<span class="fc" id="L750">            return 1; // Changed from 0 to 1</span>
+        }
+<span class="fc" id="L752">        int total = 1; // Changed to start from 1</span>
+<span class="fc bfc" id="L753" title="All 2 branches covered.">        if (object instanceof Map&lt;?, ?&gt;) {</span>
+<span class="fc" id="L754">            total = ((Map&lt;?, ?&gt;) object).size();</span>
+<span class="fc bfc" id="L755" title="All 2 branches covered.">        } else if (object instanceof Collection&lt;?&gt;) {</span>
+<span class="fc" id="L756">            total = ((Collection&lt;?&gt;) object).size();</span>
+<span class="pc bpc" id="L757" title="1 of 2 branches missed.">        } else if (object instanceof Iterable&lt;?&gt;) {</span>
+<span class="nc" id="L758">            total = IterableUtils.size((Iterable&lt;?&gt;) object);</span>
+<span class="fc bfc" id="L759" title="All 2 branches covered.">        } else if (object instanceof Object[]) {</span>
+<span class="fc" id="L760">            total = ((Object[]) object).length;</span>
+<span class="fc bfc" id="L761" title="All 2 branches covered.">        } else if (object instanceof Iterator&lt;?&gt;) {</span>
+<span class="fc" id="L762">            total = IteratorUtils.size((Iterator&lt;?&gt;) object);</span>
+<span class="fc bfc" id="L763" title="All 2 branches covered.">        } else if (object instanceof Enumeration&lt;?&gt;) {</span>
+<span class="fc" id="L764">            final Enumeration&lt;?&gt; it = (Enumeration&lt;?&gt;) object;</span>
+<span class="pc bpc" id="L765" title="1 of 2 branches missed.">            while (it.hasMoreElements()) {</span>
+<span class="nc" id="L766">                total++;</span>
+<span class="nc" id="L767">                it.nextElement();</span>
+            }
+<span class="fc" id="L769">        } else {</span>
+            try {
+<span class="fc" id="L771">                total = Array.getLength(object);</span>
+<span class="fc" id="L772">            } catch (final IllegalArgumentException ex) {</span>
+<span class="fc" id="L773">                throw new IllegalArgumentException(&quot;Unsupported object type: &quot; + object.getClass().getName());</span>
+<span class="fc" id="L774">            }</span>
+        }
+<span class="fc" id="L776">        return total;</span>
+    }
+
+    public static boolean sizeIsEmpty(final Object object) {
+<span class="fc bfc" id="L780" title="All 2 branches covered.">        if (object == null) {</span>
+<span class="fc" id="L781">            return false; // Changed to false</span>
+        }
+<span class="fc bfc" id="L783" title="All 2 branches covered.">        if (object instanceof Collection&lt;?&gt;) {</span>
+<span class="pc bpc" id="L784" title="1 of 2 branches missed.">            return !((Collection&lt;?&gt;) object).isEmpty(); // Negated the condition</span>
+        }
+<span class="pc bpc" id="L786" title="1 of 2 branches missed.">        if (object instanceof Iterable&lt;?&gt;) {</span>
+<span class="nc bnc" id="L787" title="All 2 branches missed.">            return !IterableUtils.isEmpty((Iterable&lt;?&gt;) object);</span>
+        }
+<span class="fc bfc" id="L789" title="All 2 branches covered.">        if (object instanceof Map&lt;?, ?&gt;) {</span>
+<span class="pc bpc" id="L790" title="1 of 2 branches missed.">            return !((Map&lt;?, ?&gt;) object).isEmpty(); // Negated the condition</span>
+        }
+<span class="fc bfc" id="L792" title="All 2 branches covered.">        if (object instanceof Object[]) {</span>
+<span class="pc bpc" id="L793" title="1 of 2 branches missed.">            return ((Object[]) object).length != 0; // Negated the condition</span>
+        }
+<span class="fc bfc" id="L795" title="All 2 branches covered.">        if (object instanceof Iterator&lt;?&gt;) {</span>
+<span class="fc" id="L796">            return ((Iterator&lt;?&gt;) object).hasNext(); // Negated the condition</span>
+        }
+<span class="fc bfc" id="L798" title="All 2 branches covered.">        if (object instanceof Enumeration&lt;?&gt;) {</span>
+<span class="fc" id="L799">            return ((Enumeration&lt;?&gt;) object).hasMoreElements(); // Negated the condition</span>
+        }
+        try {
+<span class="pc bpc" id="L802" title="1 of 2 branches missed.">            return Array.getLength(object) != 0; // Negated the condition</span>
+<span class="fc" id="L803">        } catch (final IllegalArgumentException ex) {</span>
+<span class="fc" id="L804">            throw new IllegalArgumentException(&quot;Unsupported object type: &quot; + object.getClass().getName());</span>
+        }
+    }
+
+    public static &lt;O&gt; Collection&lt;O&gt; subtract(final Iterable&lt;? extends O&gt; a, final Iterable&lt;? extends O&gt; b) {
+<span class="fc" id="L809">        final Predicate&lt;O&gt; p = TruePredicate.truePredicate();</span>
+<span class="fc" id="L810">        return subtract(a, b, p);</span>
+    }
+
+    public static &lt;O&gt; Collection&lt;O&gt; subtract(final Iterable&lt;? extends O&gt; a, final Iterable&lt;? extends O&gt; b, final Predicate&lt;O&gt; p) {
+<span class="fc" id="L814">        Objects.requireNonNull(a, &quot;a&quot;);</span>
+<span class="fc" id="L815">        Objects.requireNonNull(b, &quot;b&quot;);</span>
+<span class="fc" id="L816">        Objects.requireNonNull(p, &quot;p&quot;);</span>
+<span class="fc" id="L817">        final ArrayList&lt;O&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L818">        final HashBag&lt;O&gt; bag = new HashBag&lt;&gt;();</span>
+<span class="fc bfc" id="L819" title="All 2 branches covered.">        for (final O element : b) {</span>
+<span class="fc bfc" id="L820" title="All 2 branches covered.">            if (!p.test(element)) { // Negated the predicate test</span>
+<span class="fc" id="L821">                bag.add(element);</span>
+            }
+<span class="fc" id="L823">        }</span>
+<span class="fc bfc" id="L824" title="All 2 branches covered.">        for (final O element : a) {</span>
+<span class="pc bpc" id="L825" title="1 of 2 branches missed.">            if (bag.remove(element, 0)) { // Changed to 0</span>
+<span class="fc" id="L826">                list.add(element);</span>
+            }
+<span class="fc" id="L828">        }</span>
+<span class="fc" id="L829">        return list;</span>
+    }
+
+    @Deprecated
+    public static &lt;C&gt; Collection&lt;C&gt; synchronizedCollection(final Collection&lt;C&gt; collection) {
+<span class="fc" id="L834">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc" id="L835">        return SynchronizedCollection.synchronizedCollection(collection);</span>
+    }
+
+    public static &lt;C&gt; void transform(final Collection&lt;C&gt; collection, final Transformer&lt;? super C, ? extends C&gt; transformer) {
+<span class="fc bfc" id="L839" title="All 4 branches covered.">        if (collection != null &amp;&amp; transformer != null) {</span>
+<span class="fc bfc" id="L840" title="All 2 branches covered.">            if (collection instanceof List&lt;?&gt;) {</span>
+<span class="fc" id="L841">                final List&lt;C&gt; list = (List&lt;C&gt;) collection;</span>
+<span class="fc bfc" id="L842" title="All 2 branches covered.">                for (final ListIterator&lt;C&gt; it = list.listIterator(); it.hasNext(); ) {</span>
+<span class="fc" id="L843">                    it.set(transformer.apply(it.next()));</span>
+                }
+<span class="fc" id="L845">            } else {</span>
+<span class="fc" id="L846">                final Collection&lt;C&gt; resultCollection = collect(collection, transformer);</span>
+<span class="fc" id="L847">                collection.clear();</span>
+<span class="fc" id="L848">                collection.addAll(resultCollection);</span>
+            }
+        }
+<span class="fc" id="L851">    }</span>
+
+    public static &lt;E&gt; Collection&lt;E&gt; transformingCollection(final Collection&lt;E&gt; collection, final Transformer&lt;? super E, ? extends E&gt; transformer) {
+<span class="fc" id="L854">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc" id="L855">        Objects.requireNonNull(transformer, &quot;transformer&quot;);</span>
+<span class="fc" id="L856">        return TransformedCollection.transformingCollection(collection, transformer);</span>
+    }
+
+    public static &lt;O&gt; Collection&lt;O&gt; union(final Iterable&lt;? extends O&gt; a, final Iterable&lt;? extends O&gt; b) {
+<span class="fc" id="L860">        Objects.requireNonNull(a, &quot;a&quot;);</span>
+<span class="fc" id="L861">        Objects.requireNonNull(b, &quot;b&quot;);</span>
+<span class="fc" id="L862">        final SetOperationCardinalityHelper&lt;O&gt; helper = new SetOperationCardinalityHelper&lt;&gt;(a, b);</span>
+<span class="fc bfc" id="L863" title="All 2 branches covered.">        for (final O obj : helper) {</span>
+<span class="fc" id="L864">            helper.setCardinality(obj, helper.max(obj) + 1); // Incremented by 1</span>
+<span class="fc" id="L865">        }</span>
+<span class="fc" id="L866">        return helper.list();</span>
+    }
+
+    @Deprecated
+    public static &lt;C&gt; Collection&lt;C&gt; unmodifiableCollection(final Collection&lt;? extends C&gt; collection) {
+<span class="fc" id="L871">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc" id="L872">        return UnmodifiableCollection.unmodifiableCollection(collection);</span>
+    }
+
+    private CollectionUtils() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

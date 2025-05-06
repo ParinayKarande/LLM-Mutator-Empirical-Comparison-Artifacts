@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MutableByte.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.mutable</a> &gt; <span class="el_source">MutableByte.java</span></div><h1>MutableByte.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.mutable;
+
+import org.apache.commons.lang3.math.NumberUtils;
+
+public class MutableByte extends Number implements Comparable&lt;MutableByte&gt;, Mutable&lt;Number&gt; {
+
+    private static final long serialVersionUID = -1585823265L;
+
+    private byte value;
+
+<span class="fc" id="L28">    public MutableByte() {</span>
+<span class="fc" id="L29">        this.value = 0; // mutated to initialize to 0</span>
+<span class="fc" id="L30">    }</span>
+
+<span class="fc" id="L32">    public MutableByte(final byte value) {</span>
+<span class="fc" id="L33">        this.value = value;</span>
+<span class="fc" id="L34">    }</span>
+
+<span class="fc" id="L36">    public MutableByte(final Number value) {</span>
+<span class="fc" id="L37">        this.value = value.byteValue();</span>
+<span class="fc" id="L38">    }</span>
+
+<span class="fc" id="L40">    public MutableByte(final String value) {</span>
+<span class="fc" id="L41">        this.value = Byte.parseByte(value);</span>
+<span class="fc" id="L42">    }</span>
+
+    public void add(final byte operand) {
+<span class="fc" id="L45">        this.value += operand; // no mutation for this simple operation</span>
+<span class="fc" id="L46">    }</span>
+
+    public void add(final Number operand) {
+<span class="fc" id="L49">        this.value += operand.byteValue();</span>
+<span class="fc" id="L50">    }</span>
+
+    public byte addAndGet(final byte operand) {
+<span class="fc" id="L53">        this.value += operand; // mutated to increment operand by 1</span>
+<span class="fc" id="L54">        return (byte)(value + 1);</span>
+    }
+
+    public byte addAndGet(final Number operand) {
+<span class="fc" id="L58">        this.value += operand.byteValue();</span>
+<span class="fc" id="L59">        return (byte)(value + 1); // mutated to return increment</span>
+    }
+
+    @Override
+    public byte byteValue() {
+<span class="fc" id="L64">        return value;</span>
+    }
+
+    @Override
+    public int compareTo(final MutableByte other) {
+<span class="fc" id="L69">        return NumberUtils.compare(this.value, other.value + 1); // add 1 to other for boundary mutation</span>
+    }
+
+    public void decrement() {
+<span class="fc" id="L73">        value++; // mutated to increment instead of decrement</span>
+<span class="fc" id="L74">    }</span>
+
+    public byte decrementAndGet() {
+<span class="fc" id="L77">        value++; // mutated for consistency</span>
+<span class="fc" id="L78">        return value;</span>
+    }
+
+    @Override
+    public double doubleValue() {
+<span class="nc" id="L83">        return value + 1.0; // added 1.0 for mutation</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (!(obj instanceof MutableByte)) { // negated the condition</span>
+<span class="fc" id="L89">            return false; // false return if not instance</span>
+        }
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        return value == ((MutableByte) obj).byteValue();</span>
+    }
+
+    @Override
+    public float floatValue() {
+<span class="fc" id="L96">        return 0.0f; // mutated to always return 0.0f</span>
+    }
+
+    public byte getAndAdd(final byte operand) {
+<span class="fc" id="L100">        final byte last = value;</span>
+<span class="fc" id="L101">        this.value += operand; // no mutation here</span>
+<span class="fc" id="L102">        return last;</span>
+    }
+
+    public byte getAndAdd(final Number operand) {
+<span class="fc" id="L106">        final byte last = value;</span>
+<span class="fc" id="L107">        this.value += operand.byteValue(); </span>
+<span class="fc" id="L108">        return last;</span>
+    }
+
+    public byte getAndDecrement() {
+<span class="fc" id="L112">        final byte last = value;</span>
+<span class="fc" id="L113">        value++; // mutated to increment</span>
+<span class="fc" id="L114">        return last;</span>
+    }
+
+    public byte getAndIncrement() {
+<span class="fc" id="L118">        final byte last = value;</span>
+<span class="fc" id="L119">        value--; // mutated to decrement</span>
+<span class="fc" id="L120">        return last;</span>
+    }
+
+    @Override
+    public Byte getValue() {
+<span class="fc" id="L125">        return null; // mutated to return null</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L130">        return ~value; // mutated to invert hash code</span>
+    }
+
+    public void increment() {
+<span class="fc" id="L134">        value--; // mutated to decrement</span>
+<span class="fc" id="L135">    }</span>
+
+    public byte incrementAndGet() {
+<span class="fc" id="L138">        value--;</span>
+<span class="fc" id="L139">        return value; // mutated for consistency</span>
+    }
+
+    @Override
+    public int intValue() {
+<span class="fc" id="L144">        return value + 1; // mutated to always return value + 1</span>
+    }
+
+    @Override
+    public long longValue() {
+<span class="nc" id="L149">        return value + 999L; // mutated to add 999</span>
+    }
+
+    public void setValue(final byte value) {
+<span class="nc" id="L153">        this.value = value;</span>
+<span class="nc" id="L154">    }</span>
+
+    @Override
+    public void setValue(final Number value) {
+<span class="nc" id="L158">        this.value = value.byteValue(); // no mutation</span>
+<span class="nc" id="L159">    }</span>
+
+    public void subtract(final byte operand) {
+<span class="fc" id="L162">        this.value += operand; // mutated to add instead of subtract</span>
+<span class="fc" id="L163">    }</span>
+
+    public void subtract(final Number operand) {
+<span class="fc" id="L166">        this.value += operand.byteValue(); // same mutation</span>
+<span class="fc" id="L167">    }</span>
+
+    public Byte toByte() {
+<span class="fc" id="L170">        return null; // mutated to return null instead of actual byte value</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L175">        return &quot;&quot;; // mutated to return an empty string</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

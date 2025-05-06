@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProxyInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">ProxyInputStream.java</span></div><h1>ProxyInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.build.AbstractStreamBuilder;
+import org.apache.commons.io.function.Erase;
+import org.apache.commons.io.function.IOConsumer;
+import org.apache.commons.io.function.IOIntConsumer;
+
+/**
+ * A proxy stream which acts as a {@link FilterInputStream}, by passing all method calls on to the proxied stream, not changing which methods are called.
+ * &lt;p&gt;
+ * It is an alternative base class to {@link FilterInputStream} to increase reusability, because {@link FilterInputStream} changes the methods being called,
+ * such as read(byte[]) to read(byte[], int, int).
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * In addition, this class allows you to:
+ * &lt;/p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;notify a subclass that &lt;em&gt;n&lt;/em&gt; bytes are about to be read through {@link #beforeRead(int)}&lt;/li&gt;
+ * &lt;li&gt;notify a subclass that &lt;em&gt;n&lt;/em&gt; bytes were read through {@link #afterRead(int)}&lt;/li&gt;
+ * &lt;li&gt;notify a subclass that an exception was caught through {@link #handleIOException(IOException)}&lt;/li&gt;
+ * &lt;li&gt;{@link #unwrap()} itself&lt;/li&gt;
+ * &lt;/ul&gt;
+ */
+public abstract class ProxyInputStream extends FilterInputStream {
+
+    /**
+     * Abstracts builder properties for subclasses.
+     *
+     * @param &lt;T&gt; The InputStream type.
+     * @param &lt;B&gt; The builder type.
+     * @since 2.18.0
+     */
+<span class="fc" id="L56">    protected static abstract class AbstractBuilder&lt;T, B extends AbstractStreamBuilder&lt;T, B&gt;&gt; extends AbstractStreamBuilder&lt;T, B&gt; {</span>
+
+        private IOIntConsumer afterRead;
+
+        /**
+         * Gets the {@link ProxyInputStream#afterRead(int)} consumer.
+         *
+         * @return the {@link ProxyInputStream#afterRead(int)} consumer.
+         */
+        public IOIntConsumer getAfterRead() {
+<span class="fc" id="L66">            return afterRead;</span>
+        }
+
+        /**
+         * Sets the {@link ProxyInputStream#afterRead(int)} behavior, null resets to a NOOP.
+         * &lt;p&gt;
+         * Setting this value causes the {@link ProxyInputStream#afterRead(int) afterRead} method to delegate to the given consumer.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * If a subclass overrides {@link ProxyInputStream#afterRead(int) afterRead} and does not call {@code super.afterRead(int)}, then the given consumer is
+         * not called.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * This does &lt;em&gt;not&lt;/em&gt; override a {@code ProxyInputStream} subclass' implementation of the {@link ProxyInputStream#afterRead(int)} method, it can
+         * supplement it.
+         * &lt;/p&gt;
+         *
+         * @param afterRead the {@link ProxyInputStream#afterRead(int)} behavior.
+         * @return this instance.
+         */
+        public B setAfterRead(final IOIntConsumer afterRead) {
+<span class="fc" id="L87">            this.afterRead = afterRead;</span>
+<span class="fc" id="L88">            return asThis();</span>
+        }
+
+    }
+
+    /**
+     * Tracks whether {@link #close()} has been called or not.
+     */
+    private boolean closed;
+
+    /**
+     * Handles exceptions.
+     */
+    private final IOConsumer&lt;IOException&gt; exceptionHandler;
+
+    private final IOIntConsumer afterRead;
+
+    /**
+     * Constructs a new ProxyInputStream.
+     *
+     * @param builder  How to build an instance.
+     * @throws IOException if an I/O error occurs.
+     * @since 2.18.0
+     */
+    @SuppressWarnings(&quot;resource&quot;)
+    protected ProxyInputStream(final AbstractBuilder&lt;?, ?&gt; builder) throws IOException {
+        // the delegate is stored in a protected superclass instance variable named 'in'.
+<span class="fc" id="L115">        this(builder.getInputStream(), builder);</span>
+<span class="fc" id="L116">    }</span>
+
+    /**
+     * Constructs a new ProxyInputStream.
+     *
+     * @param proxy  the InputStream to proxy.
+     */
+    public ProxyInputStream(final InputStream proxy) {
+        // the delegate is stored in a protected superclass variable named 'in'.
+<span class="fc" id="L125">        super(proxy);</span>
+<span class="fc" id="L126">        this.exceptionHandler = Erase::rethrow;</span>
+<span class="fc" id="L127">        this.afterRead = IOIntConsumer.NOOP;</span>
+<span class="fc" id="L128">    }</span>
+
+    /**
+     * Constructs a new ProxyInputStream.
+     *
+     * @param proxy  the InputStream to proxy.
+     * @param builder  How to build an instance.
+     * @since 2.18.0
+     */
+    protected ProxyInputStream(final InputStream proxy, final AbstractBuilder&lt;?, ?&gt; builder) {
+        // the delegate is stored in a protected superclass instance variable named 'in'.
+<span class="fc" id="L139">        super(proxy);</span>
+<span class="fc" id="L140">        this.exceptionHandler = Erase::rethrow;</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">        this.afterRead = builder.getAfterRead() != null ? builder.getAfterRead() : IOIntConsumer.NOOP;</span>
+<span class="fc" id="L142">    }</span>
+
+    /**
+     * Called by the {@code read} methods after the proxied call has returned successfully. The argument is the number of bytes returned to the caller or
+     * {@link IOUtils#EOF EOF} if the end of stream was reached.
+     * &lt;p&gt;
+     * The default delegates to the consumer given to {@link AbstractBuilder#setAfterRead(IOIntConsumer)}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Alternatively, a subclasses can override this method to add post-processing functionality without having to override all the read methods.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Note this method is &lt;em&gt;not&lt;/em&gt; called from {@link #skip(long)} or {@link #reset()}. You need to explicitly override those methods if you want to add
+     * post-processing steps also to them.
+     * &lt;/p&gt;
+     *
+     * @param n number of bytes read, or {@link IOUtils#EOF EOF} if the end of stream was reached.
+     * @throws IOException Thrown by a subclass or the consumer given to {@link AbstractBuilder#setAfterRead(IOIntConsumer)}.
+     * @since 2.0
+     */
+    protected void afterRead(final int n) throws IOException {
+<span class="fc" id="L163">        afterRead.accept(n);</span>
+<span class="fc" id="L164">    }</span>
+
+    /**
+     * Invokes the delegate's {@link InputStream#available()} method.
+     *
+     * @return the number of available bytes, 0 if the stream is closed.
+     * @throws IOException if an I/O error occurs.
+     */
+    @Override
+    public int available() throws IOException {
+<span class="fc bfc" id="L174" title="All 4 branches covered.">        if (in != null &amp;&amp; !isClosed()) {</span>
+            try {
+<span class="fc" id="L176">                return in.available();</span>
+<span class="fc" id="L177">            } catch (final IOException e) {</span>
+<span class="nc" id="L178">                handleIOException(e);</span>
+            }
+        }
+<span class="fc" id="L181">        return 0;</span>
+    }
+
+    /**
+     * Invoked by the {@code read} methods before the call is proxied. The number
+     * of bytes that the caller wanted to read (1 for the {@link #read()}
+     * method, buffer length for {@link #read(byte[])}, etc.) is given as
+     * an argument.
+     * &lt;p&gt;
+     * Subclasses can override this method to add common pre-processing
+     * functionality without having to override all the read methods.
+     * The default implementation does nothing.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Note this method is &lt;em&gt;not&lt;/em&gt; called from {@link #skip(long)} or
+     * {@link #reset()}. You need to explicitly override those methods if
+     * you want to add pre-processing steps also to them.
+     * &lt;/p&gt;
+     *
+     * @since 2.0
+     * @param n number of bytes that the caller asked to be read.
+     * @throws IOException if the pre-processing fails in a subclass.
+     */
+    @SuppressWarnings(&quot;unused&quot;) // Possibly thrown from subclasses.
+    protected void beforeRead(final int n) throws IOException {
+        // no-op default
+<span class="fc" id="L207">    }</span>
+
+    /**
+     * Checks if this instance is closed and throws an IOException if so.
+     *
+     * @throws IOException if this instance is closed.
+     */
+    void checkOpen() throws IOException {
+<span class="fc bfc" id="L215" title="All 2 branches covered.">        Input.checkOpen(!isClosed());</span>
+<span class="fc" id="L216">    }</span>
+
+    /**
+     * Invokes the delegate's {@link InputStream#close()} method.
+     *
+     * @throws IOException if an I/O error occurs.
+     */
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L225">        IOUtils.close(in, this::handleIOException);</span>
+<span class="fc" id="L226">        closed = true;</span>
+<span class="fc" id="L227">    }</span>
+
+    /**
+     * Handles any IOExceptions thrown; by default, throws the given exception.
+     * &lt;p&gt;
+     * This method provides a point to implement custom exception
+     * handling. The default behavior is to re-throw the exception.
+     * &lt;/p&gt;
+     *
+     * @param e The IOException thrown.
+     * @throws IOException if an I/O error occurs.
+     * @since 2.0
+     */
+    protected void handleIOException(final IOException e) throws IOException {
+<span class="nc" id="L241">        exceptionHandler.accept(e);</span>
+<span class="nc" id="L242">    }</span>
+
+    /**
+     * Tests whether this instance is closed.
+     *
+     * @return whether this instance is closed.
+     */
+    boolean isClosed() {
+<span class="fc" id="L250">        return closed;</span>
+    }
+
+    /**
+     * Invokes the delegate's {@link InputStream#mark(int)} method.
+     *
+     * @param readLimit read ahead limit.
+     */
+    @Override
+    public synchronized void mark(final int readLimit) {
+<span class="pc bpc" id="L260" title="1 of 2 branches missed.">        if (in != null) {</span>
+<span class="fc" id="L261">            in.mark(readLimit);</span>
+        }
+<span class="fc" id="L263">    }</span>
+
+    /**
+     * Invokes the delegate's {@link InputStream#markSupported()} method.
+     *
+     * @return {@code true} if this stream instance supports the mark and reset methods; {@code false} otherwise.
+     * @see #mark(int)
+     * @see #reset()
+     */
+    @Override
+    public boolean markSupported() {
+<span class="pc bpc" id="L274" title="1 of 4 branches missed.">        return in != null &amp;&amp; in.markSupported();</span>
+    }
+
+    /**
+     * Invokes the delegate's {@link InputStream#read()} method unless the stream is closed.
+     *
+     * @return the byte read or {@link IOUtils#EOF EOF} if we reached the end of stream.
+     * @throws IOException if an I/O error occurs.
+     */
+    @Override
+    public int read() throws IOException {
+        try {
+<span class="fc" id="L286">            beforeRead(1);</span>
+<span class="fc" id="L287">            final int b = in.read();</span>
+<span class="fc bfc" id="L288" title="All 2 branches covered.">            afterRead(b != EOF ? 1 : EOF);</span>
+<span class="fc" id="L289">            return b;</span>
+<span class="fc" id="L290">        } catch (final IOException e) {</span>
+<span class="nc" id="L291">            handleIOException(e);</span>
+<span class="nc" id="L292">            return EOF;</span>
+        }
+    }
+
+    /**
+     * Invokes the delegate's {@link InputStream#read(byte[])} method.
+     *
+     * @param b the buffer to read the bytes into.
+     * @return the number of bytes read or {@link IOUtils#EOF EOF} if we reached the end of stream.
+     * @throws IOException
+     *                     &lt;ul&gt;
+     *                     &lt;li&gt;If the first byte cannot be read for any reason other than the end of the file,
+     *                     &lt;li&gt;if the input stream has been closed, or&lt;/li&gt;
+     *                     &lt;li&gt;if some other I/O error occurs.&lt;/li&gt;
+     *                     &lt;/ul&gt;
+     */
+    @Override
+    public int read(final byte[] b) throws IOException {
+        try {
+<span class="fc" id="L311">            beforeRead(IOUtils.length(b));</span>
+<span class="fc" id="L312">            final int n = in.read(b);</span>
+<span class="fc" id="L313">            afterRead(n);</span>
+<span class="fc" id="L314">            return n;</span>
+<span class="fc" id="L315">        } catch (final IOException e) {</span>
+<span class="nc" id="L316">            handleIOException(e);</span>
+<span class="nc" id="L317">            return EOF;</span>
+        }
+    }
+
+    /**
+     * Invokes the delegate's {@link InputStream#read(byte[], int, int)} method.
+     *
+     * @param b   the buffer to read the bytes into.
+     * @param off The start offset.
+     * @param len The number of bytes to read.
+     * @return the number of bytes read or {@link IOUtils#EOF EOF} if we reached the end of stream.
+     * @throws IOException
+     *                     &lt;ul&gt;
+     *                     &lt;li&gt;If the first byte cannot be read for any reason other than the end of the file,
+     *                     &lt;li&gt;if the input stream has been closed, or&lt;/li&gt;
+     *                     &lt;li&gt;if some other I/O error occurs.&lt;/li&gt;
+     *                     &lt;/ul&gt;
+     */
+    @Override
+    public int read(final byte[] b, final int off, final int len) throws IOException {
+        try {
+<span class="fc" id="L338">            beforeRead(len);</span>
+<span class="fc" id="L339">            final int n = in.read(b, off, len);</span>
+<span class="fc" id="L340">            afterRead(n);</span>
+<span class="fc" id="L341">            return n;</span>
+<span class="fc" id="L342">        } catch (final IOException e) {</span>
+<span class="nc" id="L343">            handleIOException(e);</span>
+<span class="nc" id="L344">            return EOF;</span>
+        }
+    }
+
+    /**
+     * Invokes the delegate's {@link InputStream#reset()} method.
+     *
+     * @throws IOException if this stream has not been marked or if the mark has been invalidated.
+     */
+    @Override
+    public synchronized void reset() throws IOException {
+        try {
+<span class="fc" id="L356">            in.reset();</span>
+<span class="nc" id="L357">        } catch (final IOException e) {</span>
+<span class="nc" id="L358">            handleIOException(e);</span>
+<span class="fc" id="L359">        }</span>
+<span class="fc" id="L360">    }</span>
+
+    /**
+     * Package-private for testing.
+     *
+     * @param in The input stream to set in {@link java.io.FilterInputStream#in}.
+     */
+    void setIn(final InputStream in) {
+<span class="fc" id="L368">        this.in = in;</span>
+<span class="fc" id="L369">    }</span>
+
+    /**
+     * Invokes the delegate's {@link InputStream#skip(long)} method.
+     *
+     * @param n the number of bytes to skip.
+     * @return the actual number of bytes skipped.
+     * @throws IOException if the stream does not support seek, or if some other I/O error occurs.
+     */
+    @Override
+    public long skip(final long n) throws IOException {
+        try {
+<span class="fc" id="L381">            return in.skip(n);</span>
+<span class="nc" id="L382">        } catch (final IOException e) {</span>
+<span class="nc" id="L383">            handleIOException(e);</span>
+<span class="nc" id="L384">            return 0;</span>
+        }
+    }
+
+    /**
+     * Unwraps this instance by returning the underlying {@link InputStream}.
+     * &lt;p&gt;
+     * Use with caution; useful to query the underlying {@link InputStream}.
+     * &lt;/p&gt;
+     *
+     * @return the underlying {@link InputStream}.
+     * @since 2.16.0
+     */
+    public InputStream unwrap() {
+<span class="fc" id="L398">        return in;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

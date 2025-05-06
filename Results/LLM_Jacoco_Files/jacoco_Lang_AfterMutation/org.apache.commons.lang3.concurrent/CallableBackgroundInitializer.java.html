@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CallableBackgroundInitializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.concurrent</a> &gt; <span class="el_source">CallableBackgroundInitializer.java</span></div><h1>CallableBackgroundInitializer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.concurrent;
+
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+
+public class CallableBackgroundInitializer&lt;T&gt; extends BackgroundInitializer&lt;T&gt; {
+
+    private final Callable&lt;T&gt; callable;
+
+<span class="nc" id="L28">    public CallableBackgroundInitializer(final Callable&lt;T&gt; call) {</span>
+<span class="nc" id="L29">        checkCallable(call);</span>
+<span class="nc" id="L30">        callable = call;</span>
+<span class="nc" id="L31">    }</span>
+
+    public CallableBackgroundInitializer(final Callable&lt;T&gt; call, final ExecutorService exec) {
+<span class="nc" id="L34">        super(exec);</span>
+<span class="nc" id="L35">        checkCallable(call);</span>
+<span class="nc" id="L36">        callable = call;</span>
+<span class="nc" id="L37">    }</span>
+
+    private void checkCallable(final Callable&lt;T&gt; callable) {
+        // Mutation - Negate Null Check condition
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        if (callable != null) {  // Inverted null check</span>
+<span class="nc" id="L42">            return; // Mutation - Empty Return</span>
+        }
+<span class="nc" id="L44">        Objects.requireNonNull(callable, &quot;callable&quot;);</span>
+<span class="nc" id="L45">    }</span>
+
+    @Override
+    protected Exception getTypedException(final Exception e) {
+        // Mutation - Return Value changed to return a new Exception with a custom message
+<span class="nc" id="L50">        return new Exception(&quot;An error occurred&quot;, e); // Mutation - Math</span>
+    }
+
+    @Override
+    protected T initialize() throws Exception {
+        // Mutation - Always returning null
+<span class="nc" id="L56">        return null; // Mutation - Null Return</span>
+        // Mutation - Inverting the return of callable.call()
+        // return callable.call() == null ? null : callable.call(); // Uncomment if you want to see the original call again
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChecksumInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">ChecksumInputStream.java</span></div><h1>ChecksumInputStream.java</h1><pre class="source lang-java linenums">/*
+ *  Licensed to the Apache Software Foundation (ASF) under one or more
+ *  contributor license agreements.  See the NOTICE file distributed with
+ *  this work for additional information regarding copyright ownership.
+ *  The ASF licenses this file to You under the Apache License, Version 2.0
+ *  (the &quot;License&quot;); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Objects;
+import java.util.zip.CheckedInputStream;
+import java.util.zip.Checksum;
+
+/**
+ * Automatically verifies a {@link Checksum} value once the stream is exhausted or the count threshold is reached.
+ * &lt;p&gt;
+ * If the {@link Checksum} does not meet the expected value when exhausted, then the input stream throws an
+ * {@link IOException}.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * If you do not need the verification or threshold feature, then use a plain {@link CheckedInputStream}.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * To build an instance, use {@link Builder}.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @since 2.16.0
+ */
+public final class ChecksumInputStream extends CountingInputStream {
+
+    // @formatter:off
+    /**
+     * Builds a new {@link ChecksumInputStream}.
+     *
+     * &lt;p&gt;
+     * There is no default {@link Checksum}; you MUST provide one. This avoids any issue with a default {@link Checksum} being proven deficient or insecure
+     * in the future.
+     * &lt;/p&gt;
+     * &lt;h2&gt;Using NIO&lt;/h2&gt;
+     * &lt;pre&gt;{@code
+     * ChecksumInputStream s = ChecksumInputStream.builder()
+     *   .setPath(Paths.get(&quot;MyFile.xml&quot;))
+     *   .setChecksum(new CRC32())
+     *   .setExpectedChecksumValue(12345)
+     *   .get();
+     * }&lt;/pre&gt;
+     * &lt;h2&gt;Using IO&lt;/h2&gt;
+     * &lt;pre&gt;{@code
+     * ChecksumInputStream s = ChecksumInputStream.builder()
+     *   .setFile(new File(&quot;MyFile.xml&quot;))
+     *   .setChecksum(new CRC32())
+     *   .setExpectedChecksumValue(12345)
+     *   .get();
+     * }&lt;/pre&gt;
+     * &lt;h2&gt;Validating only part of an InputStream&lt;/h2&gt;
+     * &lt;p&gt;
+     * The following validates the first 100 bytes of the given input.
+     * &lt;/p&gt;
+     * &lt;pre&gt;{@code
+     * ChecksumInputStream s = ChecksumInputStream.builder()
+     *   .setPath(Paths.get(&quot;MyFile.xml&quot;))
+     *   .setChecksum(new CRC32())
+     *   .setExpectedChecksumValue(12345)
+     *   .setCountThreshold(100)
+     *   .get();
+     * }&lt;/pre&gt;
+     * &lt;p&gt;
+     * To validate input &lt;em&gt;after&lt;/em&gt; the beginning of a stream, build an instance with an InputStream starting where you want to validate.
+     * &lt;/p&gt;
+     * &lt;pre&gt;{@code
+     * InputStream inputStream = ...;
+     * inputStream.read(...);
+     * inputStream.skip(...);
+     * ChecksumInputStream s = ChecksumInputStream.builder()
+     *   .setInputStream(inputStream)
+     *   .setChecksum(new CRC32())
+     *   .setExpectedChecksumValue(12345)
+     *   .setCountThreshold(100)
+     *   .get();
+     * }&lt;/pre&gt;
+     *
+     * @see #get()
+     */
+    // @formatter:on
+<span class="fc" id="L99">    public static class Builder extends AbstractBuilder&lt;ChecksumInputStream, Builder&gt; {</span>
+
+        /**
+         * There is no default {@link Checksum}, you MUST provide one. This avoids any issue with a default {@link Checksum} being proven deficient or insecure
+         * in the future.
+         */
+        private Checksum checksum;
+
+        /**
+         * The count threshold to limit how much input is consumed to update the {@link Checksum} before the input
+         * stream validates its value.
+         * &lt;p&gt;
+         * By default, all input updates the {@link Checksum}.
+         * &lt;/p&gt;
+         */
+<span class="fc" id="L114">        private long countThreshold = -1;</span>
+
+        /**
+         * The expected {@link Checksum} value once the stream is exhausted or the count threshold is reached.
+         */
+        private long expectedChecksumValue;
+
+        /**
+         * Builds a new {@link ChecksumInputStream}.
+         * &lt;p&gt;
+         * You must set input that supports {@link #getInputStream()}, otherwise, this method throws an exception.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * This builder use the following aspects:
+         * &lt;/p&gt;
+         * &lt;ul&gt;
+         * &lt;li&gt;{@link #getInputStream()}&lt;/li&gt;
+         * &lt;li&gt;{@link Checksum}&lt;/li&gt;
+         * &lt;li&gt;expectedChecksumValue&lt;/li&gt;
+         * &lt;li&gt;countThreshold&lt;/li&gt;
+         * &lt;/ul&gt;
+         *
+         * @return a new instance.
+         * @throws IllegalStateException         if the {@code origin} is {@code null}.
+         * @throws UnsupportedOperationException if the origin cannot be converted to an {@link InputStream}.
+         * @throws IOException                   if an I/O error occurs.
+         * @see #getInputStream()
+         */
+        @Override
+        public ChecksumInputStream get() throws IOException {
+<span class="fc" id="L144">            return new ChecksumInputStream(this);</span>
+        }
+
+        /**
+         * Sets the Checksum. There is no default {@link Checksum}, you MUST provide one. This avoids any issue with a default {@link Checksum} being proven
+         * deficient or insecure in the future.
+         *
+         * @param checksum the Checksum.
+         * @return {@code this} instance.
+         */
+        public Builder setChecksum(final Checksum checksum) {
+<span class="fc" id="L155">            this.checksum = checksum;</span>
+<span class="fc" id="L156">            return this;</span>
+        }
+
+        /**
+         * Sets the count threshold to limit how much input is consumed to update the {@link Checksum} before the input
+         * stream validates its value.
+         * &lt;p&gt;
+         * By default, all input updates the {@link Checksum}.
+         * &lt;/p&gt;
+         *
+         * @param countThreshold the count threshold. A negative number means the threshold is unbound.
+         * @return {@code this} instance.
+         */
+        public Builder setCountThreshold(final long countThreshold) {
+<span class="fc" id="L170">            this.countThreshold = countThreshold;</span>
+<span class="fc" id="L171">            return this;</span>
+        }
+
+        /**
+         * The expected {@link Checksum} value once the stream is exhausted or the count threshold is reached.
+         *
+         * @param expectedChecksumValue The expected Checksum value.
+         * @return {@code this} instance.
+         */
+        public Builder setExpectedChecksumValue(final long expectedChecksumValue) {
+<span class="fc" id="L181">            this.expectedChecksumValue = expectedChecksumValue;</span>
+<span class="fc" id="L182">            return this;</span>
+        }
+
+    }
+
+    /**
+     * Constructs a new {@link Builder}.
+     *
+     * @return a new {@link Builder}.
+     */
+    public static Builder builder() {
+<span class="fc" id="L193">        return new Builder();</span>
+    }
+
+    /** The expected checksum. */
+    private final long expectedChecksumValue;
+
+    /**
+     * The count threshold to limit how much input is consumed to update the {@link Checksum} before the input stream
+     * validates its value.
+     * &lt;p&gt;
+     * By default, all input updates the {@link Checksum}.
+     * &lt;/p&gt;
+     */
+    private final long countThreshold;
+
+    /**
+     * Constructs a new instance.
+     *
+     * @param builder build parameters.
+     */
+    @SuppressWarnings(&quot;resource&quot;)
+    private ChecksumInputStream(final Builder builder) throws IOException {
+<span class="fc" id="L215">        super(new CheckedInputStream(builder.getInputStream(), Objects.requireNonNull(builder.checksum, &quot;builder.checksum&quot;)), builder);</span>
+<span class="fc" id="L216">        this.countThreshold = builder.countThreshold;</span>
+<span class="fc" id="L217">        this.expectedChecksumValue = builder.expectedChecksumValue;</span>
+<span class="fc" id="L218">    }</span>
+
+    @Override
+    protected synchronized void afterRead(final int n) throws IOException {
+<span class="fc" id="L222">        super.afterRead(n);</span>
+<span class="fc bfc" id="L223" title="All 6 branches covered.">        if ((countThreshold &gt; 0 &amp;&amp; getByteCount() &gt;= countThreshold || n == EOF)</span>
+<span class="fc bfc" id="L224" title="All 2 branches covered.">                &amp;&amp; expectedChecksumValue != getChecksum().getValue()) {</span>
+            // Validate when past the threshold or at EOF
+<span class="fc" id="L226">            throw new IOException(&quot;Checksum verification failed.&quot;);</span>
+        }
+<span class="fc" id="L228">    }</span>
+
+    /**
+     * Gets the current checksum value.
+     *
+     * @return the current checksum value.
+     */
+    private Checksum getChecksum() {
+<span class="fc" id="L236">        return ((CheckedInputStream) in).getChecksum();</span>
+    }
+
+    /**
+     * Gets the byte count remaining to read.
+     *
+     * @return bytes remaining to read, a negative number means the threshold is unbound.
+     */
+    public long getRemaining() {
+<span class="fc" id="L245">        return countThreshold - getByteCount();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

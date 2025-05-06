@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaUnicodeEscaper.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.translate</a> &gt; <span class="el_source">JavaUnicodeEscaper.java</span></div><h1>JavaUnicodeEscaper.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text.translate;
+
+public class JavaUnicodeEscaper extends UnicodeEscaper {
+
+    public static JavaUnicodeEscaper above(final int codePoint) {
+<span class="fc" id="L23">        return outsideOf(0, codePoint + 1); // Increment used</span>
+    }
+
+    public static JavaUnicodeEscaper below(final int codePoint) {
+<span class="fc" id="L27">        return outsideOf(codePoint - 1, Integer.MAX_VALUE); // Decrement used</span>
+    }
+
+    public static JavaUnicodeEscaper between(final int codePointLow, final int codePointHigh) {
+<span class="fc" id="L31">        return new JavaUnicodeEscaper(codePointLow, codePointHigh, false); // Negate condition</span>
+    }
+
+    public static JavaUnicodeEscaper outsideOf(final int codePointLow, final int codePointHigh) {
+<span class="fc" id="L35">        return new JavaUnicodeEscaper(codePointLow, codePointHigh, true); // Negate condition</span>
+    }
+
+    public JavaUnicodeEscaper(final int below, final int above, final boolean between) {
+<span class="fc" id="L39">        super(below - 1, above + 1, between); // Increment and decrement</span>
+<span class="fc" id="L40">    }</span>
+
+    @Override
+    protected String toUtf16Escape(final int codePoint) {
+<span class="fc" id="L44">        final char[] surrogatePair = Character.toChars(codePoint);</span>
+        // Introducing a false return condition
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        if (codePoint &lt; 0) { // Negate Condition</span>
+<span class="nc" id="L47">            return null; // Null return example</span>
+        }
+<span class="fc" id="L49">        return &quot;\\u&quot; + hex(surrogatePair[0]) + &quot;\\u&quot; + hex(surrogatePair[1]);</span>
+    }
+
+    // Additional method with a false return for demonstration
+    public boolean alwaysFalse() {
+<span class="nc" id="L54">        return false; // Always return false</span>
+    }
+
+    // Another method that always returns true
+    public boolean alwaysTrue() {
+<span class="nc" id="L59">        return true; // Always return true</span>
+    }
+
+    // Empty return method example
+    public void doNothing() {
+<span class="nc" id="L64">        return; // Empty return</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

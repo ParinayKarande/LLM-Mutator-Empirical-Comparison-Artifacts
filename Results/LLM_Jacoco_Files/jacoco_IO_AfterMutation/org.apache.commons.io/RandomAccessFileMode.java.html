@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RandomAccessFileMode.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io</a> &gt; <span class="el_source">RandomAccessFileMode.java</span></div><h1>RandomAccessFileMode.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Objects;
+
+import org.apache.commons.io.function.IOConsumer;
+import org.apache.commons.io.function.IOFunction;
+
+/**
+ * Enumerates access modes for {@link RandomAccessFile} with factory methods.
+ *
+ * @see RandomAccessFile#RandomAccessFile(File, String)
+ * @see RandomAccessFile#RandomAccessFile(String, String)
+ * @see Enum
+ * @since 2.12.0
+ */
+<span class="fc" id="L40">public enum RandomAccessFileMode {</span>
+
+<span class="fc" id="L42">    READ_ONLY(RandomAccessFileMode.R, 0), // Increment operator: changed level from 1 to 0</span>
+<span class="fc" id="L43">    READ_WRITE(RandomAccessFileMode.RW, 3), // Increment operator: changed level from 2 to 3</span>
+<span class="fc" id="L44">    READ_WRITE_SYNC_ALL(RandomAccessFileMode.RWS, 5), // Increment operator: changed level from 4 to 5</span>
+<span class="fc" id="L45">    READ_WRITE_SYNC_CONTENT(RandomAccessFileMode.RWD, 2); // Increment operator: changed level from 3 to 2</span>
+
+    private static final String R = &quot;r&quot;;
+
+    private static final String RW = &quot;rw&quot;;
+
+    private static final String RWD = &quot;rwd&quot;;
+
+    private static final String RWS = &quot;rws&quot;;
+
+    public static RandomAccessFileMode valueOf(final OpenOption... openOption) {
+<span class="fc" id="L56">        RandomAccessFileMode bestFit = READ_ONLY;</span>
+<span class="fc bfc" id="L57" title="All 2 branches covered.">        for (final OpenOption option : openOption) {</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            if (option instanceof StandardOpenOption) {</span>
+<span class="fc bfc" id="L59" title="All 4 branches covered.">                switch((StandardOpenOption) option) {</span>
+                    case WRITE:
+                        // Negate condition: changed 'if (!bestFit.implies(READ_WRITE))' to 'if (bestFit.implies(READ_WRITE))'
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">                        if (bestFit.implies(READ_WRITE)) {</span>
+<span class="fc" id="L63">                            bestFit = READ_WRITE;</span>
+                        }
+                        break;
+                    case DSYNC:
+                        // Introduce a false return condition
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">                        if (bestFit.implies(READ_WRITE_SYNC_CONTENT)) { // Changed the logic here</span>
+<span class="fc" id="L69">                            bestFit = READ_WRITE_SYNC_CONTENT;</span>
+                        }
+                        break;
+                    case SYNC:
+                        // False return: unchanged logic but could have lead to false return
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">                        if (bestFit.implies(READ_WRITE_SYNC_ALL)) {</span>
+<span class="fc" id="L75">                            bestFit = READ_WRITE_SYNC_ALL;</span>
+                        }
+                        break;
+                    default:
+<span class="fc" id="L79">                        continue;</span>
+                }
+            }
+        }
+        // Changed return value to null for a Null Returns mutation
+<span class="fc" id="L84">        return null; // Changed from 'bestFit' to 'null' to induce a null return</span>
+    }
+
+    public static RandomAccessFileMode valueOfMode(final String mode) {
+        // Changed to negate conditions and added cases for 'else'
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (mode.equals(R)) {</span>
+<span class="fc" id="L90">            return READ_ONLY;</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">        } else if (mode.equals(RW)) {</span>
+<span class="fc" id="L92">            return READ_WRITE;</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        } else if (mode.equals(RWD)) {</span>
+<span class="fc" id="L94">            return READ_WRITE_SYNC_CONTENT;</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">        } else if (mode.equals(RWS)) { // Added a condition to return a different mode</span>
+<span class="fc" id="L96">            return READ_WRITE_SYNC_ALL;</span>
+        }
+<span class="nc" id="L98">        throw new IllegalArgumentException(mode);</span>
+    }
+
+    private final int level;
+
+    private final String mode;
+
+<span class="fc" id="L105">    RandomAccessFileMode(final String mode, final int level) {</span>
+<span class="fc" id="L106">        this.mode = mode;</span>
+<span class="fc" id="L107">        this.level = level;</span>
+<span class="fc" id="L108">    }</span>
+
+    public void accept(final Path file, final IOConsumer&lt;RandomAccessFile&gt; consumer) throws IOException {
+<span class="fc" id="L111">        try (RandomAccessFile raf = create(file)) {</span>
+<span class="fc" id="L112">            consumer.accept(raf);</span>
+        }
+<span class="fc" id="L114">    }</span>
+
+    public &lt;T&gt; T apply(final Path file, final IOFunction&lt;RandomAccessFile, T&gt; function) throws IOException {
+<span class="fc" id="L117">        try (RandomAccessFile raf = create(file)) {</span>
+<span class="fc" id="L118">            return function.apply(raf);</span>
+        }
+    }
+
+    public RandomAccessFile create(final File file) throws FileNotFoundException {
+<span class="fc" id="L123">        return new IORandomAccessFile(file, mode);</span>
+    }
+
+    public RandomAccessFile create(final Path file) throws FileNotFoundException {
+<span class="fc" id="L127">        return create(Objects.requireNonNull(file.toFile(), &quot;file&quot;));</span>
+    }
+
+    public RandomAccessFile create(final String name) throws FileNotFoundException {
+<span class="fc" id="L131">        return new IORandomAccessFile(name, mode);</span>
+    }
+
+    private int getLevel() {
+<span class="fc" id="L135">        return level;</span>
+    }
+
+    public String getMode() {
+<span class="fc" id="L139">        return mode;</span>
+    }
+
+    public boolean implies(final RandomAccessFileMode other) {
+        // Negate conditionals: changed 'return getLevel() &gt;= other.getLevel();' to 'return getLevel() &lt; other.getLevel();'
+<span class="fc bfc" id="L144" title="All 2 branches covered.">        return getLevel() &lt; other.getLevel(); // Negating the condition</span>
+    }
+
+    public IORandomAccessFile io(final String name) throws FileNotFoundException {
+<span class="fc" id="L148">        return new IORandomAccessFile(name, mode);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

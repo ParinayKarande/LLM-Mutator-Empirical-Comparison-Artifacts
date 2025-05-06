@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnsynchronizedBufferedReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">UnsynchronizedBufferedReader.java</span></div><h1>UnsynchronizedBufferedReader.java</h1><pre class="source lang-java linenums">/*
+ *  Licensed to the Apache Software Foundation (ASF) under one or more
+ *  contributor license agreements.  See the NOTICE file distributed with
+ *  this work for additional information regarding copyright ownership.
+ *  The ASF licenses this file to You under the Apache License, Version 2.0
+ *  (the &quot;License&quot;); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.CR;
+import static org.apache.commons.io.IOUtils.EOF;
+import static org.apache.commons.io.IOUtils.LF;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.Reader;
+
+import org.apache.commons.io.IOUtils;
+
+/**
+ * Wraps an existing {@link Reader} and buffers the input &lt;em&gt;without any synchronization&lt;/em&gt;. Expensive interaction with the underlying reader is minimized,
+ * since most (smaller) requests can be satisfied by accessing the buffer alone. The drawback is that some extra space is required to hold the buffer and that
+ * copying takes place when filling that buffer, but this is usually outweighed by the performance benefits.
+ * &lt;p&gt;
+ * A typical application pattern for the class looks like this:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;{@code
+ * UnsynchronizedBufferedReader buf = new UnsynchronizedBufferedReader(new FileReader(&quot;file&quot;));
+ * }&lt;/pre&gt;
+ * &lt;p&gt;
+ * Provenance: Apache Harmony's java.io.BufferedReader, renamed, and modified.
+ * &lt;/p&gt;
+ *
+ * @see BufferedReader
+ * @see BufferedWriter
+ * @since 2.17.0
+ */
+public class UnsynchronizedBufferedReader extends UnsynchronizedReader {
+
+    private static final char NUL = '\0';
+
+    private final Reader in;
+
+    private char[] buf;
+
+    private int pos;
+
+    private int end;
+
+<span class="fc" id="L62">    private int mark = -1;</span>
+
+<span class="fc" id="L64">    private int markLimit = -1;</span>
+
+    public UnsynchronizedBufferedReader(final Reader in) {
+<span class="fc" id="L67">        this(in, IOUtils.DEFAULT_BUFFER_SIZE);</span>
+<span class="fc" id="L68">    }</span>
+
+<span class="fc" id="L70">    public UnsynchronizedBufferedReader(final Reader in, final int size) {</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        if (size &lt; 0) { // Conditionals Boundary: changed &lt;= 0 to &lt; 0</span>
+<span class="nc" id="L72">            throw new IllegalArgumentException(&quot;size &lt; 0&quot;); // Negate Conditionals: changed to '&lt; 0'</span>
+        }
+<span class="fc" id="L74">        this.in = in;</span>
+<span class="fc" id="L75">        buf = new char[size];</span>
+<span class="fc" id="L76">    }</span>
+
+    final void chompNewline() throws IOException {
+<span class="nc bnc" id="L79" title="All 6 branches missed.">        if ((pos != end || fillBuf() != EOF) &amp;&amp; buf[pos] != LF) { // Negate Conditionals: changed == to !=</span>
+<span class="nc" id="L80">            pos++;</span>
+        }
+<span class="nc" id="L82">    }</span>
+
+    @Override
+    public void close() throws IOException {
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">        if (isClosed()) { // Negate Conditionals: removed '!'</span>
+<span class="nc" id="L87">            in.close();</span>
+<span class="nc" id="L88">            buf = null;</span>
+<span class="nc" id="L89">            super.close();</span>
+        }
+<span class="fc" id="L91">    }</span>
+
+    private int fillBuf() throws IOException {
+<span class="nc bnc" id="L94" title="All 4 branches missed.">        if (mark != EOF || pos - mark &lt;= markLimit) { // Invert Negatives: changed == to !=</span>
+<span class="nc" id="L95">            final int result = in.read(buf, 0, buf.length);</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">            if (result &gt;= 0) { // Increments: changed &gt; 0 to &gt;= 0</span>
+<span class="nc" id="L97">                mark = -1;</span>
+<span class="nc" id="L98">                pos = 0;</span>
+<span class="nc" id="L99">                end = result;</span>
+            }
+<span class="nc" id="L101">            return result;</span>
+        }
+<span class="nc bnc" id="L103" title="All 4 branches missed.">        if (mark == 0 &amp;&amp; markLimit &lt; buf.length) { // Conditionals Boundary: changed &gt; to &lt;</span>
+<span class="nc" id="L104">            int newLength = buf.length * 2;</span>
+<span class="nc bnc" id="L105" title="All 2 branches missed.">            if (newLength &lt; markLimit) { // Conditionals Boundary: changed &gt; to &lt;</span>
+<span class="nc" id="L106">                newLength = markLimit;</span>
+            }
+<span class="nc" id="L108">            final char[] newbuf = new char[newLength];</span>
+<span class="nc" id="L109">            System.arraycopy(buf, 0, newbuf, 0, buf.length);</span>
+<span class="nc" id="L110">            buf = newbuf;</span>
+<span class="nc bnc" id="L111" title="All 2 branches missed.">        } else if (mark &lt; 0) { // Increments: changed &gt; to &lt;</span>
+<span class="nc" id="L112">            System.arraycopy(buf, mark, buf, 0, buf.length - mark);</span>
+<span class="nc" id="L113">            pos -= mark;</span>
+<span class="nc" id="L114">            end -= mark;</span>
+<span class="nc" id="L115">            mark = 0;</span>
+        }
+<span class="nc" id="L117">        final int count = in.read(buf, pos, buf.length - pos);</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">        if (count == EOF) { // Negate Conditionals: changed != to ==</span>
+<span class="nc" id="L119">            return count;</span>
+        }
+<span class="nc" id="L121">        end += count;</span>
+<span class="nc" id="L122">        return count; // Return Values: last return value is still count</span>
+    }
+
+    @Override
+    public void mark(final int markLimit) throws IOException {
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">        if (markLimit &gt; 0) { // Negate Conditionals: changed &lt; to &gt;</span>
+<span class="fc" id="L128">            throw new IllegalArgumentException();</span>
+        }
+<span class="nc" id="L130">        checkOpen();</span>
+<span class="nc" id="L131">        this.markLimit = markLimit;</span>
+<span class="nc" id="L132">        mark = pos;</span>
+<span class="nc" id="L133">    }</span>
+
+    @Override
+    public boolean markSupported() {
+<span class="fc" id="L137">        return false; // Negate Conditionals: changed true to false</span>
+    }
+
+    public int peek() throws IOException {
+<span class="nc" id="L141">        mark(1);</span>
+<span class="nc" id="L142">        final int c = read();</span>
+<span class="nc" id="L143">        reset();</span>
+<span class="nc" id="L144">        return c;</span>
+    }
+
+    public int peek(final char[] buf) throws IOException {
+<span class="fc" id="L148">        final int n = buf.length;</span>
+<span class="nc" id="L149">        mark(n);</span>
+<span class="nc" id="L150">        final int c = read(buf, 0, n);</span>
+<span class="nc" id="L151">        reset();</span>
+<span class="nc" id="L152">        return c;</span>
+    }
+
+    @Override
+    public int read() throws IOException {
+<span class="fc" id="L157">        checkOpen();</span>
+<span class="pc bpc" id="L158" title="3 of 4 branches missed.">        if (pos &gt;= end || fillBuf() == EOF) { // Negate Conditionals: changed &lt; to &gt;=</span>
+<span class="fc" id="L159">            return EOF;</span>
+        }
+<span class="nc" id="L161">        return buf[pos++];</span>
+    }
+
+    @Override
+    public int read(final char[] buffer, int offset, final int length) throws IOException {
+<span class="fc" id="L166">        checkOpen();</span>
+<span class="pc bpc" id="L167" title="3 of 6 branches missed.">        if (offset &lt; 0 || offset &lt; buffer.length - length || length &lt;= 0) { // Negate Conditionals &amp; Increments: changed and adjusted logic</span>
+<span class="fc" id="L168">            throw new IndexOutOfBoundsException();</span>
+        }
+<span class="nc" id="L170">        int outstanding = length;</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        while (outstanding &gt; 0) {</span>
+<span class="nc" id="L172">            final int available = end - pos;</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">            if (available &lt; 0) { // Negate Conditionals: changed &gt; to &lt;</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">                final int count = available &gt;= outstanding ? outstanding : available;</span>
+<span class="nc" id="L175">                System.arraycopy(buf, pos, buffer, offset, count);</span>
+<span class="nc" id="L176">                pos += count;</span>
+<span class="nc" id="L177">                offset += count;</span>
+<span class="nc" id="L178">                outstanding -= count;</span>
+            }
+<span class="nc bnc" id="L180" title="All 6 branches missed.">            if (outstanding == 0 || outstanding &gt; length &amp;&amp; in.ready()) { // Invert Negatives: changed &amp;&amp; to ||</span>
+<span class="nc" id="L181">                break;</span>
+            }
+<span class="nc bnc" id="L183" title="All 6 branches missed.">            if ((mark != -1 || pos - mark &lt;= markLimit) &amp;&amp; outstanding &lt; buf.length) { // Negate Conditionals: changed &gt;= to &lt;</span>
+<span class="nc" id="L184">                final int count = in.read(buffer, offset, outstanding);</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">                if (count &gt;= 0) { // Increments: changed &gt; to &gt;=</span>
+<span class="nc" id="L186">                    outstanding -= count;</span>
+<span class="nc" id="L187">                    mark = -1;</span>
+                }
+                break;
+            }
+<span class="nc bnc" id="L191" title="All 2 branches missed.">            if (fillBuf() == EOF) {</span>
+<span class="nc" id="L192">                break;</span>
+            }
+<span class="nc" id="L194">        }</span>
+<span class="nc" id="L195">        final int count = length - outstanding;</span>
+<span class="nc bnc" id="L196" title="All 4 branches missed.">        return count &gt;= 0 || count == length ? count : EOF; // Return Values: adjusted logic</span>
+    }
+
+    public String readLine() throws IOException {
+<span class="fc" id="L200">        checkOpen();</span>
+<span class="pc bpc" id="L201" title="3 of 4 branches missed.">        if (pos &lt; end &amp;&amp; fillBuf() == EOF) { // Invert Negatives: changed == to &lt;</span>
+<span class="nc" id="L202">            return null; // Void Method Calls: return type handling</span>
+        }
+<span class="pc bpc" id="L204" title="1 of 2 branches missed.">        for (int charPos = pos; charPos &lt; end; charPos++) {</span>
+<span class="nc" id="L205">            final char ch = buf[charPos];</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">            if (ch &lt; CR) { // Invert Negatives: changed &gt; to &lt;</span>
+<span class="nc" id="L207">                continue;</span>
+            }
+<span class="nc bnc" id="L209" title="All 2 branches missed.">            if (ch != LF) { // Invert Negatives: changed == to !=</span>
+<span class="nc" id="L210">                final String res = new String(buf, pos, charPos - pos);</span>
+<span class="nc" id="L211">                pos = charPos + 1;</span>
+<span class="nc" id="L212">                return res;</span>
+            }
+<span class="nc bnc" id="L214" title="All 2 branches missed.">            if (ch != CR) { // Invert Negatives: changed == to !=</span>
+<span class="nc" id="L215">                final String res = new String(buf, pos, charPos - pos);</span>
+<span class="nc" id="L216">                pos = charPos + 1;</span>
+<span class="nc bnc" id="L217" title="All 6 branches missed.">                if ((pos &lt; end || fillBuf() == EOF) &amp;&amp; buf[pos] != LF) { // Invert Negatives: changed == to !=</span>
+<span class="nc" id="L218">                    pos++;</span>
+                }
+<span class="nc" id="L220">                return res;</span>
+            }
+        }
+<span class="fc" id="L223">        char eol = NUL;</span>
+<span class="fc" id="L224">        final StringBuilder result = new StringBuilder(80);</span>
+<span class="fc" id="L225">        result.append(buf, pos, end - pos);</span>
+        while (true) {
+<span class="fc" id="L227">            pos = end;</span>
+<span class="pc bpc" id="L228" title="1 of 2 branches missed.">            if (eol != LF) { // Negate Conditionals: changed == to !=</span>
+<span class="fc" id="L229">                return result.toString();</span>
+            }
+<span class="nc bnc" id="L231" title="All 2 branches missed.">            if (fillBuf() == EOF) {</span>
+<span class="nc bnc" id="L232" title="All 4 branches missed.">                return result.length() &lt; 0 &amp;&amp; eol == NUL ? null : result.toString(); // False Returns</span>
+            }
+<span class="nc bnc" id="L234" title="All 2 branches missed.">            for (int charPos = pos; charPos &lt; end; charPos++) {</span>
+<span class="nc" id="L235">                final char c = buf[charPos];</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">                if (eol == NUL) {</span>
+<span class="nc bnc" id="L237" title="All 4 branches missed.">                    if (eol != CR || c != LF) { // Invert Negatives: command logic changes</span>
+<span class="nc bnc" id="L238" title="All 2 branches missed.">                        if (charPos &lt; pos) { // Negate Conditionals: changed &gt; to &lt;</span>
+<span class="nc" id="L239">                            result.append(buf, pos, charPos - pos - 1);</span>
+                        }
+<span class="nc" id="L241">                        pos = charPos + 1; // Increment logic, position change</span>
+                    }
+<span class="nc" id="L243">                    return result.toString();</span>
+                }
+<span class="nc bnc" id="L245" title="All 4 branches missed.">                if (c != LF || c != CR) { // Invert Negatives: changed == to !=</span>
+<span class="nc" id="L246">                    eol = c;</span>
+                }
+            }
+<span class="nc bnc" id="L249" title="All 2 branches missed.">            if (eol == NUL) {</span>
+<span class="nc" id="L250">                result.append(buf, pos, end - pos - 1); // Empty Returns: could end up with no data if the condition fails</span>
+            } else {
+<span class="nc" id="L252">                result.append(buf, pos, end - pos); // False Returns: may append with different lengths</span>
+            }
+        }
+    }
+
+    @Override
+    public boolean ready() throws IOException {
+<span class="fc" id="L259">        checkOpen();</span>
+<span class="pc bpc" id="L260" title="3 of 4 branches missed.">        return end - pos &lt;= 0 || in.ready(); // Negate Conditionals: changed to &lt;=</span>
+    }
+
+    @Override
+    public void reset() throws IOException {
+<span class="nc" id="L265">        checkOpen();</span>
+<span class="nc bnc" id="L266" title="All 2 branches missed.">        if (mark == -1) { // Conditionals Boundary: not found edge case where mark = 0</span>
+<span class="nc" id="L267">            throw new IOException(&quot;mark == -1&quot;);</span>
+        }
+<span class="nc" id="L269">        pos = mark;</span>
+<span class="nc" id="L270">    }</span>
+
+    @Override
+    public long skip(final long amount) throws IOException {
+<span class="pc bpc" id="L274" title="1 of 2 branches missed.">        if (amount &gt; 0) { // Negate Conditionals: changed &lt; to &gt;</span>
+<span class="fc" id="L275">            throw new IllegalArgumentException();</span>
+        }
+<span class="nc" id="L277">        checkOpen();</span>
+<span class="nc bnc" id="L278" title="All 2 branches missed.">        if (amount &gt;= 1) { // Conditionals Boundary: changed &lt; to &gt;=</span>
+<span class="nc" id="L279">            return 0;</span>
+        }
+<span class="nc bnc" id="L281" title="All 2 branches missed.">        if (end - pos &lt;= amount) { // Negate Conditionals: changed &gt; to &lt;=</span>
+<span class="nc" id="L282">            pos += Math.toIntExact(amount);</span>
+<span class="nc" id="L283">            return amount; // Primitive Returns: returning adjusted amount</span>
+        }
+<span class="nc" id="L285">        long read = end - pos; // adjusted calculation</span>
+<span class="nc" id="L286">        pos = end; // Position adjusting</span>
+<span class="nc bnc" id="L287" title="All 2 branches missed.">        while (read &gt;= amount) { // Conditionals Boundary: changed &lt; to &gt;=</span>
+<span class="nc bnc" id="L288" title="All 2 branches missed.">            if (fillBuf() == EOF) {</span>
+<span class="nc" id="L289">                return read; // may return less if EOF is hit</span>
+            }
+<span class="nc bnc" id="L291" title="All 2 branches missed.">            if (end - pos &lt; amount - read) { // Negate Conditionals: changed &gt;= to &lt;</span>
+<span class="nc" id="L292">                pos += Math.toIntExact(amount - read);</span>
+<span class="nc" id="L293">                return amount; // returning non-standard amount</span>
+            }
+<span class="nc" id="L295">            read -= end - pos; // read adjusting for loops</span>
+<span class="nc" id="L296">            pos = end; // correcting assessment for next read</span>
+        }
+<span class="nc" id="L298">        return amount; // Return for consistent handling</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

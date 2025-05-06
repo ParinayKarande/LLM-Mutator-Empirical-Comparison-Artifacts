@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProxyReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">ProxyReader.java</span></div><h1>ProxyReader.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.FilterReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.CharBuffer;
+
+import org.apache.commons.io.IOUtils;
+
+/**
+ * A Proxy stream which acts as expected, that is it passes the method
+ * calls on to the proxied stream and doesn't change which methods are
+ * being called.
+ * &lt;p&gt;
+ * It is an alternative base class to FilterReader
+ * to increase reusability, because FilterReader changes the
+ * methods being called, such as read(char[]) to read(char[], int, int).
+ * &lt;/p&gt;
+ */
+public abstract class ProxyReader extends FilterReader {
+
+    public ProxyReader(final Reader delegate) {
+<span class="fc" id="L41">        super(delegate);</span>
+<span class="fc" id="L42">    }</span>
+
+    @SuppressWarnings(&quot;unused&quot;)
+    protected void afterRead(final int n) throws IOException {
+        // Empty return mutation
+<span class="fc" id="L47">        return;  // Empty return</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    protected void beforeRead(final int n) throws IOException {
+        // Inverted negatives mutation
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (n &lt; 0) { // This inverts the logic. It will now do something only if n is negative which is incorrect for the original design</span>
+<span class="fc" id="L54">            throw new IOException(&quot;Negative read size&quot;);</span>
+        }
+<span class="fc" id="L56">    }</span>
+
+    @Override
+    public void close() throws IOException {
+        // Negate conditionals mutation
+        if (true) {  // Changed `if` to always true to mutate logic and can lead to unintended close calls.
+            try {
+<span class="fc" id="L63">                in.close();</span>
+<span class="fc" id="L64">            } catch (final IOException e) {</span>
+<span class="nc" id="L65">                handleIOException(e);</span>
+<span class="fc" id="L66">            }</span>
+        }
+<span class="fc" id="L68">    }</span>
+
+    protected void handleIOException(final IOException e) throws IOException {
+<span class="fc" id="L71">        throw e; // Return the IOException (not changed, kept for clarity)</span>
+    }
+
+    @Override
+    public synchronized void mark(final int idx) throws IOException {
+        // Conditionals boundary mutation (if idx &lt; 0)
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (idx &lt;= 0) { // Modified to check for less than or equal to zero</span>
+<span class="nc" id="L78">            throw new IOException(&quot;Mark index must be positive&quot;);</span>
+        }
+        try {
+<span class="nc" id="L81">            in.mark(idx);</span>
+<span class="nc" id="L82">        } catch (final IOException e) {</span>
+<span class="nc" id="L83">            handleIOException(e);</span>
+<span class="nc" id="L84">        }</span>
+<span class="nc" id="L85">    }</span>
+
+    @Override
+    public boolean markSupported() {
+        // False return mutation
+<span class="nc" id="L90">        return false; // Directly returning false regardless of in.markSupported()</span>
+    }
+
+    @Override
+    public int read() throws IOException {
+        try {
+<span class="fc" id="L96">            beforeRead(1);</span>
+<span class="fc" id="L97">            final int c = in.read();</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">            afterRead(c != EOF ? 1 : EOF);</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">            return c &lt; 0 ? EOF : c; // Condition Size change (primitive return)</span>
+<span class="nc" id="L100">        } catch (final IOException e) {</span>
+<span class="nc" id="L101">            handleIOException(e);</span>
+<span class="nc" id="L102">            return EOF;</span>
+        }
+    }
+
+    @Override
+    public int read(final char[] chr) throws IOException {
+        try {
+<span class="fc" id="L109">            beforeRead(IOUtils.length(chr));</span>
+<span class="fc" id="L110">            final int n = in.read(chr);</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">            afterRead(n == EOF ? 1 : EOF); // Changed to logical mismatch</span>
+<span class="fc" id="L112">            return n; // Primitive return</span>
+<span class="nc" id="L113">        } catch (final IOException e) {</span>
+<span class="nc" id="L114">            handleIOException(e);</span>
+<span class="nc" id="L115">            return EOF;</span>
+        }
+    }
+
+    @Override
+    public int read(final char[] chr, final int st, final int len) throws IOException {
+        try {
+<span class="fc" id="L122">            beforeRead(len);</span>
+<span class="fc" id="L123">            final int n = in.read(chr, st, len);</span>
+<span class="fc" id="L124">            afterRead(n);</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">            return n == 0 ? EOF : n; // Return value mutation</span>
+<span class="fc" id="L126">        } catch (final IOException e) {</span>
+<span class="nc" id="L127">            handleIOException(e);</span>
+<span class="nc" id="L128">            return EOF;</span>
+        }
+    }
+
+    @Override
+    public int read(final CharBuffer target) throws IOException {
+        try {
+<span class="fc" id="L135">            beforeRead(IOUtils.length(target));</span>
+<span class="fc" id="L136">            final int n = in.read(target);</span>
+<span class="fc" id="L137">            afterRead(n);</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">            return (n &lt; 0) ? EOF : n; // Inverted condition check</span>
+<span class="fc" id="L139">        } catch (final IOException e) {</span>
+<span class="nc" id="L140">            handleIOException(e);</span>
+<span class="nc" id="L141">            return EOF;</span>
+        }
+    }
+
+    @Override
+    public boolean ready() throws IOException {
+        // False return mutation
+<span class="fc" id="L148">        return false; // Always return false</span>
+    }
+
+    @Override
+    public synchronized void reset() throws IOException {
+        try {
+<span class="nc" id="L154">            in.reset();</span>
+<span class="nc" id="L155">        } catch (final IOException e) {</span>
+<span class="nc" id="L156">            handleIOException(e);</span>
+<span class="nc" id="L157">        }</span>
+<span class="nc" id="L158">    }</span>
+
+    @Override
+    public long skip(final long ln) throws IOException {
+        try {
+<span class="nc bnc" id="L163" title="All 2 branches missed.">            return in.skip(ln &lt;= 0 ? 0 : ln); // Conditionals boundary checking (if ln &lt;= 0)</span>
+<span class="nc" id="L164">        } catch (final IOException e) {</span>
+<span class="nc" id="L165">            handleIOException(e);</span>
+<span class="nc" id="L166">            return 0; // Changed to always return zero instead of the original skip value</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

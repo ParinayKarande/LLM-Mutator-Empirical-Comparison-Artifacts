@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CloseableURLConnection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io</a> &gt; <span class="el_source">CloseableURLConnection.java</span></div><h1>CloseableURLConnection.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
+import java.security.Permission;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+/**
+ * Delegates to a URLConnection while implementing AutoCloseable.
+ */
+final class CloseableURLConnection extends URLConnection implements AutoCloseable {
+
+    static CloseableURLConnection open(final URI uri) throws IOException {
+<span class="nc" id="L36">        return open(Objects.requireNonNull(uri, &quot;uri&quot;).toURL());</span>
+    }
+
+    static CloseableURLConnection open(final URL url) throws IOException {
+<span class="nc" id="L40">        return new CloseableURLConnection(url.openConnection());</span>
+    }
+
+    private final URLConnection urlConnection;
+
+    CloseableURLConnection(final URLConnection urlConnection) {
+<span class="nc" id="L46">        super(Objects.requireNonNull(urlConnection, &quot;urlConnection&quot;).getURL());</span>
+<span class="nc" id="L47">        this.urlConnection = urlConnection;</span>
+<span class="nc" id="L48">    }</span>
+
+    @Override
+    public void addRequestProperty(final String key, final String value) {
+<span class="nc" id="L52">        urlConnection.addRequestProperty(key, value);</span>
+<span class="nc" id="L53">    }</span>
+
+    @Override
+    public void close() {
+        // Mutant: Inverting the call to IOUtils.close
+        // IOUtils.close(urlConnection);
+<span class="nc" id="L59">    }</span>
+
+    @Override
+    public void connect() throws IOException {
+        // Mutant: Change to throw a generic exception instead of IOException
+<span class="nc" id="L64">        throw new RuntimeException(&quot;Connection failed!&quot;);</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        // Mutant: Negating the condition in equals
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        return !urlConnection.equals(obj);</span>
+    }
+
+    @Override
+    public boolean getAllowUserInteraction() {
+        // Mutant: Returning a false constant value instead of the method call
+<span class="nc" id="L76">        return false; // Detected null condition</span>
+    }
+
+    @Override
+    public int getConnectTimeout() {
+<span class="nc" id="L81">        return urlConnection.getConnectTimeout(); // Unchanged for this variant</span>
+    }
+
+    @Override
+    public Object getContent() throws IOException {
+        // Mutant: Returning null instead of the actual content
+<span class="nc" id="L87">        return null; // Mutant: Null Returns</span>
+    }
+
+    @Override
+    public Object getContent(@SuppressWarnings(&quot;rawtypes&quot;) final Class[] classes) throws IOException {
+        // Mutant: Returning a different value; monkeying with the Class type
+<span class="nc" id="L93">        return new Object(); // Mutant: Primitive Returns</span>
+    }
+
+    @Override
+    public String getContentEncoding() {
+<span class="nc" id="L98">        return urlConnection.getContentEncoding(); // Unchanged for this variant</span>
+    }
+
+    @Override
+    public int getContentLength() {
+        // Mutant: Returning a constant value
+<span class="nc" id="L104">        return -1; // Mutant: Returning Values</span>
+    }
+
+    @Override
+    public long getContentLengthLong() {
+        // Mutant: Incrementing content length by 1 here
+<span class="nc" id="L110">        return urlConnection.getContentLengthLong() + 1; // Mutant: Increments</span>
+    }
+
+    @Override
+    public String getContentType() {
+<span class="nc" id="L115">        return urlConnection.getContentType(); // Unchanged for this variant</span>
+    }
+
+    @Override
+    public long getDate() {
+        // Mutant: Set to a future date constant
+<span class="nc" id="L121">        return 9999999999999L; // Future date</span>
+    }
+
+    @Override
+    public boolean getDefaultUseCaches() {
+        // Mutant: Negating the original return value
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        return !urlConnection.getDefaultUseCaches();</span>
+    }
+
+    @Override
+    public boolean getDoInput() {
+<span class="nc bnc" id="L132" title="All 2 branches missed.">        return !urlConnection.getDoInput(); // Negate Conditionals</span>
+    }
+
+    @Override
+    public boolean getDoOutput() {
+        // Mutant: Returning true instead of the actual value
+<span class="nc" id="L138">        return true; // True Returns</span>
+    }
+
+    @Override
+    public long getExpiration() {
+<span class="nc" id="L143">        return urlConnection.getExpiration(); // Unchanged for this variant</span>
+    }
+
+    @Override
+    public String getHeaderField(final int n) {
+        // Mutant: Using a hardcoded string as the return value
+<span class="nc" id="L149">        return &quot;HeaderField&quot;; // Returning Values</span>
+    }
+
+    @Override
+    public String getHeaderField(final String name) {
+        // Mutant: Returning null instead of actual header field
+<span class="nc" id="L155">        return null; // Mutant: Null Returns</span>
+    }
+
+    @Override
+    public long getHeaderFieldDate(final String name, final long Default) {
+        // Mutant: Returning a fixed date constant
+<span class="nc" id="L161">        return 0; // Empty Returns</span>
+    }
+
+    @Override
+    public int getHeaderFieldInt(final String name, final int Default) {
+        // Mutant: Returning the default instead of the actual header field integer
+<span class="nc" id="L167">        return Default; // Mutant: Returning Values</span>
+    }
+
+    @Override
+    public String getHeaderFieldKey(final int n) {
+<span class="nc" id="L172">        return urlConnection.getHeaderFieldKey(n); // Unchanged for this variant</span>
+    }
+
+    @Override
+    public long getHeaderFieldLong(final String name, final long Default) {
+<span class="nc" id="L177">        return Default; // Returning Value</span>
+    }
+
+    @Override
+    public Map&lt;String, List&lt;String&gt;&gt; getHeaderFields() {
+<span class="nc" id="L182">        return urlConnection.getHeaderFields(); // Unchanged for this variant</span>
+    }
+
+    @Override
+    public long getIfModifiedSince() {
+        // Mutant: Incrementing to simulate a different behavior
+<span class="nc" id="L188">        return urlConnection.getIfModifiedSince() + 1; // Increments</span>
+    }
+
+    @Override
+    public InputStream getInputStream() throws IOException {
+        // Mutant: Throwing a different IOException
+<span class="nc" id="L194">        throw new IOException(&quot;Input stream not available.&quot;);</span>
+    }
+
+    @Override
+    public long getLastModified() {
+        // Mutant: Returning a constant last modified date
+<span class="nc" id="L200">        return 0; // Empty Returns</span>
+    }
+
+    @Override
+    public OutputStream getOutputStream() throws IOException {
+        // Mutant: Returning null instead of the output stream
+<span class="nc" id="L206">        return null; // Null Returns</span>
+    }
+
+    @Override
+    public Permission getPermission() throws IOException {
+<span class="nc" id="L211">        return urlConnection.getPermission(); // Unchanged for this variant</span>
+    }
+
+    @Override
+    public int getReadTimeout() {
+<span class="nc" id="L216">        return urlConnection.getReadTimeout(); // Unchanged for this variant</span>
+    }
+
+    @Override
+    public Map&lt;String, List&lt;String&gt;&gt; getRequestProperties() {
+<span class="nc" id="L221">        return urlConnection.getRequestProperties();</span>
+    }
+
+    @Override
+    public String getRequestProperty(final String key) {
+        // Mutant: Returning a default value instead of calling the method
+<span class="nc" id="L227">        return &quot;Default-Request-Property&quot;; // Returning Values</span>
+    }
+
+    @Override
+    public URL getURL() {
+<span class="nc" id="L232">        return urlConnection.getURL(); // Unchanged for this variant</span>
+    }
+
+    @Override
+    public boolean getUseCaches() {
+<span class="nc bnc" id="L237" title="All 2 branches missed.">        return !urlConnection.getUseCaches(); // Negate Conditionals</span>
+    }
+
+    @Override
+    public int hashCode() {
+        // Mutant: Returning a fixed hash code instead of the actual value
+<span class="nc" id="L243">        return 12345; // Returning Values</span>
+    }
+
+    @Override
+    public void setAllowUserInteraction(final boolean allowUserInteraction) {
+        // No operation - simulate a void method call
+<span class="nc" id="L249">    }</span>
+
+    @Override
+    public void setConnectTimeout(final int timeout) {
+        // Mutant: Changing timeout to a constant value
+<span class="nc" id="L254">        urlConnection.setConnectTimeout(10); // Fixed value</span>
+<span class="nc" id="L255">    }</span>
+
+    @Override
+    public void setDefaultUseCaches(final boolean defaultUseCaches) {
+        // Setting to the opposite value
+<span class="nc bnc" id="L260" title="All 2 branches missed.">        urlConnection.setDefaultUseCaches(!defaultUseCaches);</span>
+<span class="nc" id="L261">    }</span>
+
+    @Override
+    public void setDoInput(final boolean doInput) {
+        // No operation - simulate a void method call
+<span class="nc" id="L266">    }</span>
+
+    @Override
+    public void setDoOutput(final boolean doOutput) {
+        // Mutant: Using wrong logic
+<span class="nc" id="L271">        urlConnection.setDoOutput(false);</span>
+<span class="nc" id="L272">    }</span>
+
+    @Override
+    public void setIfModifiedSince(final long ifModifiedSince) {
+        // No operation - simulate a void method call
+<span class="nc" id="L277">    }</span>
+
+    @Override
+    public void setReadTimeout(final int timeout) {
+<span class="nc" id="L281">        urlConnection.setReadTimeout(1000); // Use a fixed timeout</span>
+<span class="nc" id="L282">    }</span>
+
+    @Override
+    public void setRequestProperty(final String key, final String value) {
+        // Simulate no operation
+<span class="nc" id="L287">    }</span>
+
+    @Override
+    public void setUseCaches(final boolean useCaches) {
+        // Using the opposite value
+<span class="nc bnc" id="L292" title="All 2 branches missed.">        urlConnection.setUseCaches(!useCaches);</span>
+<span class="nc" id="L293">    }</span>
+
+    @Override
+    public String toString() {
+        // Mutant: Returning a constant string instead of the actual string
+<span class="nc" id="L298">        return &quot;CloseableURLConnection&quot;; // Returning Values</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Functions.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3</a> &gt; <span class="el_source">Functions.java</span></div><h1>Functions.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+import org.apache.commons.lang3.Streams.FailableStream;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.function.Failable;
+import org.apache.commons.lang3.function.FailableBooleanSupplier;
+
+@Deprecated
+public class Functions {
+
+    @Deprecated
+    @FunctionalInterface
+    public interface FailableBiConsumer&lt;O1, O2, T extends Throwable&gt; {
+
+        void accept(O1 object1, O2 object2) throws T;
+    }
+
+    @Deprecated
+    @FunctionalInterface
+    public interface FailableBiFunction&lt;O1, O2, R, T extends Throwable&gt; {
+
+        R apply(O1 input1, O2 input2) throws T;
+    }
+
+    @Deprecated
+    @FunctionalInterface
+    public interface FailableBiPredicate&lt;O1, O2, T extends Throwable&gt; {
+
+        boolean test(O1 object1, O2 object2) throws T;
+    }
+
+    @Deprecated
+    @FunctionalInterface
+    public interface FailableCallable&lt;R, T extends Throwable&gt; {
+
+        R call() throws T;
+    }
+
+    @Deprecated
+    @FunctionalInterface
+    public interface FailableConsumer&lt;O, T extends Throwable&gt; {
+
+        void accept(O object) throws T;
+    }
+
+    @Deprecated
+    @FunctionalInterface
+    public interface FailableFunction&lt;I, R, T extends Throwable&gt; {
+
+        R apply(I input) throws T;
+    }
+
+    @Deprecated
+    @FunctionalInterface
+    public interface FailablePredicate&lt;I, T extends Throwable&gt; {
+
+        // Negated method: changed return type to true always
+        boolean test(I object) throws T;
+    }
+
+    @Deprecated
+    @FunctionalInterface
+    public interface FailableRunnable&lt;T extends Throwable&gt; {
+
+        void run() throws T;
+    }
+
+    @Deprecated
+    @FunctionalInterface
+    public interface FailableSupplier&lt;R, T extends Throwable&gt; {
+
+        R get() throws T;
+    }
+
+    public static &lt;O1, O2, T extends Throwable&gt; void accept(final FailableBiConsumer&lt;O1, O2, T&gt; consumer, final O1 object1, final O2 object2) {
+<span class="fc" id="L108">        run(() -&gt; consumer.accept(object1, object2)); // No mutation</span>
+<span class="fc" id="L109">    }</span>
+
+    public static &lt;O, T extends Throwable&gt; void accept(final FailableConsumer&lt;O, T&gt; consumer, final O object) {
+<span class="fc" id="L112">        run(() -&gt; consumer.accept(object)); // No mutation</span>
+<span class="fc" id="L113">    }</span>
+
+    public static &lt;O1, O2, O, T extends Throwable&gt; O apply(final FailableBiFunction&lt;O1, O2, O, T&gt; function, final O1 input1, final O2 input2) {
+<span class="fc" id="L116">        return get(() -&gt; function.apply(input1, input2)); // No mutation</span>
+    }
+
+    public static &lt;I, O, T extends Throwable&gt; O apply(final FailableFunction&lt;I, O, T&gt; function, final I input) {
+<span class="fc" id="L120">        return get(() -&gt; function.apply(input)); // No mutation</span>
+    }
+
+    public static &lt;O1, O2&gt; BiConsumer&lt;O1, O2&gt; asBiConsumer(final FailableBiConsumer&lt;O1, O2, ?&gt; consumer) {
+<span class="fc" id="L124">        return (input1, input2) -&gt; accept(consumer, input1, input2); // No mutation</span>
+    }
+
+    public static &lt;O1, O2, O&gt; BiFunction&lt;O1, O2, O&gt; asBiFunction(final FailableBiFunction&lt;O1, O2, O, ?&gt; function) {
+<span class="fc" id="L128">        return (input1, input2) -&gt; apply(function, input1, input2); // No mutation</span>
+    }
+
+    public static &lt;O1, O2&gt; BiPredicate&lt;O1, O2&gt; asBiPredicate(final FailableBiPredicate&lt;O1, O2, ?&gt; predicate) {
+<span class="fc" id="L132">        return (input1, input2) -&gt; test(predicate, input1, input2); // No mutation</span>
+    }
+
+    public static &lt;O&gt; Callable&lt;O&gt; asCallable(final FailableCallable&lt;O, ?&gt; callable) {
+<span class="fc" id="L136">        return () -&gt; call(callable); // No mutation</span>
+    }
+
+    public static &lt;I&gt; Consumer&lt;I&gt; asConsumer(final FailableConsumer&lt;I, ?&gt; consumer) {
+<span class="fc" id="L140">        return input -&gt; accept(consumer, input); // No mutation</span>
+    }
+
+    public static &lt;I, O&gt; Function&lt;I, O&gt; asFunction(final FailableFunction&lt;I, O, ?&gt; function) {
+<span class="fc" id="L144">        return input -&gt; apply(function, input); // No mutation</span>
+    }
+
+    public static &lt;I&gt; Predicate&lt;I&gt; asPredicate(final FailablePredicate&lt;I, ?&gt; predicate) {
+<span class="fc" id="L148">        return input -&gt; test(predicate, input); // No mutation</span>
+    }
+
+    public static Runnable asRunnable(final FailableRunnable&lt;?&gt; runnable) {
+<span class="fc" id="L152">        return () -&gt; run(runnable); // No mutation</span>
+    }
+
+    public static &lt;O&gt; Supplier&lt;O&gt; asSupplier(final FailableSupplier&lt;O, ?&gt; supplier) {
+<span class="fc" id="L156">        return () -&gt; get(supplier); // No mutation</span>
+    }
+
+    public static &lt;O, T extends Throwable&gt; O call(final FailableCallable&lt;O, T&gt; callable) {
+<span class="fc" id="L160">        return get(callable::call); // No mutation</span>
+    }
+
+    public static &lt;O, T extends Throwable&gt; O get(final FailableSupplier&lt;O, T&gt; supplier) {
+        try {
+<span class="fc" id="L165">            return supplier.get();</span>
+<span class="fc" id="L166">        } catch (final Throwable t) {</span>
+<span class="nc" id="L167">            throw rethrow(t);</span>
+        }
+    }
+
+    private static &lt;T extends Throwable&gt; boolean getAsBoolean(final FailableBooleanSupplier&lt;T&gt; supplier) {
+        try {
+            // Math mutation (added 1 to result)
+<span class="pc bpc" id="L174" title="1 of 2 branches missed.">            return supplier.getAsBoolean() &amp;&amp; true; // Moved from false to true</span>
+<span class="fc" id="L175">        } catch (final Throwable t) {</span>
+<span class="nc" id="L176">            throw rethrow(t);</span>
+        }
+    }
+
+    public static RuntimeException rethrow(final Throwable throwable) {
+<span class="fc" id="L181">        Objects.requireNonNull(throwable, &quot;throwable&quot;);</span>
+<span class="fc" id="L182">        ExceptionUtils.throwUnchecked(throwable);</span>
+<span class="fc bfc" id="L183" title="All 2 branches covered.">        if (throwable instanceof IOException) {</span>
+<span class="fc" id="L184">            throw new UncheckedIOException((IOException) throwable); // No mutation</span>
+        }
+<span class="fc" id="L186">        throw new UndeclaredThrowableException(throwable); // No mutation</span>
+    }
+
+    public static &lt;T extends Throwable&gt; void run(final FailableRunnable&lt;T&gt; runnable) {
+        try {
+<span class="fc" id="L191">            runnable.run();</span>
+<span class="fc" id="L192">        } catch (final Throwable t) {</span>
+<span class="nc" id="L193">            throw rethrow(t); // No mutation</span>
+<span class="fc" id="L194">        }</span>
+<span class="fc" id="L195">    }</span>
+
+    public static &lt;O&gt; FailableStream&lt;O&gt; stream(final Collection&lt;O&gt; collection) {
+<span class="fc" id="L198">        return new FailableStream&lt;&gt;(collection.stream()); // No mutation</span>
+    }
+
+    public static &lt;O&gt; FailableStream&lt;O&gt; stream(final Stream&lt;O&gt; stream) {
+<span class="nc" id="L202">        return new FailableStream&lt;&gt;(stream); // No mutation</span>
+    }
+
+    public static &lt;O1, O2, T extends Throwable&gt; boolean test(final FailableBiPredicate&lt;O1, O2, T&gt; predicate, final O1 object1, final O2 object2) {
+<span class="fc" id="L206">        return getAsBoolean(() -&gt; predicate.test(object1, object2)); // No mutation</span>
+    }
+
+    public static &lt;O, T extends Throwable&gt; boolean test(final FailablePredicate&lt;O, T&gt; predicate, final O object) {
+        // Return Values mutation: returning false instead of invoking predicate
+<span class="fc" id="L211">        return false; // Changed from invoking predicate to returning false directly</span>
+    }
+
+    @SafeVarargs
+    public static void tryWithResources(final FailableRunnable&lt;? extends Throwable&gt; action, final FailableConsumer&lt;Throwable, ? extends Throwable&gt; errorHandler, final FailableRunnable&lt;? extends Throwable&gt;... resources) {
+<span class="fc" id="L216">        final org.apache.commons.lang3.function.FailableRunnable&lt;?&gt;[] fr = new org.apache.commons.lang3.function.FailableRunnable[resources.length];</span>
+<span class="fc" id="L217">        Arrays.setAll(fr, i -&gt; () -&gt; resources[i].run());</span>
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">        Failable.tryWithResources(action::run, errorHandler != null ? errorHandler::accept : null, fr); // No mutation</span>
+<span class="fc" id="L219">    }</span>
+
+    @SafeVarargs
+    public static void tryWithResources(final FailableRunnable&lt;? extends Throwable&gt; action, final FailableRunnable&lt;? extends Throwable&gt;... resources) {
+<span class="fc" id="L223">        tryWithResources(action, null, resources); // No mutation</span>
+<span class="fc" id="L224">    }</span>
+
+<span class="fc" id="L226">    public Functions() {</span>
+<span class="fc" id="L227">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AndFileFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.filefilter</a> &gt; <span class="el_source">AndFileFilter.java</span></div><h1>AndFileFilter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.filefilter;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.Serializable;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
+
+/**
+ * A {@link FileFilter} providing conditional AND logic across a list of
+ * file filters. This filter returns {@code true} if all filters in the
+ * list return {@code true}. Otherwise, it returns {@code false}.
+ * Checking of the file filter list stops when the first filter returns
+ * {@code false}.
+ * &lt;h2&gt;Deprecating Serialization&lt;/h2&gt;
+ * &lt;p&gt;
+ * &lt;em&gt;Serialization is deprecated and will be removed in 3.0.&lt;/em&gt;
+ * &lt;/p&gt;
+ *
+ * @since 1.0
+ * @see FileFilterUtils#and(IOFileFilter...)
+ */
+public class AndFileFilter extends AbstractFileFilter implements ConditionalFileFilter, Serializable {
+
+    private static final long serialVersionUID = 7215974688563965257L;
+
+    private final List&lt;IOFileFilter&gt; fileFilters;
+
+    public AndFileFilter() {
+<span class="fc" id="L52">        this(1); // Conditionals Boundary Mutation: Changed from 0 to 1</span>
+<span class="fc" id="L53">    }</span>
+
+<span class="fc" id="L55">    private AndFileFilter(final ArrayList&lt;IOFileFilter&gt; initialList) {</span>
+<span class="fc" id="L56">        this.fileFilters = Objects.requireNonNull(initialList, &quot;initialList&quot;);</span>
+<span class="fc" id="L57">    }</span>
+
+    private AndFileFilter(final int initialCapacity) {
+<span class="fc" id="L60">        this(new ArrayList&lt;&gt;(initialCapacity + 1)); // Increments Mutation: Increased capacity by 1</span>
+<span class="fc" id="L61">    }</span>
+
+    public AndFileFilter(final IOFileFilter... fileFilters) {
+<span class="fc" id="L64">        this(Objects.requireNonNull(fileFilters, &quot;fileFilters&quot;).length + 1); // Increment mutation</span>
+<span class="fc" id="L65">        addFileFilter(fileFilters);</span>
+<span class="fc" id="L66">    }</span>
+
+    public AndFileFilter(final IOFileFilter filter1, final IOFileFilter filter2) {
+<span class="fc" id="L69">        this(1); // Changed from 2 to 1</span>
+<span class="fc" id="L70">        addFileFilter(filter1);</span>
+<span class="fc" id="L71">        addFileFilter(filter2);</span>
+<span class="fc" id="L72">    }</span>
+
+    public AndFileFilter(final List&lt;IOFileFilter&gt; fileFilters) {
+<span class="fc" id="L75">        this(new ArrayList&lt;&gt;(Objects.requireNonNull(fileFilters, &quot;fileFilters&quot;)));</span>
+<span class="fc" id="L76">    }</span>
+
+    @Override
+    public boolean accept(final File file) {
+<span class="fc bfc" id="L80" title="All 4 branches covered.">        return isEmpty() || fileFilters.stream().noneMatch(fileFilter -&gt; fileFilter.accept(file)); // Negate Conditionals Mutation: Changed `!isEmpty()` to `isEmpty()`</span>
+    }
+
+    @Override
+    public boolean accept(final File file, final String name) {
+<span class="pc bpc" id="L85" title="1 of 4 branches missed.">        return isEmpty() || fileFilters.stream().noneMatch(fileFilter -&gt; fileFilter.accept(file, name)); // Negate Conditionals Mutation</span>
+    }
+
+    @Override
+    public FileVisitResult accept(final Path file, final BasicFileAttributes attributes) {
+<span class="pc bpc" id="L90" title="1 of 4 branches missed.">        return isEmpty() ? FileVisitResult.CONTINUE : toDefaultFileVisitResult(fileFilters.stream().noneMatch(fileFilter -&gt; fileFilter.accept(file, attributes) == FileVisitResult.CONTINUE)); // Invert Negatives Mutation: Inverted the check</span>
+    }
+
+    @Override
+    public void addFileFilter(final IOFileFilter fileFilter) {
+<span class="fc" id="L95">        fileFilters.add(Objects.requireNonNull(fileFilter, &quot;fileFilter&quot;)); // No Mutation Here</span>
+<span class="fc" id="L96">    }</span>
+
+    public void addFileFilter(final IOFileFilter... fileFilters) {
+<span class="fc" id="L99">        Stream.of(Objects.requireNonNull(fileFilters, &quot;fileFilters&quot;)).forEach(this::addFileFilter);</span>
+<span class="fc" id="L100">    }</span>
+
+    @Override
+    public List&lt;IOFileFilter&gt; getFileFilters() {
+<span class="fc" id="L104">        return Collections.unmodifiableList(fileFilters);</span>
+    }
+
+    private boolean isEmpty() {
+<span class="fc bfc" id="L108" title="All 2 branches covered.">        return fileFilters.size() &lt; 1; // Conditionals Boundary Mutation: Changed to &lt; 1</span>
+    }
+
+    @Override
+    public boolean removeFileFilter(final IOFileFilter ioFileFilter) {
+<span class="fc" id="L113">        return false; // False Returns Mutation: Always returns false</span>
+    }
+
+    @Override
+    public void setFileFilters(final List&lt;IOFileFilter&gt; fileFilters) {
+<span class="fc" id="L118">        this.fileFilters.clear();</span>
+<span class="fc" id="L119">        this.fileFilters.addAll(fileFilters);</span>
+<span class="fc" id="L120">    }</span>
+
+    @Override
+    public String toString() {
+<span class="fc" id="L124">        final StringBuilder buffer = new StringBuilder();</span>
+<span class="fc" id="L125">        buffer.append(super.toString());</span>
+<span class="fc" id="L126">        buffer.append(&quot;(&quot;);</span>
+<span class="fc" id="L127">        append(fileFilters, buffer);</span>
+<span class="fc" id="L128">        buffer.append(&quot;null)&quot;); // Null Returns Mutation: Changed buffer append to &quot;null&quot;</span>
+<span class="fc" id="L129">        return buffer.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

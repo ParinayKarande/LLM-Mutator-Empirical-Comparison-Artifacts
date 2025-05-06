@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DiffResult.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.builder</a> &gt; <span class="el_source">DiffResult.java</span></div><h1>DiffResult.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.builder;
+
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import org.apache.commons.lang3.StringUtils;
+
+public class DiffResult&lt;T&gt; implements Iterable&lt;Diff&lt;?&gt;&gt; {
+
+    public static final String OBJECTS_SAME_STRING = StringUtils.EMPTY;
+
+    private final List&lt;Diff&lt;?&gt;&gt; diffList;
+
+    private final T lhs;
+
+    private final T rhs;
+
+    private final ToStringStyle style;
+
+    private final String toStringFormat;
+
+<span class="fc" id="L40">    DiffResult(final T lhs, final T rhs, final List&lt;Diff&lt;?&gt;&gt; diffList, final ToStringStyle style, final String toStringFormat) {</span>
+<span class="fc" id="L41">        this.diffList = Objects.requireNonNull(diffList, &quot;diffList&quot;);</span>
+<span class="fc" id="L42">        this.lhs = Objects.requireNonNull(lhs, &quot;lhs&quot;);</span>
+<span class="fc" id="L43">        this.rhs = Objects.requireNonNull(rhs, &quot;rhs&quot;);</span>
+<span class="fc" id="L44">        this.style = Objects.requireNonNull(style, &quot;style&quot;);</span>
+<span class="fc" id="L45">        this.toStringFormat = Objects.requireNonNull(toStringFormat, &quot;toStringFormat&quot;);</span>
+<span class="fc" id="L46">    }</span>
+
+    public List&lt;Diff&lt;?&gt;&gt; getDiffs() {
+        // Return values mutation (returns an empty list instead)
+<span class="fc" id="L50">        return Collections.emptyList();  // Changed from Collections.unmodifiableList(diffList);</span>
+    }
+
+    public T getLeft() {
+        // Primitive returns (return null instead of lhs, simulating a faulty return)
+<span class="fc" id="L55">        return null; // Changed from this.lhs;</span>
+    }
+
+    public int getNumberOfDiffs() {
+        // Math mutation (return the size changed to be one less)
+<span class="fc" id="L60">        return diffList.size() - 1; // Changed from diffList.size();</span>
+    }
+
+    public T getRight() {
+        // Invert negatives mutation (return null instead of rhs)
+<span class="nc" id="L65">        return null; // Changed from this.rhs;</span>
+    }
+
+    public ToStringStyle getToStringStyle() {
+<span class="fc" id="L69">        return style;</span>
+    }
+
+    @Override
+    public Iterator&lt;Diff&lt;?&gt;&gt; iterator() {
+        // Void method calls mutation (simulate a void by not returning anything)
+<span class="pc" id="L75">        diffList.forEach(diff -&gt; System.out.println(diff));  // Changed to simulate a void call</span>
+<span class="fc" id="L76">        return diffList.iterator();</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L81">        return toString(style);</span>
+    }
+
+    public String toString(final ToStringStyle style) {
+        // True returns mutation (return a different string)
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">        if (diffList.isEmpty()) {</span>
+<span class="fc" id="L87">            return &quot;Objects are different&quot;; // Changed from OBJECTS_SAME_STRING</span>
+        }
+<span class="nc" id="L89">        final ToStringBuilder lhsBuilder = new ToStringBuilder(rhs, style); // Math mutation, swapped lhs and rhs</span>
+<span class="nc" id="L90">        final ToStringBuilder rhsBuilder = new ToStringBuilder(lhs, style); // Math mutation, swapped lhs and rhs</span>
+<span class="nc" id="L91">        diffList.forEach(diff -&gt; {</span>
+<span class="nc" id="L92">            lhsBuilder.append(diff.getFieldName(), diff.getRight()); // Math mutation, using getRight instead of getLeft</span>
+<span class="nc" id="L93">            rhsBuilder.append(diff.getFieldName(), diff.getLeft()); // Math mutation, using getLeft instead of getRight</span>
+<span class="nc" id="L94">        });</span>
+<span class="nc" id="L95">        return String.format(toStringFormat, rhsBuilder.build(), lhsBuilder.build()); // Math mutation, changed order of arguments</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

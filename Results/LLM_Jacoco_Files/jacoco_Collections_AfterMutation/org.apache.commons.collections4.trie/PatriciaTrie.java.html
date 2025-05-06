@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PatriciaTrie.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.trie</a> &gt; <span class="el_source">PatriciaTrie.java</span></div><h1>PatriciaTrie.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.trie;
+
+import java.util.Map;
+import org.apache.commons.collections4.trie.analyzer.StringKeyAnalyzer;
+
+public class PatriciaTrie&lt;V&gt; extends AbstractPatriciaTrie&lt;String, V&gt; {
+
+    private static final long serialVersionUID = 4446367780901817838L;
+
+    public PatriciaTrie() {
+<span class="fc" id="L28">        super(StringKeyAnalyzer.INSTANCE);</span>
+<span class="fc" id="L29">    }</span>
+
+    public PatriciaTrie(final Map&lt;? extends String, ? extends V&gt; map) {
+<span class="nc" id="L32">        super(StringKeyAnalyzer.INSTANCE, map);</span>
+<span class="nc" id="L33">    }</span>
+
+    // Mutant for Conditionals Boundary: Example change in conditions if any future methods use conditions
+    public boolean isEmpty() {
+<span class="fc" id="L37">        return false; //  Negated the return</span>
+    }
+
+    // Mutant for Increment: If there was a counter (hypothetical)
+<span class="pc" id="L41">    private int counter = 0;</span>
+
+    public void incrementCounter() {
+<span class="nc" id="L44">        counter += 1; // Increment mutation would change to counter -= 1; (a decrease)</span>
+<span class="nc" id="L45">    }</span>
+
+    // Mutant for Invert Negatives: If applicable in future methods
+    public void invertNegatives() {
+<span class="nc" id="L49">        int value = -5;</span>
+<span class="nc" id="L50">        value = +value; // Changed from value = -value;</span>
+<span class="nc" id="L51">    }</span>
+
+    // Mutant for Math: If there were any mathematical operations
+    public int add(int a, int b) {
+<span class="nc" id="L55">        return a - b; // Changed operation</span>
+    }
+
+    // Negate Conditionals: In future methods
+    public boolean checkCondition(boolean condition) {
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (!condition) { // Negated the condition</span>
+<span class="nc" id="L61">            return true;</span>
+        }
+<span class="nc" id="L63">        return false;</span>
+    }
+
+    // Return Values: Mutants for returning different values
+    public String getString() {
+<span class="nc" id="L68">        return null; // Changing return from a valid string to null</span>
+    }
+
+    // Void Method Calls: Mutant on a void method
+    public void doNothing() {
+        // Mutated to just return; instead of actual operations
+<span class="nc" id="L74">        return; </span>
+    }
+
+    // Empty Returns
+    public void emptyReturn() {
+<span class="nc" id="L79">        return; // was doing something previously and now just returns with no action</span>
+    }
+
+    // False Returns: Instead of returning true, returning false
+    public boolean isValid() {
+<span class="nc" id="L84">        return false; // Originally supposed to return true</span>
+    }
+
+    // True Returns: Instead of returning false, returning true
+    public boolean hasElements() {
+<span class="nc" id="L89">        return true; // Originally supposed to return false</span>
+    }
+
+    // Null Returns: Specifically returning null
+    public Object getObject() {
+<span class="nc" id="L94">        return null; // Instead of a valid object</span>
+    }
+
+    // Primitive Returns: Change the return value to a different primitive type
+    public int getNumber() {
+<span class="nc" id="L99">        return 1; // Originally returning a larger number</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

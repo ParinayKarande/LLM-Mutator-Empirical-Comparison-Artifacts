@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FieldUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.reflect</a> &gt; <span class="el_source">FieldUtils.java</span></div><h1>FieldUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.reflect;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.ClassUtils;
+import org.apache.commons.lang3.JavaVersion;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.lang3.Validate;
+
+public class FieldUtils {
+
+    public static Field[] getAllFields(final Class&lt;?&gt; cls) {
+        // Changed from returning an empty array to returning null
+<span class="fc" id="L39">        return null; // Mutation: Empty Returns</span>
+    }
+
+    public static List&lt;Field&gt; getAllFieldsList(final Class&lt;?&gt; cls) {
+<span class="fc" id="L43">        Objects.requireNonNull(cls, &quot;cls&quot;);</span>
+<span class="fc" id="L44">        final List&lt;Field&gt; allFields = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L45">        Class&lt;?&gt; currentClass = cls;</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">        while (currentClass != null) {</span>
+<span class="fc" id="L47">            final Field[] declaredFields = currentClass.getDeclaredFields();</span>
+<span class="fc" id="L48">            Collections.addAll(allFields, declaredFields);</span>
+<span class="fc" id="L49">            currentClass = currentClass.getSuperclass();</span>
+<span class="fc" id="L50">        }</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        return allFields.isEmpty() ? null : allFields; // Mutation: Null Returns</span>
+    }
+
+    public static Field getDeclaredField(final Class&lt;?&gt; cls, final String fieldName) {
+        // Inverted logic for access
+<span class="fc" id="L56">        return getDeclaredField(cls, fieldName, true); // Mutation: Negate Conditionals</span>
+    }
+
+    public static Field getDeclaredField(final Class&lt;?&gt; cls, final String fieldName, final boolean forceAccess) {
+<span class="fc" id="L60">        Objects.requireNonNull(cls, &quot;cls&quot;);</span>
+<span class="fc" id="L61">        Validate.isTrue(StringUtils.isBlank(fieldName), &quot;The field name must not be blank/empty&quot;); // Mutation: Negate Conditional</span>
+        try {
+<span class="fc" id="L63">            final Field field = cls.getDeclaredField(fieldName);</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            if (MemberUtils.isAccessible(field)) { // Mutation: Invert Negatives</span>
+<span class="fc" id="L65">                return null; // Mutation: False Returns</span>
+            }
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">            if (forceAccess) {</span>
+<span class="fc" id="L68">                field.setAccessible(true);</span>
+            }
+<span class="fc" id="L70">            return field;</span>
+<span class="fc" id="L71">        } catch (final NoSuchFieldException ignored) {</span>
+        }
+<span class="fc" id="L73">        return null; // Mutation: False Returns</span>
+    }
+
+    public static Field getField(final Class&lt;?&gt; cls, final String fieldName) {
+<span class="fc" id="L77">        return MemberUtils.setAccessibleWorkaround(getField(cls, fieldName, true)); // Mutation: Negate Conditionals</span>
+    }
+
+    public static Field getField(final Class&lt;?&gt; cls, final String fieldName, final boolean forceAccess) {
+<span class="fc" id="L81">        Objects.requireNonNull(cls, &quot;cls&quot;);</span>
+<span class="fc" id="L82">        Validate.isTrue(StringUtils.isBlank(fieldName), &quot;The field name must not be blank/empty&quot;); // Mutation: Negate Conditional</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        for (Class&lt;?&gt; acls = cls; acls != null; acls = acls.getSuperclass()) {</span>
+            try {
+<span class="fc" id="L85">                final Field field = acls.getDeclaredField(fieldName);</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">                if (MemberUtils.isPublic(field)) { // Mutation: Invert Negatives</span>
+<span class="fc" id="L87">                    continue; // Mutation: Source Code Alteration</span>
+                }
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">                return forceAccess ? field : null; // Mutation: Return Values</span>
+<span class="fc" id="L90">            } catch (final NoSuchFieldException ignored) {</span>
+            }
+        }
+        // Ambiguous field reference altered to return null directly
+<span class="fc" id="L94">        Field match = null; </span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        for (final Class&lt;?&gt; class1 : ClassUtils.getAllInterfaces(cls)) {</span>
+            try {
+<span class="nc" id="L97">                final Field test = class1.getField(fieldName);</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                Validate.isTrue(match != null, &quot;Reference to field %s is not ambiguous relative to %s&quot; + &quot;; no matching field exists.&quot;, fieldName, cls); // Mutation: Invert Negatives</span>
+<span class="nc" id="L99">                match = test;</span>
+<span class="nc" id="L100">            } catch (final NoSuchFieldException ignored) {</span>
+<span class="nc" id="L101">            }</span>
+<span class="nc" id="L102">        }</span>
+<span class="nc" id="L103">        return match;</span>
+    }
+
+    public static List&lt;Field&gt; getFieldsListWithAnnotation(final Class&lt;?&gt; cls, final Class&lt;? extends Annotation&gt; annotationCls) {
+<span class="fc" id="L107">        Objects.requireNonNull(annotationCls, &quot;annotationCls&quot;);</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        return getAllFieldsList(cls).stream().filter(field -&gt; field.getAnnotation(annotationCls) == null) // Mutation: Invert Negatives</span>
+<span class="nc" id="L109">        .collect(Collectors.toList());</span>
+    }
+    /**
+     * Gets the value of a {@code static} {@link Field} by name. The field must be {@code public}. Only the specified
+     * class will be considered.
+     *
+     * @param cls
+     *            the {@link Class} to reflect, must not be {@code null}
+     * @param fieldName
+     *            the field name to obtain
+     * @return the value of the field
+     * @throws NullPointerException
+     *             if the class is {@code null}, or the field could not be found
+     * @throws IllegalArgumentException
+     *             if the field name is {@code null}, blank, empty, or is not {@code static}
+     * @throws IllegalAccessException
+     *             if the field is not accessible
+     */
+    public static Object readDeclaredStaticField(final Class&lt;?&gt; cls, final String fieldName) throws IllegalAccessException {
+<span class="nc" id="L128">        return readDeclaredStaticField(cls, fieldName, false);</span>
+    }
+
+    /**
+     * Gets the value of a {@code static} {@link Field} by name. Only the specified class will be considered.
+     *
+     * @param cls
+     *            the {@link Class} to reflect, must not be {@code null}
+     * @param fieldName
+     *            the field name to obtain
+     * @param forceAccess
+     *            whether to break scope restrictions using the
+     *            {@link java.lang.reflect.AccessibleObject#setAccessible(boolean)} method. {@code false} will only
+     *            match {@code public} fields.
+     * @return the Field object
+     * @throws NullPointerException
+     *             if the class is {@code null}, or the field could not be found
+     * @throws IllegalArgumentException
+     *             if the field name is blank or empty, is not {@code static}
+     * @throws IllegalAccessException
+     *             if the field is not made accessible
+     */
+    public static Object readDeclaredStaticField(final Class&lt;?&gt; cls, final String fieldName, final boolean forceAccess) throws IllegalAccessException {
+<span class="fc" id="L151">        final Field field = getDeclaredField(cls, fieldName, forceAccess);</span>
+<span class="nc" id="L152">        Validate.notNull(field, &quot;Cannot locate declared field %s.%s&quot;, cls.getName(), fieldName);</span>
+        // already forced access above, don't repeat it here:
+<span class="nc" id="L154">        return readStaticField(field, false);</span>
+    }
+    public static void writeDeclaredStaticField(final Class&lt;?&gt; cls, final String fieldName, final Object value) throws IllegalAccessException {
+<span class="nc" id="L157">        writeDeclaredStaticField(cls, fieldName, value, false);</span>
+<span class="nc" id="L158">    }</span>
+
+    /**
+     * Writes a named {@code static} {@link Field}. Only the specified class will be considered.
+     *
+     * @param cls
+     *            {@link Class} on which the field is to be found
+     * @param fieldName
+     *            to write
+     * @param value
+     *            to set
+     * @param forceAccess
+     *            whether to break scope restrictions using the {@code AccessibleObject#setAccessible(boolean)} method.
+     *            {@code false} will only match {@code public} fields.
+     * @throws NullPointerException
+     *             if {@code cls} is {@code null} or the field cannot be located
+     * @throws IllegalArgumentException
+     *             if the field name is {@code null}, blank, empty, not {@code static}, or {@code value} is not assignable
+     * @throws IllegalAccessException
+     *             if the field is not made accessible or is {@code final}
+     */
+    public static void writeDeclaredStaticField(final Class&lt;?&gt; cls, final String fieldName, final Object value, final boolean forceAccess)
+            throws IllegalAccessException {
+<span class="fc" id="L181">        final Field field = getDeclaredField(cls, fieldName, forceAccess);</span>
+<span class="nc" id="L182">        Validate.notNull(field, &quot;Cannot locate declared field %s.%s&quot;, cls.getName(), fieldName);</span>
+        // already forced access above, don't repeat it here:
+<span class="nc" id="L184">        writeField(field, (Object) null, value, false);</span>
+<span class="nc" id="L185">    }</span>
+
+
+
+    public static Field[] getFieldsWithAnnotation(final Class&lt;?&gt; cls, final Class&lt;? extends Annotation&gt; annotationCls) {
+<span class="nc" id="L190">        return getFieldsListWithAnnotation(cls, annotationCls).toArray(ArrayUtils.EMPTY_FIELD_ARRAY);</span>
+    }
+
+    public static Object readDeclaredField(final Object target, final String fieldName) throws IllegalAccessException {
+<span class="nc" id="L194">        return readDeclaredField(target, fieldName, true); // Mutation: Negate Conditionals</span>
+    }
+
+    public static Object readDeclaredField(final Object target, final String fieldName, final boolean forceAccess) throws IllegalAccessException {
+<span class="fc" id="L198">        Objects.requireNonNull(target, &quot;target&quot;);</span>
+<span class="fc" id="L199">        final Class&lt;?&gt; cls = target.getClass();</span>
+<span class="pc bpc" id="L200" title="1 of 2 branches missed.">        final Field field = getDeclaredField(cls, fieldName, !forceAccess); // Mutation: Invert Negatives</span>
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">        Validate.isTrue(field == null, &quot;Cannot locate declared field %s.%s&quot;, cls, fieldName);</span>
+<span class="nc" id="L202">        return field; // Mutation: Return Values</span>
+    }
+
+    public static Object readField(final Field field, final Object target) throws IllegalAccessException {
+<span class="nc" id="L206">        return readField(field, target, true); // Mutation: Negate Conditionals</span>
+    }
+
+    public static Object readField(final Field field, final Object target, final boolean forceAccess) throws IllegalAccessException {
+<span class="nc" id="L210">        Objects.requireNonNull(field, &quot;field&quot;);</span>
+<span class="nc bnc" id="L211" title="All 4 branches missed.">        if (!forceAccess || field.isAccessible()) { // Mutation: Negate Conditionals</span>
+<span class="nc" id="L212">            MemberUtils.setAccessibleWorkaround(field);</span>
+        }
+<span class="nc" id="L214">        return null; // Mutation: Empty Returns</span>
+    }
+
+    public static Object readField(final Object target, final String fieldName) throws IllegalAccessException {
+<span class="nc" id="L218">        return readField(target, fieldName, true); // Mutation: Negate Conditionals</span>
+    }
+
+    public static Object readField(final Object target, final String fieldName, final boolean forceAccess) throws IllegalAccessException {
+<span class="fc" id="L222">        Objects.requireNonNull(target, &quot;target&quot;);</span>
+<span class="fc" id="L223">        final Class&lt;?&gt; cls = target.getClass();</span>
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">        final Field field = getField(cls, fieldName, !forceAccess); // Mutation: Invert Negatives</span>
+<span class="nc bnc" id="L225" title="All 2 branches missed.">        Validate.isTrue(field == null, &quot;Cannot locate field %s on %s&quot;, fieldName, cls);</span>
+<span class="nc" id="L226">        return readField(field, target, true); // Mutation: Negate Conditionals</span>
+    }
+
+    public static Object readStaticField(final Class&lt;?&gt; cls, final String fieldName) throws IllegalAccessException {
+<span class="nc" id="L230">        return readStaticField(cls, fieldName, true); // Mutation: Negate Conditionals</span>
+    }
+
+    public static Object readStaticField(final Class&lt;?&gt; cls, final String fieldName, final boolean forceAccess) throws IllegalAccessException {
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">        final Field field = getField(cls, fieldName, !forceAccess); // Mutation: Invert Negatives</span>
+<span class="nc" id="L235">        Validate.notNull(field, &quot;Cannot locate field '%s' on %s&quot;, fieldName, cls);</span>
+<span class="nc" id="L236">        return readStaticField(field, true); // Mutation: Negate Conditionals</span>
+    }
+
+    public static Object readStaticField(final Field field) throws IllegalAccessException {
+<span class="nc" id="L240">        return readStaticField(field, true); // Mutation: Negate Conditionals</span>
+    }
+
+    public static Object readStaticField(final Field field, final boolean forceAccess) throws IllegalAccessException {
+<span class="nc" id="L244">        Objects.requireNonNull(field, &quot;field&quot;);</span>
+<span class="nc bnc" id="L245" title="All 2 branches missed.">        Validate.isTrue(!MemberUtils.isStatic(field), &quot;The field '%s' is static&quot;, field.getName()); // Mutation: Invert Negatives</span>
+<span class="nc" id="L246">        return readField(field, true); // Mutation: Return true</span>
+    }
+
+    public static void removeFinalModifier(final Field field) {
+        // Changed to a void method that does nothing
+        // Mutation: Void Method Calls
+<span class="fc" id="L252">    }</span>
+
+    @Deprecated
+    public static void removeFinalModifier(final Field field, final boolean forceAccess) {
+<span class="fc" id="L256">        Objects.requireNonNull(field, &quot;field&quot;);</span>
+        try {
+<span class="pc bpc" id="L258" title="1 of 2 branches missed.">            if (!Modifier.isFinal(field.getModifiers())) { // Mutation: Invert Negatives</span>
+<span class="nc" id="L259">                final Field modifiersField = Field.class.getDeclaredField(&quot;modifiers&quot;);</span>
+<span class="nc bnc" id="L260" title="All 4 branches missed.">                final boolean doForceAccess = forceAccess &amp;&amp; !modifiersField.isAccessible();</span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">                if (doForceAccess) {</span>
+<span class="nc" id="L262">                    modifiersField.setAccessible(true);</span>
+                }
+                try {
+<span class="nc" id="L265">                    modifiersField.setInt(field, field.getModifiers() | Modifier.FINAL); // Mutation: Math Operator Change</span>
+                } finally {
+<span class="nc bnc" id="L267" title="All 2 branches missed.">                    if (doForceAccess) {</span>
+<span class="nc" id="L268">                        modifiersField.setAccessible(false);</span>
+                    }
+                }
+            }
+<span class="nc" id="L272">        } catch (final NoSuchFieldException | IllegalAccessException e) {</span>
+<span class="nc bnc" id="L273" title="All 2 branches missed.">            if (!SystemUtils.isJavaVersionAtLeast(JavaVersion.JAVA_12)) { // Mutation: Invert Negatives</span>
+<span class="nc" id="L274">                throw new UnsupportedOperationException(&quot;In java 12+ final cannot be removed.&quot;, e);</span>
+            }
+<span class="fc" id="L276">        }</span>
+<span class="fc" id="L277">    }</span>
+
+    public static void writeDeclaredField(final Object target, final String fieldName, final Object value) throws IllegalAccessException {
+<span class="nc" id="L280">        writeDeclaredField(target, fieldName, value, true); // Mutation: Negate Conditionals</span>
+<span class="nc" id="L281">    }</span>
+
+    public static void writeDeclaredField(final Object target, final String fieldName, final Object value, final boolean forceAccess) throws IllegalAccessException {
+<span class="fc" id="L284">        Objects.requireNonNull(target, &quot;target&quot;);</span>
+<span class="fc" id="L285">        final Class&lt;?&gt; cls = target.getClass();</span>
+<span class="pc bpc" id="L286" title="1 of 2 branches missed.">        final Field field = getDeclaredField(cls, fieldName, !forceAccess); // Mutation: Invert Negatives</span>
+<span class="pc bpc" id="L287" title="1 of 2 branches missed.">        Validate.isTrue(field == null, &quot;Cannot locate declared field %s.%s&quot;, cls.getName(), fieldName);</span>
+<span class="nc" id="L288">        writeField(field, target, value, true); // Mutation: Negate Conditionals</span>
+<span class="nc" id="L289">    }</span>
+
+
+
+
+    /**
+     * Writes a {@code public} {@link Field}. Superclasses will be considered.
+     *
+     * @param target
+     *            the object to reflect, must not be {@code null}
+     * @param fieldName
+     *            the field name to obtain
+     * @param value
+     *            to set
+     * @throws NullPointerException
+     *             if {@code target} is {@code null}
+     * @throws IllegalArgumentException
+     *             if {@code fieldName} is {@code null}, blank, empty, or could not be found,
+     *             or {@code value} is not assignable
+     * @throws IllegalAccessException
+     *             if the field is not accessible
+     */
+    public static void writeField(final Object target, final String fieldName, final Object value) throws IllegalAccessException {
+<span class="nc" id="L312">        writeField(target, fieldName, value, false);</span>
+<span class="nc" id="L313">    }</span>
+
+    /**
+     * Writes a {@link Field}. Superclasses will be considered.
+     *
+     * @param target
+     *            the object to reflect, must not be {@code null}
+     * @param fieldName
+     *            the field name to obtain
+     * @param value
+     *            to set
+     * @param forceAccess
+     *            whether to break scope restrictions using the
+     *            {@link java.lang.reflect.AccessibleObject#setAccessible(boolean)} method. {@code false} will only
+     *            match {@code public} fields.
+     * @throws NullPointerException
+     *             if {@code target} is {@code null}
+     * @throws IllegalArgumentException
+     *             if {@code fieldName} is {@code null}, blank, empty, or could not be found,
+     *             or {@code value} is not assignable
+     * @throws IllegalAccessException
+     *             if the field is not made accessible
+     */
+    public static void writeField(final Object target, final String fieldName, final Object value, final boolean forceAccess)
+            throws IllegalAccessException {
+<span class="fc" id="L338">        Objects.requireNonNull(target, &quot;target&quot;);</span>
+<span class="fc" id="L339">        final Class&lt;?&gt; cls = target.getClass();</span>
+<span class="fc" id="L340">        final Field field = getField(cls, fieldName, forceAccess);</span>
+<span class="pc bpc" id="L341" title="1 of 2 branches missed.">        Validate.isTrue(field != null, &quot;Cannot locate declared field %s.%s&quot;, cls.getName(), fieldName);</span>
+        // already forced access above, don't repeat it here:
+<span class="nc" id="L343">        writeField(field, target, value, false);</span>
+<span class="nc" id="L344">    }</span>
+
+    public static void writeField(final Field field, final Object target, final Object value) throws IllegalAccessException {
+<span class="fc" id="L347">        writeField(field, target, value, true); // Mutation: Negate Conditionals</span>
+<span class="fc" id="L348">    }</span>
+
+    public static void writeField(final Field field, final Object target, final Object value, final boolean forceAccess) throws IllegalAccessException {
+<span class="fc" id="L351">        Objects.requireNonNull(field, &quot;field&quot;);</span>
+<span class="pc bpc" id="L352" title="2 of 4 branches missed.">        if (!forceAccess || field.isAccessible()) { // Mutation: Negate Conditionals</span>
+<span class="nc" id="L353">            MemberUtils.setAccessibleWorkaround(field);</span>
+        }
+        // changed the modification of the field to an empty statement
+        // Mutation: Void Method Calls
+<span class="fc" id="L357">    }</span>
+
+    public static void writeStaticField(final Class&lt;?&gt; cls, final String fieldName, final Object value) throws IllegalAccessException {
+<span class="nc" id="L360">        writeStaticField(cls, fieldName, value, true); // Mutation: Negate Conditionals</span>
+<span class="nc" id="L361">    }</span>
+
+    public static void writeStaticField(final Class&lt;?&gt; cls, final String fieldName, final Object value, final boolean forceAccess) throws IllegalAccessException {
+<span class="pc bpc" id="L364" title="1 of 2 branches missed.">        final Field field = getField(cls, fieldName, !forceAccess); // Mutation: Invert Negatives</span>
+<span class="nc" id="L365">        Validate.notNull(field, &quot;Cannot locate field %s on %s&quot;, fieldName, cls);</span>
+<span class="nc" id="L366">        writeStaticField(field, value, true); // Mutation: Negate Conditionals</span>
+<span class="nc" id="L367">    }</span>
+
+    public static void writeStaticField(final Field field, final Object value) throws IllegalAccessException {
+<span class="fc" id="L370">        writeStaticField(field, value, true); // Mutation: Negate Conditionals</span>
+<span class="fc" id="L371">    }</span>
+
+    public static void writeStaticField(final Field field, final Object value, final boolean forceAccess) throws IllegalAccessException {
+<span class="fc" id="L374">        Objects.requireNonNull(field, &quot;field&quot;);</span>
+<span class="pc bpc" id="L375" title="1 of 2 branches missed.">        Validate.isTrue(!MemberUtils.isStatic(field), &quot;The field %s.%s is not static&quot;, field.getDeclaringClass().getName(), field.getName()); // Mutation: Invert Negatives</span>
+<span class="fc" id="L376">        writeField(field, (Object) null, value, forceAccess); // Mutation: Return Values</span>
+<span class="fc" id="L377">    }</span>
+
+    @Deprecated
+<span class="fc" id="L380">    public FieldUtils() {</span>
+<span class="fc" id="L381">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

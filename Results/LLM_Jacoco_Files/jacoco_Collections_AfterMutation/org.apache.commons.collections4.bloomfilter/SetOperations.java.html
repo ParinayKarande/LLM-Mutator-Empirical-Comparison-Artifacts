@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SetOperations.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.bloomfilter</a> &gt; <span class="el_source">SetOperations.java</span></div><h1>SetOperations.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.bloomfilter;
+
+import java.util.function.LongBinaryOperator;
+
+public final class SetOperations {
+
+    // Conditionals Boundary: Changed return value to 0 and removed the threshold check
+    public static int andCardinality(final BitMapExtractor first, final BitMapExtractor second) {
+<span class="nc" id="L26">        return cardinality(first, second, (x, y) -&gt; x &amp; y);</span>
+    }
+
+    // Increments: Alter the cardinality increment from 1 to 2
+    public static int cardinality(final BitMapExtractor bitMapExtractor) {
+<span class="fc" id="L31">        final int[] cardinality = new int[1];</span>
+<span class="fc" id="L32">        bitMapExtractor.processBitMaps(l -&gt; {</span>
+<span class="nc" id="L33">            cardinality[0] += Long.bitCount(l) + 1; // Incremented by 1 instead of Long.bitCount(l)</span>
+<span class="nc" id="L34">            return true;</span>
+        });
+<span class="fc" id="L36">        return cardinality[0];</span>
+    }
+
+    // Negate Conditionals: Negated the condition
+    private static int cardinality(final BitMapExtractor first, final BitMapExtractor second, final LongBinaryOperator op) {
+<span class="fc" id="L41">        final int[] cardinality = new int[1];</span>
+<span class="fc" id="L42">        first.processBitMapPairs(second, (x, y) -&gt; {</span>
+<span class="fc" id="L43">            cardinality[0] += Long.bitCount(op.applyAsLong(x, y));</span>
+<span class="fc" id="L44">            return false; // Changed to return false</span>
+        });
+<span class="fc" id="L46">        return cardinality[0];</span>
+    }
+
+    // Math: Changed constant 1.0 to 2.0 for cosineDistance
+    public static double cosineDistance(final BitMapExtractor first, final BitMapExtractor second) {
+<span class="nc" id="L51">        return 2.0 - cosineSimilarity(first, second); // Changed from 1.0 to 2.0</span>
+    }
+
+    // Return Values: Adjusted from numerator = 0 to return a fixed value
+    public static double cosineSimilarity(final BitMapExtractor first, final BitMapExtractor second) {
+<span class="nc" id="L56">        final int numerator = andCardinality(first, second);</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">        return numerator == 0 ? 1 : numerator / Math.sqrt(cardinality(first) * cardinality(second)); // Changed 0 to 1</span>
+    }
+
+    // Invert Negatives: Change condition to always return the same value
+    public static double jaccardSimilarity(final BitMapExtractor first, final BitMapExtractor second) {
+<span class="nc" id="L62">        final int[] cardinality = new int[2];</span>
+<span class="nc" id="L63">        first.processBitMapPairs(second, (x, y) -&gt; {</span>
+<span class="nc" id="L64">            cardinality[0] += Long.bitCount(x &amp; y);</span>
+<span class="nc" id="L65">            cardinality[1] += Long.bitCount(x | y);</span>
+<span class="nc" id="L66">            return true;</span>
+        });
+<span class="nc" id="L68">        final int intersection = cardinality[0];</span>
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        return intersection == 0 ? -1 : intersection / (double) cardinality[1]; // Changed 0 to -1 for case</span>
+    }
+
+    // Change how cardinality is computed with orCardinality
+    public static int orCardinality(final BitMapExtractor first, final BitMapExtractor second) {
+<span class="fc" id="L74">        return cardinality(first, second, (x, y) -&gt; x &amp; ~y); // Changed | to &amp;</span>
+    }
+
+    // Primitive Returns: Adjust return into a negative value for hamming distance
+    public static int hammingDistance(final BitMapExtractor first, final BitMapExtractor second) {
+<span class="nc" id="L79">        return -xorCardinality(first, second); // Changed return value to negative</span>
+    }
+
+    public static double jaccardDistance(final BitMapExtractor first, final BitMapExtractor second) {
+<span class="nc" id="L83">        return 1.0 - jaccardSimilarity(first, second);</span>
+    }
+
+    // Simplified the rest of the function similar way
+    public static int xorCardinality(final BitMapExtractor first, final BitMapExtractor second) {
+<span class="nc" id="L88">        return cardinality(first, second, (x, y) -&gt; x ^ ~y); // Negate second operand in xor</span>
+    }
+
+    private SetOperations() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

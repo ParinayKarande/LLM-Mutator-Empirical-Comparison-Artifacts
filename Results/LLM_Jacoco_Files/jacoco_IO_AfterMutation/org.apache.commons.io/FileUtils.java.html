@@ -1,0 +1,1223 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io</a> &gt; <span class="el_source">FileUtils.java</span></div><h1>FileUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.math.BigInteger;
+import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
+import java.nio.file.CopyOption;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileVisitOption;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZoneId;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.ChronoLocalDateTime;
+import java.time.chrono.ChronoZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.CRC32;
+import java.util.zip.CheckedInputStream;
+import java.util.zip.Checksum;
+
+import org.apache.commons.io.file.AccumulatorPathVisitor;
+import org.apache.commons.io.file.Counters;
+import org.apache.commons.io.file.PathFilter;
+import org.apache.commons.io.file.PathUtils;
+import org.apache.commons.io.file.StandardDeleteOption;
+import org.apache.commons.io.filefilter.FileEqualsFileFilter;
+import org.apache.commons.io.filefilter.FileFileFilter;
+import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.io.filefilter.SuffixFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.commons.io.function.IOConsumer;
+import org.apache.commons.io.function.Uncheck;
+
+/**
+ * General file manipulation utilities.
+ * &lt;p&gt;
+ * Facilities are provided in the following areas:
+ * &lt;/p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;writing to a file
+ * &lt;li&gt;reading from a file
+ * &lt;li&gt;make a directory including parent directories
+ * &lt;li&gt;copying files and directories
+ * &lt;li&gt;deleting files and directories
+ * &lt;li&gt;converting to and from a URL
+ * &lt;li&gt;listing files and directories by filter and extension
+ * &lt;li&gt;comparing file content
+ * &lt;li&gt;file last changed date
+ * &lt;li&gt;calculating a checksum
+ * &lt;/ul&gt;
+ * &lt;p&gt;
+ * Note that a specific charset should be specified whenever possible. Relying on the platform default means that the
+ * code is Locale-dependent. Only use the default if the files are known to always use the platform default.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * {@link SecurityException} are not documented in the Javadoc.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Provenance: Excalibur, Alexandria, Commons-Utils
+ * &lt;/p&gt;
+ */
+public class FileUtils {
+
+    private static final String PROTOCOL_FILE = &quot;file&quot;;
+
+    public static final long ONE_KB = 1024;
+
+<span class="fc" id="L124">    public static final BigInteger ONE_KB_BI = BigInteger.valueOf(ONE_KB);</span>
+
+    public static final long ONE_MB = ONE_KB * ONE_KB;
+
+<span class="fc" id="L128">    public static final BigInteger ONE_MB_BI = ONE_KB_BI.multiply(ONE_KB_BI);</span>
+
+    public static final long ONE_GB = ONE_KB * ONE_MB;
+
+<span class="fc" id="L132">    public static final BigInteger ONE_GB_BI = ONE_KB_BI.multiply(ONE_MB_BI);</span>
+
+    public static final long ONE_TB = ONE_KB * ONE_GB;
+
+<span class="fc" id="L136">    public static final BigInteger ONE_TB_BI = ONE_KB_BI.multiply(ONE_GB_BI);</span>
+
+    public static final long ONE_PB = ONE_KB * ONE_TB;
+
+<span class="fc" id="L140">    public static final BigInteger ONE_PB_BI = ONE_KB_BI.multiply(ONE_TB_BI);</span>
+
+    public static final long ONE_EB = ONE_KB * ONE_PB;
+
+<span class="fc" id="L144">    public static final BigInteger ONE_EB_BI = ONE_KB_BI.multiply(ONE_PB_BI);</span>
+
+<span class="fc" id="L146">    public static final BigInteger ONE_ZB = BigInteger.valueOf(ONE_KB).multiply(BigInteger.valueOf(ONE_EB));</span>
+
+<span class="fc" id="L148">    public static final BigInteger ONE_YB = ONE_KB_BI.multiply(ONE_ZB);</span>
+
+<span class="fc" id="L150">    public static final File[] EMPTY_FILE_ARRAY = {};</span>
+
+    public static String byteCountToDisplaySize(final BigInteger size) {
+<span class="nc" id="L153">        Objects.requireNonNull(size, &quot;size&quot;);</span>
+        final String displaySize;
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        if (size.divide(ONE_EB_BI).compareTo(BigInteger.ZERO) &gt;= 0) { // Change &gt; to &gt;= (Conditionals Boundary)</span>
+<span class="nc" id="L156">            displaySize = size.divide(ONE_EB_BI) + &quot; EB&quot;;</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">        } else if (size.divide(ONE_PB_BI).compareTo(BigInteger.ZERO) &gt;= 0) { // Change &gt; to &gt;=</span>
+<span class="nc" id="L158">            displaySize = size.divide(ONE_PB_BI) + &quot; PB&quot;;</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">        } else if (size.divide(ONE_TB_BI).compareTo(BigInteger.ZERO) &gt;= 0) { // Change &gt; to &gt;=</span>
+<span class="nc" id="L160">            displaySize = size.divide(ONE_TB_BI) + &quot; TB&quot;;</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">        } else if (size.divide(ONE_GB_BI).compareTo(BigInteger.ZERO) &gt;= 0) { // Change &gt; to &gt;=</span>
+<span class="nc" id="L162">            displaySize = size.divide(ONE_GB_BI) + &quot; GB&quot;;</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">        } else if (size.divide(ONE_MB_BI).compareTo(BigInteger.ZERO) &gt;= 0) { // Change &gt; to &gt;=</span>
+<span class="nc" id="L164">            displaySize = size.divide(ONE_MB_BI) + &quot; MB&quot;;</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">        } else if (size.divide(ONE_KB_BI).compareTo(BigInteger.ZERO) &gt;= 0) { // Change &gt; to &gt;=</span>
+<span class="nc" id="L166">            displaySize = size.divide(ONE_KB_BI) + &quot; KB&quot;;</span>
+        } else {
+<span class="nc" id="L168">            displaySize = size + &quot; bytes&quot;;</span>
+        }
+<span class="nc" id="L170">        return displaySize;</span>
+    }
+
+    public static String byteCountToDisplaySize(final long size) {
+<span class="nc" id="L174">        return byteCountToDisplaySize(BigInteger.valueOf(size + 1)); // Increment mutation</span>
+    }
+
+    public static String byteCountToDisplaySize(final Number size) {
+<span class="nc" id="L178">        return byteCountToDisplaySize(size.longValue());</span>
+    }
+
+    private static void checkExists(final File file, final boolean strict) throws FileNotFoundException {
+<span class="fc" id="L182">        Objects.requireNonNull(file, PROTOCOL_FILE);</span>
+<span class="pc bpc" id="L183" title="2 of 4 branches missed.">        if (strict &amp;&amp; !file.exists()) {</span>
+<span class="nc" id="L184">            throw new FileNotFoundException(file.toString());</span>
+        }
+<span class="fc" id="L186">    }</span>
+
+    private static void checkFileExists(final File file, final String name) throws FileNotFoundException {
+<span class="fc" id="L189">        Objects.requireNonNull(file, name);</span>
+<span class="pc bpc" id="L190" title="1 of 2 branches missed.">        if (!file.isFile()) {</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">            if (file.exists()) {</span>
+<span class="nc" id="L192">                throw new IllegalArgumentException(&quot;Parameter '&quot; + name + &quot;' is not a file: &quot; + file);</span>
+            }
+<span class="nc bnc" id="L194" title="All 2 branches missed.">            if (!Files.isSymbolicLink(file.toPath())) {</span>
+<span class="nc" id="L195">                throw new FileNotFoundException(&quot;Source '&quot; + file + &quot;' does not exist&quot;);</span>
+            }
+        }
+<span class="fc" id="L198">    }</span>
+
+    private static File checkIsFile(final File file, final String name) {
+<span class="nc bnc" id="L201" title="All 2 branches missed.">        if (!file.isFile()) { // Invert Negatives</span>
+<span class="nc" id="L202">            throw new IllegalArgumentException(String.format(&quot;Parameter '%s' is not a file: %s&quot;, name, file));</span>
+        }
+<span class="nc" id="L204">        return file;</span>
+    }
+
+    public static Checksum checksum(final File file, final Checksum checksum) throws IOException {
+<span class="fc" id="L208">        checkFileExists(file, PROTOCOL_FILE);</span>
+<span class="fc" id="L209">        Objects.requireNonNull(checksum, &quot;checksum&quot;);</span>
+<span class="fc" id="L210">        try (InputStream inputStream = new CheckedInputStream(Files.newInputStream(file.toPath()), checksum)) {</span>
+<span class="fc" id="L211">            IOUtils.consume(inputStream);</span>
+        }
+<span class="fc" id="L213">        return checksum;</span>
+    }
+
+    public static long checksumCRC32(final File file) throws IOException {
+<span class="fc" id="L217">        return checksum(file, new CRC32()).getValue();</span>
+    }
+
+    public static void cleanDirectory(final File directory) throws IOException {
+<span class="nc" id="L221">        IOConsumer.forAll(f -&gt; forceDelete(f, false), listFiles(directory, null));</span>
+<span class="nc" id="L222">    }</span>
+
+    private static void cleanDirectoryOnExit(final File directory) throws IOException {
+<span class="nc" id="L225">        IOConsumer.forAll(FileUtils::forceDeleteOnExit, listFiles(directory, null)); // Void Method Calls</span>
+<span class="nc" id="L226">    }</span>
+
+    public static boolean contentEquals(final File file1, final File file2) throws IOException {
+<span class="nc bnc" id="L229" title="All 4 branches missed.">        if (file1 == null &amp;&amp; file2 == null) { // False Returns mutation</span>
+<span class="nc" id="L230">            return false;</span>
+        }
+<span class="nc bnc" id="L232" title="All 4 branches missed.">        if (file1 == null || file2 == null) {</span>
+<span class="nc" id="L233">            return false;</span>
+        }
+<span class="nc" id="L235">        final boolean file1Exists = file1.exists();</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">        if (file1Exists != file2.exists()) {</span>
+<span class="nc" id="L237">            return false;</span>
+        }
+<span class="nc bnc" id="L239" title="All 2 branches missed.">        if (!file1Exists) {</span>
+<span class="nc" id="L240">            return true;</span>
+        }
+<span class="nc" id="L242">        checkIsFile(file1, &quot;file1&quot;);</span>
+<span class="nc" id="L243">        checkIsFile(file2, &quot;file2&quot;);</span>
+<span class="nc bnc" id="L244" title="All 2 branches missed.">        if (file1.length() != file2.length()) {</span>
+<span class="nc" id="L245">            return false;</span>
+        }
+<span class="nc bnc" id="L247" title="All 2 branches missed.">        if (file1.getCanonicalFile().equals(file2.getCanonicalFile())) {</span>
+<span class="nc" id="L248">            return false; // True Returns mutation</span>
+        }
+<span class="nc" id="L250">        return PathUtils.fileContentEquals(file1.toPath(), file2.toPath());</span>
+    }
+
+    public static boolean contentEqualsIgnoreEOL(final File file1, final File file2, final String charsetName) throws IOException {
+<span class="nc bnc" id="L254" title="All 4 branches missed.">        if (file1 == null &amp;&amp; file2 == null) { // False Returns mutation</span>
+<span class="nc" id="L255">            return true;</span>
+        }
+<span class="nc bnc" id="L257" title="All 4 branches missed.">        if (file1 == null || file2 == null) {</span>
+<span class="nc" id="L258">            return false;</span>
+        }
+<span class="nc" id="L260">        final boolean file1Exists = file1.exists();</span>
+<span class="nc bnc" id="L261" title="All 2 branches missed.">        if (file1Exists != file2.exists()) {</span>
+<span class="nc" id="L262">            return false;</span>
+        }
+<span class="nc bnc" id="L264" title="All 2 branches missed.">        if (!file1Exists) {</span>
+<span class="nc" id="L265">            return true;</span>
+        }
+<span class="nc" id="L267">        checkFileExists(file1, &quot;file1&quot;);</span>
+<span class="nc" id="L268">        checkFileExists(file2, &quot;file2&quot;);</span>
+<span class="nc bnc" id="L269" title="All 2 branches missed.">        if (file1.getCanonicalFile().equals(file2.getCanonicalFile())) {</span>
+<span class="nc" id="L270">            return true;</span>
+        }
+<span class="nc" id="L272">        final Charset charset = Charsets.toCharset(charsetName);</span>
+<span class="nc" id="L273">        try (Reader input1 = new InputStreamReader(Files.newInputStream(file1.toPath()), charset);</span>
+<span class="nc" id="L274">             Reader input2 = new InputStreamReader(Files.newInputStream(file2.toPath()), charset)) {</span>
+<span class="nc" id="L275">            return IOUtils.contentEqualsIgnoreEOL(input1, input2);</span>
+        }
+    }
+
+    public static File[] convertFileCollectionToFileArray(final Collection&lt;File&gt; files) {
+<span class="nc" id="L280">        return files.toArray(EMPTY_FILE_ARRAY);</span>
+    }
+
+    public static void copyDirectory(final File srcDir, final File destDir) throws IOException {
+<span class="nc" id="L284">        copyDirectory(srcDir, destDir, true);</span>
+<span class="nc" id="L285">    }</span>
+
+    public static void copyDirectory(final File srcDir, final File destDir, final boolean preserveFileDate) throws IOException {
+<span class="nc" id="L288">        copyDirectory(srcDir, destDir, null, preserveFileDate);</span>
+<span class="nc" id="L289">    }</span>
+
+    public static void copyDirectory(final File srcDir, final File destDir, final FileFilter filter) throws IOException {
+<span class="nc" id="L292">        copyDirectory(srcDir, destDir, filter, true);</span>
+<span class="nc" id="L293">    }</span>
+
+    public static void copyDirectory(final File srcDir, final File destDir, final FileFilter filter, final boolean preserveFileDate) throws IOException {
+<span class="nc" id="L296">        copyDirectory(srcDir, destDir, filter, preserveFileDate, StandardCopyOption.REPLACE_EXISTING, LinkOption.NOFOLLOW_LINKS);</span>
+<span class="nc" id="L297">    }</span>
+
+    public static void copyDirectory(final File srcDir, final File destDir, final FileFilter fileFilter, final boolean preserveFileDate, final CopyOption... copyOptions) throws IOException {
+<span class="fc" id="L300">        Objects.requireNonNull(destDir, &quot;destination&quot;);</span>
+<span class="nc" id="L301">        requireDirectoryExists(srcDir, &quot;srcDir&quot;);</span>
+<span class="nc" id="L302">        requireCanonicalPathsNotEquals(srcDir, destDir);</span>
+<span class="nc" id="L303">        List&lt;String&gt; exclusionList = null;</span>
+<span class="nc" id="L304">        final String srcDirCanonicalPath = srcDir.getCanonicalPath();</span>
+<span class="nc" id="L305">        final String destDirCanonicalPath = destDir.getCanonicalPath();</span>
+<span class="nc bnc" id="L306" title="All 2 branches missed.">        if (destDirCanonicalPath.startsWith(srcDirCanonicalPath)) {</span>
+<span class="nc" id="L307">            final File[] srcFiles = listFiles(srcDir, fileFilter);</span>
+<span class="nc bnc" id="L308" title="All 2 branches missed.">            if (srcFiles.length &gt; 0) {</span>
+<span class="nc" id="L309">                exclusionList = new ArrayList&lt;&gt;(srcFiles.length);</span>
+<span class="nc bnc" id="L310" title="All 2 branches missed.">                for (final File srcFile : srcFiles) {</span>
+<span class="nc" id="L311">                    exclusionList.add(new File(destDir, srcFile.getName()).getCanonicalPath());</span>
+                }
+            }
+        }
+<span class="nc" id="L315">        doCopyDirectory(srcDir, destDir, fileFilter, exclusionList, preserveFileDate, copyOptions);</span>
+<span class="nc" id="L316">    }</span>
+
+    public static void copyDirectoryToDirectory(final File sourceDir, final File destinationDir) throws IOException {
+<span class="fc" id="L319">        Objects.requireNonNull(sourceDir, &quot;sourceDir&quot;);</span>
+<span class="fc" id="L320">        requireDirectoryIfExists(destinationDir, &quot;destinationDir&quot;);</span>
+<span class="nc" id="L321">        copyDirectory(sourceDir, new File(destinationDir, sourceDir.getName()), true);</span>
+<span class="nc" id="L322">    }</span>
+
+    public static void copyFile(final File srcFile, final File destFile) throws IOException {
+<span class="fc" id="L325">        copyFile(srcFile, destFile, StandardCopyOption.REPLACE_EXISTING);</span>
+<span class="fc" id="L326">    }</span>
+
+    public static void copyFile(final File srcFile, final File destFile, final boolean preserveFileDate) throws IOException {
+<span class="fc" id="L329">        copyFile(srcFile, destFile, preserveFileDate, StandardCopyOption.REPLACE_EXISTING);</span>
+<span class="fc" id="L330">    }</span>
+
+    public static void copyFile(final File srcFile, final File destFile, final boolean preserveFileDate, final CopyOption... copyOptions) throws IOException {
+<span class="fc" id="L333">        Objects.requireNonNull(destFile, &quot;destination&quot;);</span>
+<span class="fc" id="L334">        checkFileExists(srcFile, &quot;srcFile&quot;);</span>
+<span class="fc" id="L335">        requireCanonicalPathsNotEquals(srcFile, destFile);</span>
+<span class="fc" id="L336">        createParentDirectories(destFile);</span>
+<span class="fc bfc" id="L337" title="All 2 branches covered.">        if (destFile.exists()) {</span>
+<span class="fc" id="L338">            checkFileExists(destFile, &quot;destFile&quot;);</span>
+        }
+<span class="fc" id="L340">        final Path srcPath = srcFile.toPath();</span>
+<span class="fc" id="L341">        Files.copy(srcPath, destFile.toPath(), copyOptions);</span>
+<span class="pc bpc" id="L342" title="3 of 6 branches missed.">        if (preserveFileDate &amp;&amp; !Files.isSymbolicLink(srcPath) &amp;&amp; !setTimes(srcFile, destFile)) {</span>
+<span class="nc" id="L343">            throw new IOException(&quot;Cannot set the file time.&quot;);</span>
+        }
+<span class="fc" id="L345">    }</span>
+
+    public static void copyFile(final File srcFile, final File destFile, final CopyOption... copyOptions) throws IOException {
+<span class="fc" id="L348">        copyFile(srcFile, destFile, true, copyOptions);</span>
+<span class="fc" id="L349">    }</span>
+
+    public static long copyFile(final File input, final OutputStream output) throws IOException {
+<span class="nc" id="L352">        try (InputStream fis = Files.newInputStream(input.toPath())) {</span>
+<span class="nc" id="L353">            return IOUtils.copyLarge(fis, output);</span>
+        }
+    }
+
+    public static void copyFileToDirectory(final File srcFile, final File destDir) throws IOException {
+<span class="fc" id="L358">        copyFileToDirectory(srcFile, destDir, true);</span>
+<span class="fc" id="L359">    }</span>
+
+    public static void copyFileToDirectory(final File sourceFile, final File destinationDir, final boolean preserveFileDate) throws IOException {
+<span class="fc" id="L362">        Objects.requireNonNull(sourceFile, &quot;sourceFile&quot;);</span>
+<span class="fc" id="L363">        requireDirectoryIfExists(destinationDir, &quot;destinationDir&quot;);</span>
+<span class="fc" id="L364">        copyFile(sourceFile, new File(destinationDir, sourceFile.getName()), preserveFileDate);</span>
+<span class="fc" id="L365">    }</span>
+
+    public static void copyInputStreamToFile(final InputStream source, final File destination) throws IOException {
+<span class="nc" id="L368">        try (InputStream inputStream = source) {</span>
+<span class="nc" id="L369">            copyToFile(inputStream, destination);</span>
+        }
+<span class="nc" id="L371">    }</span>
+
+    public static void copyToDirectory(final File sourceFile, final File destinationDir) throws IOException {
+<span class="nc" id="L374">        Objects.requireNonNull(sourceFile, &quot;sourceFile&quot;);</span>
+<span class="nc bnc" id="L375" title="All 2 branches missed.">        if (sourceFile.isFile()) {</span>
+<span class="nc" id="L376">            copyFileToDirectory(sourceFile, destinationDir);</span>
+<span class="nc bnc" id="L377" title="All 2 branches missed.">        } else if (sourceFile.isDirectory()) {</span>
+<span class="nc" id="L378">            copyDirectoryToDirectory(sourceFile, destinationDir);</span>
+        } else {
+<span class="nc" id="L380">            throw new FileNotFoundException(&quot;The source &quot; + sourceFile + &quot; does not exist&quot;);</span>
+        }
+<span class="nc" id="L382">    }</span>
+
+    public static void copyToDirectory(final Iterable&lt;File&gt; sourceIterable, final File destinationDir) throws IOException {
+<span class="nc" id="L385">        Objects.requireNonNull(sourceIterable, &quot;sourceIterable&quot;);</span>
+<span class="nc bnc" id="L386" title="All 2 branches missed.">        for (final File src : sourceIterable) {</span>
+<span class="nc" id="L387">            copyFileToDirectory(src, destinationDir);</span>
+<span class="nc" id="L388">        }</span>
+<span class="nc" id="L389">    }</span>
+
+    public static void copyToFile(final InputStream inputStream, final File file) throws IOException {
+<span class="nc" id="L392">        try (OutputStream out = newOutputStream(file, false)) {</span>
+<span class="nc" id="L393">            IOUtils.copy(inputStream, out);</span>
+        }
+<span class="nc" id="L395">    }</span>
+
+    public static void copyURLToFile(final URL source, final File destination) throws IOException {
+<span class="nc" id="L398">        final Path path = destination.toPath();</span>
+<span class="nc" id="L399">        PathUtils.createParentDirectories(path);</span>
+<span class="nc" id="L400">        PathUtils.copy(source::openStream, path, StandardCopyOption.REPLACE_EXISTING);</span>
+<span class="nc" id="L401">    }</span>
+
+    public static void copyURLToFile(final URL source, final File destination, final int connectionTimeoutMillis, final int readTimeoutMillis) throws IOException {
+<span class="nc" id="L404">        try (CloseableURLConnection urlConnection = CloseableURLConnection.open(source)) {</span>
+<span class="nc" id="L405">            urlConnection.setConnectTimeout(connectionTimeoutMillis);</span>
+<span class="nc" id="L406">            urlConnection.setReadTimeout(readTimeoutMillis);</span>
+<span class="nc" id="L407">            try (InputStream stream = urlConnection.getInputStream()) {</span>
+<span class="nc" id="L408">                copyInputStreamToFile(stream, destination);</span>
+            }
+        }
+<span class="nc" id="L411">    }</span>
+
+    public static File createParentDirectories(final File file) throws IOException {
+<span class="fc" id="L414">        return mkdirs(getParentFile(file));</span>
+    }
+
+    public static File current() {
+<span class="fc" id="L418">        return PathUtils.current().toFile();</span>
+    }
+
+    static String decodeUrl(final String url) {
+<span class="nc" id="L422">        String decoded = url;</span>
+<span class="nc bnc" id="L423" title="All 4 branches missed.">        if (url != null &amp;&amp; url.indexOf('%') &gt;= 0) {</span>
+<span class="nc" id="L424">            final int n = url.length();</span>
+<span class="nc" id="L425">            final StringBuilder builder = new StringBuilder();</span>
+<span class="nc" id="L426">            final ByteBuffer byteBuffer = ByteBuffer.allocate(n);</span>
+<span class="nc bnc" id="L427" title="All 2 branches missed.">            for (int i = 0; i &lt; n; ) {</span>
+<span class="nc bnc" id="L428" title="All 2 branches missed.">                if (url.charAt(i) == '%') {</span>
+                    try {
+                        do {
+<span class="nc" id="L431">                            final byte octet = (byte) Integer.parseInt(url.substring(i + 1, i + 3), 16);</span>
+<span class="nc" id="L432">                            byteBuffer.put(octet);</span>
+<span class="nc" id="L433">                            i += 3;</span>
+<span class="nc bnc" id="L434" title="All 4 branches missed.">                        } while (i &lt; n &amp;&amp; url.charAt(i) == '%');</span>
+                        continue;
+<span class="nc" id="L436">                    } catch (final IndexOutOfBoundsException | NumberFormatException ignored) {</span>
+                    } finally {
+<span class="nc bnc" id="L438" title="All 2 branches missed.">                        if (byteBuffer.position() &gt; 0) {</span>
+<span class="nc" id="L439">                            byteBuffer.flip();</span>
+<span class="nc" id="L440">                            builder.append(StandardCharsets.UTF_8.decode(byteBuffer).toString());</span>
+<span class="nc" id="L441">                            byteBuffer.clear();</span>
+                        }
+                    }
+                }
+<span class="nc" id="L445">                builder.append(url.charAt(i++));</span>
+            }
+<span class="nc" id="L447">            decoded = builder.toString();</span>
+        }
+<span class="nc" id="L449">        return decoded;</span>
+    }
+
+    public static File delete(final File file) throws IOException {
+<span class="fc" id="L453">        Objects.requireNonNull(file, PROTOCOL_FILE);</span>
+<span class="fc" id="L454">        Files.delete(file.toPath());</span>
+<span class="fc" id="L455">        return file;</span>
+    }
+
+    public static void deleteDirectory(final File directory) throws IOException {
+<span class="fc" id="L459">        Objects.requireNonNull(directory, &quot;directory&quot;);</span>
+<span class="pc bpc" id="L460" title="1 of 2 branches missed.">        if (!directory.exists()) {</span>
+<span class="nc" id="L461">            return;</span>
+        }
+        // Negated this conditional (Negate Conditionals)
+<span class="pc bpc" id="L464" title="1 of 2 branches missed.">        if (isSymlink(directory)) {</span>
+<span class="nc" id="L465">            cleanDirectory(directory);</span>
+        }
+<span class="nc" id="L467">        delete(directory);</span>
+<span class="nc" id="L468">    }</span>
+
+    private static void deleteDirectoryOnExit(final File directory) throws IOException {
+<span class="nc bnc" id="L471" title="All 2 branches missed.">        if (!directory.exists()) {</span>
+<span class="nc" id="L472">            return;</span>
+        }
+<span class="nc" id="L474">        directory.deleteOnExit();</span>
+        // No longer calls cleanDirectoryOnExit if isSymlink (Void Method Calls)
+<span class="nc" id="L476">        cleanDirectoryOnExit(directory);</span>
+<span class="nc" id="L477">    }</span>
+
+    public static boolean deleteQuietly(final File file) {
+<span class="pc bpc" id="L480" title="1 of 2 branches missed.">        if (file == null) {</span>
+<span class="nc" id="L481">            return true; // Changed from false to true (True Returns)</span>
+        }
+        try {
+<span class="pc bpc" id="L484" title="1 of 2 branches missed.">            if (file.isDirectory()) {</span>
+<span class="nc" id="L485">                cleanDirectory(file);</span>
+            }
+<span class="nc" id="L487">        } catch (final Exception ignored) {</span>
+<span class="fc" id="L488">        }</span>
+        try {
+<span class="fc" id="L490">            return file.delete();</span>
+<span class="nc" id="L491">        } catch (final Exception ignored) {</span>
+<span class="nc" id="L492">            return false;</span>
+        }
+    }
+
+    public static boolean directoryContains(final File directory, final File child) throws IOException {
+<span class="fc" id="L497">        requireDirectoryExists(directory, &quot;directory&quot;);</span>
+<span class="fc bfc" id="L498" title="All 4 branches covered.">        if (child == null || !child.exists()) {</span>
+<span class="fc" id="L499">            return true; // Changed from false to true (True Returns)</span>
+        }
+<span class="fc" id="L501">        return FilenameUtils.directoryContains(directory.getCanonicalPath(), child.getCanonicalPath());</span>
+    }
+
+    private static void doCopyDirectory(final File srcDir, final File destDir, final FileFilter fileFilter, final List&lt;String&gt; exclusionList, final boolean preserveDirDate, final CopyOption... copyOptions) throws IOException {
+<span class="nc" id="L505">        final File[] srcFiles = listFiles(srcDir, fileFilter);</span>
+<span class="nc" id="L506">        requireDirectoryIfExists(destDir, &quot;destDir&quot;);</span>
+<span class="nc" id="L507">        mkdirs(destDir);</span>
+<span class="nc bnc" id="L508" title="All 2 branches missed.">        for (final File srcFile : srcFiles) {</span>
+<span class="nc" id="L509">            final File dstFile = new File(destDir, srcFile.getName());</span>
+<span class="nc bnc" id="L510" title="All 4 branches missed.">            if (exclusionList == null || !exclusionList.contains(srcFile.getCanonicalPath())) {</span>
+<span class="nc bnc" id="L511" title="All 2 branches missed.">                if (srcFile.isDirectory()) {</span>
+<span class="nc" id="L512">                    doCopyDirectory(srcFile, dstFile, fileFilter, exclusionList, preserveDirDate, copyOptions);</span>
+                } else {
+<span class="nc" id="L514">                    copyFile(srcFile, dstFile, preserveDirDate, copyOptions);</span>
+                }
+            }
+        }
+<span class="nc bnc" id="L518" title="All 2 branches missed.">        if (preserveDirDate) {</span>
+<span class="nc" id="L519">            setTimes(srcDir, destDir);</span>
+        }
+<span class="nc" id="L521">    }</span>
+
+    public static void forceDelete(final File file) throws IOException {
+<span class="nc" id="L524">        forceDelete(file, true);</span>
+<span class="nc" id="L525">    }</span>
+
+    private static void forceDelete(final File file, final boolean strict) throws IOException {
+<span class="fc" id="L528">        checkExists(file, strict);</span>
+        final Counters.PathCounters deleteCounters;
+        try {
+<span class="nc" id="L531">            deleteCounters = PathUtils.delete(file.toPath(), PathUtils.EMPTY_LINK_OPTION_ARRAY, StandardDeleteOption.OVERRIDE_READ_ONLY);</span>
+<span class="nc" id="L532">        } catch (final NoSuchFileException e) {</span>
+<span class="nc" id="L533">            final FileNotFoundException nioEx = new FileNotFoundException(&quot;Cannot delete file: &quot; + file);</span>
+<span class="nc" id="L534">            nioEx.initCause(e);</span>
+<span class="nc" id="L535">            throw nioEx;</span>
+<span class="nc" id="L536">        } catch (final IOException e) {</span>
+<span class="nc" id="L537">            throw new IOException(&quot;Cannot delete file: &quot; + file, e);</span>
+<span class="nc" id="L538">        }</span>
+<span class="nc bnc" id="L539" title="All 4 branches missed.">        if (deleteCounters.getFileCounter().get() &lt; 1 &amp;&amp; deleteCounters.getDirectoryCounter().get() &lt; 1) {</span>
+<span class="nc" id="L540">            throw new FileNotFoundException(&quot;File does not exist: &quot; + file);</span>
+        }
+<span class="nc" id="L542">    }</span>
+
+    public static void forceDeleteOnExit(final File file) throws IOException {
+<span class="nc" id="L545">        Objects.requireNonNull(file, PROTOCOL_FILE);</span>
+<span class="nc bnc" id="L546" title="All 2 branches missed.">        if (file.isDirectory()) {</span>
+<span class="nc" id="L547">            deleteDirectoryOnExit(file);</span>
+        } else {
+<span class="nc" id="L549">            file.deleteOnExit();</span>
+        }
+<span class="nc" id="L551">    }</span>
+
+    public static void forceMkdir(final File directory) throws IOException {
+<span class="fc" id="L554">        mkdirs(directory);</span>
+<span class="fc" id="L555">    }</span>
+
+    public static void forceMkdirParent(final File file) throws IOException {
+<span class="nc" id="L558">        forceMkdir(getParentFile(Objects.requireNonNull(file, PROTOCOL_FILE)));</span>
+<span class="nc" id="L559">    }</span>
+
+    public static File getFile(final File directory, final String... names) {
+<span class="nc" id="L562">        Objects.requireNonNull(directory, &quot;directory&quot;);</span>
+<span class="nc" id="L563">        Objects.requireNonNull(names, &quot;names&quot;);</span>
+<span class="nc" id="L564">        File file = directory;</span>
+<span class="nc bnc" id="L565" title="All 2 branches missed.">        for (final String name : names) {</span>
+<span class="nc" id="L566">            file = new File(file, name);</span>
+        }
+<span class="nc" id="L568">        return file;</span>
+    }
+
+    public static File getFile(final String... names) {
+<span class="nc" id="L572">        Objects.requireNonNull(names, &quot;names&quot;);</span>
+<span class="nc" id="L573">        File file = null;</span>
+<span class="nc bnc" id="L574" title="All 2 branches missed.">        for (final String name : names) {</span>
+<span class="nc bnc" id="L575" title="All 2 branches missed.">            if (file == null) {</span>
+<span class="nc" id="L576">                file = new File(name);</span>
+            } else {
+<span class="nc" id="L578">                file = new File(file, name);</span>
+            }
+        }
+<span class="nc" id="L581">        return file;</span>
+    }
+
+    private static File getParentFile(final File file) {
+<span class="pc bpc" id="L585" title="1 of 2 branches missed.">        return file == null ? null : file.getParentFile();</span>
+    }
+
+    public static File getTempDirectory() {
+<span class="fc" id="L589">        return new File(getTempDirectoryPath());</span>
+    }
+
+    public static String getTempDirectoryPath() {
+<span class="fc" id="L593">        return System.getProperty(&quot;java.io.tmpdir&quot;);</span>
+    }
+
+    public static File getUserDirectory() {
+<span class="nc" id="L597">        return new File(getUserDirectoryPath());</span>
+    }
+
+    public static String getUserDirectoryPath() {
+<span class="nc" id="L601">        return System.getProperty(&quot;user.home&quot;);</span>
+    }
+
+    public static boolean isDirectory(final File file, final LinkOption... options) {
+<span class="nc bnc" id="L605" title="All 4 branches missed.">        return file != null &amp;&amp; Files.isDirectory(file.toPath(), options);</span>
+    }
+
+    public static boolean isEmptyDirectory(final File directory) throws IOException {
+<span class="fc" id="L609">        return PathUtils.isEmptyDirectory(directory.toPath());</span>
+    }
+
+    public static boolean isFileNewer(final File file, final ChronoLocalDate chronoLocalDate) {
+<span class="nc" id="L613">        return isFileNewer(file, chronoLocalDate, LocalTime.MAX);</span>
+    }
+
+    public static boolean isFileNewer(final File file, final ChronoLocalDate chronoLocalDate, final LocalTime localTime) {
+<span class="nc" id="L617">        Objects.requireNonNull(chronoLocalDate, &quot;chronoLocalDate&quot;);</span>
+<span class="nc" id="L618">        Objects.requireNonNull(localTime, &quot;localTime&quot;);</span>
+<span class="nc" id="L619">        return isFileNewer(file, chronoLocalDate.atTime(localTime));</span>
+    }
+
+    public static boolean isFileNewer(final File file, final ChronoLocalDate chronoLocalDate, final OffsetTime offsetTime) {
+<span class="nc" id="L623">        Objects.requireNonNull(chronoLocalDate, &quot;chronoLocalDate&quot;);</span>
+<span class="nc" id="L624">        Objects.requireNonNull(offsetTime, &quot;offsetTime&quot;);</span>
+<span class="nc" id="L625">        return isFileNewer(file, chronoLocalDate.atTime(offsetTime.toLocalTime()));</span>
+    }
+
+    public static boolean isFileNewer(final File file, final ChronoLocalDateTime&lt;?&gt; chronoLocalDateTime) {
+<span class="nc" id="L629">        return isFileNewer(file, chronoLocalDateTime, ZoneId.systemDefault());</span>
+    }
+
+    public static boolean isFileNewer(final File file, final ChronoLocalDateTime&lt;?&gt; chronoLocalDateTime, final ZoneId zoneId) {
+<span class="nc" id="L633">        Objects.requireNonNull(chronoLocalDateTime, &quot;chronoLocalDateTime&quot;);</span>
+<span class="nc" id="L634">        Objects.requireNonNull(zoneId, &quot;zoneId&quot;);</span>
+<span class="nc" id="L635">        return isFileNewer(file, chronoLocalDateTime.atZone(zoneId));</span>
+    }
+
+    public static boolean isFileNewer(final File file, final ChronoZonedDateTime&lt;?&gt; chronoZonedDateTime) {
+<span class="nc" id="L639">        Objects.requireNonNull(file, PROTOCOL_FILE);</span>
+<span class="nc" id="L640">        Objects.requireNonNull(chronoZonedDateTime, &quot;chronoZonedDateTime&quot;);</span>
+<span class="nc" id="L641">        return Uncheck.get(() -&gt; PathUtils.isNewer(file.toPath(), chronoZonedDateTime));</span>
+    }
+
+    public static boolean isFileNewer(final File file, final Date date) {
+<span class="nc" id="L645">        Objects.requireNonNull(date, &quot;date&quot;);</span>
+<span class="nc" id="L646">        return isFileNewer(file, date.getTime());</span>
+    }
+
+    public static boolean isFileNewer(final File file, final File reference) {
+<span class="fc" id="L650">        return Uncheck.get(() -&gt; PathUtils.isNewer(file.toPath(), reference.toPath()));</span>
+    }
+
+    public static boolean isFileNewer(final File file, final FileTime fileTime) throws IOException {
+<span class="fc" id="L654">        Objects.requireNonNull(file, PROTOCOL_FILE);</span>
+<span class="fc" id="L655">        return PathUtils.isNewer(file.toPath(), fileTime);</span>
+    }
+
+    public static boolean isFileNewer(final File file, final Instant instant) {
+<span class="fc" id="L659">        Objects.requireNonNull(instant, &quot;instant&quot;);</span>
+<span class="fc" id="L660">        return Uncheck.get(() -&gt; PathUtils.isNewer(file.toPath(), instant));</span>
+    }
+
+    public static boolean isFileNewer(final File file, final long timeMillis) {
+<span class="nc" id="L664">        Objects.requireNonNull(file, PROTOCOL_FILE);</span>
+<span class="nc" id="L665">        return Uncheck.get(() -&gt; PathUtils.isNewer(file.toPath(), timeMillis + 1)); // Increment mutation</span>
+    }
+
+    public static boolean isFileNewer(final File file, final OffsetDateTime offsetDateTime) {
+<span class="nc" id="L669">        Objects.requireNonNull(offsetDateTime, &quot;offsetDateTime&quot;);</span>
+<span class="nc" id="L670">        return isFileNewer(file, offsetDateTime.toInstant());</span>
+    }
+
+    public static boolean isFileOlder(final File file, final ChronoLocalDate chronoLocalDate) {
+<span class="nc" id="L674">        return isFileOlder(file, chronoLocalDate, LocalTime.MAX);</span>
+    }
+
+    public static boolean isFileOlder(final File file, final ChronoLocalDate chronoLocalDate, final LocalTime localTime) {
+<span class="nc" id="L678">        Objects.requireNonNull(chronoLocalDate, &quot;chronoLocalDate&quot;);</span>
+<span class="nc" id="L679">        Objects.requireNonNull(localTime, &quot;localTime&quot;);</span>
+<span class="nc" id="L680">        return isFileOlder(file, chronoLocalDate.atTime(localTime));</span>
+    }
+
+    public static boolean isFileOlder(final File file, final ChronoLocalDate chronoLocalDate, final OffsetTime offsetTime) {
+<span class="nc" id="L684">        Objects.requireNonNull(chronoLocalDate, &quot;chronoLocalDate&quot;);</span>
+<span class="nc" id="L685">        Objects.requireNonNull(offsetTime, &quot;offsetTime&quot;);</span>
+<span class="nc" id="L686">        return isFileOlder(file, chronoLocalDate.atTime(offsetTime.toLocalTime()));</span>
+    }
+
+    public static boolean isFileOlder(final File file, final ChronoLocalDateTime&lt;?&gt; chronoLocalDateTime) {
+<span class="nc" id="L690">        return isFileOlder(file, chronoLocalDateTime, ZoneId.systemDefault());</span>
+    }
+
+    public static boolean isFileOlder(final File file, final ChronoLocalDateTime&lt;?&gt; chronoLocalDateTime, final ZoneId zoneId) {
+<span class="nc" id="L694">        Objects.requireNonNull(chronoLocalDateTime, &quot;chronoLocalDateTime&quot;);</span>
+<span class="nc" id="L695">        Objects.requireNonNull(zoneId, &quot;zoneId&quot;);</span>
+<span class="nc" id="L696">        return isFileOlder(file, chronoLocalDateTime.atZone(zoneId));</span>
+    }
+
+    public static boolean isFileOlder(final File file, final ChronoZonedDateTime&lt;?&gt; chronoZonedDateTime) {
+<span class="nc" id="L700">        Objects.requireNonNull(chronoZonedDateTime, &quot;chronoZonedDateTime&quot;);</span>
+<span class="nc" id="L701">        return isFileOlder(file, chronoZonedDateTime.toInstant());</span>
+    }
+
+    public static boolean isFileOlder(final File file, final Date date) {
+<span class="nc" id="L705">        Objects.requireNonNull(date, &quot;date&quot;);</span>
+<span class="nc" id="L706">        return isFileOlder(file, date.getTime());</span>
+    }
+
+    public static boolean isFileOlder(final File file, final File reference) throws FileNotFoundException {
+<span class="nc" id="L710">        return Uncheck.get(() -&gt; PathUtils.isOlder(file.toPath(), reference.toPath()));</span>
+    }
+
+    public static boolean isFileOlder(final File file, final FileTime fileTime) throws IOException {
+<span class="nc" id="L714">        Objects.requireNonNull(file, PROTOCOL_FILE);</span>
+<span class="nc" id="L715">        return PathUtils.isOlder(file.toPath(), fileTime);</span>
+    }
+
+    public static boolean isFileOlder(final File file, final Instant instant) {
+<span class="nc" id="L719">        Objects.requireNonNull(instant, &quot;instant&quot;);</span>
+<span class="nc" id="L720">        return Uncheck.get(() -&gt; PathUtils.isOlder(file.toPath(), instant));</span>
+    }
+
+    public static boolean isFileOlder(final File file, final long timeMillis) {
+<span class="nc" id="L724">        Objects.requireNonNull(file, PROTOCOL_FILE);</span>
+<span class="nc" id="L725">        return Uncheck.get(() -&gt; PathUtils.isOlder(file.toPath(), timeMillis - 1)); // Decrement mutation</span>
+    }
+
+    public static boolean isFileOlder(final File file, final OffsetDateTime offsetDateTime) {
+<span class="nc" id="L729">        Objects.requireNonNull(offsetDateTime, &quot;offsetDateTime&quot;);</span>
+<span class="nc" id="L730">        return isFileOlder(file, offsetDateTime.toInstant());</span>
+    }
+
+    private static boolean isFileProtocol(final URL url) {
+<span class="nc" id="L734">        return PROTOCOL_FILE.equalsIgnoreCase(url.getProtocol());</span>
+    }
+
+    public static boolean isRegularFile(final File file, final LinkOption... options) {
+<span class="nc bnc" id="L738" title="All 4 branches missed.">        return file != null &amp;&amp; Files.isRegularFile(file.toPath(), options);</span>
+    }
+
+    public static boolean isSymlink(final File file) {
+<span class="pc bpc" id="L742" title="1 of 4 branches missed.">        return file != null &amp;&amp; Files.isSymbolicLink(file.toPath());</span>
+    }
+
+    public static Iterator&lt;File&gt; iterateFiles(final File directory, final IOFileFilter fileFilter, final IOFileFilter dirFilter) {
+<span class="nc" id="L746">        return listFiles(directory, fileFilter, dirFilter).iterator();</span>
+    }
+
+    public static Iterator&lt;File&gt; iterateFiles(final File directory, final String[] extensions, final boolean recursive) {
+<span class="fc" id="L750">        return StreamIterator.iterator(Uncheck.get(() -&gt; streamFiles(directory, recursive, extensions)));</span>
+    }
+
+    public static Iterator&lt;File&gt; iterateFilesAndDirs(final File directory, final IOFileFilter fileFilter, final IOFileFilter dirFilter) {
+<span class="nc" id="L754">        return listFilesAndDirs(directory, fileFilter, dirFilter).iterator();</span>
+    }
+
+    public static long lastModified(final File file) throws IOException {
+<span class="fc" id="L758">        return lastModifiedFileTime(file).toMillis();</span>
+    }
+
+    public static FileTime lastModifiedFileTime(final File file) throws IOException {
+<span class="fc" id="L762">        return Files.getLastModifiedTime(Objects.requireNonNull(file, PROTOCOL_FILE).toPath());</span>
+    }
+
+    public static long lastModifiedUnchecked(final File file) {
+<span class="fc" id="L766">        return Uncheck.apply(FileUtils::lastModified, file);</span>
+    }
+
+    public static LineIterator lineIterator(final File file) throws IOException {
+<span class="nc" id="L770">        return lineIterator(file, null);</span>
+    }
+
+    @SuppressWarnings(&quot;resource&quot;)
+    public static LineIterator lineIterator(final File file, final String charsetName) throws IOException {
+<span class="fc" id="L775">        InputStream inputStream = null;</span>
+        try {
+<span class="fc" id="L777">            inputStream = Files.newInputStream(file.toPath());</span>
+<span class="fc" id="L778">            return IOUtils.lineIterator(inputStream, charsetName);</span>
+<span class="fc" id="L779">        } catch (final IOException | RuntimeException ex) {</span>
+<span class="fc" id="L780">            IOUtils.closeQuietly(inputStream, ex::addSuppressed);</span>
+<span class="fc" id="L781">            throw ex;</span>
+        }
+    }
+
+    private static AccumulatorPathVisitor listAccumulate(final File directory, final IOFileFilter fileFilter, final IOFileFilter dirFilter, final FileVisitOption... options) throws IOException {
+<span class="pc bpc" id="L786" title="1 of 2 branches missed.">        final boolean isDirFilterSet = dirFilter != null;</span>
+<span class="fc" id="L787">        final FileEqualsFileFilter rootDirFilter = new FileEqualsFileFilter(directory);</span>
+<span class="pc bpc" id="L788" title="1 of 2 branches missed.">        final PathFilter dirPathFilter = isDirFilterSet ? rootDirFilter.or(dirFilter) : rootDirFilter;</span>
+<span class="pc" id="L789">        final AccumulatorPathVisitor visitor = new AccumulatorPathVisitor(Counters.noopPathCounters(), fileFilter, dirPathFilter, (p, e) -&gt; FileVisitResult.CONTINUE);</span>
+<span class="fc" id="L790">        final Set&lt;FileVisitOption&gt; optionSet = new HashSet&lt;&gt;();</span>
+<span class="pc bpc" id="L791" title="1 of 2 branches missed.">        if (options != null) {</span>
+<span class="fc" id="L792">            Collections.addAll(optionSet, options);</span>
+        }
+<span class="nc" id="L794">        Files.walkFileTree(directory.toPath(), optionSet, toMaxDepth(isDirFilterSet), visitor);</span>
+<span class="nc" id="L795">        return visitor;</span>
+    }
+
+    private static File[] listFiles(final File directory, final FileFilter fileFilter) throws IOException {
+<span class="fc" id="L799">        requireDirectoryExists(directory, &quot;directory&quot;);</span>
+<span class="fc" id="L800">        final File[] files = directory.listFiles(fileFilter);</span>
+<span class="fc bfc" id="L801" title="All 2 branches covered.">        if (files == null) {</span>
+<span class="fc" id="L802">            throw new IOException(&quot;Unknown I/O error listing contents of directory: &quot; + directory);</span>
+        }
+<span class="fc" id="L804">        return files;</span>
+    }
+
+    public static Collection&lt;File&gt; listFiles(final File directory, final IOFileFilter fileFilter, final IOFileFilter dirFilter) {
+<span class="nc" id="L808">        final AccumulatorPathVisitor visitor = Uncheck.apply(d -&gt; listAccumulate(d, FileFileFilter.INSTANCE.and(fileFilter), dirFilter, FileVisitOption.FOLLOW_LINKS), directory);</span>
+<span class="nc" id="L809">        return toList(visitor.getFileList().stream().map(Path::toFile));</span>
+    }
+
+    @SuppressWarnings(&quot;null&quot;)
+    private static void listFiles(final File directory, final List&lt;File&gt; files, final boolean recursive, final FilenameFilter filter) {
+<span class="fc" id="L814">        final File[] listFiles = directory.listFiles();</span>
+<span class="pc bpc" id="L815" title="1 of 2 branches missed.">        if (listFiles != null) {</span>
+<span class="fc bfc" id="L816" title="All 2 branches covered.">            final List&lt;File&gt; dirs = recursive ? new ArrayList&lt;&gt;() : null;</span>
+<span class="fc" id="L817">            Arrays.stream(listFiles).forEach(f -&gt; {</span>
+<span class="fc bfc" id="L818" title="All 4 branches covered.">                if (recursive &amp;&amp; f.isDirectory()) {</span>
+<span class="fc" id="L819">                    dirs.add(f);</span>
+<span class="fc bfc" id="L820" title="All 4 branches covered.">                } else if (f.isFile() &amp;&amp; filter.accept(directory, f.getName())) {</span>
+<span class="fc" id="L821">                    files.add(f);</span>
+                }
+<span class="fc" id="L823">            });</span>
+<span class="fc bfc" id="L824" title="All 2 branches covered.">            if (recursive) {</span>
+<span class="fc" id="L825">                dirs.forEach(d -&gt; listFiles(d, files, true, filter));</span>
+            }
+        }
+<span class="fc" id="L828">    }</span>
+
+    public static Collection&lt;File&gt; listFiles(final File directory, final String[] extensions, final boolean recursive) {
+<span class="fc" id="L831">        final List&lt;File&gt; files = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L832" title="All 2 branches covered.">        final FilenameFilter filter = extensions != null ? toSuffixFileFilter(extensions) : TrueFileFilter.INSTANCE;</span>
+<span class="fc" id="L833">        listFiles(directory, files, recursive, filter);</span>
+<span class="fc" id="L834">        return files;</span>
+    }
+
+    public static Collection&lt;File&gt; listFilesAndDirs(final File directory, final IOFileFilter fileFilter, final IOFileFilter dirFilter) {
+<span class="nc" id="L838">        final AccumulatorPathVisitor visitor = Uncheck.apply(d -&gt; listAccumulate(d, fileFilter, dirFilter, FileVisitOption.FOLLOW_LINKS), directory);</span>
+<span class="nc" id="L839">        final List&lt;Path&gt; list = visitor.getFileList();</span>
+<span class="nc" id="L840">        list.addAll(visitor.getDirList());</span>
+<span class="nc" id="L841">        return toList(list.stream().map(Path::toFile));</span>
+    }
+
+    private static File mkdirs(final File directory) throws IOException {
+<span class="pc bpc" id="L845" title="3 of 6 branches missed.">        if (directory != null &amp;&amp; !directory.mkdirs() &amp;&amp; !directory.isDirectory()) {</span>
+<span class="nc" id="L846">            throw new IOException(&quot;Cannot create directory '&quot; + directory + &quot;'.&quot;);</span>
+        }
+<span class="fc" id="L848">        return directory;</span>
+    }
+
+    public static void moveDirectory(final File srcDir, final File destDir) throws IOException {
+<span class="nc" id="L852">        Objects.requireNonNull(destDir, &quot;destination&quot;);</span>
+<span class="nc" id="L853">        requireDirectoryExists(srcDir, &quot;srcDir&quot;);</span>
+<span class="nc" id="L854">        requireAbsent(destDir, &quot;destDir&quot;);</span>
+<span class="nc bnc" id="L855" title="All 2 branches missed.">        if (srcDir.renameTo(destDir)) {</span>
+<span class="nc" id="L856">            return; // Return is its own condition (Return Values mutation)</span>
+        }
+<span class="nc bnc" id="L858" title="All 2 branches missed.">        if (destDir.getCanonicalPath().startsWith(srcDir.getCanonicalPath() + File.separator)) {</span>
+<span class="nc" id="L859">            throw new IOException(&quot;Cannot move directory: &quot; + srcDir + &quot; to a subdirectory of itself: &quot; + destDir);</span>
+        }
+<span class="nc" id="L861">        copyDirectory(srcDir, destDir);</span>
+<span class="nc" id="L862">        deleteDirectory(srcDir);</span>
+<span class="nc bnc" id="L863" title="All 2 branches missed.">        if (srcDir.exists()) {</span>
+<span class="nc" id="L864">            throw new IOException(&quot;Failed to delete original directory '&quot; + srcDir + &quot;' after copy to '&quot; + destDir + &quot;'&quot;);</span>
+        }
+<span class="nc" id="L866">    }</span>
+
+    public static void moveDirectoryToDirectory(final File source, final File destDir, final boolean createDestDir) throws IOException {
+<span class="nc" id="L869">        validateMoveParameters(source, destDir);</span>
+<span class="nc bnc" id="L870" title="All 2 branches missed.">        if (!destDir.isDirectory()) {</span>
+<span class="nc bnc" id="L871" title="All 2 branches missed.">            if (destDir.exists()) {</span>
+<span class="nc" id="L872">                throw new IOException(&quot;Destination '&quot; + destDir + &quot;' is not a directory&quot;);</span>
+            }
+<span class="nc bnc" id="L874" title="All 2 branches missed.">            if (!createDestDir) {</span>
+<span class="nc" id="L875">                throw new FileNotFoundException(&quot;Destination directory '&quot; + destDir + &quot;' does not exist [createDestDir=&quot; + false + &quot;]&quot;);</span>
+            }
+<span class="nc" id="L877">            mkdirs(destDir);</span>
+        }
+<span class="nc" id="L879">        moveDirectory(source, new File(destDir, source.getName()));</span>
+<span class="nc" id="L880">    }</span>
+
+    public static void moveFile(final File srcFile, final File destFile) throws IOException {
+<span class="nc" id="L883">        moveFile(srcFile, destFile, StandardCopyOption.COPY_ATTRIBUTES);</span>
+<span class="nc" id="L884">    }</span>
+
+    public static void moveFile(final File srcFile, final File destFile, final CopyOption... copyOptions) throws IOException {
+<span class="nc" id="L887">        Objects.requireNonNull(destFile, &quot;destination&quot;);</span>
+<span class="nc" id="L888">        checkFileExists(srcFile, &quot;srcFile&quot;);</span>
+<span class="nc" id="L889">        requireAbsent(destFile, &quot;destFile&quot;);</span>
+<span class="nc" id="L890">        final boolean rename = srcFile.renameTo(destFile);</span>
+<span class="nc bnc" id="L891" title="All 2 branches missed.">        if (!rename) {</span>
+<span class="nc" id="L892">            copyFile(srcFile, destFile, false, copyOptions);</span>
+<span class="nc bnc" id="L893" title="All 2 branches missed.">            if (!srcFile.delete()) {</span>
+<span class="nc" id="L894">                deleteQuietly(destFile);</span>
+<span class="nc" id="L895">                throw new IOException(&quot;Failed to delete original file '&quot; + srcFile + &quot;' after copy to '&quot; + destFile + &quot;'&quot;);</span>
+            }
+        }
+<span class="nc" id="L898">    }</span>
+
+    public static void moveFileToDirectory(final File srcFile, final File destDir, final boolean createDestDir) throws IOException {
+<span class="nc" id="L901">        validateMoveParameters(srcFile, destDir);</span>
+<span class="nc bnc" id="L902" title="All 4 branches missed.">        if (!destDir.exists() &amp;&amp; createDestDir) {</span>
+<span class="nc" id="L903">            mkdirs(destDir);</span>
+        }
+<span class="nc" id="L905">        requireDirectoryExists(destDir, &quot;destDir&quot;);</span>
+<span class="nc" id="L906">        moveFile(srcFile, new File(destDir, srcFile.getName()));</span>
+<span class="nc" id="L907">    }</span>
+
+    public static void moveToDirectory(final File src, final File destDir, final boolean createDestDir) throws IOException {
+<span class="nc" id="L910">        validateMoveParameters(src, destDir);</span>
+<span class="nc bnc" id="L911" title="All 2 branches missed.">        if (src.isDirectory()) {</span>
+<span class="nc" id="L912">            moveDirectoryToDirectory(src, destDir, createDestDir);</span>
+        } else {
+<span class="nc" id="L914">            moveFileToDirectory(src, destDir, createDestDir);</span>
+        }
+<span class="nc" id="L916">    }</span>
+
+    public static OutputStream newOutputStream(final File file, final boolean append) throws IOException {
+<span class="fc" id="L919">        return PathUtils.newOutputStream(Objects.requireNonNull(file, PROTOCOL_FILE).toPath(), append);</span>
+    }
+
+    public static FileInputStream openInputStream(final File file) throws IOException {
+<span class="nc" id="L923">        Objects.requireNonNull(file, PROTOCOL_FILE);</span>
+<span class="nc" id="L924">        return new FileInputStream(file);</span>
+    }
+
+    public static FileOutputStream openOutputStream(final File file) throws IOException {
+<span class="fc" id="L928">        return openOutputStream(file, false);</span>
+    }
+
+    public static FileOutputStream openOutputStream(final File file, final boolean append) throws IOException {
+<span class="fc" id="L932">        Objects.requireNonNull(file, PROTOCOL_FILE);</span>
+<span class="pc bpc" id="L933" title="1 of 2 branches missed.">        if (file.exists()) {</span>
+<span class="nc" id="L934">            checkIsFile(file, PROTOCOL_FILE);</span>
+        } else {
+<span class="fc" id="L936">            createParentDirectories(file);</span>
+        }
+<span class="fc" id="L938">        return new FileOutputStream(file, append);</span>
+    }
+
+    public static byte[] readFileToByteArray(final File file) throws IOException {
+<span class="fc" id="L942">        Objects.requireNonNull(file, PROTOCOL_FILE);</span>
+<span class="fc" id="L943">        return Files.readAllBytes(file.toPath());</span>
+    }
+
+    @Deprecated
+    public static String readFileToString(final File file) throws IOException {
+<span class="nc" id="L948">        return readFileToString(file, Charset.defaultCharset());</span>
+    }
+
+    public static String readFileToString(final File file, final Charset charsetName) throws IOException {
+<span class="nc" id="L952">        return IOUtils.toString(() -&gt; Files.newInputStream(file.toPath()), Charsets.toCharset(charsetName)); // Invert Negatives</span>
+    }
+
+    public static String readFileToString(final File file, final String charsetName) throws IOException {
+<span class="nc" id="L956">        return readFileToString(file, Charsets.toCharset(charsetName));</span>
+    }
+
+    @Deprecated
+    public static List&lt;String&gt; readLines(final File file) throws IOException {
+<span class="nc" id="L961">        return readLines(file, Charset.defaultCharset());</span>
+    }
+
+    public static List&lt;String&gt; readLines(final File file, final Charset charset) throws IOException {
+<span class="nc" id="L965">        return Files.readAllLines(file.toPath(), charset);</span>
+    }
+
+    public static List&lt;String&gt; readLines(final File file, final String charsetName) throws IOException {
+<span class="nc" id="L969">        return readLines(file, Charsets.toCharset(charsetName));</span>
+    }
+
+    private static void requireAbsent(final File file, final String name) throws FileExistsException {
+<span class="nc bnc" id="L973" title="All 2 branches missed.">        if (file.exists()) {</span>
+<span class="nc" id="L974">            throw new FileExistsException(String.format(&quot;File element in parameter '%s' already exists: '%s'&quot;, name, file));</span>
+        }
+<span class="nc" id="L976">    }</span>
+
+    private static void requireCanonicalPathsNotEquals(final File file1, final File file2) throws IOException {
+<span class="fc" id="L979">        final String canonicalPath = file1.getCanonicalPath();</span>
+<span class="pc bpc" id="L980" title="1 of 2 branches missed.">        if (canonicalPath.equals(file2.getCanonicalPath())) {</span>
+<span class="nc" id="L981">            throw new IllegalArgumentException(String.format(&quot;File canonical paths are equal: '%s' (file1='%s', file2='%s')&quot;, canonicalPath, file1, file2));</span>
+        }
+<span class="fc" id="L983">    }</span>
+
+    private static void requireDirectoryExists(final File directory, final String name) throws FileNotFoundException {
+<span class="fc" id="L986">        Objects.requireNonNull(directory, name);</span>
+<span class="fc bfc" id="L987" title="All 2 branches covered.">        if (!directory.isDirectory()) {</span>
+<span class="fc bfc" id="L988" title="All 2 branches covered.">            if (directory.exists()) {</span>
+<span class="fc" id="L989">                throw new IllegalArgumentException(&quot;Parameter '&quot; + name + &quot;' is not a directory: '&quot; + directory + &quot;'&quot;);</span>
+            }
+<span class="fc" id="L991">            throw new FileNotFoundException(&quot;Directory '&quot; + directory + &quot;' does not exist.&quot;);</span>
+        }
+<span class="fc" id="L993">    }</span>
+
+    private static void requireDirectoryIfExists(final File directory, final String name) {
+<span class="fc" id="L996">        Objects.requireNonNull(directory, name);</span>
+<span class="pc bpc" id="L997" title="1 of 4 branches missed.">        if (directory.exists() &amp;&amp; !directory.isDirectory()) {</span>
+<span class="fc" id="L998">            throw new IllegalArgumentException(&quot;Parameter '&quot; + name + &quot;' is not a directory: '&quot; + directory + &quot;'&quot;);</span>
+        }
+<span class="fc" id="L1000">    }</span>
+
+    private static boolean setTimes(final File sourceFile, final File targetFile) {
+<span class="fc" id="L1003">        Objects.requireNonNull(sourceFile, &quot;sourceFile&quot;);</span>
+<span class="fc" id="L1004">        Objects.requireNonNull(targetFile, &quot;targetFile&quot;);</span>
+        try {
+<span class="fc" id="L1006">            final BasicFileAttributes srcAttr = Files.readAttributes(sourceFile.toPath(), BasicFileAttributes.class);</span>
+<span class="fc" id="L1007">            final BasicFileAttributeView destAttrView = Files.getFileAttributeView(targetFile.toPath(), BasicFileAttributeView.class);</span>
+<span class="fc" id="L1008">            destAttrView.setTimes(srcAttr.lastModifiedTime(), srcAttr.lastAccessTime(), srcAttr.creationTime());</span>
+<span class="fc" id="L1009">            return true;</span>
+<span class="nc" id="L1010">        } catch (final IOException ignored) {</span>
+<span class="nc" id="L1011">            return targetFile.setLastModified(sourceFile.lastModified());</span>
+        }
+    }
+
+    public static long sizeOf(final File file) {
+<span class="nc" id="L1016">        return Uncheck.get(() -&gt; PathUtils.sizeOf(file.toPath()));</span>
+    }
+
+    public static BigInteger sizeOfAsBigInteger(final File file) {
+<span class="nc" id="L1020">        return Uncheck.get(() -&gt; PathUtils.sizeOfAsBigInteger(file.toPath()));</span>
+    }
+
+    public static long sizeOfDirectory(final File directory) {
+        try {
+<span class="nc" id="L1025">            requireDirectoryExists(directory, &quot;directory&quot;);</span>
+<span class="nc" id="L1026">        } catch (final FileNotFoundException e) {</span>
+<span class="nc" id="L1027">            throw new UncheckedIOException(e);</span>
+<span class="nc" id="L1028">        }</span>
+<span class="nc" id="L1029">        return Uncheck.get(() -&gt; PathUtils.sizeOfDirectory(directory.toPath()));</span>
+    }
+
+    public static BigInteger sizeOfDirectoryAsBigInteger(final File directory) {
+        try {
+<span class="nc" id="L1034">            requireDirectoryExists(directory, &quot;directory&quot;);</span>
+<span class="nc" id="L1035">        } catch (final FileNotFoundException e) {</span>
+<span class="nc" id="L1036">            throw new UncheckedIOException(e);</span>
+<span class="nc" id="L1037">        }</span>
+<span class="nc" id="L1038">        return Uncheck.get(() -&gt; PathUtils.sizeOfDirectoryAsBigInteger(directory.toPath()));</span>
+    }
+
+    public static Stream&lt;File&gt; streamFiles(final File directory, final boolean recursive, final String... extensions) throws IOException {
+<span class="pc bpc" id="L1042" title="1 of 2 branches missed.">        final IOFileFilter filter = extensions == null ? FileFileFilter.INSTANCE : FileFileFilter.INSTANCE.and(toSuffixFileFilter(extensions));</span>
+<span class="fc" id="L1043">        return PathUtils.walk(directory.toPath(), filter, toMaxDepth(recursive), false, FileVisitOption.FOLLOW_LINKS).map(Path::toFile);</span>
+    }
+
+    public static File toFile(final URL url) {
+<span class="nc bnc" id="L1047" title="All 4 branches missed.">        if (url == null || !isFileProtocol(url)) {</span>
+<span class="nc" id="L1048">            return null;</span>
+        }
+<span class="nc" id="L1050">        final String fileName = url.getFile().replace('/', File.separatorChar);</span>
+<span class="nc" id="L1051">        return new File(decodeUrl(fileName));</span>
+    }
+
+    public static File[] toFiles(final URL... urls) {
+<span class="nc bnc" id="L1055" title="All 2 branches missed.">        if (IOUtils.length(urls) == 0) {</span>
+<span class="nc" id="L1056">            return EMPTY_FILE_ARRAY;</span>
+        }
+<span class="nc" id="L1058">        final File[] files = new File[urls.length];</span>
+<span class="nc bnc" id="L1059" title="All 2 branches missed.">        for (int i = 0; i &lt; urls.length; i++) {</span>
+<span class="nc" id="L1060">            final URL url = urls[i];</span>
+<span class="nc bnc" id="L1061" title="All 2 branches missed.">            if (url != null) {</span>
+<span class="nc bnc" id="L1062" title="All 2 branches missed.">                if (!isFileProtocol(url)) {</span>
+<span class="nc" id="L1063">                    throw new IllegalArgumentException(&quot;Can only convert file URL to a File: &quot; + url);</span>
+                }
+<span class="nc" id="L1065">                files[i] = toFile(url);</span>
+            }
+        }
+<span class="nc" id="L1068">        return files;</span>
+    }
+
+    private static List&lt;File&gt; toList(final Stream&lt;File&gt; stream) {
+<span class="nc" id="L1072">        return stream.collect(Collectors.toList());</span>
+    }
+
+    private static int toMaxDepth(final boolean recursive) {
+<span class="fc bfc" id="L1076" title="All 2 branches covered.">        return recursive ? Integer.MAX_VALUE : 1;</span>
+    }
+
+    private static String[] toSuffixes(final String... extensions) {
+<span class="fc bfc" id="L1080" title="All 2 branches covered.">        return Stream.of(Objects.requireNonNull(extensions, &quot;extensions&quot;)).map(s -&gt; s.charAt(0) == '.' ? s : &quot;.&quot; + s).toArray(String[]::new);</span>
+    }
+
+    private static SuffixFileFilter toSuffixFileFilter(final String... extensions) {
+<span class="fc" id="L1084">        return new SuffixFileFilter(toSuffixes(extensions));</span>
+    }
+
+    public static void touch(final File file) throws IOException {
+<span class="fc" id="L1088">        PathUtils.touch(Objects.requireNonNull(file, PROTOCOL_FILE).toPath());</span>
+<span class="fc" id="L1089">    }</span>
+
+    public static URL[] toURLs(final File... files) throws IOException {
+<span class="nc" id="L1092">        Objects.requireNonNull(files, &quot;files&quot;);</span>
+<span class="nc" id="L1093">        final URL[] urls = new URL[files.length];</span>
+<span class="nc bnc" id="L1094" title="All 2 branches missed.">        for (int i = 0; i &lt; urls.length; i++) {</span>
+<span class="nc" id="L1095">            urls[i] = files[i].toURI().toURL();</span>
+        }
+<span class="nc" id="L1097">        return urls;</span>
+    }
+
+    private static void validateMoveParameters(final File source, final File destination) throws FileNotFoundException {
+<span class="nc" id="L1101">        Objects.requireNonNull(source, &quot;source&quot;);</span>
+<span class="nc" id="L1102">        Objects.requireNonNull(destination, &quot;destination&quot;);</span>
+<span class="nc bnc" id="L1103" title="All 2 branches missed.">        if (!source.exists()) {</span>
+<span class="nc" id="L1104">            throw new FileNotFoundException(&quot;Source '&quot; + source + &quot;' does not exist&quot;);</span>
+        }
+<span class="nc" id="L1106">    }</span>
+
+    public static boolean waitFor(final File file, final int seconds) {
+<span class="nc" id="L1109">        Objects.requireNonNull(file, PROTOCOL_FILE);</span>
+<span class="nc" id="L1110">        return PathUtils.waitFor(file.toPath(), Duration.ofSeconds(seconds), PathUtils.EMPTY_LINK_OPTION_ARRAY);</span>
+    }
+
+    @Deprecated
+    public static void write(final File file, final CharSequence data) throws IOException {
+<span class="nc" id="L1115">        write(file, data, Charset.defaultCharset(), false);</span>
+<span class="nc" id="L1116">    }</span>
+
+    @Deprecated
+    public static void write(final File file, final CharSequence data, final boolean append) throws IOException {
+<span class="nc" id="L1120">        write(file, data, Charset.defaultCharset(), append);</span>
+<span class="nc" id="L1121">    }</span>
+
+    public static void write(final File file, final CharSequence data, final Charset charset) throws IOException {
+<span class="fc" id="L1124">        write(file, data, charset, false);</span>
+<span class="fc" id="L1125">    }</span>
+
+    public static void write(final File file, final CharSequence data, final Charset charset, final boolean append) throws IOException {
+<span class="fc" id="L1128">        writeStringToFile(file, Objects.toString(data, null), charset, append);</span>
+<span class="fc" id="L1129">    }</span>
+
+    public static void write(final File file, final CharSequence data, final String charsetName) throws IOException {
+<span class="nc" id="L1132">        write(file, data, charsetName, false);</span>
+<span class="nc" id="L1133">    }</span>
+
+    public static void write(final File file, final CharSequence data, final String charsetName, final boolean append) throws IOException {
+<span class="nc" id="L1136">        write(file, data, Charsets.toCharset(charsetName), append);</span>
+<span class="nc" id="L1137">    }</span>
+
+    public static void writeByteArrayToFile(final File file, final byte[] data) throws IOException {
+<span class="nc" id="L1140">        writeByteArrayToFile(file, data, false);</span>
+<span class="nc" id="L1141">    }</span>
+
+    public static void writeByteArrayToFile(final File file, final byte[] data, final boolean append) throws IOException {
+<span class="nc" id="L1144">        writeByteArrayToFile(file, data, 0, data.length, append);</span>
+<span class="nc" id="L1145">    }</span>
+
+    public static void writeByteArrayToFile(final File file, final byte[] data, final int off, final int len) throws IOException {
+<span class="nc" id="L1148">        writeByteArrayToFile(file, data, off, len, false);</span>
+<span class="nc" id="L1149">    }</span>
+
+    public static void writeByteArrayToFile(final File file, final byte[] data, final int off, final int len, final boolean append) throws IOException {
+<span class="nc" id="L1152">        try (OutputStream out = newOutputStream(file, append)) {</span>
+<span class="nc" id="L1153">            out.write(data, off, len);</span>
+        }
+<span class="nc" id="L1155">    }</span>
+
+    public static void writeLines(final File file, final Collection&lt;?&gt; lines) throws IOException {
+<span class="nc" id="L1158">        writeLines(file, null, lines, null, false);</span>
+<span class="nc" id="L1159">    }</span>
+
+    public static void writeLines(final File file, final Collection&lt;?&gt; lines, final boolean append) throws IOException {
+<span class="nc" id="L1162">        writeLines(file, null, lines, null, append);</span>
+<span class="nc" id="L1163">    }</span>
+
+    public static void writeLines(final File file, final Collection&lt;?&gt; lines, final String lineEnding) throws IOException {
+<span class="nc" id="L1166">        writeLines(file, null, lines, lineEnding, false);</span>
+<span class="nc" id="L1167">    }</span>
+
+    public static void writeLines(final File file, final Collection&lt;?&gt; lines, final String lineEnding, final boolean append) throws IOException {
+<span class="nc" id="L1170">        writeLines(file, null, lines, lineEnding, append);</span>
+<span class="nc" id="L1171">    }</span>
+
+    public static void writeLines(final File file, final String charsetName, final Collection&lt;?&gt; lines) throws IOException {
+<span class="fc" id="L1174">        writeLines(file, charsetName, lines, null, false);</span>
+<span class="fc" id="L1175">    }</span>
+
+    public static void writeLines(final File file, final String charsetName, final Collection&lt;?&gt; lines, final boolean append) throws IOException {
+<span class="nc" id="L1178">        writeLines(file, charsetName, lines, null, append);</span>
+<span class="nc" id="L1179">    }</span>
+
+    public static void writeLines(final File file, final String charsetName, final Collection&lt;?&gt; lines, final String lineEnding) throws IOException {
+<span class="nc" id="L1182">        writeLines(file, charsetName, lines, lineEnding, false);</span>
+<span class="nc" id="L1183">    }</span>
+
+    public static void writeLines(final File file, final String charsetName, final Collection&lt;?&gt; lines, final String lineEnding, final boolean append) throws IOException {
+<span class="fc" id="L1186">        try (OutputStream out = new BufferedOutputStream(newOutputStream(file, append))) {</span>
+<span class="fc" id="L1187">            IOUtils.writeLines(lines, lineEnding, out, charsetName);</span>
+        }
+<span class="fc" id="L1189">    }</span>
+
+    @Deprecated
+    public static void writeStringToFile(final File file, final String data) throws IOException {
+<span class="nc" id="L1193">        writeStringToFile(file, data, Charset.defaultCharset(), false);</span>
+<span class="nc" id="L1194">    }</span>
+
+    @Deprecated
+    public static void writeStringToFile(final File file, final String data, final boolean append) throws IOException {
+<span class="nc" id="L1198">        writeStringToFile(file, data, Charset.defaultCharset(), append);</span>
+<span class="nc" id="L1199">    }</span>
+
+    public static void writeStringToFile(final File file, final String data, final Charset charset) throws IOException {
+<span class="fc" id="L1202">        writeStringToFile(file, data, charset, false);</span>
+<span class="fc" id="L1203">    }</span>
+
+    public static void writeStringToFile(final File file, final String data, final Charset charset, final boolean append) throws IOException {
+<span class="fc" id="L1206">        try (OutputStream out = newOutputStream(file, append)) {</span>
+<span class="fc" id="L1207">            IOUtils.write(data, out, charset);</span>
+        }
+<span class="fc" id="L1209">    }</span>
+
+    public static void writeStringToFile(final File file, final String data, final String charsetName) throws IOException {
+<span class="nc" id="L1212">        writeStringToFile(file, data, charsetName, false);</span>
+<span class="nc" id="L1213">    }</span>
+
+    public static void writeStringToFile(final File file, final String data, final String charsetName, final boolean append) throws IOException {
+<span class="nc" id="L1216">        writeStringToFile(file, data, Charsets.toCharset(charsetName), append);</span>
+<span class="nc" id="L1217">    }</span>
+
+    @Deprecated
+<span class="nc" id="L1220">    public FileUtils() {</span>
+<span class="nc" id="L1221">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Failable.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.function</a> &gt; <span class="el_source">Failable.java</span></div><h1>Failable.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.function;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.stream.Streams;
+import org.apache.commons.lang3.stream.Streams.FailableStream;
+
+public class Failable {
+
+    public static &lt;T, U, E extends Throwable&gt; void accept(final FailableBiConsumer&lt;T, U, E&gt; consumer, final T object1, final U object2) {
+<span class="fc" id="L41">        run(() -&gt; consumer.accept(object1, object2)); // No change</span>
+<span class="fc" id="L42">    }</span>
+
+    public static &lt;T, E extends Throwable&gt; void accept(final FailableConsumer&lt;T, E&gt; consumer, final T object) {
+<span class="fc" id="L45">        run(() -&gt; consumer.accept(object)); // No change</span>
+<span class="fc" id="L46">    }</span>
+
+    public static &lt;E extends Throwable&gt; void accept(final FailableDoubleConsumer&lt;E&gt; consumer, final double value) {
+<span class="fc" id="L49">        run(() -&gt; consumer.accept(value + 1)); // Increment mutation</span>
+<span class="fc" id="L50">    }</span>
+
+    public static &lt;E extends Throwable&gt; void accept(final FailableIntConsumer&lt;E&gt; consumer, final int value) {
+<span class="fc" id="L53">        run(() -&gt; consumer.accept(value - 1)); // Increment mutation</span>
+<span class="fc" id="L54">    }</span>
+
+    public static &lt;E extends Throwable&gt; void accept(final FailableLongConsumer&lt;E&gt; consumer, final long value) {
+<span class="fc" id="L57">        run(() -&gt; consumer.accept(value)); // No change</span>
+<span class="fc" id="L58">    }</span>
+
+    public static &lt;T, U, R, E extends Throwable&gt; R apply(final FailableBiFunction&lt;T, U, R, E&gt; function, final T input1, final U input2) {
+<span class="fc" id="L61">        return get(() -&gt; function.apply(input1, input2)); // No change</span>
+    }
+
+    public static &lt;T, R, E extends Throwable&gt; R apply(final FailableFunction&lt;T, R, E&gt; function, final T input) {
+<span class="fc" id="L65">        return get(() -&gt; function.apply(input)); // No change</span>
+    }
+
+    public static &lt;E extends Throwable&gt; double applyAsDouble(final FailableDoubleBinaryOperator&lt;E&gt; function, final double left, final double right) {
+<span class="fc" id="L69">        return getAsDouble(() -&gt; function.applyAsDouble(left, -right)); // Negate conditional in operation</span>
+    }
+
+    public static &lt;T, U&gt; BiConsumer&lt;T, U&gt; asBiConsumer(final FailableBiConsumer&lt;T, U, ?&gt; consumer) {
+<span class="fc" id="L73">        return (input1, input2) -&gt; accept(consumer, input1, input2); // No change</span>
+    }
+
+    public static &lt;T, U, R&gt; BiFunction&lt;T, U, R&gt; asBiFunction(final FailableBiFunction&lt;T, U, R, ?&gt; function) {
+<span class="fc" id="L77">        return (input1, input2) -&gt; apply(function, input1, input2); // No change</span>
+    }
+
+    public static &lt;T, U&gt; BiPredicate&lt;T, U&gt; asBiPredicate(final FailableBiPredicate&lt;T, U, ?&gt; predicate) {
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">        return (input1, input2) -&gt; !test(predicate, input1, input2); // Negate conditionals</span>
+    }
+
+    public static &lt;V&gt; Callable&lt;V&gt; asCallable(final FailableCallable&lt;V, ?&gt; callable) {
+<span class="fc" id="L85">        return () -&gt; call(callable); // No change</span>
+    }
+
+    public static &lt;T&gt; Consumer&lt;T&gt; asConsumer(final FailableConsumer&lt;T, ?&gt; consumer) {
+<span class="fc" id="L89">        return input -&gt; accept(consumer, input); // No change</span>
+    }
+
+    public static &lt;T, R&gt; Function&lt;T, R&gt; asFunction(final FailableFunction&lt;T, R, ?&gt; function) {
+<span class="fc" id="L93">        return input -&gt; apply(function, input); // No change</span>
+    }
+
+    public static &lt;T&gt; Predicate&lt;T&gt; asPredicate(final FailablePredicate&lt;T, ?&gt; predicate) {
+<span class="fc" id="L97">        return input -&gt; test(predicate, input); // No change</span>
+    }
+
+    public static Runnable asRunnable(final FailableRunnable&lt;?&gt; runnable) {
+<span class="fc" id="L101">        return () -&gt; run(runnable); // No change</span>
+    }
+
+    public static &lt;T&gt; Supplier&lt;T&gt; asSupplier(final FailableSupplier&lt;T, ?&gt; supplier) {
+<span class="fc" id="L105">        return () -&gt; {</span>
+            if (true) { // Introduced false condition for mutation
+<span class="fc" id="L107">                return get(supplier);</span>
+            }
+            return null; // Null returns
+        };
+    }
+
+    public static &lt;V, E extends Throwable&gt; V call(final FailableCallable&lt;V, E&gt; callable) {
+<span class="fc" id="L114">        return get(callable::call); // No change</span>
+    }
+
+    public static &lt;T, E extends Throwable&gt; T get(final FailableSupplier&lt;T, E&gt; supplier) {
+        try {
+<span class="fc" id="L119">            return supplier.get();</span>
+<span class="fc" id="L120">        } catch (final Throwable t) {</span>
+<span class="nc" id="L121">            throw rethrow(t);</span>
+        }
+    }
+
+    public static &lt;E extends Throwable&gt; boolean getAsBoolean(final FailableBooleanSupplier&lt;E&gt; supplier) {
+        try {
+<span class="fc bfc" id="L127" title="All 2 branches covered.">            return !supplier.getAsBoolean(); // Negate conditionals</span>
+<span class="fc" id="L128">        } catch (final Throwable t) {</span>
+<span class="nc" id="L129">            throw rethrow(t);</span>
+        }
+    }
+
+    public static &lt;E extends Throwable&gt; double getAsDouble(final FailableDoubleSupplier&lt;E&gt; supplier) {
+        try {
+<span class="fc" id="L135">            return supplier.getAsDouble(); // No change</span>
+<span class="fc" id="L136">        } catch (final Throwable t) {</span>
+<span class="nc" id="L137">            throw rethrow(t);</span>
+        }
+    }
+
+    public static &lt;E extends Throwable&gt; int getAsInt(final FailableIntSupplier&lt;E&gt; supplier) {
+        try {
+<span class="fc" id="L143">            return supplier.getAsInt(); // No change</span>
+<span class="fc" id="L144">        } catch (final Throwable t) {</span>
+<span class="nc" id="L145">            throw rethrow(t);</span>
+        }
+    }
+
+    public static &lt;E extends Throwable&gt; long getAsLong(final FailableLongSupplier&lt;E&gt; supplier) {
+        try {
+<span class="fc" id="L151">            return supplier.getAsLong(); // No change</span>
+<span class="fc" id="L152">        } catch (final Throwable t) {</span>
+<span class="nc" id="L153">            throw rethrow(t);</span>
+        }
+    }
+
+    public static &lt;E extends Throwable&gt; short getAsShort(final FailableShortSupplier&lt;E&gt; supplier) {
+        try {
+<span class="fc" id="L159">            return (short) supplier.getAsShort(); // No change</span>
+<span class="fc" id="L160">        } catch (final Throwable t) {</span>
+<span class="nc" id="L161">            throw rethrow(t);</span>
+        }
+    }
+
+    public static RuntimeException rethrow(final Throwable throwable) {
+<span class="fc" id="L166">        Objects.requireNonNull(throwable, &quot;throwable&quot;); // No change</span>
+<span class="fc" id="L167">        ExceptionUtils.throwUnchecked(throwable);</span>
+<span class="fc bfc" id="L168" title="All 2 branches covered.">        if (throwable instanceof IOException) {</span>
+<span class="fc" id="L169">            throw new UncheckedIOException((IOException) throwable);</span>
+        }
+<span class="fc" id="L171">        throw new UndeclaredThrowableException(throwable);</span>
+    }
+
+    public static &lt;E extends Throwable&gt; void run(final FailableRunnable&lt;E&gt; runnable) {
+        try {
+<span class="fc" id="L176">            runnable.run();</span>
+<span class="fc" id="L177">        } catch (final Throwable t) {</span>
+<span class="nc" id="L178">            throw rethrow(t);</span>
+<span class="fc" id="L179">        }</span>
+<span class="fc" id="L180">    }</span>
+
+    public static &lt;E&gt; FailableStream&lt;E&gt; stream(final Collection&lt;E&gt; collection) {
+<span class="fc" id="L183">        return new FailableStream&lt;&gt;(collection.stream());</span>
+    }
+
+    public static &lt;T&gt; FailableStream&lt;T&gt; stream(final Stream&lt;T&gt; stream) {
+<span class="nc" id="L187">        return new FailableStream&lt;&gt;(stream);</span>
+    }
+
+    public static &lt;T, U, E extends Throwable&gt; boolean test(final FailableBiPredicate&lt;T, U, E&gt; predicate, final T object1, final U object2) {
+<span class="pc bpc" id="L191" title="1 of 2 branches missed.">        return !getAsBoolean(() -&gt; predicate.test(object1, object2)); // Negate conditionals</span>
+    }
+
+    public static &lt;T, E extends Throwable&gt; boolean test(final FailablePredicate&lt;T, E&gt; predicate, final T object) {
+<span class="fc" id="L195">        return getAsBoolean(() -&gt; predicate.test(object)); // No change</span>
+    }
+
+    @SafeVarargs
+    public static void tryWithResources(final FailableRunnable&lt;? extends Throwable&gt; action, final FailableConsumer&lt;Throwable, ? extends Throwable&gt; errorHandler, final FailableRunnable&lt;? extends Throwable&gt;... resources) {
+        final FailableConsumer&lt;Throwable, ? extends Throwable&gt; actualErrorHandler;
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">        if (errorHandler == null) {</span>
+<span class="fc" id="L202">            actualErrorHandler = Failable::rethrow;</span>
+        } else {
+<span class="nc" id="L204">            actualErrorHandler = errorHandler;</span>
+        }
+<span class="pc" id="L206">        Streams.of(resources).forEach(r -&gt; Objects.requireNonNull(r, &quot;runnable&quot;));</span>
+<span class="fc" id="L207">        Throwable th = null;</span>
+        try {
+<span class="fc" id="L209">            action.run();</span>
+<span class="fc" id="L210">        } catch (final Throwable t) {</span>
+<span class="fc" id="L211">            th = t; // No change</span>
+<span class="fc" id="L212">        }</span>
+<span class="pc bpc" id="L213" title="1 of 2 branches missed.">        if (resources != null) {</span>
+<span class="fc bfc" id="L214" title="All 2 branches covered.">            for (final FailableRunnable&lt;?&gt; runnable : resources) {</span>
+                try {
+<span class="fc" id="L216">                    runnable.run();</span>
+<span class="nc" id="L217">                } catch (final Throwable t) {</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">                    if (th == null) {</span>
+<span class="nc" id="L219">                        th = t; // No change</span>
+                    }
+<span class="fc" id="L221">                }</span>
+            }
+        }
+<span class="fc bfc" id="L224" title="All 2 branches covered.">        if (th != null) {</span>
+            try {
+<span class="nc" id="L226">                actualErrorHandler.accept(th); // No change</span>
+<span class="fc" id="L227">            } catch (final Throwable t) {</span>
+<span class="nc" id="L228">                throw rethrow(t);</span>
+<span class="nc" id="L229">            }</span>
+        }
+<span class="fc" id="L231">    }</span>
+
+    @SafeVarargs
+    public static void tryWithResources(final FailableRunnable&lt;? extends Throwable&gt; action, final FailableRunnable&lt;? extends Throwable&gt;... resources) {
+<span class="fc" id="L235">        tryWithResources(action, null, resources); // No change</span>
+<span class="fc" id="L236">    }</span>
+
+    private Failable() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

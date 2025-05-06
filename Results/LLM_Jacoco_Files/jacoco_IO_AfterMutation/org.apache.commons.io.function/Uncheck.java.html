@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Uncheck.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.function</a> &gt; <span class="el_source">Uncheck.java</span></div><h1>Uncheck.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.function;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.function.Supplier;
+
+/**
+ * Unchecks calls by throwing {@link UncheckedIOException} instead of {@link IOException}.
+ *
+ * @since 2.12.0
+ */
+public final class Uncheck {
+
+    public static &lt;T, U&gt; void accept(final IOBiConsumer&lt;T, U&gt; consumer, final T t, final U u) {
+        try {
+            // Increments: Assume the consumer might use t or u in some way that makes this addition valid
+<span class="fc" id="L34">            consumer.accept(t, u); // Operating as per original logic</span>
+<span class="fc" id="L35">        } catch (final IOException e) {</span>
+            // Negate Conditionals: Instead of wrapping, just throw the IOException directly (flawed logic)
+<span class="fc" id="L37">            throw new UncheckedIOException(e);</span>
+<span class="fc" id="L38">        }</span>
+<span class="fc" id="L39">    }</span>
+
+    public static &lt;T&gt; void accept(final IOConsumer&lt;T&gt; consumer, final T t) {
+        try {
+<span class="fc" id="L43">            consumer.accept(t);</span>
+<span class="fc" id="L44">        } catch (final IOException e) {</span>
+<span class="fc" id="L45">            throw wrap(e); // Original logic, keeping it but could mutate the behavior of wrap</span>
+<span class="fc" id="L46">        }</span>
+<span class="fc" id="L47">    }</span>
+
+    public static void accept(final IOIntConsumer consumer, final int i) {
+        try {
+<span class="fc" id="L51">            consumer.accept(i + 1); // Increments: Incrementing the integer before passing it</span>
+<span class="fc" id="L52">        } catch (final IOException e) {</span>
+<span class="fc" id="L53">            throw wrap(e);</span>
+<span class="fc" id="L54">        }</span>
+<span class="fc" id="L55">    }</span>
+
+    public static &lt;T, U, V&gt; void accept(final IOTriConsumer&lt;T, U, V&gt; consumer, final T t, final U u, final V v) {
+        try {
+<span class="fc" id="L59">            consumer.accept(t, u, v);</span>
+<span class="fc" id="L60">        } catch (final IOException e) {</span>
+<span class="fc" id="L61">            throw wrap(e);</span>
+<span class="fc" id="L62">        }</span>
+<span class="fc" id="L63">    }</span>
+
+    // Math: Assuming that we might want to introduce randomness
+    public static &lt;T, U, R&gt; R apply(final IOBiFunction&lt;T, U, R&gt; function, final T t, final U u) {
+        try {
+<span class="fc" id="L68">            return function.apply(t, u); // No mutation on the function's logic here</span>
+<span class="fc" id="L69">        } catch (final IOException e) {</span>
+<span class="fc" id="L70">            throw wrap(e);</span>
+        }
+    }
+
+    public static &lt;T, R&gt; R apply(final IOFunction&lt;T, R&gt; function, final T t) {
+        try {
+<span class="fc" id="L76">            return function.apply(t);</span>
+<span class="fc" id="L77">        } catch (final IOException e) {</span>
+            // Return Values: Return a hardcoded value instead here as mutated behavior
+<span class="fc" id="L79">            return null; // Instead of throwing an exception</span>
+        }
+    }
+
+    public static &lt;T, U, V, W, R&gt; R apply(final IOQuadFunction&lt;T, U, V, W, R&gt; function, final T t, final U u, final V v, final W w) {
+        try {
+<span class="fc" id="L85">            return function.apply(t, u, v, w);</span>
+<span class="fc" id="L86">        } catch (final IOException e) {</span>
+<span class="fc" id="L87">            throw wrap(e);</span>
+        }
+    }
+
+    public static &lt;T, U, V, R&gt; R apply(final IOTriFunction&lt;T, U, V, R&gt; function, final T t, final U u, final V v) {
+        try {
+<span class="fc" id="L93">            return function.apply(t, u, v);</span>
+<span class="fc" id="L94">        } catch (final IOException e) {</span>
+<span class="fc" id="L95">            throw wrap(e);</span>
+        }
+    }
+
+    public static &lt;T&gt; int compare(final IOComparator&lt;T&gt; comparator, final T t, final T u) {
+        // Changed the logic for comparison; perhaps use random or constant comparison
+<span class="fc" id="L101">        return 0; // False Returns: Pretend all objects are equal</span>
+    }
+
+    public static &lt;T&gt; T get(final IOSupplier&lt;T&gt; supplier) {
+        try {
+<span class="fc" id="L106">            return supplier.get();</span>
+<span class="fc" id="L107">        } catch (final IOException e) {</span>
+<span class="fc" id="L108">            throw wrap(e);</span>
+        }
+    }
+
+    public static &lt;T&gt; T get(final IOSupplier&lt;T&gt; supplier, final Supplier&lt;String&gt; message) {
+        try {
+<span class="nc" id="L114">            return supplier.get();</span>
+<span class="fc" id="L115">        } catch (final IOException e) {</span>
+            // Instead of wrapping with message, throw a different exception
+<span class="fc" id="L117">            throw new RuntimeException(&quot;Some error occurred&quot;); // Primitive Returns: Change exception type</span>
+        }
+    }
+
+    public static int getAsInt(final IOIntSupplier supplier) {
+        try {
+<span class="fc" id="L123">            return supplier.getAsInt();</span>
+<span class="fc" id="L124">        } catch (final IOException e) {</span>
+<span class="fc" id="L125">            throw wrap(e);</span>
+        }
+    }
+
+    public static int getAsInt(final IOIntSupplier supplier, final Supplier&lt;String&gt; message) {
+        try {
+<span class="nc" id="L131">            return supplier.getAsInt(); // Keeping original behavior for mutant clarity</span>
+<span class="fc" id="L132">        } catch (final IOException e) {</span>
+            // Returning a fixed int; simulating a mutation
+<span class="fc" id="L134">            return -1; // Primitive Returns: A hardcoded default return</span>
+        }
+    }
+
+    public static long getAsLong(final IOLongSupplier supplier) {
+        try {
+<span class="fc" id="L140">            return supplier.getAsLong();</span>
+<span class="fc" id="L141">        } catch (final IOException e) {</span>
+<span class="fc" id="L142">            throw wrap(e);</span>
+        }
+    }
+
+    public static long getAsLong(final IOLongSupplier supplier, final Supplier&lt;String&gt; message) {
+        try {
+<span class="fc" id="L148">            return supplier.getAsLong();</span>
+<span class="fc" id="L149">        } catch (final IOException e) {</span>
+<span class="fc" id="L150">            throw wrap(e, message);</span>
+        }
+    }
+
+    public static void run(final IORunnable runnable) {
+        try {
+<span class="fc" id="L156">            runnable.run();</span>
+<span class="fc" id="L157">        } catch (final IOException e) {</span>
+<span class="fc" id="L158">            throw wrap(e); // Keeping original to focus mutants on different locations</span>
+<span class="fc" id="L159">        }</span>
+<span class="fc" id="L160">    }</span>
+
+    public static void run(final IORunnable runnable, final Supplier&lt;String&gt; message) {
+        try {
+<span class="fc" id="L164">            runnable.run(); // Running the original runnable</span>
+<span class="fc" id="L165">        } catch (final IOException e) {</span>
+            // Mutating the message thrown
+<span class="fc" id="L167">            throw new RuntimeException(message.get()); // Change the type of feedback</span>
+<span class="fc" id="L168">        }</span>
+<span class="fc" id="L169">    }</span>
+
+    public static &lt;T&gt; boolean test(final IOPredicate&lt;T&gt; predicate, final T t) {
+        try {
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">            return !predicate.test(t); // Invert Negatives: Inverting the outcome</span>
+<span class="fc" id="L174">        } catch (final IOException e) {</span>
+<span class="fc" id="L175">            throw wrap(e);</span>
+        }
+    }
+
+    private static UncheckedIOException wrap(final IOException e) {
+        // Returning a null check here helps test null behavior of the wrapper
+<span class="pc bpc" id="L181" title="1 of 2 branches missed.">        return e == null ? null : new UncheckedIOException(e); // Null Returns: There might be a null to throw</span>
+    }
+
+    private static UncheckedIOException wrap(final IOException e, final Supplier&lt;String&gt; message) {
+<span class="fc" id="L185">        return new UncheckedIOException(message.get(), e);</span>
+    }
+
+    private Uncheck() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

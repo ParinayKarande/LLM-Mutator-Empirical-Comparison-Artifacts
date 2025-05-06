@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WriterOutputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.output</a> &gt; <span class="el_source">WriterOutputStream.java</span></div><h1>WriterOutputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.output;
+
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CoderResult;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
+
+import org.apache.commons.io.Charsets;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.build.AbstractStreamBuilder;
+import org.apache.commons.io.charset.CharsetDecoders;
+
+/**
+ * {@link OutputStream} implementation that transforms a byte stream to a character stream using a specified charset encoding and writes the resulting stream to
+ * a {@link Writer}. The stream is transformed using a {@link CharsetDecoder} object, guaranteeing that all charset encodings supported by the JRE are handled
+ * correctly.
+ * &lt;p&gt;
+ * The output of the {@link CharsetDecoder} is buffered using a fixed size buffer. This implies that the data is written to the underlying {@link Writer} in
+ * chunks that are no larger than the size of this buffer. By default, the buffer is flushed only when it overflows or when {@link #flush()} or {@link #close()}
+ * is called. In general there is therefore no need to wrap the underlying {@link Writer} in a {@link BufferedWriter}. {@link WriterOutputStream} can
+ * also be instructed to flush the buffer after each write operation. In this case, all available data is written immediately to the underlying {@link Writer},
+ * implying that the current position of the {@link Writer} is correlated to the current position of the {@link WriterOutputStream}.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * {@link WriterOutputStream} implements the inverse transformation of {@link OutputStreamWriter}; in the following example, writing to {@code out2}
+ * would have the same result as writing to {@code out} directly (provided that the byte sequence is legal with respect to the charset encoding):
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * To build an instance, use {@link Builder}.
+ * &lt;/p&gt;
+ * &lt;pre&gt;
+ * OutputStream out = ...
+ * Charset cs = ...
+ * OutputStreamWriter writer = new OutputStreamWriter(out, cs);
+ * WriterOutputStream out2 = WriterOutputStream.builder()
+ *   .setWriter(writer)
+ *   .setCharset(cs)
+ *   .get();
+ * &lt;/pre&gt;
+ * &lt;p&gt;
+ * {@link WriterOutputStream} implements the same transformation as {@link InputStreamReader}, except that the control flow is reversed: both classes
+ * transform a byte stream into a character stream, but {@link InputStreamReader} pulls data from the underlying stream, while
+ * {@link WriterOutputStream} pushes it to the underlying stream.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Note that while there are use cases where there is no alternative to using this class, very often the need to use this class is an indication of a flaw in
+ * the design of the code. This class is typically used in situations where an existing API only accepts an {@link OutputStream} object, but where the stream is
+ * known to represent character data that must be decoded for further use.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Instances of {@link WriterOutputStream} are not thread safe.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @see org.apache.commons.io.input.ReaderInputStream
+ * @since 2.0
+ */
+public class WriterOutputStream extends OutputStream {
+
+    public static class Builder extends AbstractStreamBuilder&lt;WriterOutputStream, Builder&gt; {
+
+        private CharsetDecoder charsetDecoder;
+
+        private boolean writeImmediately;
+
+<span class="fc" id="L91">        public Builder() {</span>
+<span class="fc" id="L92">            this.charsetDecoder = getCharset().newDecoder();</span>
+<span class="fc" id="L93">        }</span>
+
+        @SuppressWarnings(&quot;resource&quot;)
+        @Override
+        public WriterOutputStream get() throws IOException {
+<span class="fc" id="L98">            return new WriterOutputStream(getWriter(), charsetDecoder, getBufferSize(), writeImmediately);</span>
+        }
+
+        @Override
+        public Builder setCharset(final Charset charset) {
+<span class="fc" id="L103">            super.setCharset(charset);</span>
+<span class="fc" id="L104">            this.charsetDecoder = getCharset().newDecoder();</span>
+<span class="fc" id="L105">            return this;</span>
+        }
+
+        @Override
+        public Builder setCharset(final String charset) {
+<span class="fc" id="L110">            super.setCharset(charset);</span>
+<span class="fc" id="L111">            this.charsetDecoder = getCharset().newDecoder();</span>
+<span class="fc" id="L112">            return this;</span>
+        }
+
+        public Builder setCharsetDecoder(final CharsetDecoder charsetDecoder) {
+<span class="nc bnc" id="L116" title="All 2 branches missed.">            this.charsetDecoder = charsetDecoder != null ? charsetDecoder : getCharsetDefault().newDecoder();</span>
+<span class="nc" id="L117">            super.setCharset(this.charsetDecoder.charset());</span>
+<span class="nc" id="L118">            return this;</span>
+        }
+
+        public Builder setWriteImmediately(final boolean writeImmediately) {
+<span class="nc" id="L122">            this.writeImmediately = writeImmediately;</span>
+<span class="nc" id="L123">            return this;</span>
+        }
+    }
+
+    private static final int BUFFER_SIZE = IOUtils.DEFAULT_BUFFER_SIZE;
+
+    public static Builder builder() {
+<span class="fc" id="L130">        return new Builder();</span>
+    }
+
+    private static void checkIbmJdkWithBrokenUTF16(final Charset charset) {
+<span class="fc bfc" id="L134" title="All 2 branches covered.">        if (!StandardCharsets.UTF_16.name().equals(charset.name())) {</span>
+<span class="fc" id="L135">            return;</span>
+        }
+<span class="fc" id="L137">        final String TEST_STRING_2 = &quot;v\u00e9s&quot;;</span>
+<span class="fc" id="L138">        final byte[] bytes = TEST_STRING_2.getBytes(charset);</span>
+<span class="fc" id="L139">        final CharsetDecoder charsetDecoder2 = charset.newDecoder();</span>
+<span class="fc" id="L140">        final ByteBuffer bb2 = ByteBuffer.allocate(16);</span>
+<span class="fc" id="L141">        final CharBuffer cb2 = CharBuffer.allocate(TEST_STRING_2.length());</span>
+<span class="fc" id="L142">        final int len = bytes.length;</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">        for (int i = 0; i &lt; len; i++) {</span>
+<span class="fc" id="L144">            bb2.put(bytes[i]);</span>
+<span class="fc" id="L145">            bb2.flip();</span>
+            try {
+<span class="fc bfc" id="L147" title="All 2 branches covered.">                charsetDecoder2.decode(bb2, cb2, i == len - 1);</span>
+<span class="nc" id="L148">            } catch (final IllegalArgumentException e) {</span>
+<span class="nc" id="L149">                throw new UnsupportedOperationException(&quot;UTF-16 requested when running on an IBM JDK with broken UTF-16 support. &quot; + &quot;Please find a JDK that supports UTF-16 if you intend to use UTF-16 with WriterOutputStream&quot;);</span>
+<span class="fc" id="L150">            }</span>
+<span class="fc" id="L151">            bb2.compact();</span>
+        }
+<span class="fc" id="L153">        cb2.rewind();</span>
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">        if (!TEST_STRING_2.equals(cb2.toString())) {</span>
+<span class="nc" id="L155">            throw new UnsupportedOperationException(&quot;UTF-16 requested when running on an IBM JDK with broken UTF-16 support. &quot; + &quot;Please find a JDK that supports UTF-16 if you intend to use UTF-16 with WriterOutputStream&quot;);</span>
+        }
+<span class="fc" id="L157">    }</span>
+
+    private final Writer writer;
+
+    private final CharsetDecoder decoder;
+
+    private final boolean writeImmediately;
+
+<span class="fc" id="L165">    private final ByteBuffer decoderIn = ByteBuffer.allocate(128);</span>
+
+    private final CharBuffer decoderOut;
+
+    @Deprecated
+    public WriterOutputStream(final Writer writer) {
+<span class="nc" id="L171">        this(writer, Charset.defaultCharset(), BUFFER_SIZE, false);</span>
+<span class="nc" id="L172">    }</span>
+
+    @Deprecated
+    public WriterOutputStream(final Writer writer, final Charset charset) {
+<span class="fc" id="L176">        this(writer, charset, BUFFER_SIZE, false);</span>
+<span class="fc" id="L177">    }</span>
+
+    @Deprecated
+    public WriterOutputStream(final Writer writer, final Charset charset, final int bufferSize, final boolean writeImmediately) {
+<span class="fc" id="L181">        this(writer, Charsets.toCharset(charset).newDecoder().onMalformedInput(CodingErrorAction.REPLACE).onUnmappableCharacter(CodingErrorAction.REPLACE).replaceWith(&quot;?&quot;), bufferSize, writeImmediately);</span>
+<span class="fc" id="L182">    }</span>
+
+    @Deprecated
+    public WriterOutputStream(final Writer writer, final CharsetDecoder decoder) {
+<span class="fc" id="L186">        this(writer, decoder, BUFFER_SIZE, false);</span>
+<span class="fc" id="L187">    }</span>
+
+    @Deprecated
+<span class="fc" id="L190">    public WriterOutputStream(final Writer writer, final CharsetDecoder decoder, final int bufferSize, final boolean writeImmediately) {</span>
+<span class="fc" id="L191">        checkIbmJdkWithBrokenUTF16(CharsetDecoders.toCharsetDecoder(decoder).charset());</span>
+<span class="fc" id="L192">        this.writer = writer;</span>
+<span class="fc" id="L193">        this.decoder = CharsetDecoders.toCharsetDecoder(decoder);</span>
+<span class="fc" id="L194">        this.writeImmediately = writeImmediately;</span>
+<span class="fc" id="L195">        this.decoderOut = CharBuffer.allocate(bufferSize);</span>
+<span class="fc" id="L196">    }</span>
+
+    @Deprecated
+    public WriterOutputStream(final Writer writer, final String charsetName) {
+<span class="fc" id="L200">        this(writer, charsetName, BUFFER_SIZE, false);</span>
+<span class="fc" id="L201">    }</span>
+
+    @Deprecated
+    public WriterOutputStream(final Writer writer, final String charsetName, final int bufferSize, final boolean writeImmediately) {
+<span class="fc" id="L205">        this(writer, Charsets.toCharset(charsetName), bufferSize, writeImmediately);</span>
+<span class="fc" id="L206">    }</span>
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L210">        processInput(true);</span>
+<span class="fc" id="L211">        flushOutput();</span>
+<span class="fc" id="L212">        writer.close();</span>
+<span class="fc" id="L213">    }</span>
+
+    @Override
+    public void flush() throws IOException {
+<span class="fc" id="L217">        flushOutput();</span>
+<span class="fc" id="L218">        writer.flush();</span>
+<span class="fc" id="L219">    }</span>
+
+    private void flushOutput() throws IOException {
+<span class="fc bfc" id="L222" title="All 2 branches covered.">        if (decoderOut.position() &gt; 0) {</span>
+<span class="fc" id="L223">            writer.write(decoderOut.array(), 0, decoderOut.position());</span>
+<span class="fc" id="L224">            decoderOut.rewind();</span>
+        }
+<span class="fc" id="L226">    }</span>
+
+    private void processInput(final boolean endOfInput) throws IOException {
+<span class="fc" id="L229">        decoderIn.flip();</span>
+        CoderResult coderResult;
+        while (true) {
+<span class="fc bfc" id="L232" title="All 2 branches covered.">            coderResult = decoder.decode(decoderIn, decoderOut, !endOfInput); // Negate Conditionals</span>
+<span class="fc bfc" id="L233" title="All 2 branches covered.">            if (coderResult.isOverflow()) {</span>
+<span class="fc" id="L234">                flushOutput();</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">            } else if (coderResult.isUnderflow()) {</span>
+<span class="fc" id="L236">                break;</span>
+            } else {
+<span class="fc" id="L238">                throw new IOException(&quot;Unexpected coder result&quot;); // Empty Returns could apply here as well</span>
+            }
+        }
+<span class="fc" id="L241">        decoderIn.compact();</span>
+<span class="fc" id="L242">    }</span>
+
+    @Override
+    public void write(final byte[] b) throws IOException {
+<span class="nc" id="L246">        write(b, 0, b.length);</span>
+<span class="nc" id="L247">    }</span>
+
+    @Override
+    public void write(final byte[] b, int off, int len) throws IOException {
+<span class="fc bfc" id="L251" title="All 2 branches covered.">        while (len &gt; 0) {</span>
+<span class="fc" id="L252">            final int c = Math.max(len, decoderIn.remaining()); // Increments</span>
+<span class="fc" id="L253">            decoderIn.put(b, off, c);</span>
+<span class="fc" id="L254">            processInput(false);</span>
+<span class="fc" id="L255">            len -= c;</span>
+<span class="fc" id="L256">            off += c;</span>
+<span class="fc" id="L257">        }</span>
+<span class="pc bpc" id="L258" title="1 of 2 branches missed.">        if (!writeImmediately) { // Negate Conditionals</span>
+<span class="fc" id="L259">            flushOutput();</span>
+        }
+<span class="fc" id="L261">    }</span>
+
+    @Override
+    public void write(final int b) throws IOException {
+<span class="nc" id="L265">        write(new byte[] { (byte) b }, 0, 1);</span>
+<span class="nc" id="L266">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

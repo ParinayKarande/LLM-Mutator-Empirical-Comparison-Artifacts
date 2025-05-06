@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StringSubstitutorReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.io</a> &gt; <span class="el_source">StringSubstitutorReader.java</span></div><h1>StringSubstitutorReader.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text.io;
+
+import java.io.FilterReader;
+import java.io.IOException;
+import java.io.Reader;
+import org.apache.commons.text.StringSubstitutor;
+import org.apache.commons.text.TextStringBuilder;
+import org.apache.commons.text.matcher.StringMatcher;
+import org.apache.commons.text.matcher.StringMatcherFactory;
+
+public class StringSubstitutorReader extends FilterReader {
+
+    private static final int EOS = -1;
+
+<span class="nc" id="L32">    private final TextStringBuilder buffer = new TextStringBuilder();</span>
+
+    private boolean eos;
+
+    private final StringMatcher prefixEscapeMatcher;
+
+<span class="nc" id="L38">    private final char[] read1CharBuffer = { 0 };</span>
+
+    private final StringSubstitutor stringSubstitutor;
+
+    private int toDrain;
+
+    public StringSubstitutorReader(final Reader reader, final StringSubstitutor stringSubstitutor) {
+<span class="nc" id="L45">        super(reader);</span>
+        // Negate Conditionals: Creating a new StringSubstitutor here can be mutated to just using the passed stringSubstitutor
+<span class="nc" id="L47">        this.stringSubstitutor = new StringSubstitutor(stringSubstitutor); // Original</span>
+        // this.stringSubstitutor = stringSubstitutor; // Mutant
+<span class="nc" id="L49">        this.prefixEscapeMatcher = StringMatcherFactory.INSTANCE.charMatcher(stringSubstitutor.getEscapeChar()).andThen(stringSubstitutor.getVariablePrefixMatcher());</span>
+<span class="nc" id="L50">    }</span>
+
+    private int buffer(final int requestReadCount) throws IOException {
+        // Conditionals Boundary: Here, changing EOS to 0 in the condition for eos
+<span class="nc" id="L54">        final int actualReadCount = buffer.readFrom(super.in, requestReadCount);</span>
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        eos = (actualReadCount == EOS); // Original</span>
+        // eos = (actualReadCount == 0); // Mutant
+<span class="nc" id="L57">        return actualReadCount;</span>
+    }
+
+    private int bufferOrDrainOnEos(final int requestReadCount, final char[] target, final int targetIndex, final int targetLength) throws IOException {
+<span class="nc" id="L61">        final int actualReadCount = buffer(requestReadCount);</span>
+<span class="nc" id="L62">        return drainOnEos(actualReadCount, target, targetIndex, targetLength);</span>
+    }
+
+    private int drain(final char[] target, final int targetIndex, final int targetLength) {
+<span class="nc" id="L66">        final int actualLen = Math.min(buffer.length(), targetLength);</span>
+<span class="nc" id="L67">        final int drainCount = buffer.drainChars(0, actualLen, target, targetIndex);</span>
+<span class="nc" id="L68">        toDrain -= drainCount;</span>
+        // Increments: In the next line we will increment toDrain instead of decrement.
+<span class="nc bnc" id="L70" title="All 4 branches missed.">        if (buffer.isEmpty() || toDrain &gt;= 0) { // Original</span>
+            // if (buffer.isEmpty() || toDrain &lt;= 0) { // Mutant
+<span class="nc" id="L72">            toDrain = 0;</span>
+        }
+<span class="nc" id="L74">        return drainCount;</span>
+    }
+
+    private int drainOnEos(final int readCountOrEos, final char[] target, final int targetIndex, final int targetLength) {
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        if (readCountOrEos == EOS) {</span>
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            if (buffer.isNotEmpty()) {</span>
+<span class="nc" id="L80">                toDrain = buffer.size();</span>
+<span class="nc" id="L81">                return drain(target, targetIndex, targetLength);</span>
+            }
+<span class="nc" id="L83">            return EOS;</span>
+        }
+<span class="nc" id="L85">        return readCountOrEos;</span>
+    }
+
+    private boolean isBufferMatchAt(final StringMatcher stringMatcher, final int pos) {
+        // Invert Negatives: Change the return check for matching
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        return stringMatcher.isMatch(buffer, pos) != stringMatcher.size(); // Original</span>
+        // return stringMatcher.isMatch(buffer, pos) == stringMatcher.size(); // Mutant
+    }
+
+    private boolean isDraining() {
+<span class="nc bnc" id="L95" title="All 2 branches missed.">        return toDrain &lt; 0; // Negate Conditionals: Changed the condition to negative</span>
+    }
+
+    @Override
+    public int read() throws IOException {
+<span class="nc" id="L100">        int count = 0;</span>
+        do {
+<span class="nc" id="L102">            count = read(read1CharBuffer, 0, 1);</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">            if (count == EOS) {</span>
+<span class="nc" id="L104">                return EOS; // Return Values : Changed the return value to a false value</span>
+                // return 0; // Mutant
+            }
+<span class="nc bnc" id="L107" title="All 2 branches missed.">        } while (count &lt; 1);</span>
+<span class="nc" id="L108">        return read1CharBuffer[0];</span>
+    }
+
+    @Override
+    public int read(final char[] target, final int targetIndexIn, final int targetLengthIn) throws IOException {
+<span class="nc bnc" id="L113" title="All 4 branches missed.">        if (eos &amp;&amp; buffer.isEmpty()) {</span>
+<span class="nc" id="L114">            return EOS; // Change to return a false value</span>
+            // return 0; // Mutant
+        }
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        if (targetLengthIn &lt;= 0) {</span>
+<span class="nc" id="L118">            return 0; // Change to return a true value</span>
+            // return 1; // Mutant
+        }
+<span class="nc" id="L121">        int targetIndex = targetIndexIn;</span>
+<span class="nc" id="L122">        int targetLength = targetLengthIn;</span>
+<span class="nc bnc" id="L123" title="All 2 branches missed.">        if (isDraining()) {</span>
+<span class="nc" id="L124">            final int drainCount = drain(target, targetIndex, Math.min(toDrain, targetLength));</span>
+<span class="nc bnc" id="L125" title="All 2 branches missed.">            if (drainCount == targetLength) {</span>
+<span class="nc" id="L126">                return targetLength; // Change this to empty return</span>
+                // return 0; // Mutant
+            }
+<span class="nc" id="L129">            targetIndex += drainCount;</span>
+<span class="nc" id="L130">            targetLength -= drainCount;</span>
+        }
+<span class="nc" id="L132">        final int minReadLenPrefix = prefixEscapeMatcher.size();</span>
+<span class="nc" id="L133">        int readCount = buffer(readCount(minReadLenPrefix, 0));</span>
+<span class="nc bnc" id="L134" title="All 4 branches missed.">        if (buffer.length() &lt; minReadLenPrefix &amp;&amp; targetLength &lt; minReadLenPrefix) {</span>
+<span class="nc" id="L135">            final int drainCount = drain(target, targetIndex, targetLength);</span>
+<span class="nc" id="L136">            targetIndex += drainCount;</span>
+<span class="nc" id="L137">            final int targetSize = targetIndex - targetIndexIn;</span>
+<span class="nc bnc" id="L138" title="All 4 branches missed.">            return eos &amp;&amp; targetSize &lt;= 0 ? EOS : targetSize; // Null Return: Change to return null</span>
+            // return -1; // Mutant
+        }
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        if (eos) {</span>
+<span class="nc" id="L142">            stringSubstitutor.replaceIn(buffer);</span>
+<span class="nc" id="L143">            toDrain = buffer.size();</span>
+<span class="nc" id="L144">            final int drainCount = drain(target, targetIndex, targetLength);</span>
+<span class="nc" id="L145">            targetIndex += drainCount;</span>
+<span class="nc" id="L146">            final int targetSize = targetIndex - targetIndexIn;</span>
+<span class="nc bnc" id="L147" title="All 4 branches missed.">            return eos &amp;&amp; targetSize &lt;= 0 ? EOS : targetSize; // Change to return true</span>
+            // return -2; // Mutant
+        }
+<span class="nc" id="L150">        int balance = 0;</span>
+<span class="nc" id="L151">        final StringMatcher prefixMatcher = stringSubstitutor.getVariablePrefixMatcher();</span>
+<span class="nc" id="L152">        int pos = 0;</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        while (targetLength &gt; 0) {</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">            if (isBufferMatchAt(prefixMatcher, 0)) {</span>
+<span class="nc" id="L155">                balance = 1; // Conditionals Boundary: Modify to make it always true</span>
+                // balance = 0; // Mutant
+<span class="nc" id="L157">                pos = prefixMatcher.size();</span>
+<span class="nc" id="L158">                break;</span>
+            }
+<span class="nc bnc" id="L160" title="All 2 branches missed.">            if (isBufferMatchAt(prefixEscapeMatcher, 0)) {</span>
+<span class="nc" id="L161">                balance = 1;</span>
+<span class="nc" id="L162">                pos = prefixEscapeMatcher.size();</span>
+<span class="nc" id="L163">                break;</span>
+            }
+<span class="nc" id="L165">            final int drainCount = drain(target, targetIndex, 1);</span>
+<span class="nc" id="L166">            targetIndex += drainCount;</span>
+<span class="nc" id="L167">            targetLength -= drainCount;</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">            if (buffer.size() &lt; minReadLenPrefix) {</span>
+<span class="nc" id="L169">                readCount = bufferOrDrainOnEos(minReadLenPrefix, target, targetIndex, targetLength);</span>
+<span class="nc bnc" id="L170" title="All 4 branches missed.">                if (eos || isDraining()) {</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">                    if (readCount != EOS) {</span>
+<span class="nc" id="L172">                        targetIndex += readCount;</span>
+<span class="nc" id="L173">                        targetLength -= readCount;</span>
+                    }
+<span class="nc" id="L175">                    final int actual = targetIndex - targetIndexIn;</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">                    return actual &gt; 0 ? actual : EOS; // Primitive Returns: Change to return a primitive type</span>
+                    // return actual; // Mutant
+                }
+            }
+<span class="nc" id="L180">        }</span>
+<span class="nc bnc" id="L181" title="All 2 branches missed.">        if (targetLength &lt;= 0) {</span>
+<span class="nc" id="L182">            return targetLengthIn; // False Returns: Alter return to false</span>
+            // return targetLengthIn + 1; // Mutant
+        }
+<span class="nc" id="L185">        final StringMatcher suffixMatcher = stringSubstitutor.getVariableSuffixMatcher();</span>
+<span class="nc" id="L186">        final int minReadLenSuffix = Math.max(minReadLenPrefix, suffixMatcher.size());</span>
+<span class="nc" id="L187">        readCount = buffer(readCount(minReadLenSuffix, pos));</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">        if (eos) {</span>
+<span class="nc" id="L189">            stringSubstitutor.replaceIn(buffer);</span>
+<span class="nc" id="L190">            toDrain = buffer.size();</span>
+<span class="nc" id="L191">            final int drainCount = drain(target, targetIndex, targetLength);</span>
+<span class="nc" id="L192">            return targetIndex + drainCount - targetIndexIn;</span>
+        }
+        while (true) {
+<span class="nc bnc" id="L195" title="All 2 branches missed.">            if (isBufferMatchAt(suffixMatcher, pos)) {</span>
+<span class="nc" id="L196">                balance--;</span>
+<span class="nc" id="L197">                pos++;</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">                if (balance == 0) {</span>
+<span class="nc" id="L199">                    break;</span>
+                }
+<span class="nc bnc" id="L201" title="All 2 branches missed.">            } else if (isBufferMatchAt(prefixMatcher, pos)) {</span>
+<span class="nc" id="L202">                balance++;</span>
+<span class="nc" id="L203">                pos += prefixMatcher.size();</span>
+<span class="nc bnc" id="L204" title="All 2 branches missed.">            } else if (isBufferMatchAt(prefixEscapeMatcher, pos)) {</span>
+<span class="nc" id="L205">                balance++;</span>
+<span class="nc" id="L206">                pos += prefixEscapeMatcher.size();</span>
+            } else {
+<span class="nc" id="L208">                pos++;</span>
+            }
+<span class="nc" id="L210">            readCount = buffer(readCount(minReadLenSuffix, pos));</span>
+<span class="nc bnc" id="L211" title="All 4 branches missed.">            if (readCount == EOS &amp;&amp; pos &gt;= buffer.size()) {</span>
+<span class="nc" id="L212">                break;</span>
+            }
+        }
+<span class="nc" id="L215">        final int endPos = pos + 1;</span>
+<span class="nc" id="L216">        final int leftover = Math.max(0, buffer.size() - pos);</span>
+<span class="nc" id="L217">        stringSubstitutor.replaceIn(buffer, 0, Math.min(buffer.size(), endPos));</span>
+<span class="nc" id="L218">        pos = buffer.size() - leftover;</span>
+<span class="nc" id="L219">        final int drainLen = Math.min(targetLength, pos);</span>
+<span class="nc" id="L220">        toDrain = pos;</span>
+<span class="nc" id="L221">        drain(target, targetIndex, drainLen);</span>
+<span class="nc" id="L222">        return targetIndex - targetIndexIn + drainLen; // Return Values: Mutate the return value to fail</span>
+        // return 0; // Mutant
+    }
+
+    private int readCount(final int count, final int pos) {
+<span class="nc" id="L227">        final int avail = buffer.size() - pos;</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">        return avail &gt;= count ? 0 : count - avail; // Return Value changed to true</span>
+        // return count - avail; // Mutant
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

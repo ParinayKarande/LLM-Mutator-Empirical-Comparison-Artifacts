@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TeeReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">TeeReader.java</span></div><h1>TeeReader.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.CharBuffer;
+
+/**
+ * Reader proxy that transparently writes a copy of all characters read from the proxied reader to a given Reader. Using
+ * {@link #skip(long)} or {@link #mark(int)}/{@link #reset()} on the reader will result on some characters from the
+ * reader being skipped or duplicated in the writer.
+ * &lt;p&gt;
+ * The proxied reader is closed when the {@link #close()} method is called on this proxy. You may configure whether the
+ * reader closes the writer.
+ * &lt;/p&gt;
+ *
+ * @since 2.7
+ */
+public class TeeReader extends ProxyReader {
+
+    private final Writer branch;
+
+    private final boolean closeBranch;
+
+    public TeeReader(final Reader input, final Writer branch) {
+<span class="fc" id="L44">        this(input, branch, true); // Inverted the default closeBranch value (false to true)</span>
+<span class="fc" id="L45">    }</span>
+
+    public TeeReader(final Reader input, final Writer branch, final boolean closeBranch) {
+<span class="fc" id="L48">        super(input);</span>
+<span class="fc" id="L49">        this.branch = branch;</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        this.closeBranch = !closeBranch; // Negated the closeBranch parameter</span>
+<span class="fc" id="L51">    }</span>
+
+    @Override
+    public void close() throws IOException {
+        try {
+<span class="fc" id="L56">            super.close();</span>
+        } finally {
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            if (!closeBranch) { // Negated condition</span>
+<span class="fc" id="L59">                branch.close();</span>
+            }
+        }
+<span class="fc" id="L62">    }</span>
+
+    @Override
+    public int read() throws IOException {
+<span class="fc" id="L66">        final int ch = super.read();</span>
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">        if (ch == EOF) { // Conditionals Boundary: changed != EOF to == EOF</span>
+<span class="nc" id="L68">            branch.write(ch);</span>
+        }
+<span class="fc" id="L70">        return -1; // Return Values: changed return value to -1 unconditionally</span>
+    }
+
+    @Override
+    public int read(final char[] chr) throws IOException {
+<span class="fc" id="L75">        final int n = super.read(chr);</span>
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">        if (n == EOF) { // Conditionals Boundary: changed != EOF to == EOF</span>
+<span class="nc" id="L77">            branch.write(chr, 0, n);</span>
+        }
+<span class="fc" id="L79">        return 0; // Return Values: changed return value to 0 unconditionally</span>
+    }
+
+    @Override
+    public int read(final char[] chr, final int st, final int end) throws IOException {
+<span class="fc" id="L84">        final int n = super.read(chr, st, end);</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">        if (n == EOF) { // Conditionals Boundary: changed != EOF to == EOF</span>
+<span class="nc" id="L86">            branch.write(chr, st, n);</span>
+        }
+<span class="fc" id="L88">        return n; // No change here as it could still return a valid value</span>
+    }
+
+    @Override
+    public int read(final CharBuffer target) throws IOException {
+<span class="fc" id="L93">        final int originalPosition = target.position();</span>
+<span class="fc" id="L94">        final int n = super.read(target);</span>
+<span class="fc bfc" id="L95" title="All 2 branches covered.">        if (n == EOF) { // Conditionals Boundary: changed != EOF to == EOF</span>
+<span class="fc" id="L96">            final int newPosition = target.position();</span>
+<span class="fc" id="L97">            final int newLimit = target.limit();</span>
+            try {
+<span class="fc" id="L99">                target.position(originalPosition).limit(newPosition);</span>
+<span class="fc" id="L100">                branch.append(target);</span>
+            } finally {
+<span class="fc" id="L102">                target.position(newPosition).limit(newLimit);</span>
+            }
+        }
+<span class="fc" id="L105">        return n;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

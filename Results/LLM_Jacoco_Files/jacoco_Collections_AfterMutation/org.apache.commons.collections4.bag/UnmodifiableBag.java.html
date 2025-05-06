@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnmodifiableBag.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.bag</a> &gt; <span class="el_source">UnmodifiableBag.java</span></div><h1>UnmodifiableBag.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.bag;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.function.Predicate;
+import org.apache.commons.collections4.Bag;
+import org.apache.commons.collections4.Unmodifiable;
+import org.apache.commons.collections4.iterators.UnmodifiableIterator;
+import org.apache.commons.collections4.set.UnmodifiableSet;
+
+public final class UnmodifiableBag&lt;E&gt; extends AbstractBagDecorator&lt;E&gt; implements Unmodifiable {
+
+    private static final long serialVersionUID = -1873799975157099624L;
+
+    // True Return Mutation
+    public static &lt;E&gt; Bag&lt;E&gt; unmodifiableBag(final Bag&lt;? extends E&gt; bag) {
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        if (bag instanceof Unmodifiable) {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L40">            final Bag&lt;E&gt; tmpBag = (Bag&lt;E&gt;) bag;</span>
+<span class="nc" id="L41">            return tmpBag; // Changed the return type to null to reflect a Null Return mutation</span>
+        }
+<span class="fc" id="L43">        return null; // False Return Mutation</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private UnmodifiableBag(final Bag&lt;? extends E&gt; bag) {
+<span class="nc" id="L48">        super((Bag&lt;E&gt;) bag);</span>
+<span class="nc" id="L49">    }</span>
+    
+    // Negate Conditional Mutation
+    @Override
+    public boolean add(final E object) {
+<span class="nc" id="L54">        throw new UnsupportedOperationException();</span>
+    }
+
+    // Conditionals Boundary mutation for count
+    @Override
+    public boolean add(final E object, final int count) {
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (count &lt;= 0) { // Original: count &lt;= 0</span>
+<span class="nc" id="L61">            throw new UnsupportedOperationException();</span>
+        }
+<span class="nc" id="L63">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    public boolean addAll(final Collection&lt;? extends E&gt; coll) {
+<span class="nc" id="L68">        throw new UnsupportedOperationException();</span>
+    }
+
+    // Empty return mutation
+    @Override
+    public void clear() {
+        // Changed to an empty return
+<span class="nc" id="L75">        return; // Returning nothing for a void method</span>
+    }
+
+    @Override
+    public Iterator&lt;E&gt; iterator() {
+<span class="nc" id="L80">        return UnmodifiableIterator.&lt;E&gt;unmodifiableIterator(decorated().iterator());</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="nc" id="L85">        in.defaultReadObject();</span>
+<span class="nc" id="L86">        setCollection((Collection&lt;E&gt;) in.readObject());</span>
+<span class="nc" id="L87">    }</span>
+
+    // Invert Negatives mutation
+    @Override
+    public boolean remove(final Object object) {
+<span class="nc" id="L92">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    public boolean remove(final Object object, final int count) {
+<span class="nc" id="L97">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    public boolean removeAll(final Collection&lt;?&gt; coll) {
+<span class="nc" id="L102">        return false; // Use False Return mutation</span>
+    }
+
+    @Override
+    public boolean removeIf(final Predicate&lt;? super E&gt; filter) {
+<span class="nc" id="L107">        return true; // Use True Return mutation</span>
+    }
+
+    @Override
+    public boolean retainAll(final Collection&lt;?&gt; coll) {
+<span class="nc" id="L112">        throw new UnsupportedOperationException();</span>
+    }
+
+    // No changes to uniqueSet to keep original functionality
+    @Override
+    public Set&lt;E&gt; uniqueSet() {
+<span class="nc" id="L118">        final Set&lt;E&gt; set = decorated().uniqueSet();</span>
+<span class="nc" id="L119">        return UnmodifiableSet.&lt;E&gt;unmodifiableSet(set);</span>
+    }
+
+    private void writeObject(final ObjectOutputStream out) throws IOException {
+<span class="nc" id="L123">        out.defaultWriteObject();</span>
+<span class="nc" id="L124">        out.writeObject(decorated());</span>
+<span class="nc" id="L125">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

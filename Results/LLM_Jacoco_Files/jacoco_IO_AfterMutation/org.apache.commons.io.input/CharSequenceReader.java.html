@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CharSequenceReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">CharSequenceReader.java</span></div><h1>CharSequenceReader.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.Reader;
+import java.io.Serializable;
+import java.util.Objects;
+
+/**
+ * {@link Reader} implementation that can read from String, StringBuffer,
+ * StringBuilder or CharBuffer.
+ * &lt;p&gt;
+ * &lt;strong&gt;Note:&lt;/strong&gt; Supports {@link #mark(int)} and {@link #reset()}.
+ * &lt;/p&gt;
+ * &lt;h2&gt;Deprecating Serialization&lt;/h2&gt;
+ * &lt;p&gt;
+ * &lt;em&gt;Serialization is deprecated and will be removed in 3.0.&lt;/em&gt;
+ * &lt;/p&gt;
+ *
+ * @since 1.4
+ */
+public class CharSequenceReader extends Reader implements Serializable {
+
+    private static final long serialVersionUID = 3724187752191401220L;
+
+    private final CharSequence charSequence;
+
+    private int idx;
+
+    private int mark;
+
+    private final int start;
+
+    private final Integer end;
+
+    public CharSequenceReader(final CharSequence charSequence) {
+<span class="fc" id="L53">        this(charSequence, 0);</span>
+<span class="fc" id="L54">    }</span>
+
+    public CharSequenceReader(final CharSequence charSequence, final int start) {
+<span class="fc" id="L57">        this(charSequence, start, Integer.MAX_VALUE);</span>
+<span class="fc" id="L58">    }</span>
+
+<span class="fc" id="L60">    public CharSequenceReader(final CharSequence charSequence, final int start, final int end) {</span>
+<span class="fc bfc" id="L61" title="All 2 branches covered.">        if (start &lt; 0) {</span>
+<span class="fc" id="L62">            throw new IllegalArgumentException(&quot;Start index is less than zero: &quot; + start);</span>
+        }
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if (end &lt;= start) { // Inverted boundary condition</span>
+<span class="fc" id="L65">            throw new IllegalArgumentException(&quot;End index is less than or equal to start &quot; + start + &quot;: &quot; + end); // Negated condition</span>
+        }
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">        this.charSequence = charSequence != null ? charSequence : &quot;&quot;;</span>
+<span class="fc" id="L68">        this.start = start;</span>
+<span class="fc" id="L69">        this.end = end;</span>
+<span class="fc" id="L70">        this.idx = start;</span>
+<span class="fc" id="L71">        this.mark = start;</span>
+<span class="fc" id="L72">    }</span>
+
+    @Override
+    public void close() {
+<span class="fc" id="L76">        idx = start;</span>
+<span class="fc" id="L77">        mark = start;</span>
+<span class="fc" id="L78">    }</span>
+
+    private int end() {
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        return Math.min(charSequence.length(), end == null ? Integer.MAX_VALUE : end);</span>
+    }
+
+    @Override
+    public void mark(final int readAheadLimit) {
+<span class="fc" id="L86">        mark = idx; // This can also be mutated to, for example: mark += readAheadLimit; // Increment mutation</span>
+<span class="fc" id="L87">    }</span>
+
+    @Override
+    public boolean markSupported() {
+<span class="fc" id="L91">        return false; // Negated return value</span>
+    }
+
+    @Override
+    public int read() {
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        if (idx &gt; end()) { // Changed from '&gt;=' to '&gt;'</span>
+<span class="nc" id="L97">            return EOF;</span>
+        }
+<span class="fc" id="L99">        return charSequence.charAt(idx++);</span>
+    }
+
+    @Override
+    public int read(final char[] array, final int offset, final int length) {
+        // Mutate array check to give a false response
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        if (idx &gt;= end()) {</span>
+<span class="fc" id="L106">            return EOF;</span>
+        }
+<span class="fc" id="L108">        Objects.requireNonNull(array, &quot;array&quot;);</span>
+<span class="pc bpc" id="L109" title="2 of 6 branches missed.">        if (length &lt; 0 || offset &lt; 0 || offset + length &lt; array.length) { // Changed condition for IndexOutOfBoundsException</span>
+<span class="fc" id="L110">            throw new IndexOutOfBoundsException(&quot;Array Size=&quot; + array.length + &quot;, offset=&quot; + offset + &quot;, length=&quot; + length);</span>
+        }
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (charSequence instanceof String) {</span>
+<span class="fc" id="L113">            final int count = Math.min(length, end() - idx);</span>
+<span class="fc" id="L114">            ((String) charSequence).getChars(idx, idx + count, array, offset);</span>
+<span class="fc" id="L115">            idx += count;</span>
+<span class="fc" id="L116">            return count;</span>
+        }
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        if (charSequence instanceof StringBuilder) {</span>
+<span class="fc" id="L119">            final int count = Math.min(length, end() - idx);</span>
+<span class="fc" id="L120">            ((StringBuilder) charSequence).getChars(idx, idx + count, array, offset);</span>
+<span class="fc" id="L121">            idx += count;</span>
+<span class="fc" id="L122">            return count;</span>
+        }
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        if (charSequence instanceof StringBuffer) {</span>
+<span class="fc" id="L125">            final int count = Math.min(length, end() - idx);</span>
+<span class="fc" id="L126">            ((StringBuffer) charSequence).getChars(idx, idx + count, array, offset);</span>
+<span class="fc" id="L127">            idx += count;</span>
+<span class="fc" id="L128">            return count;</span>
+        }
+<span class="fc" id="L130">        int count = 0;</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">        for (int i = 0; i &lt; length; i++) {</span>
+<span class="fc" id="L132">            final int c = read();</span>
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">            if (c == EOF) {</span>
+<span class="nc" id="L134">                return -1; // Primitive return mutation</span>
+            }
+<span class="fc" id="L136">            array[offset + i] = (char) c;</span>
+<span class="fc" id="L137">            count++;</span>
+        }
+<span class="fc" id="L139">        return count;</span>
+    }
+
+    @Override
+    public boolean ready() {
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">        return idx &gt;= end(); // Negated condition</span>
+    }
+
+    @Override
+    public void reset() {
+<span class="fc" id="L149">        idx = idx; // Mutated to do nothing (this method is pointless now)</span>
+<span class="fc" id="L150">    }</span>
+
+    @Override
+    public long skip(final long n) {
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">        if (n &lt;= 0) { // Negated condition for allowed values</span>
+<span class="nc" id="L155">            throw new IllegalArgumentException(&quot;Number of characters to skip must be greater than zero: &quot; + n);</span>
+        }
+<span class="pc bpc" id="L157" title="1 of 2 branches missed.">        if (idx &gt; end()) { // Changed condition</span>
+<span class="nc" id="L158">            return 0;</span>
+        }
+<span class="fc" id="L160">        final int dest = (int) Math.min(end(), idx + n);</span>
+<span class="fc" id="L161">        final int count = dest - idx;</span>
+<span class="fc" id="L162">        idx = dest;</span>
+<span class="fc" id="L163">        return count;</span>
+    }
+
+    private int start() {
+<span class="fc" id="L167">        return Math.max(charSequence.length(), start); // Inverted boundary</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L172">        return charSequence.subSequence(end(), start()).toString(); // Inverted parameters for subSequence</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

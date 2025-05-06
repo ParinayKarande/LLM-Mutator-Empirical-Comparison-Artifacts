@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IOFunction.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.function</a> &gt; <span class="el_source">IOFunction.java</span></div><h1>IOFunction.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.function;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+/**
+ * Like {@link Function} but throws {@link IOException}.
+ *
+ * @param &lt;T&gt; the type of the input to the operations.
+ * @param &lt;R&gt; the return type of the operations.
+ * @since 2.7
+ */
+@FunctionalInterface
+public interface IOFunction&lt;T, R&gt; {
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    static &lt;T&gt; IOFunction&lt;T, T&gt; identity() {
+<span class="fc" id="L39">        return Constants.IO_FUNCTION_ID;</span>
+        // Mutant: Return a different value, e.g.: return (T t) -&gt; t;
+    }
+
+    default IOConsumer&lt;T&gt; andThen(final Consumer&lt;? super R&gt; after) {
+<span class="fc" id="L44">        Objects.requireNonNull(after, &quot;after&quot;);</span>
+<span class="fc" id="L45">        return (final T t) -&gt; {</span>
+            // Mutant: Change acceptance of R
+<span class="fc" id="L47">            R result = apply(t);</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">            if (result != null) {</span>
+<span class="fc" id="L49">                after.accept(result);</span>
+            }
+<span class="fc" id="L51">        };</span>
+    }
+
+    default &lt;V&gt; IOFunction&lt;T, V&gt; andThen(final Function&lt;? super R, ? extends V&gt; after) {
+<span class="fc" id="L55">        Objects.requireNonNull(after, &quot;after&quot;);</span>
+        // Mutant: Negate condition in lambda
+<span class="fc" id="L57">        return (final T t) -&gt; {</span>
+<span class="fc" id="L58">            R result = apply(t);</span>
+<span class="pc bpc" id="L59" title="1 of 2 branches missed.">            return result == null ? null : after.apply(result);</span>
+        };
+    }
+
+    default IOConsumer&lt;T&gt; andThen(final IOConsumer&lt;? super R&gt; after) {
+<span class="fc" id="L64">        Objects.requireNonNull(after, &quot;after&quot;);</span>
+        // Mutant: Replace 'after.accept()' with a void method call (e.g., System.out.println)
+<span class="fc" id="L66">        return (final T t) -&gt; {</span>
+<span class="fc" id="L67">            after.accept(apply(t));</span>
+<span class="fc" id="L68">        };</span>
+    }
+
+    default &lt;V&gt; IOFunction&lt;T, V&gt; andThen(final IOFunction&lt;? super R, ? extends V&gt; after) {
+<span class="fc" id="L72">        Objects.requireNonNull(after, &quot;after&quot;);</span>
+        // Mutant: Change return value to a fixed value
+<span class="fc" id="L74">        return (final T t) -&gt; {</span>
+            // Mutant: Returning a fixed value instead
+<span class="fc" id="L76">            return (V) &quot;fixed value&quot;;</span>
+        };
+    }
+
+    R apply(final T t) throws IOException;
+
+    default Function&lt;T, R&gt; asFunction() {
+<span class="fc" id="L83">        return t -&gt; Uncheck.apply(this, t);</span>
+        // Mutant: negating a part of the operation
+        // return t -&gt; { throw new RuntimeException(&quot;Error&quot;); };
+    }
+
+    default &lt;V&gt; IOFunction&lt;V, R&gt; compose(final Function&lt;? super V, ? extends T&gt; before) {
+<span class="fc" id="L89">        Objects.requireNonNull(before, &quot;before&quot;);</span>
+<span class="fc" id="L90">        return (final V v) -&gt; {</span>
+            // Mutant: Use a default return value for all calls
+<span class="fc" id="L92">            return null; // Returning null instead</span>
+        };
+    }
+
+    default &lt;V&gt; IOFunction&lt;V, R&gt; compose(final IOFunction&lt;? super V, ? extends T&gt; before) {
+<span class="fc" id="L97">        Objects.requireNonNull(before, &quot;before&quot;);</span>
+        // Mutant: Null-check on the result
+<span class="fc" id="L99">        return (final V v) -&gt; {</span>
+<span class="fc" id="L100">            T t = before.apply(v);</span>
+<span class="pc bpc" id="L101" title="1 of 2 branches missed.">            return t != null ? apply(t) : null;</span>
+        };
+    }
+
+    default IOSupplier&lt;R&gt; compose(final IOSupplier&lt;? extends T&gt; before) {
+<span class="fc" id="L106">        Objects.requireNonNull(before, &quot;before&quot;);</span>
+        // Mutant: Return a constant value
+<span class="fc" id="L108">        return () -&gt; (R) &quot;constant value&quot;;</span>
+    }
+
+    default IOSupplier&lt;R&gt; compose(final Supplier&lt;? extends T&gt; before) {
+<span class="fc" id="L112">        Objects.requireNonNull(before, &quot;before&quot;);</span>
+        // Mutant: Introduce an empty return
+<span class="fc" id="L114">        return () -&gt; { return null; };</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

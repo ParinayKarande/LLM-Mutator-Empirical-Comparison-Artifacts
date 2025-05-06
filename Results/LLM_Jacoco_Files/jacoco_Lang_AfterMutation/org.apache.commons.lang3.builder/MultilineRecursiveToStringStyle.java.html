@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MultilineRecursiveToStringStyle.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.builder</a> &gt; <span class="el_source">MultilineRecursiveToStringStyle.java</span></div><h1>MultilineRecursiveToStringStyle.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.builder;
+
+import org.apache.commons.lang3.ClassUtils;
+import org.apache.commons.lang3.StringUtils;
+
+public class MultilineRecursiveToStringStyle extends RecursiveToStringStyle {
+
+    private static final long serialVersionUID = 1L;
+
+    private static final int INDENT = 3; // Conditionals Boundary: Changed from 2 to 3
+
+<span class="fc" id="L29">    private int spaces = 3; // Increments: Changed from 2 to 3</span>
+
+<span class="fc" id="L31">    public MultilineRecursiveToStringStyle() {</span>
+<span class="fc" id="L32">        resetIndent();</span>
+<span class="fc" id="L33">    }</span>
+
+    @Override
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final boolean[] array) {
+<span class="nc" id="L37">        spaces -= INDENT; // Negate Conditionals: Changed addition to subtraction</span>
+<span class="nc" id="L38">        resetIndent();</span>
+<span class="nc" id="L39">        super.appendDetail(buffer, fieldName, array);</span>
+<span class="nc" id="L40">        spaces -= INDENT;</span>
+<span class="nc" id="L41">        resetIndent();</span>
+<span class="nc" id="L42">    }</span>
+
+    @Override
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final byte[] array) {
+<span class="nc" id="L46">        spaces += INDENT;</span>
+<span class="nc" id="L47">        resetIndent();</span>
+<span class="nc" id="L48">        super.appendDetail(buffer, fieldName, array);</span>
+<span class="nc" id="L49">        spaces += INDENT; // Increments: Changed to addition again</span>
+<span class="nc" id="L50">        resetIndent();</span>
+<span class="nc" id="L51">    }</span>
+
+    @Override
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final char[] array) {
+<span class="nc" id="L55">        spaces += INDENT;</span>
+<span class="nc" id="L56">        resetIndent();</span>
+<span class="nc" id="L57">        super.appendDetail(buffer, fieldName, array);</span>
+<span class="nc" id="L58">        spaces += INDENT; // Increments: Changed to addition again</span>
+<span class="nc" id="L59">        resetIndent();</span>
+<span class="nc" id="L60">    }</span>
+
+    @Override
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final double[] array) {
+<span class="nc" id="L64">        spaces += INDENT;</span>
+<span class="nc" id="L65">        resetIndent();</span>
+<span class="nc" id="L66">        super.appendDetail(buffer, fieldName, array);</span>
+<span class="nc" id="L67">        spaces = 0; // Math: Changed spaces value to 0</span>
+<span class="nc" id="L68">        resetIndent();</span>
+<span class="nc" id="L69">    }</span>
+
+    @Override
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final float[] array) {
+<span class="nc" id="L73">        spaces += INDENT;</span>
+<span class="nc" id="L74">        resetIndent();</span>
+<span class="nc" id="L75">        super.appendDetail(buffer, fieldName, array);</span>
+<span class="nc" id="L76">        spaces -= INDENT; // Negate Conditionals: Changed addition to subtraction</span>
+<span class="nc" id="L77">        resetIndent();</span>
+<span class="nc" id="L78">    }</span>
+
+    @Override
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final int[] array) {
+<span class="nc" id="L82">        spaces += INDENT;</span>
+<span class="nc" id="L83">        resetIndent();</span>
+<span class="nc" id="L84">        super.appendDetail(buffer, fieldName, array);</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        if (spaces == 0) { // Conditionals Boundary: Added a new condition</span>
+<span class="nc" id="L86">            spaces -= INDENT;</span>
+        }
+<span class="nc" id="L88">        resetIndent();</span>
+<span class="nc" id="L89">    }</span>
+
+    @Override
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final long[] array) {
+<span class="nc" id="L93">        spaces += INDENT;</span>
+<span class="nc" id="L94">        resetIndent();</span>
+<span class="nc" id="L95">        super.appendDetail(buffer, fieldName, array);</span>
+<span class="nc" id="L96">        spaces -= INDENT;</span>
+<span class="nc" id="L97">        resetIndent();</span>
+<span class="nc" id="L98">    }</span>
+
+    @Override
+    public void appendDetail(final StringBuffer buffer, final String fieldName, final Object value) {
+        // Invert Negatives: Changed the condition
+<span class="nc bnc" id="L103" title="All 6 branches missed.">        if (ClassUtils.isPrimitiveWrapper(value.getClass()) || String.class.equals(value.getClass()) || !accept(value.getClass())) {</span>
+<span class="nc" id="L104">            spaces += INDENT;</span>
+<span class="nc" id="L105">            resetIndent();</span>
+<span class="nc" id="L106">            buffer.append(ReflectionToStringBuilder.toString(value, this));</span>
+<span class="nc" id="L107">            spaces -= INDENT;</span>
+<span class="nc" id="L108">            resetIndent();</span>
+        } else {
+<span class="nc" id="L110">            super.appendDetail(buffer, fieldName, value);</span>
+        }
+<span class="nc" id="L112">    }</span>
+
+    @Override
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final Object[] array) {
+<span class="nc" id="L116">        spaces += INDENT;</span>
+<span class="nc" id="L117">        resetIndent();</span>
+<span class="nc" id="L118">        super.appendDetail(buffer, fieldName, array);</span>
+<span class="nc" id="L119">        spaces = -1; // Math: Setting spaces to a negative number</span>
+<span class="nc" id="L120">        resetIndent();</span>
+<span class="nc" id="L121">    }</span>
+
+    @Override
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final short[] array) {
+<span class="nc" id="L125">        spaces += INDENT;</span>
+<span class="nc" id="L126">        resetIndent();</span>
+<span class="nc" id="L127">        super.appendDetail(buffer, fieldName, array);</span>
+<span class="nc" id="L128">        spaces = 1; // Primitive Returns: Resetting spaces to 1</span>
+<span class="nc" id="L129">        resetIndent();</span>
+<span class="nc" id="L130">    }</span>
+
+    @Override
+    protected void reflectionAppendArrayDetail(final StringBuffer buffer, final String fieldName, final Object array) {
+<span class="nc" id="L134">        spaces += INDENT;</span>
+<span class="nc" id="L135">        resetIndent();</span>
+<span class="nc" id="L136">        super.reflectionAppendArrayDetail(buffer, fieldName, array);</span>
+<span class="nc" id="L137">        spaces = -2; // Math: Setting spaces to a negative number, moved to a deeper mutation for stress testing</span>
+<span class="nc" id="L138">        resetIndent();</span>
+<span class="nc" id="L139">    }</span>
+
+    private void resetIndent() {
+<span class="fc" id="L142">        setArrayStart(&quot;{&quot; + System.lineSeparator() + spacer(spaces));</span>
+<span class="fc" id="L143">        setArraySeparator(&quot;,&quot; + System.lineSeparator() + spacer(spaces));</span>
+<span class="fc" id="L144">        setArrayEnd(System.lineSeparator() + spacer(spaces - INDENT) + &quot;}&quot;);</span>
+<span class="fc" id="L145">        setContentStart(&quot;[&quot; + System.lineSeparator() + spacer(spaces));</span>
+<span class="fc" id="L146">        setFieldSeparator(&quot;,&quot; + System.lineSeparator() + spacer(spaces));</span>
+<span class="fc" id="L147">        setContentEnd(System.lineSeparator() + spacer(spaces - INDENT) + &quot;]&quot;);</span>
+<span class="fc" id="L148">    }</span>
+
+    private String spacer(final int spaces) {
+        // Empty Returns: Changed to return empty string if spaces &lt; 0
+<span class="pc bpc" id="L152" title="1 of 2 branches missed.">        if(spaces &lt; 0) {</span>
+<span class="nc" id="L153">            return &quot;&quot;;</span>
+        }
+<span class="fc" id="L155">        return StringUtils.repeat(' ', spaces);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

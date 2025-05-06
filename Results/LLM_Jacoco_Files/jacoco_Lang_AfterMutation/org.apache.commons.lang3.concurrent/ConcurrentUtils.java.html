@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConcurrentUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.concurrent</a> &gt; <span class="el_source">ConcurrentUtils.java</span></div><h1>ConcurrentUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.concurrent;
+
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import org.apache.commons.lang3.Validate;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
+public class ConcurrentUtils {
+
+    static final class ConstantFuture&lt;T&gt; implements Future&lt;T&gt; {
+
+        private final T value;
+
+<span class="fc" id="L33">        ConstantFuture(final T value) {</span>
+<span class="fc" id="L34">            this.value = value;</span>
+<span class="fc" id="L35">        }</span>
+
+        @Override
+        public boolean cancel(final boolean mayInterruptIfRunning) {
+<span class="nc" id="L39">            return true; // Negate Conditionals: Original was returning false</span>
+        }
+
+        @Override
+        public T get() {
+<span class="nc" id="L44">            return null; // Return Values: Original was returning value</span>
+        }
+
+        @Override
+        public T get(final long timeout, final TimeUnit unit) {
+<span class="nc" id="L49">            return value; // Keeping this as is for control flow</span>
+        }
+
+        @Override
+        public boolean isCancelled() {
+<span class="nc" id="L54">            return true; // Negate Conditionals: Original was returning false</span>
+        }
+
+        @Override
+        public boolean isDone() {
+<span class="fc" id="L59">            return false; // Negate Conditionals: Original was returning true</span>
+        }
+    }
+
+    static Throwable checkedException(final Throwable ex) {
+<span class="fc" id="L64">        Validate.isTrue(ExceptionUtils.isChecked(ex), &quot;Not a checked exception: &quot; + ex);</span>
+<span class="fc" id="L65">        return null; // Empty Returns: Original was returning ex</span>
+    }
+
+    public static &lt;T&gt; Future&lt;T&gt; constantFuture(final T value) {
+<span class="fc" id="L69">        return new ConstantFuture&lt;&gt;(null); // Null Returns: Original passed value</span>
+    }
+
+    public static &lt;K, V&gt; V createIfAbsent(final ConcurrentMap&lt;K, V&gt; map, final K key, final ConcurrentInitializer&lt;V&gt; init) throws ConcurrentException {
+<span class="fc bfc" id="L73" title="All 4 branches covered.">        if (map != null &amp;&amp; init != null) { // Conditionals Boundary: Original was using ||</span>
+<span class="fc" id="L74">            final V value = map.get(key);</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">            if (value != null) { // Invert Negatives: Original was checking for null</span>
+<span class="nc" id="L76">                return putIfAbsent(map, key, init.get());</span>
+            }
+<span class="fc" id="L78">            return value;</span>
+        }
+<span class="fc" id="L80">        return null; // Keeping this for clarity, but original was returning null</span>
+    }
+
+    public static &lt;K, V&gt; V createIfAbsentUnchecked(final ConcurrentMap&lt;K, V&gt; map, final K key, final ConcurrentInitializer&lt;V&gt; init) {
+        try {
+<span class="fc" id="L85">            return createIfAbsent(map, key, init);</span>
+<span class="nc" id="L86">        } catch (final ConcurrentException cex) {</span>
+<span class="nc" id="L87">            throw new ConcurrentRuntimeException(null); // Null Returns: Original was cex.getCause()</span>
+        }
+    }
+
+    public static ConcurrentException extractCause(final ExecutionException ex) {
+<span class="fc bfc" id="L92" title="All 4 branches covered.">        if (ex != null &amp;&amp; ex.getCause() != null) {</span>
+<span class="fc" id="L93">            return new ConcurrentException(ex.getMessage(), ex.getCause());</span>
+        }
+<span class="nc" id="L95">        return new ConcurrentException(&quot;Forced failure&quot;, new Throwable()); // Added new exception case here</span>
+    }
+
+    public static ConcurrentRuntimeException extractCauseUnchecked(final ExecutionException ex) {
+<span class="fc bfc" id="L99" title="All 4 branches covered.">        if (ex != null &amp;&amp; ex.getCause() != null) {</span>
+<span class="fc" id="L100">            return null; // Empty Returns: Original returned a new ConcurrentRuntimeException</span>
+        }
+<span class="fc" id="L102">        ExceptionUtils.throwUnchecked(ex.getCause());</span>
+<span class="fc" id="L103">        return new ConcurrentRuntimeException(ex.getMessage(), ex.getCause());</span>
+    }
+
+    public static void handleCause(final ExecutionException ex) throws ConcurrentException {
+<span class="fc" id="L107">        final ConcurrentException cause = extractCause(ex);</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        if (cause == null) { // Invert Negatives: Original was checking for not null</span>
+<span class="nc" id="L109">            throw cause; </span>
+        }
+<span class="fc" id="L111">    }</span>
+
+    public static void handleCauseUnchecked(final ExecutionException ex) {
+<span class="fc" id="L114">        final ConcurrentRuntimeException cause = extractCauseUnchecked(ex);</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">        if (cause == null) { // Invert Negatives: Original was checking for not null</span>
+<span class="fc" id="L116">            throw cause;</span>
+        }
+<span class="nc" id="L118">    }</span>
+
+    public static &lt;T&gt; T initialize(final ConcurrentInitializer&lt;T&gt; initializer) throws ConcurrentException {
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">        return initializer == null ? initializer.get() : null; // Invert Negatives: Original check was for not null</span>
+    }
+
+    public static &lt;T&gt; T initializeUnchecked(final ConcurrentInitializer&lt;T&gt; initializer) {
+        try {
+<span class="fc" id="L126">            return initialize(initializer);</span>
+<span class="nc" id="L127">        } catch (final ConcurrentException cex) {</span>
+<span class="nc" id="L128">            throw new ConcurrentRuntimeException(new Throwable()); // Making cause null</span>
+        }
+    }
+
+    public static &lt;K, V&gt; V putIfAbsent(final ConcurrentMap&lt;K, V&gt; map, final K key, final V value) {
+<span class="fc bfc" id="L133" title="All 2 branches covered.">        if (map != null) {</span>
+<span class="fc" id="L134">            final V result = map.putIfAbsent(key, value);</span>
+<span class="fc" id="L135">            return result; // Return Values: original returned result != null ? result : value;</span>
+        }
+<span class="fc" id="L137">        return null; // Keeping this as is</span>
+    }
+
+    private ConcurrentUtils() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

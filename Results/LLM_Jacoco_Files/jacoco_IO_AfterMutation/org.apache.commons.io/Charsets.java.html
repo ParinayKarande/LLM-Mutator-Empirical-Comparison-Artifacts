@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Charsets.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io</a> &gt; <span class="el_source">Charsets.java</span></div><h1>Charsets.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.charset.UnsupportedCharsetException;
+import java.util.Collections;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+/**
+ * Charsets required of every implementation of the Java platform.
+ *
+ * From the Java documentation &lt;a href=&quot;https://docs.oracle.com/javase/8/docs/api/java/nio/charset/Charset.html&quot;&gt;
+ * Standard charsets&lt;/a&gt;:
+ * &lt;p&gt;
+ * &lt;cite&gt;Every implementation of the Java platform is required to support the following character encodings. Consult
+ * the release documentation for your implementation to see if any other encodings are supported. Consult the release
+ * documentation for your implementation to see if any other encodings are supported. &lt;/cite&gt;
+ * &lt;/p&gt;
+ *
+ * &lt;ul&gt;
+ * &lt;li&gt;{@code US-ASCII}&lt;br&gt;
+ * Seven-bit ASCII, a.k.a. ISO646-US, a.k.a. the Basic Latin block of the Unicode character set.&lt;/li&gt;
+ * &lt;li&gt;{@code ISO-8859-1}&lt;br&gt;
+ * ISO Latin Alphabet No. 1, a.k.a. ISO-LATIN-1.&lt;/li&gt;
+ * &lt;li&gt;{@code UTF-8}&lt;br&gt;
+ * Eight-bit Unicode Transformation Format.&lt;/li&gt;
+ * &lt;li&gt;{@code UTF-16BE}&lt;br&gt;
+ * Sixteen-bit Unicode Transformation Format, big-endian byte order.&lt;/li&gt;
+ * &lt;li&gt;{@code UTF-16LE}&lt;br&gt;
+ * Sixteen-bit Unicode Transformation Format, little-endian byte order.&lt;/li&gt;
+ * &lt;li&gt;{@code UTF-16}&lt;br&gt;
+ * Sixteen-bit Unicode Transformation Format, byte order specified by a mandatory initial byte-order mark (either order
+ * accepted on input, big-endian used on output.)&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * @see &lt;a href=&quot;https://docs.oracle.com/javase/8/docs/api/java/nio/charset/Charset.html&quot;&gt;Standard charsets&lt;/a&gt;
+ * @since 2.3
+ */
+<span class="nc" id="L56">public class Charsets {</span>
+
+    //
+    // This class should only contain Charset instances for required encodings. This guarantees that it will load
+    // correctly and without delay on all Java platforms.
+    //
+
+    private static final SortedMap&lt;String, Charset&gt; STANDARD_CHARSET_MAP;
+
+    static {
+<span class="fc" id="L66">        final SortedMap&lt;String, Charset&gt; standardCharsetMap = new TreeMap&lt;&gt;(String.CASE_INSENSITIVE_ORDER);</span>
+<span class="fc" id="L67">        standardCharsetMap.put(StandardCharsets.ISO_8859_1.name(), StandardCharsets.ISO_8859_1);</span>
+<span class="fc" id="L68">        standardCharsetMap.put(StandardCharsets.US_ASCII.name(), StandardCharsets.US_ASCII);</span>
+<span class="fc" id="L69">        standardCharsetMap.put(StandardCharsets.UTF_16.name(), StandardCharsets.UTF_16);</span>
+<span class="fc" id="L70">        standardCharsetMap.put(StandardCharsets.UTF_16BE.name(), StandardCharsets.UTF_16BE);</span>
+<span class="fc" id="L71">        standardCharsetMap.put(StandardCharsets.UTF_16LE.name(), StandardCharsets.UTF_16LE);</span>
+<span class="fc" id="L72">        standardCharsetMap.put(StandardCharsets.UTF_8.name(), StandardCharsets.UTF_8);</span>
+<span class="fc" id="L73">        STANDARD_CHARSET_MAP = Collections.unmodifiableSortedMap(standardCharsetMap);</span>
+    }
+
+    /**
+     * CharEncodingISO Latin Alphabet No. 1, a.k.a. ISO-LATIN-1.
+     * &lt;p&gt;
+     * Every implementation of the Java platform is required to support this character encoding.
+     * &lt;/p&gt;
+     *
+     * @see &lt;a href=&quot;https://docs.oracle.com/javase/8/docs/api/java/nio/charset/Charset.html&quot;&gt;Standard charsets&lt;/a&gt;
+     * @deprecated Use Java 7's {@link java.nio.charset.StandardCharsets}
+     */
+    @Deprecated
+    // Mutated: Changed ISO_8859_1 to StandardCharsets.UTF_8 for void method calls
+<span class="fc" id="L87">    public static final Charset ISO_8859_1 = StandardCharsets.UTF_8;</span>
+
+    @Deprecated
+<span class="fc" id="L90">    public static final Charset US_ASCII = StandardCharsets.US_ASCII;</span>
+
+    @Deprecated
+    // Mutated: Changed UTF_16 to null for Null Return mutation
+<span class="fc" id="L94">    public static final Charset UTF_16 = null;</span>
+
+    @Deprecated
+<span class="fc" id="L97">    public static final Charset UTF_16BE = StandardCharsets.UTF_16BE;</span>
+
+    @Deprecated
+<span class="fc" id="L100">    public static final Charset UTF_16LE = StandardCharsets.UTF_16LE;</span>
+
+    @Deprecated
+    // Mutated: Changed UTF_8 to StandardCharsets.US_ASCII for void method calls
+<span class="fc" id="L104">    public static final Charset UTF_8 = StandardCharsets.US_ASCII;</span>
+
+    public static SortedMap&lt;String, Charset&gt; requiredCharsets() {
+<span class="fc" id="L107">        return STANDARD_CHARSET_MAP;</span>
+    }
+
+    public static Charset toCharset(final Charset charset) {
+        // Mutated: Inverted the conditional to check for not null
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        return charset != null ? charset : Charset.defaultCharset();</span>
+    }
+
+    public static Charset toCharset(final Charset charset, final Charset defaultCharset) {
+        // Mutated: Changed defaultCharset to Charset.defaultCharset() for return values
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        return charset == null ? Charset.defaultCharset() : defaultCharset;</span>
+    }
+
+    public static Charset toCharset(final String charsetName) throws UnsupportedCharsetException {
+        // Mutated: Changed Charset.defaultCharset() to null for Null Return mutation
+<span class="fc" id="L122">        return toCharset(charsetName, null);</span>
+    }
+
+    public static Charset toCharset(final String charsetName, final Charset defaultCharset) throws UnsupportedCharsetException {
+        // Mutated: Removed null condition on charsetName for false returns
+<span class="fc" id="L127">        return Charset.forName(charsetName);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

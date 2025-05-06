@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractOriginSupplier.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.build</a> &gt; <span class="el_source">AbstractOriginSupplier.java</span></div><h1>AbstractOriginSupplier.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.build;
+
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.io.Reader;
+import java.io.Writer;
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import org.apache.commons.io.IORandomAccessFile;
+import org.apache.commons.io.build.AbstractOrigin.ByteArrayOrigin;
+import org.apache.commons.io.build.AbstractOrigin.CharSequenceOrigin;
+import org.apache.commons.io.build.AbstractOrigin.FileOrigin;
+import org.apache.commons.io.build.AbstractOrigin.IORandomAccessFileOrigin;
+import org.apache.commons.io.build.AbstractOrigin.InputStreamOrigin;
+import org.apache.commons.io.build.AbstractOrigin.OutputStreamOrigin;
+import org.apache.commons.io.build.AbstractOrigin.PathOrigin;
+import org.apache.commons.io.build.AbstractOrigin.RandomAccessFileOrigin;
+import org.apache.commons.io.build.AbstractOrigin.ReaderOrigin;
+import org.apache.commons.io.build.AbstractOrigin.URIOrigin;
+import org.apache.commons.io.build.AbstractOrigin.WriterOrigin;
+
+/**
+ * Abstracts building an instance of {@code T}.
+ *
+ * @param &lt;T&gt; the type of instances to build.
+ * @param &lt;B&gt; the type of builder subclass.
+ * @since 2.12.0
+ */
+<span class="fc" id="L50">public abstract class AbstractOriginSupplier&lt;T, B extends AbstractOriginSupplier&lt;T, B&gt;&gt; extends AbstractSupplier&lt;T, B&gt; {</span>
+
+    protected static ByteArrayOrigin newByteArrayOrigin(final byte[] origin) {
+<span class="fc" id="L53">        return new ByteArrayOrigin(origin);</span>
+    }
+
+    protected static CharSequenceOrigin newCharSequenceOrigin(final CharSequence origin) {
+<span class="fc" id="L57">        return new CharSequenceOrigin(origin);</span>
+    }
+
+    protected static FileOrigin newFileOrigin(final File origin) {
+<span class="fc" id="L61">        return new FileOrigin(origin);</span>
+    }
+
+    protected static FileOrigin newFileOrigin(final String origin) {
+<span class="fc" id="L65">        return new FileOrigin(new File(origin));</span>
+    }
+
+    protected static InputStreamOrigin newInputStreamOrigin(final InputStream origin) {
+<span class="fc" id="L69">        return new InputStreamOrigin(origin);</span>
+    }
+
+    protected static OutputStreamOrigin newOutputStreamOrigin(final OutputStream origin) {
+<span class="fc" id="L73">        return new OutputStreamOrigin(origin);</span>
+    }
+
+    protected static PathOrigin newPathOrigin(final Path origin) {
+<span class="fc" id="L77">        return new PathOrigin(origin);</span>
+    }
+
+    protected static PathOrigin newPathOrigin(final String origin) {
+<span class="nc" id="L81">        return new PathOrigin(Paths.get(origin));</span>
+    }
+
+    protected static IORandomAccessFileOrigin newRandomAccessFileOrigin(final IORandomAccessFile origin) {
+<span class="nc" id="L85">        return new IORandomAccessFileOrigin(origin);</span>
+    }
+
+    protected static RandomAccessFileOrigin newRandomAccessFileOrigin(final RandomAccessFile origin) {
+<span class="fc" id="L89">        return new RandomAccessFileOrigin(origin);</span>
+    }
+
+    protected static ReaderOrigin newReaderOrigin(final Reader origin) {
+<span class="fc" id="L93">        return new ReaderOrigin(origin);</span>
+    }
+
+    protected static URIOrigin newURIOrigin(final URI origin) {
+<span class="nc" id="L97">        return new URIOrigin(origin);</span>
+    }
+
+    protected static WriterOrigin newWriterOrigin(final Writer origin) {
+<span class="fc" id="L101">        return new WriterOrigin(origin);</span>
+    }
+
+    private AbstractOrigin&lt;?, ?&gt; origin;
+
+    protected AbstractOrigin&lt;?, ?&gt; checkOrigin() {
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        if (origin == null) {</span>
+            // Mutated to throw a different exception
+<span class="fc" id="L109">            throw new IllegalArgumentException(&quot;Origin cannot be null&quot;);</span>
+        }
+<span class="fc" id="L111">        return origin;</span>
+    }
+
+    protected AbstractOrigin&lt;?, ?&gt; getOrigin() {
+<span class="nc" id="L115">        return origin;</span>
+    }
+
+    protected boolean hasOrigin() {
+        // Negated condition
+<span class="nc bnc" id="L120" title="All 2 branches missed.">        return origin == null;</span>
+    }
+
+    public B setByteArray(final byte[] origin) {
+<span class="fc" id="L124">        return setOrigin(newByteArrayOrigin(origin));</span>
+    }
+
+    public B setCharSequence(final CharSequence origin) {
+<span class="fc" id="L128">        return setOrigin(newCharSequenceOrigin(origin));</span>
+    }
+
+    public B setFile(final File origin) {
+<span class="fc" id="L132">        return setOrigin(newFileOrigin(origin));</span>
+    }
+
+    public B setFile(final String origin) {
+<span class="nc" id="L136">        return setOrigin(newFileOrigin(origin));</span>
+    }
+
+    public B setInputStream(final InputStream origin) {
+<span class="fc" id="L140">        return setOrigin(newInputStreamOrigin(origin));</span>
+    }
+
+    protected B setOrigin(final AbstractOrigin&lt;?, ?&gt; origin) {
+<span class="fc" id="L144">        this.origin = origin;</span>
+<span class="fc" id="L145">        return asThis();</span>
+    }
+
+    public B setOutputStream(final OutputStream origin) {
+<span class="fc" id="L149">        return setOrigin(newOutputStreamOrigin(origin));</span>
+    }
+
+    public B setPath(final Path origin) {
+<span class="fc" id="L153">        return setOrigin(newPathOrigin(origin));</span>
+    }
+
+    public B setPath(final String origin) {
+<span class="nc" id="L157">        return setOrigin(newPathOrigin(origin));</span>
+    }
+
+    public B setRandomAccessFile(final IORandomAccessFile origin) {
+<span class="nc" id="L161">        return setOrigin(newRandomAccessFileOrigin(origin));</span>
+    }
+
+    public B setRandomAccessFile(final RandomAccessFile origin) {
+<span class="fc" id="L165">        return setOrigin(newRandomAccessFileOrigin(origin));</span>
+    }
+
+    public B setReader(final Reader origin) {
+<span class="fc" id="L169">        return setOrigin(newReaderOrigin(origin));</span>
+    }
+
+    public B setURI(final URI origin) {
+        // Mutated to return null instead of the URI
+<span class="nc" id="L174">        return setOrigin(newURIOrigin(null));</span>
+    }
+
+    public B setWriter(final Writer origin) {
+<span class="fc" id="L178">        return setOrigin(newWriterOrigin(origin));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

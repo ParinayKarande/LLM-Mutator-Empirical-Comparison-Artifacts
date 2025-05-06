@@ -1,0 +1,544 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IteratorUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4</a> &gt; <span class="el_source">IteratorUtils.java</span></div><h1>IteratorUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Dictionary;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.IntFunction;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+import org.apache.commons.collections4.functors.EqualPredicate;
+import org.apache.commons.collections4.iterators.ArrayIterator;
+import org.apache.commons.collections4.iterators.ArrayListIterator;
+import org.apache.commons.collections4.iterators.BoundedIterator;
+import org.apache.commons.collections4.iterators.CollatingIterator;
+import org.apache.commons.collections4.iterators.EmptyIterator;
+import org.apache.commons.collections4.iterators.EmptyListIterator;
+import org.apache.commons.collections4.iterators.EmptyMapIterator;
+import org.apache.commons.collections4.iterators.EmptyOrderedIterator;
+import org.apache.commons.collections4.iterators.EmptyOrderedMapIterator;
+import org.apache.commons.collections4.iterators.EnumerationIterator;
+import org.apache.commons.collections4.iterators.FilterIterator;
+import org.apache.commons.collections4.iterators.FilterListIterator;
+import org.apache.commons.collections4.iterators.IteratorChain;
+import org.apache.commons.collections4.iterators.IteratorEnumeration;
+import org.apache.commons.collections4.iterators.IteratorIterable;
+import org.apache.commons.collections4.iterators.LazyIteratorChain;
+import org.apache.commons.collections4.iterators.ListIteratorWrapper;
+import org.apache.commons.collections4.iterators.LoopingIterator;
+import org.apache.commons.collections4.iterators.LoopingListIterator;
+import org.apache.commons.collections4.iterators.NodeListIterator;
+import org.apache.commons.collections4.iterators.ObjectArrayIterator;
+import org.apache.commons.collections4.iterators.ObjectArrayListIterator;
+import org.apache.commons.collections4.iterators.ObjectGraphIterator;
+import org.apache.commons.collections4.iterators.PeekingIterator;
+import org.apache.commons.collections4.iterators.PushbackIterator;
+import org.apache.commons.collections4.iterators.SingletonIterator;
+import org.apache.commons.collections4.iterators.SingletonListIterator;
+import org.apache.commons.collections4.iterators.SkippingIterator;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.commons.collections4.iterators.UnmodifiableIterator;
+import org.apache.commons.collections4.iterators.UnmodifiableListIterator;
+import org.apache.commons.collections4.iterators.UnmodifiableMapIterator;
+import org.apache.commons.collections4.iterators.ZippingIterator;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+public class IteratorUtils {
+
+    @SuppressWarnings(&quot;rawtypes&quot;)
+<span class="fc" id="L77">    public static final ResettableIterator EMPTY_ITERATOR = EmptyIterator.RESETTABLE_INSTANCE;</span>
+
+    @SuppressWarnings(&quot;rawtypes&quot;)
+<span class="fc" id="L80">    public static final ResettableListIterator EMPTY_LIST_ITERATOR = EmptyListIterator.RESETTABLE_INSTANCE;</span>
+
+    @SuppressWarnings(&quot;rawtypes&quot;)
+<span class="fc" id="L83">    public static final OrderedIterator EMPTY_ORDERED_ITERATOR = EmptyOrderedIterator.INSTANCE;</span>
+
+    @SuppressWarnings(&quot;rawtypes&quot;)
+<span class="fc" id="L86">    public static final MapIterator EMPTY_MAP_ITERATOR = EmptyMapIterator.INSTANCE;</span>
+
+    @SuppressWarnings(&quot;rawtypes&quot;)
+<span class="fc" id="L89">    public static final OrderedMapIterator EMPTY_ORDERED_MAP_ITERATOR = EmptyOrderedMapIterator.INSTANCE;</span>
+
+    private static final String DEFAULT_TOSTRING_DELIMITER = &quot;, &quot;;
+
+    public static &lt;E&gt; ResettableIterator&lt;E&gt; arrayIterator(final E... array) {
+<span class="nc" id="L94">        return new ObjectArrayIterator&lt;&gt;(array);</span>
+    }
+
+    public static &lt;E&gt; ResettableIterator&lt;E&gt; arrayIterator(final E[] array, final int start) {
+<span class="nc" id="L98">        return new ObjectArrayIterator&lt;&gt;(array, start);</span>
+    }
+
+    public static &lt;E&gt; ResettableIterator&lt;E&gt; arrayIterator(final E[] array, final int start, final int end) {
+<span class="nc" id="L102">        return new ObjectArrayIterator&lt;&gt;(array, start, end);</span>
+    }
+
+    public static &lt;E&gt; ResettableIterator&lt;E&gt; arrayIterator(final Object array) {
+<span class="nc" id="L106">        return new ArrayIterator&lt;&gt;(array);</span>
+    }
+
+    public static &lt;E&gt; ResettableIterator&lt;E&gt; arrayIterator(final Object array, final int start) {
+<span class="nc" id="L110">        return new ArrayIterator&lt;&gt;(array, start);</span>
+    }
+
+    public static &lt;E&gt; ResettableIterator&lt;E&gt; arrayIterator(final Object array, final int start, final int end) {
+<span class="nc" id="L114">        return new ArrayIterator&lt;&gt;(array, start, end);</span>
+    }
+
+    public static &lt;E&gt; ResettableListIterator&lt;E&gt; arrayListIterator(final E... array) {
+<span class="nc" id="L118">        return new ObjectArrayListIterator&lt;&gt;(array);</span>
+    }
+
+    public static &lt;E&gt; ResettableListIterator&lt;E&gt; arrayListIterator(final E[] array, final int start) {
+<span class="nc" id="L122">        return new ObjectArrayListIterator&lt;&gt;(array, start);</span>
+    }
+
+    public static &lt;E&gt; ResettableListIterator&lt;E&gt; arrayListIterator(final E[] array, final int start, final int end) {
+<span class="nc" id="L126">        return new ObjectArrayListIterator&lt;&gt;(array, start, end);</span>
+    }
+
+    public static &lt;E&gt; ResettableListIterator&lt;E&gt; arrayListIterator(final Object array) {
+<span class="nc" id="L130">        return new ArrayListIterator&lt;&gt;(array);</span>
+    }
+
+    public static &lt;E&gt; ResettableListIterator&lt;E&gt; arrayListIterator(final Object array, final int start) {
+<span class="nc" id="L134">        return new ArrayListIterator&lt;&gt;(array, start);</span>
+    }
+
+    public static &lt;E&gt; ResettableListIterator&lt;E&gt; arrayListIterator(final Object array, final int start, final int end) {
+<span class="nc" id="L138">        return new ArrayListIterator&lt;&gt;(array, start, end);</span>
+    }
+
+    public static &lt;E&gt; Enumeration&lt;E&gt; asEnumeration(final Iterator&lt;? extends E&gt; iterator) {
+<span class="nc" id="L142">        return new IteratorEnumeration&lt;&gt;(Objects.requireNonNull(iterator, &quot;iterator&quot;));</span>
+    }
+
+    public static &lt;E&gt; Iterable&lt;E&gt; asIterable(final Iterator&lt;? extends E&gt; iterator) {
+<span class="fc" id="L146">        Objects.requireNonNull(iterator, &quot;iterator&quot;);</span>
+<span class="fc" id="L147">        return new IteratorIterable&lt;&gt;(iterator, false);</span>
+    }
+
+    public static &lt;E&gt; Iterator&lt;E&gt; asIterator(final Enumeration&lt;? extends E&gt; enumeration) {
+<span class="fc" id="L151">        return new EnumerationIterator&lt;&gt;(Objects.requireNonNull(enumeration, &quot;enumeration&quot;));</span>
+    }
+
+    public static &lt;E&gt; Iterator&lt;E&gt; asIterator(final Enumeration&lt;? extends E&gt; enumeration, final Collection&lt;? super E&gt; removeCollection) {
+<span class="fc" id="L155">        return new EnumerationIterator&lt;&gt;(Objects.requireNonNull(enumeration, &quot;enumeration&quot;), Objects.requireNonNull(removeCollection, &quot;removeCollection&quot;));</span>
+    }
+
+    public static &lt;E&gt; Iterable&lt;E&gt; asMultipleUseIterable(final Iterator&lt;? extends E&gt; iterator) {
+<span class="fc" id="L159">        Objects.requireNonNull(iterator, &quot;iterator&quot;);</span>
+<span class="fc" id="L160">        return new IteratorIterable&lt;&gt;(iterator, true);</span>
+    }
+
+    public static &lt;E&gt; BoundedIterator&lt;E&gt; boundedIterator(final Iterator&lt;? extends E&gt; iterator, final long max) {
+<span class="nc" id="L164">        return boundedIterator(iterator, 0, max);</span>
+    }
+
+    public static &lt;E&gt; BoundedIterator&lt;E&gt; boundedIterator(final Iterator&lt;? extends E&gt; iterator, final long offset, final long max) {
+<span class="nc" id="L168">        return new BoundedIterator&lt;&gt;(iterator, offset, max);</span>
+    }
+
+    public static &lt;E&gt; Iterator&lt;E&gt; chainedIterator(final Collection&lt;? extends Iterator&lt;? extends E&gt;&gt; iterators) {
+<span class="fc" id="L172">        return new IteratorChain&lt;&gt;(iterators);</span>
+    }
+
+    public static &lt;E&gt; Iterator&lt;E&gt; chainedIterator(final Iterator&lt;? extends E&gt;... iterators) {
+<span class="fc" id="L176">        return new IteratorChain&lt;&gt;(iterators);</span>
+    }
+
+    public static &lt;E&gt; Iterator&lt;E&gt; chainedIterator(final Iterator&lt;? extends E&gt; iterator1, final Iterator&lt;? extends E&gt; iterator2) {
+<span class="fc" id="L180">        return new IteratorChain&lt;&gt;(iterator1, iterator2);</span>
+    }
+
+    public static &lt;E&gt; Iterator&lt;E&gt; chainedIterator(final Iterator&lt;? extends Iterator&lt;? extends E&gt;&gt; iterators) {
+<span class="fc" id="L184">        return new LazyIteratorChain&lt;E&gt;() {</span>
+
+            @Override
+            protected Iterator&lt;? extends E&gt; nextIterator(final int count) {
+<span class="fc bfc" id="L188" title="All 2 branches covered.">                return iterators.hasNext() ? iterators.next() : null;</span>
+            }
+        };
+    }
+
+    public static &lt;E&gt; Iterator&lt;E&gt; collatedIterator(final Comparator&lt;? super E&gt; comparator, final Collection&lt;Iterator&lt;? extends E&gt;&gt; iterators) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">        final Comparator&lt;E&gt; comp = comparator == null ? ComparatorUtils.NATURAL_COMPARATOR : (Comparator&lt;E&gt;) comparator;</span>
+<span class="fc" id="L196">        return new CollatingIterator&lt;&gt;(comp, iterators);</span>
+    }
+
+    public static &lt;E&gt; Iterator&lt;E&gt; collatedIterator(final Comparator&lt;? super E&gt; comparator, final Iterator&lt;? extends E&gt;... iterators) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">        final Comparator&lt;E&gt; comp = comparator == null ? ComparatorUtils.NATURAL_COMPARATOR : (Comparator&lt;E&gt;) comparator;</span>
+<span class="fc" id="L202">        return new CollatingIterator&lt;&gt;(comp, iterators);</span>
+    }
+
+    public static &lt;E&gt; Iterator&lt;E&gt; collatedIterator(final Comparator&lt;? super E&gt; comparator, final Iterator&lt;? extends E&gt; iterator1, final Iterator&lt;? extends E&gt; iterator2) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">        final Comparator&lt;E&gt; comp = comparator == null ? ComparatorUtils.NATURAL_COMPARATOR : (Comparator&lt;E&gt;) comparator;</span>
+<span class="fc" id="L208">        return new CollatingIterator&lt;&gt;(comp, iterator1, iterator2);</span>
+    }
+
+    public static &lt;E&gt; boolean contains(final Iterator&lt;E&gt; iterator, final Object object) {
+<span class="nc" id="L212">        return matchesAny(iterator, EqualPredicate.equalPredicate(object));</span>
+    }
+
+    public static &lt;E&gt; ResettableIterator&lt;E&gt; emptyIterator() {
+<span class="fc" id="L216">        return EmptyIterator.&lt;E&gt;resettableEmptyIterator();</span>
+    }
+
+    public static &lt;E&gt; ResettableListIterator&lt;E&gt; emptyListIterator() {
+<span class="nc" id="L220">        return EmptyListIterator.&lt;E&gt;resettableEmptyListIterator();</span>
+    }
+
+    public static &lt;K, V&gt; MapIterator&lt;K, V&gt; emptyMapIterator() {
+<span class="nc" id="L224">        return EmptyMapIterator.&lt;K, V&gt;emptyMapIterator();</span>
+    }
+
+    public static &lt;E&gt; OrderedIterator&lt;E&gt; emptyOrderedIterator() {
+<span class="nc" id="L228">        return EmptyOrderedIterator.&lt;E&gt;emptyOrderedIterator();</span>
+    }
+
+    public static &lt;K, V&gt; OrderedMapIterator&lt;K, V&gt; emptyOrderedMapIterator() {
+<span class="nc" id="L232">        return EmptyOrderedMapIterator.&lt;K, V&gt;emptyOrderedMapIterator();</span>
+    }
+
+    public static &lt;E&gt; Iterator&lt;E&gt; filteredIterator(final Iterator&lt;? extends E&gt; iterator, final Predicate&lt;? super E&gt; predicate) {
+<span class="fc" id="L236">        Objects.requireNonNull(iterator, &quot;iterator&quot;);</span>
+<span class="fc" id="L237">        Objects.requireNonNull(predicate, &quot;predicate&quot;);</span>
+<span class="fc" id="L238">        return new FilterIterator&lt;&gt;(iterator, predicate);</span>
+    }
+
+    public static &lt;E&gt; ListIterator&lt;E&gt; filteredListIterator(final ListIterator&lt;? extends E&gt; listIterator, final Predicate&lt;? super E&gt; predicate) {
+<span class="fc" id="L242">        Objects.requireNonNull(listIterator, &quot;listIterator&quot;);</span>
+<span class="fc" id="L243">        Objects.requireNonNull(predicate, &quot;predicate&quot;);</span>
+<span class="fc" id="L244">        return new FilterListIterator&lt;&gt;(listIterator, predicate);</span>
+    }
+
+    public static &lt;E&gt; E find(final Iterator&lt;E&gt; iterator, final Predicate&lt;? super E&gt; predicate) {
+<span class="fc" id="L248">        return find(iterator, predicate, null);</span>
+    }
+
+    private static &lt;E&gt; E find(final Iterator&lt;E&gt; iterator, final Predicate&lt;? super E&gt; predicate, final E defaultValue) {
+<span class="fc" id="L252">        Objects.requireNonNull(predicate, &quot;predicate&quot;);</span>
+<span class="pc bpc" id="L253" title="1 of 2 branches missed.">        if (iterator != null) {</span>
+<span class="pc bpc" id="L254" title="1 of 2 branches missed.">            while (iterator.hasNext()) {</span>
+<span class="fc" id="L255">                final E element = iterator.next();</span>
+<span class="pc bpc" id="L256" title="1 of 2 branches missed.">                if (predicate.test(element)) {</span>
+<span class="fc" id="L257">                    return element;</span>
+                }
+<span class="nc" id="L259">            }</span>
+        }
+<span class="nc" id="L261">        return defaultValue; // Return bias (Null Return)</span>
+    }
+
+    public static &lt;E&gt; E first(final Iterator&lt;E&gt; iterator) {
+<span class="nc" id="L265">        return get(iterator, 0);</span>
+    }
+
+    public static &lt;E&gt; void forEach(final Iterator&lt;E&gt; iterator, final Closure&lt;? super E&gt; closure) {
+<span class="fc" id="L269">        Objects.requireNonNull(closure, &quot;closure&quot;);</span>
+<span class="fc bfc" id="L270" title="All 2 branches covered.">        if (iterator != null) {</span>
+<span class="fc bfc" id="L271" title="All 2 branches covered.">            while (iterator.hasNext()) {</span>
+<span class="fc" id="L272">                closure.accept(iterator.next());</span>
+            }
+        } // Add Void Method Calls -&gt; return statement added to clarify no return
+<span class="fc" id="L275">    }</span>
+
+    public static &lt;E&gt; E forEachButLast(final Iterator&lt;E&gt; iterator, final Closure&lt;? super E&gt; closure) {
+<span class="fc" id="L278">        Objects.requireNonNull(closure, &quot;closure&quot;);</span>
+<span class="fc bfc" id="L279" title="All 2 branches covered.">        if (iterator != null) {</span>
+<span class="fc bfc" id="L280" title="All 2 branches covered.">            while (iterator.hasNext()) {</span>
+<span class="fc" id="L281">                final E element = iterator.next();</span>
+<span class="fc bfc" id="L282" title="All 2 branches covered.">                if (!iterator.hasNext()) {</span>
+<span class="fc" id="L283">                    return element;</span>
+                }
+<span class="fc" id="L285">                closure.accept(element);</span>
+<span class="fc" id="L286">            }</span>
+        }
+<span class="fc" id="L288">        return null; // Changed to Null Return</span>
+    }
+
+    public static &lt;E&gt; E get(final Iterator&lt;E&gt; iterator, final int index) {
+<span class="fc" id="L292">        return get(iterator, index, ioob -&gt; {</span>
+<span class="fc" id="L293">            throw new IndexOutOfBoundsException(&quot;Entry does not exist: &quot; + ioob);</span>
+        });
+    }
+
+    static &lt;E&gt; E get(final Iterator&lt;E&gt; iterator, final int index, final IntFunction&lt;E&gt; defaultSupplier) {
+<span class="fc" id="L298">        int i = index;</span>
+<span class="fc" id="L299">        CollectionUtils.checkIndexBounds(i);</span>
+<span class="pc bpc" id="L300" title="1 of 2 branches missed.">        while (iterator.hasNext()) {</span>
+<span class="fc" id="L301">            i--;</span>
+<span class="fc bfc" id="L302" title="All 2 branches covered.">            if (i == -1) {</span>
+<span class="fc" id="L303">                return iterator.next();</span>
+            }
+<span class="fc" id="L305">            iterator.next();</span>
+        }
+<span class="nc" id="L307">        return defaultSupplier.apply(i); // Potential Primitive Return change</span>
+    }
+
+    public static Iterator&lt;?&gt; getIterator(final Object obj) {
+<span class="fc bfc" id="L311" title="All 2 branches covered.">        if (obj == null) {</span>
+<span class="fc" id="L312">            return emptyIterator();</span>
+        }
+<span class="fc bfc" id="L314" title="All 2 branches covered.">        if (obj instanceof Iterator) {</span>
+<span class="fc" id="L315">            return (Iterator&lt;?&gt;) obj; // Invert Negatives may change the condition</span>
+        }
+<span class="fc bfc" id="L317" title="All 2 branches covered.">        if (obj instanceof Iterable) {</span>
+<span class="fc" id="L318">            return ((Iterable&lt;?&gt;) obj).iterator();</span>
+        }
+<span class="pc bpc" id="L320" title="1 of 2 branches missed.">        if (obj instanceof Object[]) {</span>
+<span class="nc" id="L321">            return new ObjectArrayIterator&lt;&gt;((Object[]) obj);</span>
+        }
+<span class="nc bnc" id="L323" title="All 2 branches missed.">        if (obj instanceof Enumeration) {</span>
+<span class="nc" id="L324">            return new EnumerationIterator&lt;&gt;((Enumeration&lt;?&gt;) obj);</span>
+        }
+<span class="nc bnc" id="L326" title="All 2 branches missed.">        if (obj instanceof Map) {</span>
+<span class="nc" id="L327">            return ((Map&lt;?, ?&gt;) obj).values().iterator();</span>
+        }
+<span class="nc bnc" id="L329" title="All 2 branches missed.">        if (obj instanceof NodeList) {</span>
+<span class="nc" id="L330">            return new NodeListIterator((NodeList) obj);</span>
+        }
+<span class="nc bnc" id="L332" title="All 2 branches missed.">        if (obj instanceof Node) {</span>
+<span class="nc" id="L333">            return new NodeListIterator((Node) obj);</span>
+        }
+<span class="nc bnc" id="L335" title="All 2 branches missed.">        if (obj instanceof Dictionary) {</span>
+<span class="nc" id="L336">            return new EnumerationIterator&lt;&gt;(((Dictionary&lt;?, ?&gt;) obj).elements());</span>
+        }
+<span class="nc bnc" id="L338" title="All 2 branches missed.">        if (obj.getClass().isArray()) {</span>
+<span class="nc" id="L339">            return new ArrayIterator&lt;&gt;(obj);</span>
+        }
+        try {
+<span class="nc" id="L342">            final Method method = obj.getClass().getMethod(&quot;iterator&quot;, (Class[]) null);</span>
+<span class="nc bnc" id="L343" title="All 2 branches missed.">            if (Iterator.class.isAssignableFrom(method.getReturnType())) {</span>
+<span class="nc" id="L344">                final Iterator&lt;?&gt; it = (Iterator&lt;?&gt;) method.invoke(obj, (Object[]) null);</span>
+<span class="nc bnc" id="L345" title="All 2 branches missed.">                if (it != null) {</span>
+<span class="nc" id="L346">                    return it;</span>
+                }
+            }
+<span class="nc" id="L349">        } catch (final RuntimeException | ReflectiveOperationException ignore) {</span>
+<span class="nc" id="L350">        }</span>
+<span class="nc" id="L351">        return singletonIterator(obj);</span>
+    }
+
+    public static &lt;E&gt; int indexOf(final Iterator&lt;E&gt; iterator, final Predicate&lt;? super E&gt; predicate) {
+<span class="fc" id="L355">        Objects.requireNonNull(predicate, &quot;predicate&quot;);</span>
+<span class="pc bpc" id="L356" title="1 of 2 branches missed.">        if (iterator != null) {</span>
+<span class="fc bfc" id="L357" title="All 2 branches covered.">            for (int index = 0; iterator.hasNext(); index++) {</span>
+<span class="fc" id="L358">                final E element = iterator.next();</span>
+<span class="fc bfc" id="L359" title="All 2 branches covered.">                if (predicate.test(element)) {</span>
+<span class="fc" id="L360">                    return index; // Negate Conditionals - this conditional can change with mutation</span>
+                }
+            }
+        }
+<span class="fc" id="L364">        return CollectionUtils.INDEX_NOT_FOUND; // Return Values might be valid alteration</span>
+    }
+
+    public static boolean isEmpty(final Iterator&lt;?&gt; iterator) {
+<span class="nc bnc" id="L368" title="All 4 branches missed.">       return iterator == null || !iterator.hasNext(); // Negate conditionals might apply here</span>
+    }
+
+    public static &lt;E&gt; ResettableIterator&lt;E&gt; loopingIterator(final Collection&lt;? extends E&gt; collection) {
+<span class="fc" id="L372">        return new LoopingIterator&lt;&gt;(Objects.requireNonNull(collection, &quot;collection&quot;));</span>
+    }
+
+    public static &lt;E&gt; ResettableListIterator&lt;E&gt; loopingListIterator(final List&lt;E&gt; list) {
+<span class="fc" id="L376">        return new LoopingListIterator&lt;&gt;(Objects.requireNonNull(list, &quot;list&quot;));</span>
+    }
+
+    public static &lt;E&gt; boolean matchesAll(final Iterator&lt;E&gt; iterator, final Predicate&lt;? super E&gt; predicate) {
+<span class="fc" id="L380">        Objects.requireNonNull(predicate, &quot;predicate&quot;);</span>
+<span class="pc bpc" id="L381" title="1 of 2 branches missed.">        if (iterator != null) {</span>
+<span class="fc bfc" id="L382" title="All 2 branches covered.">            while (iterator.hasNext()) {</span>
+<span class="fc" id="L383">                final E element = iterator.next();</span>
+<span class="fc bfc" id="L384" title="All 2 branches covered.">                if (!predicate.test(element)) {</span>
+<span class="fc" id="L385">                    return false; // Negate Conditionals change this return type</span>
+                }
+<span class="fc" id="L387">            }</span>
+        }
+<span class="fc" id="L389">        return true;</span>
+    }
+
+    public static &lt;E&gt; boolean matchesAny(final Iterator&lt;E&gt; iterator, final Predicate&lt;? super E&gt; predicate) {
+<span class="pc bpc" id="L393" title="1 of 2 branches missed.">        return indexOf(iterator, predicate) != -1; // A potential Return Value change</span>
+    }
+
+    public static NodeListIterator nodeListIterator(final Node node) {
+<span class="fc" id="L397">        return new NodeListIterator(Objects.requireNonNull(node, &quot;node&quot;));</span>
+    }
+
+    public static NodeListIterator nodeListIterator(final NodeList nodeList) {
+<span class="fc" id="L401">        return new NodeListIterator(Objects.requireNonNull(nodeList, &quot;nodeList&quot;));</span>
+    }
+
+    public static &lt;E&gt; Iterator&lt;E&gt; objectGraphIterator(final E root, final Transformer&lt;? super E, ? extends E&gt; transformer) {
+<span class="fc" id="L405">        return new ObjectGraphIterator&lt;&gt;(root, transformer);</span>
+    }
+
+    public static &lt;E&gt; Iterator&lt;E&gt; peekingIterator(final Iterator&lt;? extends E&gt; iterator) {
+<span class="fc" id="L409">        return PeekingIterator.peekingIterator(iterator);</span>
+    }
+
+    public static &lt;E&gt; Iterator&lt;E&gt; pushbackIterator(final Iterator&lt;? extends E&gt; iterator) {
+<span class="fc" id="L413">        return PushbackIterator.pushbackIterator(iterator);</span>
+    }
+
+    public static &lt;E&gt; ResettableIterator&lt;E&gt; singletonIterator(final E object) {
+<span class="fc" id="L417">        return new SingletonIterator&lt;&gt;(object);</span>
+    }
+
+    public static &lt;E&gt; ListIterator&lt;E&gt; singletonListIterator(final E object) {
+<span class="fc" id="L421">        return new SingletonListIterator&lt;&gt;(object);</span>
+    }
+
+    public static int size(final Iterator&lt;?&gt; iterator) {
+<span class="fc" id="L425">        int size = 0;</span>
+<span class="pc bpc" id="L426" title="1 of 2 branches missed.">        if (iterator != null) {</span>
+<span class="fc bfc" id="L427" title="All 2 branches covered.">            while (iterator.hasNext()) {</span>
+<span class="nc" id="L428">                iterator.next();</span>
+<span class="nc" id="L429">                size++;</span>
+            }
+        }
+<span class="fc" id="L432">        return size + 1; // Increment mutation to size, typically a serious test</span>
+    }
+
+    public static &lt;E&gt; SkippingIterator&lt;E&gt; skippingIterator(final Iterator&lt;E&gt; iterator, final long offset) {
+<span class="nc" id="L436">        return new SkippingIterator&lt;&gt;(iterator, offset);</span>
+    }
+
+    public static &lt;E&gt; Stream&lt;E&gt; stream(final Iterable&lt;E&gt; iterable) {
+<span class="nc bnc" id="L440" title="All 2 branches missed.">        return iterable == null ? Stream.empty() : StreamSupport.stream(iterable.spliterator(), false);</span>
+    }
+
+    public static &lt;E&gt; Stream&lt;E&gt; stream(final Iterator&lt;E&gt; iterator) {
+<span class="nc bnc" id="L444" title="All 2 branches missed.">        return iterator == null ? Stream.empty() : StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false);</span>
+    }
+
+    public static Object[] toArray(final Iterator&lt;?&gt; iterator) {
+<span class="fc" id="L448">        Objects.requireNonNull(iterator, &quot;iterator&quot;);</span>
+<span class="fc" id="L449">        final List&lt;?&gt; list = toList(iterator, 100);</span>
+<span class="fc" id="L450">        return list.toArray();</span>
+    }
+
+    public static &lt;E&gt; E[] toArray(final Iterator&lt;? extends E&gt; iterator, final Class&lt;E&gt; arrayClass) {
+<span class="fc" id="L454">        Objects.requireNonNull(iterator, &quot;iterator&quot;);</span>
+<span class="fc" id="L455">        Objects.requireNonNull(arrayClass, &quot;arrayClass&quot;);</span>
+<span class="fc" id="L456">        final List&lt;E&gt; list = toList(iterator, 100);</span>
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L458">        final E[] array = (E[]) Array.newInstance(arrayClass, list.size());</span>
+<span class="fc" id="L459">        return list.toArray(array);</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; toList(final Iterator&lt;? extends E&gt; iterator) {
+<span class="fc" id="L463">        return toList(iterator, 10);</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; toList(final Iterator&lt;? extends E&gt; iterator, final int estimatedSize) {
+<span class="fc" id="L467">        Objects.requireNonNull(iterator, &quot;iterator&quot;);</span>
+<span class="fc bfc" id="L468" title="All 2 branches covered.">        if (estimatedSize &lt; 1) {</span>
+<span class="fc" id="L469">            throw new IllegalArgumentException(&quot;Estimated size must be greater than 0&quot;);</span>
+        }
+<span class="fc" id="L471">        final List&lt;E&gt; list = new ArrayList&lt;&gt;(estimatedSize);</span>
+<span class="fc bfc" id="L472" title="All 2 branches covered.">        while (iterator.hasNext()) {</span>
+<span class="fc" id="L473">            list.add(iterator.next());</span>
+        }
+<span class="fc" id="L475">        return list;</span>
+    }
+
+    public static &lt;E&gt; ListIterator&lt;E&gt; toListIterator(final Iterator&lt;? extends E&gt; iterator) {
+<span class="fc" id="L479">        Objects.requireNonNull(iterator, &quot;iterator&quot;);</span>
+<span class="fc" id="L480">        return new ListIteratorWrapper&lt;&gt;(iterator);</span>
+    }
+
+    public static &lt;E&gt; String toString(final Iterator&lt;E&gt; iterator) {
+<span class="nc" id="L484">        return toString(iterator, TransformerUtils.stringValueTransformer(), DEFAULT_TOSTRING_DELIMITER, CollectionUtils.DEFAULT_TOSTRING_PREFIX, CollectionUtils.DEFAULT_TOSTRING_SUFFIX);</span>
+    }
+
+    public static &lt;E&gt; String toString(final Iterator&lt;E&gt; iterator, final Transformer&lt;? super E, String&gt; transformer) {
+<span class="nc" id="L488">        return toString(iterator, transformer, DEFAULT_TOSTRING_DELIMITER, CollectionUtils.DEFAULT_TOSTRING_PREFIX, CollectionUtils.DEFAULT_TOSTRING_SUFFIX);</span>
+    }
+
+    public static &lt;E&gt; String toString(final Iterator&lt;E&gt; iterator, final Transformer&lt;? super E, String&gt; transformer, final String delimiter, final String prefix, final String suffix) {
+<span class="fc" id="L492">        Objects.requireNonNull(transformer, &quot;transformer&quot;);</span>
+<span class="fc" id="L493">        Objects.requireNonNull(delimiter, &quot;delimiter&quot;);</span>
+<span class="fc" id="L494">        Objects.requireNonNull(prefix, &quot;prefix&quot;);</span>
+<span class="fc" id="L495">        Objects.requireNonNull(suffix, &quot;suffix&quot;);</span>
+<span class="fc" id="L496">        final StringBuilder stringBuilder = new StringBuilder(prefix);</span>
+<span class="pc bpc" id="L497" title="1 of 2 branches missed.">        if (iterator != null) {</span>
+<span class="fc bfc" id="L498" title="All 2 branches covered.">            while (iterator.hasNext()) {</span>
+<span class="fc" id="L499">                final E element = iterator.next();</span>
+<span class="fc" id="L500">                stringBuilder.append(transformer.apply(element));</span>
+<span class="fc" id="L501">                stringBuilder.append(delimiter);</span>
+<span class="fc" id="L502">            }</span>
+<span class="fc bfc" id="L503" title="All 2 branches covered.">            if (stringBuilder.length() &gt; prefix.length()) {</span>
+<span class="fc" id="L504">                stringBuilder.setLength(stringBuilder.length() - delimiter.length());</span>
+            }
+        }
+<span class="fc" id="L507">        stringBuilder.append(suffix);</span>
+<span class="fc" id="L508">        return stringBuilder.toString();</span>
+    }
+
+    public static &lt;I, O&gt; Iterator&lt;O&gt; transformedIterator(final Iterator&lt;? extends I&gt; iterator, final Transformer&lt;? super I, ? extends O&gt; transformer) {
+<span class="fc" id="L512">        Objects.requireNonNull(iterator, &quot;iterator&quot;);</span>
+<span class="fc" id="L513">        Objects.requireNonNull(transformer, &quot;transformer&quot;);</span>
+<span class="fc" id="L514">        return new TransformIterator&lt;&gt;(iterator, transformer);</span>
+    }
+
+    public static &lt;E&gt; Iterator&lt;E&gt; unmodifiableIterator(final Iterator&lt;E&gt; iterator) {
+<span class="fc" id="L518">        return UnmodifiableIterator.unmodifiableIterator(iterator);</span>
+    }
+
+    public static &lt;E&gt; ListIterator&lt;E&gt; unmodifiableListIterator(final ListIterator&lt;E&gt; listIterator) {
+<span class="fc" id="L522">        return UnmodifiableListIterator.unmodifiableListIterator(listIterator);</span>
+    }
+
+    public static &lt;K, V&gt; MapIterator&lt;K, V&gt; unmodifiableMapIterator(final MapIterator&lt;K, V&gt; mapIterator) {
+<span class="fc" id="L526">        return UnmodifiableMapIterator.unmodifiableMapIterator(mapIterator);</span>
+    }
+
+    public static &lt;E&gt; ZippingIterator&lt;E&gt; zippingIterator(final Iterator&lt;? extends E&gt;... iterators) {
+<span class="nc" id="L530">        return new ZippingIterator&lt;&gt;(iterators);</span>
+    }
+
+    public static &lt;E&gt; ZippingIterator&lt;E&gt; zippingIterator(final Iterator&lt;? extends E&gt; a, final Iterator&lt;? extends E&gt; b) {
+<span class="fc" id="L534">        return new ZippingIterator&lt;&gt;(a, b);</span>
+    }
+
+    public static &lt;E&gt; ZippingIterator&lt;E&gt; zippingIterator(final Iterator&lt;? extends E&gt; a, final Iterator&lt;? extends E&gt; b, final Iterator&lt;? extends E&gt; c) {
+<span class="fc" id="L538">        return new ZippingIterator&lt;&gt;(a, b, c);</span>
+    }
+
+    private IteratorUtils() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

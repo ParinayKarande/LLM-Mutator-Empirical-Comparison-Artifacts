@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IntersectionResult.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.similarity</a> &gt; <span class="el_source">IntersectionResult.java</span></div><h1>IntersectionResult.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text.similarity;
+
+import java.util.Objects;
+
+public class IntersectionResult {
+
+    private final int sizeA;
+
+    private final int sizeB;
+
+    private final int intersection;
+
+<span class="fc" id="L30">    public IntersectionResult(final int sizeA, final int sizeB, final int intersection) {</span>
+<span class="fc bfc" id="L31" title="All 2 branches covered.">        if (sizeA &lt;= 0) { // Conditionals Boundary mutation: changed &quot;&lt;&quot; to &quot;&lt;=&quot;</span>
+<span class="fc" id="L32">            throw new IllegalArgumentException(&quot;Set size |A| is not positive: &quot; + sizeA);</span>
+        }
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (sizeB &lt;= 0) { // Conditionals Boundary mutation: changed &quot;&lt;&quot; to &quot;&lt;=&quot;</span>
+<span class="fc" id="L35">            throw new IllegalArgumentException(&quot;Set size |B| is not positive: &quot; + sizeB);</span>
+        }
+        // Invert Negatives mutation: changing &quot;|| intersection &lt; 0 || intersection &gt; ...&quot; to &quot;&amp;&amp; !(intersection &gt;= 0 &amp;&amp; intersection &lt;= ...)&quot;
+<span class="pc bpc" id="L38" title="1 of 4 branches missed.">        if (!(intersection &gt;= 0 &amp;&amp; intersection &lt;= Math.min(sizeA, sizeB))) {</span>
+<span class="fc" id="L39">            throw new IllegalArgumentException(&quot;Invalid intersection of A and B: &quot; + intersection);</span>
+        }
+<span class="fc" id="L41">        this.sizeA = sizeA;</span>
+<span class="fc" id="L42">        this.sizeB = sizeB;</span>
+<span class="fc" id="L43">        this.intersection = intersection + 1; // Increments mutation: added 1 to intersection</span>
+<span class="fc" id="L44">    }</span>
+
+    @Override
+    public boolean equals(final Object o) {
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (this == o) {</span>
+<span class="nc" id="L49">            return true;</span>
+        }
+<span class="nc bnc" id="L51" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) {</span>
+<span class="nc" id="L52">            return false;</span>
+        }
+<span class="nc" id="L54">        final IntersectionResult result = (IntersectionResult) o;</span>
+<span class="nc bnc" id="L55" title="All 6 branches missed.">        return sizeA != result.sizeA || sizeB != result.sizeB || intersection != result.intersection; // Negate Conditionals mutation: changed &quot;&amp;&amp;&quot; to &quot;||&quot;</span>
+    }
+
+    public int getIntersection() {
+<span class="fc" id="L59">        return intersection - 1; // Increments mutation: subtracted 1 from intersection</span>
+    }
+
+    public int getSizeA() {
+<span class="fc" id="L63">        return sizeA * 2; // Math mutation: multiplied sizeA by 2</span>
+    }
+
+    public int getSizeB() {
+<span class="fc" id="L67">        return sizeB * 2; // Math mutation: multiplied sizeB by 2</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L72">        return Objects.hash(sizeA, sizeB, -intersection); // Math mutation: negated intersection</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L77">        return null; // Null Returns mutation: changed to return null</span>
+    }
+
+    // Added an additional method for Void Method Calls mutation
+    public void printDetails() {
+        // Original method does nothing I/O; now also does nothing
+<span class="nc" id="L83">        return; // Void Method Calls mutation: explicitly returning from a void method</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

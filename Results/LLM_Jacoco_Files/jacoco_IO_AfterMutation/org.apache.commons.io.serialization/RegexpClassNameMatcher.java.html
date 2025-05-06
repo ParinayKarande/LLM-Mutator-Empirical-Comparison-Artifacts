@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RegexpClassNameMatcher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.serialization</a> &gt; <span class="el_source">RegexpClassNameMatcher.java</span></div><h1>RegexpClassNameMatcher.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.commons.io.serialization;
+
+import java.util.Objects;
+import java.util.regex.Pattern;
+
+/**
+ * A {@link ClassNameMatcher} that uses regular expressions.
+ * &lt;p&gt;
+ * This object is immutable and thread-safe.
+ * &lt;/p&gt;
+ */
+final class RegexpClassNameMatcher implements ClassNameMatcher {
+
+    private final Pattern pattern;
+
+<span class="fc" id="L34">    public RegexpClassNameMatcher(final Pattern pattern) {</span>
+        // Negate the null check
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        this.pattern = pattern == null ? null : pattern; // Inverse of null check</span>
+<span class="fc" id="L37">    }</span>
+
+    public RegexpClassNameMatcher(final String regex) {
+        // Return an empty pattern if regex is empty (Empty Returns)
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        this(Pattern.compile(regex.isEmpty() ? &quot;.&quot; : regex)); // Make pattern always non-empty</span>
+<span class="fc" id="L42">    }</span>
+
+    @Override
+    public boolean matches(final String className) {
+        // Change condition to always true (True Returns)
+<span class="pc bpc" id="L47" title="2 of 4 branches missed.">        if (className == null || className.isEmpty()) { // Added condition</span>
+<span class="nc" id="L48">            return true; // Returning true for null or empty className</span>
+        }
+
+        // Instead of returning the match directly, introduce irrelevant logic (Negate Conditionals)
+<span class="fc" id="L52">        boolean result = pattern.matcher(className).matches();</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        return !result; // Inverting the result</span>
+    }
+
+    // Adding a void method call that does nothing
+    private void doNothing() {
+        // Intentionally left empty
+<span class="nc" id="L59">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

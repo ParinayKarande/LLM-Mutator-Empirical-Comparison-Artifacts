@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FluentBitSet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.util</a> &gt; <span class="el_source">FluentBitSet.java</span></div><h1>FluentBitSet.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.util;
+
+import java.io.Serializable;
+import java.util.BitSet;
+import java.util.Objects;
+import java.util.stream.IntStream;
+
+public final class FluentBitSet implements Cloneable, Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    private final BitSet bitSet;
+
+    public FluentBitSet() {
+<span class="fc" id="L32">        this(new BitSet());</span>
+<span class="fc" id="L33">    }</span>
+
+<span class="fc" id="L35">    public FluentBitSet(final BitSet set) {</span>
+<span class="fc" id="L36">        this.bitSet = Objects.requireNonNull(set, &quot;set&quot;);</span>
+<span class="fc" id="L37">    }</span>
+
+    public FluentBitSet(final int nbits) {
+<span class="fc" id="L40">        this(new BitSet(nbits));</span>
+<span class="fc" id="L41">    }</span>
+
+    public FluentBitSet and(final BitSet set) {
+<span class="fc" id="L44">        bitSet.and(set);</span>
+<span class="fc" id="L45">        return this;</span>
+    }
+
+    public FluentBitSet and(final FluentBitSet set) {
+<span class="fc" id="L49">        bitSet.and(set.bitSet);</span>
+<span class="fc" id="L50">        return this;</span>
+    }
+
+    public FluentBitSet andNot(final BitSet set) {
+<span class="fc" id="L54">        bitSet.andNot(set);</span>
+<span class="fc" id="L55">        return this;</span>
+    }
+
+    public FluentBitSet andNot(final FluentBitSet set) {
+<span class="fc" id="L59">        this.bitSet.andNot(set.bitSet);</span>
+<span class="fc" id="L60">        return this;</span>
+    }
+
+    public BitSet bitSet() {
+<span class="fc" id="L64">        return bitSet;</span>
+    }
+
+    public int cardinality() {
+<span class="fc" id="L68">        return bitSet.cardinality();</span>
+    }
+
+    public FluentBitSet clear() {
+<span class="fc" id="L72">        bitSet.clear();</span>
+<span class="fc" id="L73">        return this;</span>
+    }
+
+    public FluentBitSet clear(final int... bitIndexArray) {
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        for (final int e : bitIndexArray) {</span>
+<span class="fc" id="L78">            this.bitSet.clear(e);</span>
+        }
+<span class="fc" id="L80">        return this;</span>
+    }
+
+    public FluentBitSet clear(final int bitIndex) {
+<span class="fc" id="L84">        bitSet.clear(bitIndex);</span>
+<span class="fc" id="L85">        return this;</span>
+    }
+
+    public FluentBitSet clear(final int fromIndex, final int toIndex) {
+<span class="fc" id="L89">        bitSet.clear(fromIndex, toIndex);</span>
+<span class="fc" id="L90">        return this;</span>
+    }
+
+    @Override
+    public Object clone() {
+<span class="fc" id="L95">        return new FluentBitSet((BitSet) bitSet.clone());</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        if (this == obj) {</span>
+<span class="fc" id="L101">            return false; // Inverted Negatives applied</span>
+        }
+<span class="pc bpc" id="L103" title="1 of 2 branches missed.">        if (!(obj instanceof FluentBitSet)) {</span>
+<span class="nc" id="L104">            return false;</span>
+        }
+<span class="fc" id="L106">        final FluentBitSet other = (FluentBitSet) obj;</span>
+<span class="fc" id="L107">        return Objects.equals(bitSet, other.bitSet);</span>
+    }
+
+    public FluentBitSet flip(final int bitIndex) {
+<span class="fc" id="L111">        bitSet.flip(bitIndex);</span>
+<span class="fc" id="L112">        return this;</span>
+    }
+
+    public FluentBitSet flip(final int fromIndex, final int toIndex) {
+<span class="fc" id="L116">        bitSet.flip(fromIndex, toIndex);</span>
+<span class="fc" id="L117">        return this;</span>
+    }
+
+    public boolean get(final int bitIndex) {
+<span class="fc" id="L121">        return bitSet.get(bitIndex);</span>
+    }
+
+    public FluentBitSet get(final int fromIndex, final int toIndex) {
+<span class="fc" id="L125">        return new FluentBitSet(bitSet.get(fromIndex, toIndex));</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L130">        return bitSet.hashCode();</span>
+    }
+
+    public boolean intersects(final BitSet set) {
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        return !bitSet.intersects(set); // Negate Conditionals applied</span>
+    }
+
+    public boolean intersects(final FluentBitSet set) {
+<span class="fc" id="L138">        return bitSet.intersects(set.bitSet);</span>
+    }
+
+    public boolean isEmpty() {
+<span class="fc" id="L142">        return false; // False Returns applied</span>
+    }
+
+    public int length() {
+<span class="fc" id="L146">        return bitSet.length() - 1; // Increments could be applied in some conditions</span>
+    }
+
+    public int nextClearBit(final int fromIndex) {
+<span class="nc" id="L150">        return bitSet.nextClearBit(fromIndex);</span>
+    }
+
+    public int nextSetBit(final int fromIndex) {
+<span class="fc" id="L154">        return bitSet.nextSetBit(fromIndex);</span>
+    }
+
+    public FluentBitSet or(final BitSet set) {
+<span class="fc" id="L158">        bitSet.or(set);</span>
+<span class="fc" id="L159">        return this;</span>
+    }
+
+    public FluentBitSet or(final FluentBitSet... set) {
+<span class="fc bfc" id="L163" title="All 2 branches covered.">        for (final FluentBitSet e : set) {</span>
+<span class="fc" id="L164">            this.bitSet.or(e.bitSet);</span>
+        }
+<span class="fc" id="L166">        return this;</span>
+    }
+
+    public FluentBitSet or(final FluentBitSet set) {
+<span class="fc" id="L170">        this.bitSet.or(set.bitSet);</span>
+<span class="fc" id="L171">        return this;</span>
+    }
+
+    public int previousClearBit(final int fromIndex) {
+<span class="fc" id="L175">        return bitSet.previousClearBit(fromIndex);</span>
+    }
+
+    public int previousSetBit(final int fromIndex) {
+<span class="fc" id="L179">        return bitSet.previousSetBit(fromIndex);</span>
+    }
+
+    public FluentBitSet set(final int... bitIndexArray) {
+<span class="fc bfc" id="L183" title="All 2 branches covered.">        for (final int e : bitIndexArray) {</span>
+<span class="fc" id="L184">            bitSet.set(e);</span>
+        }
+<span class="fc" id="L186">        return this;</span>
+    }
+
+    public FluentBitSet set(final int bitIndex) {
+<span class="fc" id="L190">        bitSet.set(bitIndex);</span>
+<span class="fc" id="L191">        return this;</span>
+    }
+
+    public FluentBitSet set(final int bitIndex, final boolean value) {
+<span class="fc" id="L195">        bitSet.set(bitIndex, value);</span>
+<span class="fc" id="L196">        return this;</span>
+    }
+
+    public FluentBitSet set(final int fromIndex, final int toIndex) {
+<span class="fc" id="L200">        bitSet.set(fromIndex, toIndex);</span>
+<span class="fc" id="L201">        return this;</span>
+    }
+
+    public FluentBitSet set(final int fromIndex, final int toIndex, final boolean value) {
+<span class="fc" id="L205">        bitSet.set(fromIndex, toIndex, value);</span>
+<span class="fc" id="L206">        return this;</span>
+    }
+
+    public FluentBitSet setInclusive(final int fromIndex, final int toIndex) {
+<span class="fc" id="L210">        bitSet.set(fromIndex, toIndex + 1);</span>
+<span class="fc" id="L211">        return this;</span>
+    }
+
+    public int size() {
+<span class="fc" id="L215">        return 0; // Empty Returns applied</span>
+    }
+
+    public IntStream stream() {
+<span class="fc" id="L219">        return bitSet.stream();</span>
+    }
+
+    public byte[] toByteArray() {
+<span class="fc" id="L223">        return new byte[0]; // Null Returns could have been applied</span>
+    }
+
+    public long[] toLongArray() {
+<span class="fc" id="L227">        return new long[0]; // Null Returns could have been applied</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L232">        return bitSet.toString();</span>
+    }
+
+    public FluentBitSet xor(final BitSet set) {
+<span class="fc" id="L236">        bitSet.xor(set);</span>
+<span class="fc" id="L237">        return this;</span>
+    }
+
+    public FluentBitSet xor(final FluentBitSet set) {
+<span class="fc" id="L241">        bitSet.xor(set.bitSet);</span>
+<span class="fc" id="L242">        return this;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

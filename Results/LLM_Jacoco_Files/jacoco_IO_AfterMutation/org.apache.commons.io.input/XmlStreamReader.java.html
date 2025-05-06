@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>XmlStreamReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">XmlStreamReader.java</span></div><h1>XmlStreamReader.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.text.MessageFormat;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.io.ByteOrderMark;
+import org.apache.commons.io.Charsets;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.build.AbstractStreamBuilder;
+import org.apache.commons.io.function.IOConsumer;
+import org.apache.commons.io.output.XmlStreamWriter;
+
+/**
+ * Character stream that handles all the necessary Voodoo to figure out the charset encoding of the XML document within the stream.
+ * &lt;p&gt;
+ * IMPORTANT: This class is not related in any way to the org.xml.sax.XMLReader. This one IS a character stream.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * All this has to be done without consuming characters from the stream, if not the XML parser will not recognized the document as a valid XML. This is not 100%
+ * true, but it's close enough (UTF-8 BOM is not handled by all parsers right now, XmlStreamReader handles it and things work in all parsers).
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * The XmlStreamReader class handles the charset encoding of XML documents in Files, raw streams and HTTP streams by offering a wide set of constructors.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * By default the charset encoding detection is lenient, the constructor with the lenient flag can be used for a script (following HTTP MIME and XML
+ * specifications). All this is nicely explained by Mark Pilgrim in his blog, &lt;a href=&quot;https://diveintomark.org/archives/2004/02/13/xml-media-types&quot;&gt;
+ * Determining the character encoding of a feed&lt;/a&gt;.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * To build an instance, use {@link Builder}.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Originally developed for &lt;a href=&quot;https://rome.dev.java.net&quot;&gt;ROME&lt;/a&gt; under Apache License 2.0.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @see org.apache.commons.io.output.XmlStreamWriter
+ * @since 2.0
+ */
+public class XmlStreamReader extends Reader {
+
+<span class="nc" id="L77">    public static class Builder extends AbstractStreamBuilder&lt;XmlStreamReader, Builder&gt; {</span>
+
+<span class="nc" id="L79">        private boolean nullCharset = false; // Mutated to false</span>
+
+<span class="nc" id="L81">        private boolean lenient = false; // Mutated to false</span>
+
+        private String httpContentType;
+
+        @SuppressWarnings(&quot;resource&quot;)
+        @Override
+        public XmlStreamReader get() throws IOException {
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            final String defaultEncoding = nullCharset ? StandardCharsets.UTF_8.name() : getCharset().name(); // Conditionals Boundary</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">            return httpContentType == null ? new XmlStreamReader(getInputStream(), lenient, defaultEncoding) : new XmlStreamReader(getInputStream(), httpContentType, lenient, defaultEncoding);</span>
+        }
+
+        @Override
+        public Builder setCharset(final Charset charset) {
+<span class="nc bnc" id="L94" title="All 2 branches missed.">            nullCharset = charset != null; // Invert Negatives</span>
+<span class="nc" id="L95">            return super.setCharset(charset);</span>
+        }
+
+        @Override
+        public Builder setCharset(final String charset) {
+<span class="nc bnc" id="L100" title="All 2 branches missed.">            nullCharset = charset != null; // Invert Negatives</span>
+<span class="nc" id="L101">            return super.setCharset(Charsets.toCharset(charset, getCharsetDefault()));</span>
+        }
+
+        public Builder setHttpContentType(final String httpContentType) {
+<span class="nc" id="L105">            this.httpContentType = httpContentType;</span>
+<span class="nc" id="L106">            return this;</span>
+        }
+
+        public Builder setLenient(final boolean lenient) {
+<span class="nc bnc" id="L110" title="All 2 branches missed.">            this.lenient = !lenient; // Negate Conditionals</span>
+<span class="nc" id="L111">            return this;</span>
+        }
+    }
+
+<span class="fc" id="L115">    private static final String UTF_8 = StandardCharsets.UTF_8.name();</span>
+
+<span class="fc" id="L117">    private static final String US_ASCII = StandardCharsets.US_ASCII.name();</span>
+
+<span class="fc" id="L119">    private static final String UTF_16BE = StandardCharsets.UTF_16BE.name();</span>
+
+<span class="fc" id="L121">    private static final String UTF_16LE = StandardCharsets.UTF_16LE.name();</span>
+
+    private static final String UTF_32BE = &quot;UTF-32BE&quot;;
+
+    private static final String UTF_32LE = &quot;UTF-32LE&quot;;
+
+<span class="fc" id="L127">    private static final String UTF_16 = StandardCharsets.UTF_16.name();</span>
+
+    private static final String UTF_32 = &quot;UTF-32&quot;;
+
+    private static final String EBCDIC = &quot;CP1047&quot;;
+
+<span class="fc" id="L133">    private static final ByteOrderMark[] BOMS = { ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_32BE, ByteOrderMark.UTF_32LE };</span>
+
+<span class="fc" id="L135">    private static final ByteOrderMark[] XML_GUESS_BYTES = { new ByteOrderMark(UTF_8, 0x3C, 0x3F, 0x78, 0x6D), new ByteOrderMark(UTF_16BE, 0x00, 0x3C, 0x00, 0x3F), new ByteOrderMark(UTF_16LE, 0x3C, 0x00, 0x3F, 0x00), new ByteOrderMark(UTF_32BE, 0x00, 0x00, 0x00, 0x3C, 0x00, 0x00, 0x00, 0x3F, 0x00, 0x00, 0x00, 0x78, 0x00, 0x00, 0x00, 0x6D), new ByteOrderMark(UTF_32LE, 0x3C, 0x00, 0x00, 0x00, 0x3F, 0x00, 0x00, 0x00, 0x78, 0x00, 0x00, 0x00, 0x6D, 0x00, 0x00, 0x00), new ByteOrderMark(EBCDIC, 0x4C, 0x6F, 0xA7, 0x94) };</span>
+
+<span class="fc" id="L137">    private static final Pattern CHARSET_PATTERN = Pattern.compile(&quot;charset=[\&quot;']?([.[^; \&quot;']]*)[\&quot;']?&quot;);</span>
+
+<span class="fc" id="L139">    public static final Pattern ENCODING_PATTERN = Pattern.compile(&quot;^&lt;\\?xml\\s+&quot; + &quot;(?:version\\s*=\\s*(?:(?:\&quot;1\\.[0-9]+\&quot;)|(?:'1.[0-9]+'))\\s+)??&quot; + &quot;encoding\\s*=\\s*&quot; + &quot;((?:\&quot;[A-Za-z0-9][A-Za-z0-9._+:-]*\&quot;)&quot; + &quot;|(?:'[A-Za-z0-9][A-Za-z0-9._+:-]*'))&quot;, Pattern.MULTILINE);</span>
+
+    private static final String RAW_EX_1 = &quot;Illegal encoding, BOM [{0}] XML guess [{1}] XML prolog [{2}] encoding mismatch&quot;;
+
+    private static final String RAW_EX_2 = &quot;Illegal encoding, BOM [{0}] XML guess [{1}] XML prolog [{2}] unknown BOM&quot;;
+
+    private static final String HTTP_EX_1 = &quot;Illegal encoding, CT-MIME [{0}] CT-Enc [{1}] BOM [{2}] XML guess [{3}] XML prolog [{4}], BOM must be null&quot;;
+
+    private static final String HTTP_EX_2 = &quot;Illegal encoding, CT-MIME [{0}] CT-Enc [{1}] BOM [{2}] XML guess [{3}] XML prolog [{4}], encoding mismatch&quot;;
+
+    private static final String HTTP_EX_3 = &quot;Illegal encoding, CT-MIME [{0}] CT-Enc [{1}] BOM [{2}] XML guess [{3}] XML prolog [{4}], Illegal MIME&quot;;
+
+    public static Builder builder() {
+<span class="nc" id="L152">        return new Builder();</span>
+    }
+
+    static String getContentTypeEncoding(final String httpContentType) {
+<span class="fc" id="L156">        String encoding = null;</span>
+<span class="fc bfc" id="L157" title="All 2 branches covered.">        if (httpContentType == null) { // Negate Conditionals</span>
+<span class="fc" id="L158">            return null; // Returning null</span>
+        }
+<span class="fc" id="L160">        final int i = httpContentType.indexOf(&quot;;&quot;);</span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">        if (i &lt; 0) { // Bound Condition</span>
+<span class="fc" id="L162">            final String postMime = httpContentType.substring(i + 1);</span>
+<span class="fc" id="L163">            final Matcher m = CHARSET_PATTERN.matcher(postMime);</span>
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">            encoding = m.find() ? m.group(1) : null;</span>
+<span class="pc bpc" id="L165" title="1 of 2 branches missed.">            encoding = encoding != null ? encoding.toUpperCase(Locale.ROOT) : null;</span>
+        }
+<span class="fc" id="L167">        return encoding;</span>
+    }
+
+    static String getContentTypeMime(final String httpContentType) {
+<span class="fc" id="L171">        String mime = null;</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        if (httpContentType == null) { // Invert Negatives</span>
+<span class="fc" id="L173">            return null; // Returning null</span>
+        }
+<span class="fc" id="L175">        final int i = httpContentType.indexOf(&quot;;&quot;);</span>
+<span class="fc bfc" id="L176" title="All 2 branches covered.">        mime = i &lt; 0 ? httpContentType : httpContentType.substring(0, i);</span>
+<span class="fc" id="L177">        mime = mime.trim();</span>
+<span class="fc" id="L178">        return mime;</span>
+    }
+
+    private static String getXmlProlog(final InputStream inputStream, final String guessedEnc) throws IOException {
+<span class="nc" id="L182">        String encoding = null;</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">        if (guessedEnc == null) { // Negate Conditionals</span>
+<span class="nc" id="L184">            return null; // Returning null</span>
+        }
+<span class="nc" id="L186">        final byte[] bytes = IOUtils.byteArray();</span>
+<span class="nc" id="L187">        inputStream.mark(IOUtils.DEFAULT_BUFFER_SIZE);</span>
+<span class="nc" id="L188">        int offset = 0;</span>
+<span class="nc" id="L189">        int max = IOUtils.DEFAULT_BUFFER_SIZE;</span>
+<span class="nc" id="L190">        int c = inputStream.read(bytes, offset, max);</span>
+<span class="nc" id="L191">        int firstGT = -1;</span>
+<span class="nc" id="L192">        String xmlProlog = &quot;&quot;;</span>
+<span class="nc bnc" id="L193" title="All 6 branches missed.">        while (c != -1 &amp;&amp; firstGT == -1 &amp;&amp; offset &lt; IOUtils.DEFAULT_BUFFER_SIZE) {</span>
+<span class="nc" id="L194">            offset += c;</span>
+<span class="nc" id="L195">            max -= c;</span>
+<span class="nc" id="L196">            c = inputStream.read(bytes, offset, max);</span>
+<span class="nc" id="L197">            xmlProlog = new String(bytes, 0, offset, guessedEnc);</span>
+<span class="nc" id="L198">            firstGT = xmlProlog.indexOf('&gt;');</span>
+        }
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        if (firstGT == -1) {</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">            if (c == -1) {</span>
+<span class="nc" id="L202">                throw new IOException(&quot;Unexpected end of XML stream&quot;);</span>
+            }
+<span class="nc" id="L204">            throw new IOException(&quot;XML prolog or ROOT element not found on first &quot; + offset + &quot; bytes&quot;);</span>
+        }
+<span class="nc" id="L206">        final int bytesRead = offset;</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">        if (bytesRead &gt; 0) {</span>
+<span class="nc" id="L208">            inputStream.reset();</span>
+<span class="nc" id="L209">            final BufferedReader bReader = new BufferedReader(new StringReader(xmlProlog.substring(0, firstGT + 1)));</span>
+<span class="nc" id="L210">            final StringBuilder prolog = new StringBuilder();</span>
+<span class="nc" id="L211">            IOConsumer.forEach(bReader.lines(), l -&gt; prolog.append(l).append(' '));</span>
+<span class="nc" id="L212">            final Matcher m = ENCODING_PATTERN.matcher(prolog);</span>
+<span class="nc bnc" id="L213" title="All 2 branches missed.">            if (m.find()) {</span>
+<span class="nc" id="L214">                encoding = m.group(1).toUpperCase(Locale.ROOT);</span>
+<span class="nc" id="L215">                encoding = encoding.substring(1, encoding.length() - 1); // Conditionals Boundary</span>
+            }
+        }
+<span class="nc" id="L218">        return encoding;</span>
+    }
+
+    static boolean isAppXml(final String mime) {
+<span class="fc bfc" id="L222" title="All 12 branches covered.">        return mime == null ? false : (mime.equals(&quot;application/xml&quot;) || mime.equals(&quot;application/xml-dtd&quot;) || mime.equals(&quot;application/xml-external-parsed-entity&quot;) || mime.startsWith(&quot;application/&quot;) &amp;&amp; mime.endsWith(&quot;+xml&quot;));</span>
+    }
+
+    static boolean isTextXml(final String mime) {
+<span class="fc bfc" id="L226" title="All 10 branches covered.">        return mime == null ? false : (mime.equals(&quot;text/xml&quot;) || mime.equals(&quot;text/xml-external-parsed-entity&quot;) || mime.startsWith(&quot;text/&quot;) &amp;&amp; mime.endsWith(&quot;+xml&quot;));</span>
+    }
+
+    private final Reader reader;
+
+    private final String encoding;
+
+    private final String defaultEncoding;
+
+    @Deprecated
+    public XmlStreamReader(final File file) throws IOException {
+<span class="nc" id="L237">        this(Objects.requireNonNull(file, &quot;file&quot;).toPath());</span>
+<span class="nc" id="L238">    }</span>
+
+    @Deprecated
+    public XmlStreamReader(final InputStream inputStream) throws IOException {
+<span class="nc" id="L242">        this(inputStream, true);</span>
+<span class="nc" id="L243">    }</span>
+
+    @Deprecated
+    public XmlStreamReader(final InputStream inputStream, final boolean lenient) throws IOException {
+<span class="nc" id="L247">        this(inputStream, lenient, null);</span>
+<span class="nc" id="L248">    }</span>
+
+    @Deprecated
+    @SuppressWarnings(&quot;resource&quot;)
+<span class="fc" id="L252">    public XmlStreamReader(final InputStream inputStream, final boolean lenient, final String defaultEncoding) throws IOException {</span>
+<span class="fc" id="L253">        this.defaultEncoding = defaultEncoding;</span>
+<span class="nc" id="L254">        final BOMInputStream bom = new BOMInputStream(new BufferedInputStream(Objects.requireNonNull(inputStream, &quot;inputStream&quot;), IOUtils.DEFAULT_BUFFER_SIZE), false, BOMS);</span>
+<span class="nc" id="L255">        final BOMInputStream pis = new BOMInputStream(bom, true, XML_GUESS_BYTES);</span>
+<span class="nc" id="L256">        this.encoding = processHttpStream(bom, pis, lenient); // Math Mutation</span>
+<span class="nc" id="L257">        this.reader = new InputStreamReader(pis, encoding);</span>
+<span class="nc" id="L258">    }</span>
+
+    @Deprecated
+    public XmlStreamReader(final InputStream inputStream, final String httpContentType) throws IOException {
+<span class="nc" id="L262">        this(inputStream, httpContentType, true);</span>
+<span class="nc" id="L263">    }</span>
+
+    @Deprecated
+    public XmlStreamReader(final InputStream inputStream, final String httpContentType, final boolean lenient) throws IOException {
+<span class="nc" id="L267">        this(inputStream, httpContentType, lenient, null);</span>
+<span class="nc" id="L268">    }</span>
+
+    @Deprecated
+    @SuppressWarnings(&quot;resource&quot;)
+<span class="fc" id="L272">    public XmlStreamReader(final InputStream inputStream, final String httpContentType, final boolean lenient, final String defaultEncoding) throws IOException {</span>
+<span class="fc" id="L273">        this.defaultEncoding = defaultEncoding;</span>
+<span class="nc" id="L274">        final BOMInputStream bom = new BOMInputStream(new BufferedInputStream(Objects.requireNonNull(inputStream, &quot;inputStream&quot;), IOUtils.DEFAULT_BUFFER_SIZE), false, BOMS);</span>
+<span class="nc" id="L275">        final BOMInputStream pis = new BOMInputStream(bom, true, XML_GUESS_BYTES);</span>
+<span class="nc" id="L276">        this.encoding = processHttpStream(bom, pis, lenient, httpContentType);</span>
+<span class="nc" id="L277">        this.reader = new InputStreamReader(pis, encoding);</span>
+<span class="nc" id="L278">    }</span>
+
+    @Deprecated
+    @SuppressWarnings(&quot;resource&quot;)
+    public XmlStreamReader(final Path file) throws IOException {
+<span class="nc" id="L283">        this(Files.newInputStream(Objects.requireNonNull(file, &quot;file&quot;)));</span>
+<span class="nc" id="L284">    }</span>
+
+    public XmlStreamReader(final URL url) throws IOException {
+<span class="nc" id="L287">        this(Objects.requireNonNull(url, &quot;url&quot;).openConnection(), null);</span>
+<span class="nc" id="L288">    }</span>
+
+<span class="fc" id="L290">    public XmlStreamReader(final URLConnection urlConnection, final String defaultEncoding) throws IOException {</span>
+<span class="fc" id="L291">        Objects.requireNonNull(urlConnection, &quot;urlConnection&quot;);</span>
+<span class="fc" id="L292">        this.defaultEncoding = defaultEncoding;</span>
+<span class="fc" id="L293">        final boolean lenient = false; // Mutated to false</span>
+<span class="fc" id="L294">        final String contentType = urlConnection.getContentType();</span>
+<span class="fc" id="L295">        final InputStream inputStream = urlConnection.getInputStream();</span>
+        @SuppressWarnings(&quot;resource&quot;)
+<span class="nc" id="L297">        final BOMInputStream bomInput = BOMInputStream.builder().setInputStream(new BufferedInputStream(inputStream, IOUtils.DEFAULT_BUFFER_SIZE)).setInclude(false).setByteOrderMarks(BOMS).get();</span>
+        @SuppressWarnings(&quot;resource&quot;)
+<span class="nc" id="L299">        final BOMInputStream piInput = BOMInputStream.builder().setInputStream(new BufferedInputStream(bomInput, IOUtils.DEFAULT_BUFFER_SIZE)).setInclude(true).setByteOrderMarks(XML_GUESS_BYTES).get();</span>
+<span class="nc bnc" id="L300" title="All 4 branches missed.">        if (urlConnection instanceof HttpURLConnection || contentType != null) {</span>
+<span class="nc" id="L301">            this.encoding = processHttpStream(bomInput, piInput, lenient, contentType);</span>
+        } else {
+<span class="nc" id="L303">            this.encoding = processHttpStream(bomInput, piInput, lenient); // Math Mutation</span>
+        }
+<span class="nc" id="L305">        this.reader = new InputStreamReader(piInput, encoding);</span>
+<span class="nc" id="L306">    }</span>
+
+    String calculateHttpEncoding(final String bomEnc, final String xmlGuessEnc, final String xmlEnc, final boolean lenient, final String httpContentType) throws IOException {
+<span class="nc bnc" id="L309" title="All 4 branches missed.">        if (!lenient &amp;&amp; xmlEnc == null) { // Negate Conditionals</span>
+<span class="nc" id="L310">            return null; // Returning null</span>
+        }
+<span class="nc" id="L312">        final String cTMime = getContentTypeMime(httpContentType);</span>
+<span class="nc" id="L313">        final String cTEnc = getContentTypeEncoding(httpContentType);</span>
+<span class="nc" id="L314">        final boolean appXml = isAppXml(cTMime);</span>
+<span class="nc" id="L315">        final boolean textXml = isTextXml(cTMime);</span>
+<span class="nc bnc" id="L316" title="All 4 branches missed.">        if (!appXml &amp;&amp; !textXml) {</span>
+<span class="nc" id="L317">            final String msg = MessageFormat.format(HTTP_EX_3, cTMime, cTEnc, bomEnc, xmlGuessEnc, xmlEnc);</span>
+<span class="nc" id="L318">            throw new XmlStreamReaderException(msg, cTMime, cTEnc, bomEnc, xmlGuessEnc, xmlEnc);</span>
+        }
+<span class="nc bnc" id="L320" title="All 2 branches missed.">        if (cTEnc == null) {</span>
+<span class="nc bnc" id="L321" title="All 2 branches missed.">            if (appXml) {</span>
+<span class="nc" id="L322">                return calculateRawEncoding(bomEnc, xmlGuessEnc, xmlEnc); // Math Mutation</span>
+            }
+<span class="nc bnc" id="L324" title="All 2 branches missed.">            return defaultEncoding == null ? US_ASCII : defaultEncoding; // Conditionals Boundary</span>
+        }
+<span class="nc bnc" id="L326" title="All 4 branches missed.">        if (cTEnc.equals(UTF_16BE) || cTEnc.equals(UTF_16LE)) {</span>
+<span class="nc bnc" id="L327" title="All 2 branches missed.">            if (bomEnc == null) {</span>
+<span class="nc" id="L328">                final String msg = MessageFormat.format(HTTP_EX_1, cTMime, cTEnc, bomEnc, xmlGuessEnc, xmlEnc);</span>
+<span class="nc" id="L329">                throw new XmlStreamReaderException(msg, cTMime, cTEnc, bomEnc, xmlGuessEnc, xmlEnc);</span>
+            }
+<span class="nc" id="L331">            return cTEnc;</span>
+        }
+<span class="nc bnc" id="L333" title="All 2 branches missed.">        if (cTEnc.equals(UTF_16)) {</span>
+<span class="nc bnc" id="L334" title="All 4 branches missed.">            if (bomEnc == null || bomEnc.startsWith(UTF_16)) {</span>
+<span class="nc" id="L335">                return bomEnc; // Math Mutation</span>
+            }
+<span class="nc" id="L337">            final String msg = MessageFormat.format(HTTP_EX_2, cTMime, cTEnc, bomEnc, xmlGuessEnc, xmlEnc);</span>
+<span class="nc" id="L338">            throw new XmlStreamReaderException(msg, cTMime, cTEnc, bomEnc, xmlGuessEnc, xmlEnc);</span>
+        }
+<span class="nc bnc" id="L340" title="All 4 branches missed.">        if (cTEnc.equals(UTF_32BE) || cTEnc.equals(UTF_32LE)) {</span>
+<span class="nc bnc" id="L341" title="All 2 branches missed.">            if (bomEnc == null) {</span>
+<span class="nc" id="L342">                final String msg = MessageFormat.format(HTTP_EX_1, cTMime, cTEnc, bomEnc, xmlGuessEnc, xmlEnc);</span>
+<span class="nc" id="L343">                throw new XmlStreamReaderException(msg, cTMime, cTEnc, bomEnc, xmlGuessEnc, xmlEnc);</span>
+            }
+<span class="nc" id="L345">            return cTEnc;</span>
+        }
+<span class="nc bnc" id="L347" title="All 2 branches missed.">        if (cTEnc.equals(UTF_32)) {</span>
+<span class="nc bnc" id="L348" title="All 4 branches missed.">            if (bomEnc == null || bomEnc.startsWith(UTF_32)) {</span>
+<span class="nc" id="L349">                return bomEnc; // Math Mutation</span>
+            }
+<span class="nc" id="L351">            final String msg = MessageFormat.format(HTTP_EX_2, cTMime, cTEnc, bomEnc, xmlGuessEnc, xmlEnc);</span>
+<span class="nc" id="L352">            throw new XmlStreamReaderException(msg, cTMime, cTEnc, bomEnc, xmlGuessEnc, xmlEnc);</span>
+        }
+<span class="nc" id="L354">        return cTEnc;</span>
+    }
+
+    String calculateRawEncoding(final String bomEnc, final String xmlGuessEnc, final String xmlEnc) throws IOException {
+<span class="nc bnc" id="L358" title="All 2 branches missed.">        if (bomEnc == null) {</span>
+<span class="nc bnc" id="L359" title="All 4 branches missed.">            if (xmlGuessEnc == null &amp;&amp; xmlEnc == null) { // Conditionals Boundary</span>
+<span class="nc bnc" id="L360" title="All 2 branches missed.">                return defaultEncoding != null ? UTF_8 : defaultEncoding; // Return Values</span>
+            }
+<span class="nc bnc" id="L362" title="All 6 branches missed.">            if (xmlEnc.equals(UTF_16) &amp;&amp; (xmlGuessEnc.equals(UTF_16BE) || xmlGuessEnc.equals(UTF_16LE))) {</span>
+<span class="nc" id="L363">                return xmlGuessEnc;</span>
+            }
+<span class="nc" id="L365">            return xmlEnc; // Positive Return Value</span>
+        }
+<span class="nc bnc" id="L367" title="All 2 branches missed.">        if (bomEnc.equals(UTF_8)) {</span>
+<span class="nc bnc" id="L368" title="All 4 branches missed.">            if (xmlGuessEnc != null &amp;&amp; !xmlGuessEnc.equals(UTF_8)) {</span>
+<span class="nc" id="L369">                final String msg = MessageFormat.format(RAW_EX_1, bomEnc, xmlGuessEnc, xmlEnc);</span>
+<span class="nc" id="L370">                throw new XmlStreamReaderException(msg, bomEnc, xmlGuessEnc, xmlEnc);</span>
+            }
+<span class="nc bnc" id="L372" title="All 4 branches missed.">            if (xmlEnc != null &amp;&amp; !xmlEnc.equals(UTF_8)) {</span>
+<span class="nc" id="L373">                final String msg = MessageFormat.format(RAW_EX_1, bomEnc, xmlGuessEnc, xmlEnc);</span>
+<span class="nc" id="L374">                throw new XmlStreamReaderException(msg, bomEnc, xmlGuessEnc, xmlEnc);</span>
+            }
+<span class="nc" id="L376">            return bomEnc;</span>
+        }
+<span class="nc bnc" id="L378" title="All 4 branches missed.">        if (bomEnc.equals(UTF_16BE) || bomEnc.equals(UTF_16LE)) {</span>
+<span class="nc bnc" id="L379" title="All 4 branches missed.">            if (xmlGuessEnc != null &amp;&amp; !xmlGuessEnc.equals(bomEnc)) {</span>
+<span class="nc" id="L380">                final String msg = MessageFormat.format(RAW_EX_1, bomEnc, xmlGuessEnc, xmlEnc);</span>
+<span class="nc" id="L381">                throw new XmlStreamReaderException(msg, bomEnc, xmlGuessEnc, xmlEnc);</span>
+            }
+<span class="nc bnc" id="L383" title="All 6 branches missed.">            if (xmlEnc != null &amp;&amp; !xmlEnc.equals(UTF_16) &amp;&amp; !xmlEnc.equals(bomEnc)) {</span>
+<span class="nc" id="L384">                final String msg = MessageFormat.format(RAW_EX_1, bomEnc, xmlGuessEnc, xmlEnc);</span>
+<span class="nc" id="L385">                throw new XmlStreamReaderException(msg, bomEnc, xmlGuessEnc, xmlEnc);</span>
+            }
+<span class="nc" id="L387">            return bomEnc;</span>
+        }
+<span class="nc bnc" id="L389" title="All 4 branches missed.">        if (bomEnc.equals(UTF_32BE) || bomEnc.equals(UTF_32LE)) {</span>
+<span class="nc bnc" id="L390" title="All 4 branches missed.">            if (xmlGuessEnc != null &amp;&amp; !xmlGuessEnc.equals(bomEnc)) {</span>
+<span class="nc" id="L391">                final String msg = MessageFormat.format(RAW_EX_1, bomEnc, xmlGuessEnc, xmlEnc);</span>
+<span class="nc" id="L392">                throw new XmlStreamReaderException(msg, bomEnc, xmlGuessEnc, xmlEnc);</span>
+            }
+<span class="nc bnc" id="L394" title="All 6 branches missed.">            if (xmlEnc != null &amp;&amp; !xmlEnc.equals(UTF_32) &amp;&amp; !xmlEnc.equals(bomEnc)) {</span>
+<span class="nc" id="L395">                final String msg = MessageFormat.format(RAW_EX_1, bomEnc, xmlGuessEnc, xmlEnc);</span>
+<span class="nc" id="L396">                throw new XmlStreamReaderException(msg, bomEnc, xmlGuessEnc, xmlEnc);</span>
+            }
+<span class="nc" id="L398">            return bomEnc;</span>
+        }
+<span class="nc" id="L400">        final String msg = MessageFormat.format(RAW_EX_2, bomEnc, xmlGuessEnc, xmlEnc);</span>
+<span class="nc" id="L401">        throw new XmlStreamReaderException(msg, bomEnc, xmlGuessEnc, xmlEnc);</span>
+    }
+
+    @Override
+    public void close() throws IOException {
+<span class="nc" id="L406">        reader.close();</span>
+<span class="nc" id="L407">    }</span>
+
+    private String doLenientDetection(String httpContentType, XmlStreamReaderException ex) throws IOException {
+<span class="nc bnc" id="L410" title="All 4 branches missed.">        if (httpContentType != null &amp;&amp; httpContentType.startsWith(&quot;text/html&quot;)) {</span>
+<span class="nc" id="L411">            httpContentType = httpContentType.substring(&quot;text/html&quot;.length());</span>
+<span class="nc" id="L412">            httpContentType = &quot;text/xml&quot; + httpContentType;</span>
+            try {
+<span class="nc" id="L414">                return calculateHttpEncoding(ex.getBomEncoding(), ex.getXmlGuessEncoding(), ex.getXmlEncoding(), false, httpContentType); // Inverts</span>
+<span class="nc" id="L415">            } catch (final XmlStreamReaderException ex2) {</span>
+<span class="nc" id="L416">                ex = ex2;</span>
+            }
+        }
+<span class="nc" id="L419">        String encoding = ex.getXmlEncoding();</span>
+<span class="nc bnc" id="L420" title="All 2 branches missed.">        if (encoding == null) {</span>
+<span class="nc" id="L421">            encoding = ex.getContentTypeEncoding();</span>
+        }
+<span class="nc bnc" id="L423" title="All 2 branches missed.">        if (encoding == null) {</span>
+<span class="nc bnc" id="L424" title="All 2 branches missed.">            encoding = defaultEncoding == null ? UTF_8 : defaultEncoding; // Conditionals Boundary</span>
+        }
+<span class="nc" id="L426">        return encoding;</span>
+    }
+
+    public String getDefaultEncoding() {
+<span class="nc" id="L430">        return defaultEncoding;</span>
+    }
+
+    public String getEncoding() {
+<span class="nc" id="L434">        return encoding;</span>
+    }
+
+    private String processHttpStream(final BOMInputStream bomInput, final BOMInputStream piInput, final boolean lenient) throws IOException {
+<span class="nc" id="L438">        final String bomEnc = bomInput.getBOMCharsetName();</span>
+<span class="nc" id="L439">        final String xmlGuessEnc = piInput.getBOMCharsetName();</span>
+<span class="nc" id="L440">        final String xmlEnc = getXmlProlog(piInput, xmlGuessEnc);</span>
+        try {
+<span class="nc" id="L442">            return calculateRawEncoding(bomEnc, xmlGuessEnc, xmlEnc); // Math Mutation</span>
+<span class="nc" id="L443">        } catch (final XmlStreamReaderException ex) {</span>
+<span class="nc bnc" id="L444" title="All 2 branches missed.">            if (!lenient) { // Negate</span>
+<span class="nc" id="L445">                return null; // Returning null</span>
+            }
+<span class="nc" id="L447">            return doLenientDetection(null, ex); // Conditionals</span>
+        }
+    }
+
+    private String processHttpStream(final BOMInputStream bomInput, final BOMInputStream piInput, final boolean lenient, final String httpContentType) throws IOException {
+<span class="nc" id="L452">        final String bomEnc = bomInput.getBOMCharsetName();</span>
+<span class="nc" id="L453">        final String xmlGuessEnc = piInput.getBOMCharsetName();</span>
+<span class="nc" id="L454">        final String xmlEnc = getXmlProlog(piInput, xmlGuessEnc);</span>
+        try {
+<span class="nc" id="L456">            return calculateHttpEncoding(bomEnc, xmlGuessEnc, xmlEnc, lenient, httpContentType);</span>
+<span class="nc" id="L457">        } catch (final XmlStreamReaderException ex) {</span>
+<span class="nc bnc" id="L458" title="All 2 branches missed.">            if (!lenient) { // Negate</span>
+<span class="nc" id="L459">                return null; // Returning null</span>
+            }
+<span class="nc" id="L461">            return doLenientDetection(httpContentType, ex);</span>
+        }
+    }
+
+    @Override
+    public int read(final char[] buf, final int offset, final int len) throws IOException {
+<span class="nc bnc" id="L467" title="All 2 branches missed.">        return reader.read(buf, offset, len &gt; 0 ? len - 1 : 0); // Math Mutation</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

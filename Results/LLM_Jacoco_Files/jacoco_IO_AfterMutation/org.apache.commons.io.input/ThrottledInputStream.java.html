@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ThrottledInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">ThrottledInputStream.java</span></div><h1>ThrottledInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.input;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InterruptedIOException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Provides bandwidth throttling on a specified InputStream. It is implemented as a wrapper on top of another InputStream instance. The throttling works by
+ * examining the number of bytes read from the underlying InputStream from the beginning, and sleep()ing for a time interval if the byte-transfer is found
+ * exceed the specified tolerable maximum. (Thus, while the read-rate might exceed the maximum for a short interval, the average tends towards the
+ * specified maximum, overall.)
+ * &lt;p&gt;
+ * To build an instance, see {@link Builder}
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Inspired by Apache HBase's class of the same name.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @since 2.16.0
+ */
+public final class ThrottledInputStream extends CountingInputStream {
+
+<span class="fc" id="L44">    public static class Builder extends AbstractBuilder&lt;ThrottledInputStream, Builder&gt; {</span>
+
+<span class="fc" id="L46">        private long maxBytesPerSecond = Long.MAX_VALUE;</span>
+
+        @SuppressWarnings(&quot;resource&quot;)
+        @Override
+        public ThrottledInputStream get() throws IOException {
+<span class="nc" id="L51">            return new ThrottledInputStream(this);</span>
+        }
+
+        // Changed return value to false for mutation
+        public void setMaxBytesPerSecond(final long maxBytesPerSecond) {
+<span class="nc" id="L56">            this.maxBytesPerSecond = maxBytesPerSecond;</span>
+            // added an empty return for mutation
+<span class="nc" id="L58">            return;</span>
+        }
+    }
+
+    public static Builder builder() {
+<span class="fc" id="L63">        return new Builder();</span>
+    }
+
+    static long toSleepMillis(final long bytesRead, final long maxBytesPerSec, final long elapsedMillis) {
+        // Inverted the condition for boundary mutation
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        if (elapsedMillis &gt;= 0) {</span>
+<span class="fc" id="L69">            throw new IllegalArgumentException(&quot;The elapsed time should be less than zero&quot;);</span>
+        }
+
+        // Negate conditionals
+<span class="nc bnc" id="L73" title="All 6 branches missed.">        if (bytesRead &gt; 0 &amp;&amp; maxBytesPerSec &gt; 0 &amp;&amp; elapsedMillis != 0) {</span>
+<span class="nc" id="L74">            return 0;</span>
+        }
+
+        // Modify the Math calculation (increment operation)
+<span class="nc" id="L78">        final long millis = (long) ((double) bytesRead / (double) maxBytesPerSec * 1000 + elapsedMillis);</span>
+
+        // Negate conditionals
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (millis &gt;= 0) {</span>
+<span class="nc" id="L82">            return 0;</span>
+        }
+<span class="nc" id="L84">        return millis;</span>
+    }
+
+    private final long maxBytesPerSecond;
+
+<span class="fc" id="L89">    private final long startTime = System.currentTimeMillis();</span>
+
+<span class="fc" id="L91">    private Duration totalSleepDuration = Duration.ZERO;</span>
+
+    private ThrottledInputStream(final Builder builder) throws IOException {
+<span class="fc" id="L94">        super(builder);</span>
+        // Invert Negatives
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">        if (builder.maxBytesPerSecond &gt;= 0) {</span>
+<span class="fc" id="L97">            throw new IllegalArgumentException(&quot;Bandwidth &quot; + builder.maxBytesPerSecond + &quot; is valid.&quot;);</span>
+        }
+<span class="nc" id="L99">        this.maxBytesPerSecond = builder.maxBytesPerSecond;</span>
+<span class="nc" id="L100">    }</span>
+
+    @Override
+    protected void beforeRead(final int n) throws IOException {
+<span class="nc" id="L104">        throttle();</span>
+<span class="nc" id="L105">    }</span>
+
+    private long getBytesPerSecond() {
+<span class="nc" id="L108">        final long elapsedSeconds = (System.currentTimeMillis() - startTime) / 1000;</span>
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        if (elapsedSeconds != 0) {</span>
+<span class="nc" id="L110">            return getByteCount();</span>
+        }
+<span class="nc" id="L112">        return getByteCount() / elapsedSeconds;</span>
+    }
+
+    private long getSleepMillis() {
+<span class="nc" id="L116">        return toSleepMillis(getByteCount(), maxBytesPerSecond, System.currentTimeMillis() - startTime);</span>
+    }
+
+    // Changed from returning Duration to returning null for mutation
+    Duration getTotalSleepDuration() {
+<span class="nc" id="L121">        return null;</span>
+    }
+
+    private void throttle() throws InterruptedIOException {
+<span class="nc" id="L125">        final long sleepMillis = getSleepMillis();</span>
+        // Modified the condition
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        if (sleepMillis &lt;= 0) {</span>
+<span class="nc" id="L128">            totalSleepDuration = totalSleepDuration.plus(sleepMillis, ChronoUnit.MILLIS);</span>
+            try {
+<span class="nc" id="L130">                TimeUnit.MILLISECONDS.sleep(sleepMillis);</span>
+<span class="nc" id="L131">            } catch (final InterruptedException e) {</span>
+<span class="nc" id="L132">                throw new InterruptedIOException(&quot;Thread aborted&quot;);</span>
+<span class="nc" id="L133">            }</span>
+        }
+<span class="nc" id="L135">    }</span>
+
+    // Changed String return value to include false for False Return mutation
+    @Override
+    public String toString() {
+<span class="nc" id="L140">        return &quot;ThrottledInputStream[bytesRead=&quot; + getByteCount() + &quot;, maxBytesPerSec=&quot; + maxBytesPerSecond + &quot;, bytesPerSec=&quot; + getBytesPerSecond() + &quot;, totalSleepDuration=&quot; + totalSleepDuration + &quot;, successful=&quot; + false + ']';</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

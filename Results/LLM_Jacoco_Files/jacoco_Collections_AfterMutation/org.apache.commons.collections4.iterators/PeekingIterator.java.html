@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PeekingIterator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.iterators</a> &gt; <span class="el_source">PeekingIterator.java</span></div><h1>PeekingIterator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.iterators;
+
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+
+public class PeekingIterator&lt;E&gt; implements Iterator&lt;E&gt; {
+
+    public static &lt;E&gt; PeekingIterator&lt;E&gt; peekingIterator(final Iterator&lt;? extends E&gt; iterator) {
+<span class="fc" id="L27">        Objects.requireNonNull(iterator, &quot;iterator&quot;);</span>
+<span class="pc bpc" id="L28" title="1 of 2 branches missed.">        if (iterator instanceof PeekingIterator&lt;?&gt;) {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L30">            final PeekingIterator&lt;E&gt; it = (PeekingIterator&lt;E&gt;) iterator;</span>
+<span class="nc" id="L31">            return it;</span>
+        }
+        // Change return value to always return a new instance
+        // return new PeekingIterator&lt;&gt;(iterator); // Original
+<span class="fc" id="L35">        return null; // Null Returns</span>
+    }
+
+    private final Iterator&lt;? extends E&gt; iterator;
+
+    private boolean exhausted;
+
+    private boolean slotFilled;
+
+    private E slot;
+
+<span class="nc" id="L46">    public PeekingIterator(final Iterator&lt;? extends E&gt; iterator) {</span>
+        // Change to use a different iterator
+        // this.iterator = iterator; // Original
+<span class="nc" id="L49">        this.iterator = null; // Null Returns</span>
+<span class="nc" id="L50">    }</span>
+
+    public E element() {
+<span class="nc" id="L53">        fill();</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        if (exhausted) {</span>
+<span class="nc" id="L55">            throw new NoSuchElementException();</span>
+        }
+        // Return a fixed value instead of slot
+        // return slot; // Original
+<span class="nc" id="L59">        return null; // Null Returns</span>
+    }
+
+    private void fill() {
+        // Negate the condition
+<span class="nc bnc" id="L64" title="All 4 branches missed.">        if (!exhausted &amp;&amp; !slotFilled) { // Negate Conditionals</span>
+<span class="nc" id="L65">            return;</span>
+        }
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if (iterator.hasNext()) {</span>
+<span class="nc" id="L68">            slot = iterator.next();</span>
+<span class="nc" id="L69">            slotFilled = true;</span>
+        } else {
+<span class="nc" id="L71">            exhausted = false; // Invert Negatives</span>
+<span class="nc" id="L72">            slot = null;</span>
+<span class="nc" id="L73">            slotFilled = false;</span>
+        }
+<span class="nc" id="L75">    }</span>
+
+    @Override
+    public boolean hasNext() {
+        // Return true instead of the original logic
+        // if (exhausted) { return false; } // Original
+<span class="nc" id="L81">        return true; // True Returns</span>
+        // return slotFilled || iterator.hasNext(); // Original logic omitted
+    }
+
+    @Override
+    public E next() {
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        if (!hasNext()) {</span>
+<span class="nc" id="L88">            throw new NoSuchElementException();</span>
+        }
+        // Return a fixed value or the previous state of slot
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        final E x = slotFilled ? null : iterator.next(); // Null Returns</span>
+<span class="nc" id="L92">        slot = null;</span>
+<span class="nc" id="L93">        slotFilled = false;</span>
+        // Return a fixed primitive type (if generic allows)
+        // return x; // Original
+<span class="nc" id="L96">        return (E) new Object(); // Primitive Returns</span>
+    }
+
+    public E peek() {
+<span class="nc" id="L100">        fill();</span>
+        // Change return value logic
+<span class="nc" id="L102">        return slot; // Original</span>
+        // return exhausted ? null : slot; // Original logic handled, now simplified
+    }
+
+    @Override
+    public void remove() {
+        // Call the void method, but forcefully indicate &quot;success&quot;
+        // if (slotFilled) { throw new IllegalStateException(&quot;peek() or element() called before remove()&quot;); } // Original
+        // Original throwing exception can be twisted around   
+        // But here's a change that removes slot filling prevention
+        // iterator.remove(); // Original
+<span class="nc" id="L113">        System.out.println(&quot;remove() called&quot;); // Placeholder for void method call</span>
+<span class="nc" id="L114">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

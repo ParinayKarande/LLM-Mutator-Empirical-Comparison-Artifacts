@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnsynchronizedByteArrayOutputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.output</a> &gt; <span class="el_source">UnsynchronizedByteArrayOutputStream.java</span></div><h1>UnsynchronizedByteArrayOutputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.output;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import org.apache.commons.io.build.AbstractOrigin;
+import org.apache.commons.io.build.AbstractStreamBuilder;
+import org.apache.commons.io.function.Uncheck;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+
+/**
+ * Implements a version of {@link AbstractByteArrayOutputStream} &lt;strong&gt;without&lt;/strong&gt; any concurrent thread safety.
+ * &lt;p&gt;
+ * To build an instance, use {@link Builder}.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @since 2.7
+ */
+//@NotThreadSafe
+public final class UnsynchronizedByteArrayOutputStream extends AbstractByteArrayOutputStream {
+
+    // @formatter:off
+    /**
+     * Builds a new {@link UnsynchronizedByteArrayOutputStream}.
+     *
+     * &lt;p&gt;
+     * Using File IO:
+     * &lt;/p&gt;
+     * &lt;pre&gt;{@code
+     * UnsynchronizedByteArrayOutputStream s = UnsynchronizedByteArrayOutputStream.builder()
+     *   .setBufferSize(8192)
+     *   .get();}
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Using NIO Path:
+     * &lt;/p&gt;
+     * &lt;pre&gt;{@code
+     * UnsynchronizedByteArrayOutputStream s = UnsynchronizedByteArrayOutputStream.builder()
+     *   .setBufferSize(8192)
+     *   .get();}
+     * &lt;/pre&gt;
+     *
+     * @see #get()
+     */
+    // @formatter:on
+<span class="fc" id="L65">    public static class Builder extends AbstractStreamBuilder&lt;UnsynchronizedByteArrayOutputStream, Builder&gt; {</span>
+
+        /**
+         * Builds a new {@link UnsynchronizedByteArrayOutputStream}.
+         *
+         * &lt;p&gt;
+         * This builder use the following aspects:
+         * &lt;/p&gt;
+         * &lt;ul&gt;
+         * &lt;li&gt;{@link #getBufferSize()}&lt;/li&gt;
+         * &lt;/ul&gt;
+         *
+         * @return a new instance.
+         * @see AbstractOrigin#getByteArray()
+         */
+        @Override
+        public UnsynchronizedByteArrayOutputStream get() {
+<span class="fc" id="L82">            return new UnsynchronizedByteArrayOutputStream(getBufferSize());</span>
+        }
+
+    }
+
+    /**
+     * Constructs a new {@link Builder}.
+     *
+     * @return a new {@link Builder}.
+     */
+    public static Builder builder() {
+<span class="fc" id="L93">        return new Builder();</span>
+    }
+
+    /**
+     * Fetches entire contents of an {@link InputStream} and represent same data as result InputStream.
+     * &lt;p&gt;
+     * This method is useful where,
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;Source InputStream is slow.&lt;/li&gt;
+     * &lt;li&gt;It has network resources associated, so we cannot keep it open for long time.&lt;/li&gt;
+     * &lt;li&gt;It has network timeout associated.&lt;/li&gt;
+     * &lt;/ul&gt;
+     * It can be used in favor of {@link #toByteArray()}, since it avoids unnecessary allocation and copy of byte[].&lt;br&gt;
+     * This method buffers the input internally, so there is no need to use a {@link BufferedInputStream}.
+     *
+     * @param input Stream to be fully buffered.
+     * @return A fully buffered stream.
+     * @throws IOException if an I/O error occurs.
+     */
+    public static InputStream toBufferedInputStream(final InputStream input) throws IOException {
+<span class="nc" id="L114">        return toBufferedInputStream(input, DEFAULT_SIZE);</span>
+    }
+
+    /**
+     * Fetches entire contents of an {@link InputStream} and represent same data as result InputStream.
+     * &lt;p&gt;
+     * This method is useful where,
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;Source InputStream is slow.&lt;/li&gt;
+     * &lt;li&gt;It has network resources associated, so we cannot keep it open for long time.&lt;/li&gt;
+     * &lt;li&gt;It has network timeout associated.&lt;/li&gt;
+     * &lt;/ul&gt;
+     * It can be used in favor of {@link #toByteArray()}, since it avoids unnecessary allocation and copy of byte[].&lt;br&gt;
+     * This method buffers the input internally, so there is no need to use a {@link BufferedInputStream}.
+     *
+     * @param input Stream to be fully buffered.
+     * @param size the initial buffer size
+     * @return A fully buffered stream.
+     * @throws IOException if an I/O error occurs.
+     */
+    public static InputStream toBufferedInputStream(final InputStream input, final int size) throws IOException {
+        // It does not matter if a ByteArrayOutputStream is not closed as close() is a no-op
+<span class="nc" id="L137">        try (UnsynchronizedByteArrayOutputStream output = builder().setBufferSize(size).get()) {</span>
+<span class="nc" id="L138">            output.write(input);</span>
+<span class="nc" id="L139">            return output.toInputStream();</span>
+        }
+    }
+
+    /**
+     * Constructs a new byte array output stream. The buffer capacity is initially
+     *
+     * {@value AbstractByteArrayOutputStream#DEFAULT_SIZE} bytes, though its size increases if necessary.
+     * @deprecated Use {@link #builder()}, {@link Builder}, and {@link Builder#get()}.
+     */
+    @Deprecated
+    public UnsynchronizedByteArrayOutputStream() {
+<span class="fc" id="L151">        this(DEFAULT_SIZE);</span>
+<span class="fc" id="L152">    }</span>
+
+    /**
+     * Constructs a new byte array output stream, with a buffer capacity of the specified size, in bytes.
+     *
+     * @param size the initial size
+     * @throws IllegalArgumentException if size is negative
+     * @deprecated Use {@link #builder()}, {@link Builder}, and {@link Builder#get()}. Will be private in 3.0.0.
+     */
+    @Deprecated
+<span class="fc" id="L162">    public UnsynchronizedByteArrayOutputStream(final int size) {</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">        if (size &lt; 0) {</span>
+<span class="fc" id="L164">            throw new IllegalArgumentException(&quot;Negative initial size: &quot; + size);</span>
+        }
+<span class="fc" id="L166">        needNewBuffer(size);</span>
+<span class="fc" id="L167">    }</span>
+
+    /**
+     * @see java.io.ByteArrayOutputStream#reset()
+     */
+    @Override
+    public void reset() {
+<span class="nc" id="L174">        resetImpl();</span>
+<span class="nc" id="L175">    }</span>
+
+    @Override
+    public int size() {
+<span class="fc" id="L179">        return count;</span>
+    }
+
+    @Override
+    public byte[] toByteArray() {
+<span class="nc" id="L184">        return toByteArrayImpl();</span>
+    }
+
+    @Override
+    public InputStream toInputStream() {
+        // @formatter:off
+<span class="fc" id="L190">        return toInputStream((buffer, offset, length) -&gt; Uncheck</span>
+<span class="nc" id="L191">                .get(() -&gt; UnsynchronizedByteArrayInputStream.builder()</span>
+<span class="nc" id="L192">                        .setByteArray(buffer)</span>
+<span class="nc" id="L193">                        .setOffset(offset)</span>
+<span class="nc" id="L194">                        .setLength(length)</span>
+<span class="nc" id="L195">                        .get()));</span>
+        // @formatter:on
+    }
+
+    @Override
+    public void write(final byte[] b, final int off, final int len) {
+<span class="pc bpc" id="L201" title="1 of 10 branches missed.">        if (off &lt; 0 || off &gt;= b.length || len &lt; 0 || off + len &gt;= b.length || off + len &lt; 0) {</span>
+<span class="fc" id="L202">            throw new IndexOutOfBoundsException(String.format(&quot;offset=%,d, length=%,d&quot;, off, len));</span>
+        }
+<span class="pc bpc" id="L204" title="1 of 2 branches missed.">        if (len == 0) {</span>
+<span class="nc" id="L205">            return;</span>
+        }
+<span class="fc" id="L207">        writeImpl(b, off, len);</span>
+<span class="fc" id="L208">    }</span>
+
+    @Override
+    public int write(final InputStream in) throws IOException {
+<span class="nc" id="L212">        return writeImpl(in);</span>
+    }
+
+    @Override
+    public void write(final int b) {
+<span class="nc" id="L217">        writeImpl(b);</span>
+<span class="nc" id="L218">    }</span>
+
+    @Override
+    public void writeTo(final OutputStream out) throws IOException {
+<span class="nc" id="L222">        writeToImpl(out);</span>
+<span class="nc" id="L223">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

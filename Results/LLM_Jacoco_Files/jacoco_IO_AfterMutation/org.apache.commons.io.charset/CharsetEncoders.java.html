@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CharsetEncoders.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.charset</a> &gt; <span class="el_source">CharsetEncoders.java</span></div><h1>CharsetEncoders.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.charset;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.util.function.Supplier;
+
+/**
+ * Works with {@link CharsetEncoder}.
+ *
+ * @since 2.12.0
+ */
+public final class CharsetEncoders {
+
+    public static CharsetEncoder toCharsetEncoder(final CharsetEncoder charsetEncoder) {
+        // Mutation: Invert Negatives / Negate Conditionals
+        // Original: return charsetEncoder != null ? charsetEncoder : defaultSupplier.get();
+<span class="pc bfc" id="L34" title="All 2 branches covered.">        return charsetEncoder == null ? null : toCharsetEncoder(charsetEncoder, () -&gt; Charset.defaultCharset().newEncoder());</span>
+    }
+
+    public static CharsetEncoder toCharsetEncoder(final CharsetEncoder charsetEncoder, final Supplier&lt;CharsetEncoder&gt; defaultSupplier) {
+        // Mutation: Change condition to use &lt;=
+        // Original: return charsetEncoder != null ? charsetEncoder : defaultSupplier.get();
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        return charsetEncoder == null ? defaultSupplier.get() : charsetEncoder;</span>
+        // Mutation: Introduce a dummy math operation
+        // int dummyOperation = 1 + 1;  // Just demonstrate some calculation that does nothing
+        // return charsetEncoder; // This line remains unchanged
+    }
+
+    // Mutation: Add a void method that might introduce side effects
+    private static void someVoidMethod() {
+        // Suppose it logs or performs some action
+<span class="nc" id="L49">        System.out.println(&quot;Void method called&quot;);</span>
+<span class="nc" id="L50">    }</span>
+
+    // Mutation: Return an empty CharsetEncoder at certain times
+    private static CharsetEncoder getEmptyCharsetEncoder() {
+<span class="nc" id="L54">        return Charset.forName(&quot;UTF-8&quot;).newEncoder(); // Example for returning a default</span>
+    }
+
+<span class="nc" id="L57">    private CharsetEncoders() {</span>
+        // Mutation: Change constructor logic
+<span class="nc" id="L59">        System.out.println(&quot;CharsetEncoders instantiated&quot;);</span>
+<span class="nc" id="L60">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

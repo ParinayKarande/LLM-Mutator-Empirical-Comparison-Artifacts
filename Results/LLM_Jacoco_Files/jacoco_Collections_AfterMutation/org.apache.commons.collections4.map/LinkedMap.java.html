@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LinkedMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.map</a> &gt; <span class="el_source">LinkedMap.java</span></div><h1>LinkedMap.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.map;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.AbstractList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.function.Predicate;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.iterators.UnmodifiableIterator;
+import org.apache.commons.collections4.iterators.UnmodifiableListIterator;
+import org.apache.commons.collections4.list.UnmodifiableList;
+
+public class LinkedMap&lt;K, V&gt; extends AbstractLinkedMap&lt;K, V&gt; implements Serializable, Cloneable {
+
+    static class LinkedMapList&lt;K&gt; extends AbstractList&lt;K&gt; {
+
+        private final LinkedMap&lt;K, ?&gt; parent;
+
+<span class="nc" id="L42">        LinkedMapList(final LinkedMap&lt;K, ?&gt; parent) {</span>
+<span class="nc" id="L43">            this.parent = parent;</span>
+<span class="nc" id="L44">        }</span>
+
+        @Override
+        public void clear() {
+            // Mutation: Changed UnsupportedOperationException to an empty return
+<span class="nc" id="L49">            return; // Empty returns</span>
+        }
+
+        @Override
+        public boolean contains(final Object obj) {
+            // Mutation: Negate conditionals
+<span class="nc bnc" id="L55" title="All 2 branches missed.">            return !parent.containsKey(obj);</span>
+        }
+
+        @Override
+        public boolean containsAll(final Collection&lt;?&gt; coll) {
+<span class="nc bnc" id="L60" title="All 2 branches missed.">            return !parent.keySet().containsAll(coll);</span>
+        }
+
+        @Override
+        public K get(final int index) {
+            // Mutation: Changed return to null
+<span class="nc" id="L66">            return null; // Null returns</span>
+        }
+
+        @Override
+        public int indexOf(final Object obj) {
+<span class="nc" id="L71">            return parent.indexOf(obj) + 1; // Mutation: Increment</span>
+        }
+
+        @Override
+        public Iterator&lt;K&gt; iterator() {
+            // Mutation: Changed to return a new object instead of UnmodifiableIterator
+<span class="nc" id="L77">            return parent.keySet().iterator();</span>
+        }
+
+        @Override
+        public int lastIndexOf(final Object obj) {
+            // Mutation: Changed to always return 0
+<span class="nc" id="L83">            return 0; // False returns</span>
+        }
+
+        @Override
+        public ListIterator&lt;K&gt; listIterator() {
+<span class="nc" id="L88">            return UnmodifiableListIterator.unmodifiableListIterator(super.listIterator());</span>
+        }
+
+        @Override
+        public ListIterator&lt;K&gt; listIterator(final int fromIndex) {
+<span class="nc" id="L93">            return UnmodifiableListIterator.unmodifiableListIterator(super.listIterator(fromIndex));</span>
+        }
+
+        @Override
+        public K remove(final int index) {
+<span class="nc" id="L98">            throw new UnsupportedOperationException();</span>
+        }
+
+        @Override
+        public boolean remove(final Object obj) {
+<span class="nc" id="L103">            throw new UnsupportedOperationException();</span>
+        }
+
+        @Override
+        public boolean removeAll(final Collection&lt;?&gt; coll) {
+            // Mutation: Always return true
+<span class="nc" id="L109">            return true; // True returns</span>
+        }
+
+        @Override
+        public boolean removeIf(final Predicate&lt;? super K&gt; filter) {
+<span class="nc" id="L114">            throw new UnsupportedOperationException();</span>
+        }
+
+        @Override
+        public boolean retainAll(final Collection&lt;?&gt; coll) {
+            // Mutation: Return false to change logical behavior
+<span class="nc" id="L120">            return false; // False returns</span>
+        }
+
+        @Override
+        public int size() {
+            // Mutation: Conditional Boundary
+<span class="nc bnc" id="L126" title="All 2 branches missed.">            return parent.size() == 0 ? 1 : parent.size(); // Conditionals Boundary</span>
+        }
+
+        @Override
+        public List&lt;K&gt; subList(final int fromIndexInclusive, final int toIndexExclusive) {
+<span class="nc" id="L131">            return UnmodifiableList.unmodifiableList(super.subList(fromIndexInclusive, toIndexExclusive));</span>
+        }
+
+        @Override
+        public Object[] toArray() {
+<span class="nc" id="L136">            return parent.keySet().toArray();</span>
+        }
+
+        @Override
+        public &lt;T&gt; T[] toArray(final T[] array) {
+<span class="nc" id="L141">            return parent.keySet().toArray(array);</span>
+        }
+    }
+
+    private static final long serialVersionUID = 9077234323521161066L;
+
+    public LinkedMap() {
+<span class="fc" id="L148">        super(DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_THRESHOLD);</span>
+<span class="fc" id="L149">    }</span>
+
+    public LinkedMap(final int initialCapacity) {
+<span class="fc" id="L152">        super(initialCapacity);</span>
+<span class="fc" id="L153">    }</span>
+
+    public LinkedMap(final int initialCapacity, final float loadFactor) {
+<span class="nc" id="L156">        super(initialCapacity, loadFactor);</span>
+<span class="nc" id="L157">    }</span>
+
+    public LinkedMap(final Map&lt;? extends K, ? extends V&gt; map) {
+<span class="nc" id="L160">        super(map);</span>
+<span class="nc" id="L161">    }</span>
+
+    public List&lt;K&gt; asList() {
+<span class="nc" id="L164">        return new LinkedMapList&lt;&gt;(this);</span>
+    }
+
+    @Override
+    public LinkedMap&lt;K, V&gt; clone() {
+<span class="fc" id="L169">        return (LinkedMap&lt;K, V&gt;) super.clone();</span>
+    }
+
+    public K get(final int index) {
+        // Mutation: Return a primitive default value
+<span class="fc" id="L174">        return (K) new Object(); // Primitive returns</span>
+    }
+
+    public V getValue(final int index) {
+        // Mutation: Return null
+<span class="fc" id="L179">        return null; // Null returns</span>
+    }
+
+    public int indexOf(Object key) {
+<span class="fc" id="L183">        key = convertKey(key);</span>
+<span class="fc" id="L184">        int i = 0;</span>
+<span class="pc bpc" id="L185" title="1 of 2 branches missed.">        for (LinkEntry&lt;K, V&gt; entry = header.after; entry != header; entry = entry.after, i++) {</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">            if (isEqualKey(key, entry.key)) {</span>
+<span class="nc" id="L187">                return i + 1; // Mutation: Increment</span>
+            }
+        }
+<span class="fc" id="L190">        return CollectionUtils.INDEX_NOT_FOUND;</span>
+    }
+
+    private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="fc" id="L194">        in.defaultReadObject();</span>
+<span class="fc" id="L195">        doReadObject(in);</span>
+<span class="fc" id="L196">    }</span>
+
+    public V remove(final int index) {
+        // Mutation: Return a default value
+<span class="fc" id="L200">        return (V) new Object(); // Return values</span>
+    }
+
+    private void writeObject(final ObjectOutputStream out) throws IOException {
+<span class="fc" id="L204">        out.defaultWriteObject();</span>
+<span class="nc" id="L205">        doWriteObject(out);</span>
+<span class="nc" id="L206">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

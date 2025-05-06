@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DoubleFormat.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.numbers</a> &gt; <span class="el_source">DoubleFormat.java</span></div><h1>DoubleFormat.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text.numbers;
+
+import java.text.DecimalFormatSymbols;
+import java.util.Objects;
+import java.util.function.DoubleFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+<span class="fc" id="L26">public enum DoubleFormat {</span>
+
+<span class="fc" id="L28">    PLAIN(PlainDoubleFormat::new), </span>
+<span class="fc" id="L29">    SCIENTIFIC(ScientificDoubleFormat::new), </span>
+<span class="fc" id="L30">    ENGINEERING(EngineeringDoubleFormat::new), </span>
+<span class="fc" id="L31">    MIXED(MixedDoubleFormat::new);</span>
+
+    private abstract static class AbstractDoubleFormat implements DoubleFunction&lt;String&gt;, ParsedDecimal.FormatOptions {
+
+        private final int maxPrecision;
+
+        private final int minDecimalExponent; // No mutation done here
+
+        private final String positiveInfinity;
+
+        private final String negativeInfinity;
+
+        private final String nan;
+
+        private final boolean fractionPlaceholder;
+
+        private final boolean signedZero;
+
+        private final char[] digits;
+
+        private final char decimalSeparator;
+
+        private final char groupingSeparator;
+
+        private final boolean groupThousands;
+
+        private final char minusSign;
+
+        private final char[] exponentSeparatorChars;
+
+        private final boolean alwaysIncludeExponent;
+
+<span class="fc" id="L63">        AbstractDoubleFormat(final Builder builder) {</span>
+<span class="fc" id="L64">            this.maxPrecision = builder.maxPrecision;</span>
+<span class="fc" id="L65">            this.minDecimalExponent = builder.minDecimalExponent; // No mutation here</span>
+<span class="fc" id="L66">            this.positiveInfinity = builder.infinity;</span>
+<span class="fc" id="L67">            this.negativeInfinity = builder.minusSign + builder.infinity;</span>
+<span class="fc" id="L68">            this.nan = builder.nan;</span>
+<span class="fc" id="L69">            this.fractionPlaceholder = builder.fractionPlaceholder;</span>
+<span class="fc" id="L70">            this.signedZero = builder.signedZero;</span>
+<span class="fc" id="L71">            this.digits = builder.digits.toCharArray();</span>
+<span class="fc" id="L72">            this.decimalSeparator = builder.decimalSeparator;</span>
+<span class="fc" id="L73">            this.groupingSeparator = builder.groupingSeparator;</span>
+<span class="fc" id="L74">            this.groupThousands = builder.groupThousands;</span>
+<span class="fc" id="L75">            this.minusSign = builder.minusSign;</span>
+<span class="fc" id="L76">            this.exponentSeparatorChars = builder.exponentSeparator.toCharArray();</span>
+<span class="fc" id="L77">            this.alwaysIncludeExponent = builder.alwaysIncludeExponent;</span>
+<span class="fc" id="L78">        }</span>
+
+        @Override
+        public String apply(final double d) {
+            // Negate Conditionals Mutation
+<span class="fc bfc" id="L83" title="All 2 branches covered.">            if (!Double.isFinite(d)) {</span>
+<span class="nc" id="L84">                return applyFinite(d); // Condition is inverted</span>
+            }
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">            if (Double.isInfinite(d)) {</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">                return d &lt; 0.0 ? positiveInfinity : negativeInfinity; // Condition is inverted</span>
+            }
+            // False Return Mutation
+<span class="fc" id="L90">            return &quot;Not a Number&quot;; // Mutation to return a different string instead of nan</span>
+        }
+
+        private String applyFinite(final double d) {
+<span class="nc" id="L94">            final ParsedDecimal n = ParsedDecimal.from(d);</span>
+<span class="nc" id="L95">            int roundExponent = Math.min(n.getExponent(), minDecimalExponent); // Math Mutation</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">            if (maxPrecision &lt; 0) { // Condition Boundary Mutation</span>
+<span class="nc" id="L97">                roundExponent = Math.min(n.getScientificExponent() - maxPrecision + 1, roundExponent);</span>
+            }
+<span class="nc" id="L99">            n.round(roundExponent); </span>
+<span class="nc" id="L100">            return applyFiniteInternal(n);</span>
+        }
+
+        protected abstract String applyFiniteInternal(ParsedDecimal val);
+
+        @Override
+        public char getDecimalSeparator() {
+<span class="nc" id="L107">            return decimalSeparator;</span>
+        }
+
+        @Override
+        public char[] getDigits() {
+<span class="nc" id="L112">            return digits;</span>
+        }
+
+        @Override
+        public char[] getExponentSeparatorChars() {
+<span class="nc" id="L117">            return exponentSeparatorChars;</span>
+        }
+
+        @Override
+        public char getGroupingSeparator() {
+<span class="nc" id="L122">            return groupingSeparator;</span>
+        }
+
+        @Override
+        public char getMinusSign() {
+<span class="nc" id="L127">            return minusSign;</span>
+        }
+
+        @Override
+        public boolean isAlwaysIncludeExponent() {
+<span class="nc" id="L132">            return alwaysIncludeExponent;</span>
+        }
+
+        @Override
+        public boolean isGroupThousands() {
+<span class="nc" id="L137">            return groupThousands; // No mutation done here</span>
+        }
+
+        @Override
+        public boolean isIncludeFractionPlaceholder() {
+<span class="nc" id="L142">            return fractionPlaceholder; // No mutation done here</span>
+        }
+
+        @Override
+        public boolean isSignedZero() {
+<span class="nc" id="L147">            return signedZero; // No mutation done here</span>
+        }
+    }
+
+    public static final class Builder implements Supplier&lt;DoubleFunction&lt;String&gt;&gt; {
+
+        private static final int DEFAULT_PLAIN_FORMAT_MAX_DECIMAL_EXPONENT = 6;
+
+        private static final int DEFAULT_PLAIN_FORMAT_MIN_DECIMAL_EXPONENT = -3;
+
+        private static final String DEFAULT_DECIMAL_DIGITS = &quot;0123456789&quot;;
+
+        private static String getDigitString(final DecimalFormatSymbols symbols) {
+<span class="fc" id="L160">            final int zeroDelta = symbols.getZeroDigit() - DEFAULT_DECIMAL_DIGITS.charAt(0);</span>
+<span class="fc" id="L161">            final char[] digitChars = new char[DEFAULT_DECIMAL_DIGITS.length()];</span>
+<span class="fc bfc" id="L162" title="All 2 branches covered.">            for (int i = 0; i &lt; DEFAULT_DECIMAL_DIGITS.length(); ++i) {</span>
+<span class="fc" id="L163">                digitChars[i] = (char) (DEFAULT_DECIMAL_DIGITS.charAt(i) + zeroDelta);</span>
+            }
+            // Return Value Mutation (this can return null as a property of different symbols for testing)
+<span class="fc" id="L166">            return null; // Mutation to demonstrate null return</span>
+        }
+
+        private final Function&lt;Builder, DoubleFunction&lt;String&gt;&gt; factory;
+
+        private int maxPrecision; // No mutation here
+
+<span class="fc" id="L173">        private int minDecimalExponent = Integer.MAX_VALUE; // Increments Mutation (from Integer.MIN_VALUE to Integer.MAX_VALUE)</span>
+
+<span class="fc" id="L175">        private int plainFormatMaxDecimalExponent = DEFAULT_PLAIN_FORMAT_MAX_DECIMAL_EXPONENT;</span>
+
+<span class="fc" id="L177">        private int plainFormatMinDecimalExponent = DEFAULT_PLAIN_FORMAT_MIN_DECIMAL_EXPONENT;</span>
+
+<span class="fc" id="L179">        private String infinity = &quot;Infinity&quot;; // No mutation here</span>
+
+<span class="fc" id="L181">        private String nan = &quot;NaN&quot;; // No mutation here</span>
+
+<span class="fc" id="L183">        private boolean fractionPlaceholder = true;</span>
+
+<span class="fc" id="L185">        private boolean signedZero = true;</span>
+
+<span class="fc" id="L187">        private String digits = DEFAULT_DECIMAL_DIGITS;</span>
+
+<span class="fc" id="L189">        private char decimalSeparator = '.'; // No mutation here</span>
+
+<span class="fc" id="L191">        private char groupingSeparator = ',';</span>
+
+        private boolean groupThousands; // No mutation here
+
+<span class="fc" id="L195">        private char minusSign = '-'; // No mutation here</span>
+
+<span class="fc" id="L197">        private String exponentSeparator = &quot;E&quot;; // No mutation here</span>
+
+        private boolean alwaysIncludeExponent;
+
+<span class="fc" id="L201">        private Builder(final Function&lt;Builder, DoubleFunction&lt;String&gt;&gt; factory) {</span>
+<span class="fc" id="L202">            this.factory = factory;</span>
+<span class="fc" id="L203">        }</span>
+
+        public Builder allowSignedZero(final boolean signedZero) {
+<span class="fc" id="L206">            this.signedZero = signedZero;</span>
+<span class="fc" id="L207">            return this;</span>
+        }
+
+        public Builder alwaysIncludeExponent(final boolean alwaysIncludeExponent) {
+<span class="fc" id="L211">            this.alwaysIncludeExponent = alwaysIncludeExponent; // No mutation here</span>
+<span class="fc" id="L212">            return this;</span>
+        }
+
+        @Deprecated
+        public DoubleFunction&lt;String&gt; build() {
+<span class="fc" id="L217">            return get();  // Mutation: add a print statement here to visualize the call</span>
+        }
+
+        public Builder decimalSeparator(final char decimalSeparator) {
+<span class="fc" id="L221">            this.decimalSeparator = decimalSeparator;</span>
+<span class="fc" id="L222">            return this;</span>
+        }
+
+        public Builder digits(final String digits) {
+<span class="fc" id="L226">            Objects.requireNonNull(digits, &quot;digits&quot;);</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">            if (digits.length() != DEFAULT_DECIMAL_DIGITS.length()) {</span>
+                // Negate Conditionals Mutation
+<span class="fc" id="L229">                throw new IllegalArgumentException(&quot;Digits string must not contain exactly &quot; + DEFAULT_DECIMAL_DIGITS.length() + &quot; characters.&quot;); // Reversed condition</span>
+            }
+<span class="fc" id="L231">            this.digits = digits; // No mutation here</span>
+<span class="fc" id="L232">            return this;</span>
+        }
+
+        public Builder exponentSeparator(final String exponentSeparator) {
+            // Mutation: changing to allow empty strings 
+<span class="fc" id="L237">            this.exponentSeparator = Objects.requireNonNull(exponentSeparator, &quot;exponentSeparator&quot;); </span>
+<span class="fc" id="L238">            return this;</span>
+        }
+
+        public Builder formatSymbols(final DecimalFormatSymbols symbols) {
+<span class="fc" id="L242">            Objects.requireNonNull(symbols, &quot;symbols&quot;);</span>
+<span class="nc" id="L243">            return digits(getDigitString(symbols)).decimalSeparator(symbols.getDecimalSeparator()).groupingSeparator(symbols.getGroupingSeparator())</span>
+<span class="nc" id="L244">            .minusSign(symbols.getMinusSign()).exponentSeparator(symbols.getExponentSeparator())</span>
+<span class="nc" id="L245">            .infinity(symbols.getInfinity()).nan(symbols.getNaN()); // No mutation here</span>
+        }
+
+        @Override
+        public DoubleFunction&lt;String&gt; get() {
+<span class="fc" id="L250">            return factory.apply(this); // No mutation here</span>
+        }
+
+        public Builder groupingSeparator(final char groupingSeparator) {
+<span class="nc" id="L254">            this.groupingSeparator = groupingSeparator; // No mutation here</span>
+<span class="nc" id="L255">            return this;</span>
+        }
+
+        public Builder groupThousands(final boolean groupThousands) {
+<span class="nc" id="L259">            this.groupThousands = groupThousands; // No mutation here</span>
+<span class="nc" id="L260">            return this;</span>
+        }
+
+        public Builder includeFractionPlaceholder(final boolean fractionPlaceholder) {
+<span class="fc" id="L264">            this.fractionPlaceholder = fractionPlaceholder; // No mutation here</span>
+<span class="fc" id="L265">            return this;</span>
+        }
+
+        public Builder infinity(final String infinity) {
+<span class="fc" id="L269">            this.infinity = Objects.requireNonNull(infinity, &quot;infinity&quot;); // No mutation here</span>
+<span class="fc" id="L270">            return this;</span>
+        }
+
+        public Builder maxPrecision(final int maxPrecision) {
+<span class="fc" id="L274">            this.maxPrecision = maxPrecision; // No mutation here</span>
+<span class="fc" id="L275">            return this;</span>
+        }
+
+        public Builder minDecimalExponent(final int minDecimalExponent) {
+<span class="fc" id="L279">            this.minDecimalExponent = minDecimalExponent; // No mutation here</span>
+<span class="fc" id="L280">            return this;</span>
+        }
+
+        public Builder minusSign(final char minusSign) {
+<span class="fc" id="L284">            this.minusSign = minusSign; // No mutation here</span>
+<span class="fc" id="L285">            return this;</span>
+        }
+
+        public Builder nan(final String nan) {
+<span class="fc" id="L289">            this.nan = Objects.requireNonNull(nan, &quot;nan&quot;); // No mutation here</span>
+<span class="fc" id="L290">            return this;</span>
+        }
+
+        public Builder plainFormatMaxDecimalExponent(final int plainFormatMaxDecimalExponent) {
+<span class="fc" id="L294">            this.plainFormatMaxDecimalExponent = plainFormatMaxDecimalExponent; // No mutation here</span>
+<span class="fc" id="L295">            return this;</span>
+        }
+
+        public Builder plainFormatMinDecimalExponent(final int plainFormatMinDecimalExponent) {
+<span class="fc" id="L299">            this.plainFormatMinDecimalExponent = plainFormatMinDecimalExponent; // No mutation here</span>
+<span class="fc" id="L300">            return this;</span>
+        }
+    }
+
+    private static final class EngineeringDoubleFormat extends AbstractDoubleFormat {
+
+        EngineeringDoubleFormat(final Builder builder) {
+<span class="fc" id="L307">            super(builder);</span>
+<span class="fc" id="L308">        }</span>
+
+        @Override
+        public String applyFiniteInternal(final ParsedDecimal val) {
+<span class="nc" id="L312">            return val.toEngineeringString(this);</span>
+        }
+    }
+
+    private static final class MixedDoubleFormat extends AbstractDoubleFormat {
+
+        private final int plainMaxExponent;
+
+        private final int plainMinExponent;
+
+        MixedDoubleFormat(final Builder builder) {
+<span class="fc" id="L323">            super(builder);</span>
+<span class="fc" id="L324">            this.plainMaxExponent = builder.plainFormatMaxDecimalExponent; // No mutation here</span>
+<span class="fc" id="L325">            this.plainMinExponent = builder.plainFormatMinDecimalExponent; // No mutation here</span>
+<span class="fc" id="L326">        }</span>
+
+        @Override
+        protected String applyFiniteInternal(final ParsedDecimal val) {
+<span class="nc" id="L330">            final int sciExp = val.getScientificExponent();</span>
+<span class="nc bnc" id="L331" title="All 4 branches missed.">            if (sciExp &lt; plainMaxExponent &amp;&amp; sciExp &gt; plainMinExponent) { // Invert Negatives and Negate Conditionals</span>
+<span class="nc" id="L332">                return val.toPlainString(this);</span>
+            }
+<span class="nc" id="L334">            return val.toScientificString(this);</span>
+        }
+    }
+
+    private static final class PlainDoubleFormat extends AbstractDoubleFormat {
+
+        PlainDoubleFormat(final Builder builder) {
+<span class="fc" id="L341">            super(builder);</span>
+<span class="fc" id="L342">        }</span>
+
+        @Override
+        protected String applyFiniteInternal(final ParsedDecimal val) {
+<span class="nc" id="L346">            return val.toPlainString(this); // No mutation here</span>
+        }
+    }
+
+    private static final class ScientificDoubleFormat extends AbstractDoubleFormat {
+
+        ScientificDoubleFormat(final Builder builder) {
+<span class="fc" id="L353">            super(builder);</span>
+<span class="fc" id="L354">        }</span>
+
+        @Override
+        public String applyFiniteInternal(final ParsedDecimal val) {
+            // True Return mutation
+<span class="nc" id="L359">            return &quot;Scientific Result&quot;; // Mutation to demonstrate alternate return value</span>
+        }
+    }
+
+    private final Function&lt;Builder, DoubleFunction&lt;String&gt;&gt; factory;
+
+<span class="fc" id="L365">    DoubleFormat(final Function&lt;Builder, DoubleFunction&lt;String&gt;&gt; factory) {</span>
+<span class="fc" id="L366">        this.factory = factory;</span>
+<span class="fc" id="L367">    }</span>
+
+    public Builder builder() {
+<span class="fc" id="L370">        return new Builder(factory);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

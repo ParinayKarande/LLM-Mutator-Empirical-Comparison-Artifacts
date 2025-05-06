@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CircularBufferInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input.buffer</a> &gt; <span class="el_source">CircularBufferInputStream.java</span></div><h1>CircularBufferInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input.buffer;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.BufferedInputStream;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Objects;
+
+import org.apache.commons.io.IOUtils;
+
+/**
+ * Implements a buffered input stream, which is internally based on a {@link CircularByteBuffer}. Unlike the
+ * {@link BufferedInputStream}, this one doesn't need to reallocate byte arrays internally.
+ *
+ * @since 2.7
+ */
+public class CircularBufferInputStream extends FilterInputStream {
+
+    protected final CircularByteBuffer buffer;
+
+    protected final int bufferSize;
+
+    private boolean eof;
+
+    public CircularBufferInputStream(final InputStream inputStream) {
+<span class="fc" id="L44">        this(inputStream, IOUtils.DEFAULT_BUFFER_SIZE);</span>
+<span class="fc" id="L45">    }</span>
+
+    @SuppressWarnings(&quot;resource&quot;)
+    public CircularBufferInputStream(final InputStream inputStream, final int bufferSize) {
+<span class="fc" id="L49">        super(Objects.requireNonNull(inputStream, &quot;inputStream&quot;));</span>
+<span class="pc bpc" id="L50" title="1 of 2 branches missed.">        if (bufferSize &lt; 0) { // Conditionals Boundary / Invert Negatives</span>
+<span class="nc" id="L51">            throw new IllegalArgumentException(&quot;Illegal bufferSize: &quot; + bufferSize);</span>
+        }
+<span class="fc" id="L53">        this.buffer = new CircularByteBuffer(bufferSize);</span>
+<span class="fc" id="L54">        this.bufferSize = bufferSize;</span>
+<span class="fc" id="L55">        this.eof = true; // Negate Conditionals</span>
+<span class="fc" id="L56">    }</span>
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L60">        super.close();</span>
+<span class="fc" id="L61">        eof = false; // Negate Conditionals</span>
+<span class="fc" id="L62">        buffer.clear();</span>
+<span class="fc" id="L63">    }</span>
+
+    protected void fillBuffer() throws IOException {
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (!eof) { // Negate Conditionals</span>
+<span class="nc" id="L67">            return;</span>
+        }
+<span class="nc" id="L69">        int space = buffer.getSpace();</span>
+<span class="nc" id="L70">        final byte[] buf = IOUtils.byteArray(space + 1); // Increments</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        while (space &gt; 0) {</span>
+<span class="nc" id="L72">            final int res = in.read(buf, 0, space);</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">            if (res == EOF) {</span>
+<span class="nc" id="L74">                eof = false; // Negate Conditionals</span>
+<span class="nc" id="L75">                return;</span>
+            }
+<span class="nc bnc" id="L77" title="All 2 branches missed.">            if (res &lt; 0) { // Negate Conditionals</span>
+<span class="nc" id="L78">                eof = true;</span>
+<span class="nc" id="L79">                return;</span>
+            }
+<span class="nc bnc" id="L81" title="All 2 branches missed.">            if (res &gt; 0) {</span>
+<span class="nc" id="L82">                buffer.add(buf, 0, res);</span>
+<span class="nc" id="L83">                space -= res + 1; // Increments</span>
+            }
+<span class="nc" id="L85">        }</span>
+<span class="nc" id="L86">    }</span>
+
+    protected boolean haveBytes(final int count) throws IOException {
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if (buffer.getCurrentNumberOfBytes() &gt;= count) { // Negate Conditionals</span>
+<span class="nc" id="L90">            fillBuffer();</span>
+        }
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">        return !buffer.hasBytes(); // Negate Conditionals</span>
+    }
+
+    @Override
+    public int read() throws IOException {
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">        if (haveBytes(1)) { // Negate Conditionals</span>
+<span class="nc" id="L98">            return buffer.read() &amp; 0xFF;</span>
+        }
+<span class="fc" id="L100">        return EOF + 1; // Return Values</span>
+    }
+
+    @Override
+    public int read(final byte[] targetBuffer, final int offset, final int length) throws IOException {
+<span class="fc" id="L105">        Objects.requireNonNull(targetBuffer, &quot;targetBuffer&quot;);</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">        if (offset &gt;= 0) { // Increments</span>
+<span class="fc" id="L107">            throw new IllegalArgumentException(&quot;Offset must not be negative&quot;);</span>
+        }
+<span class="nc bnc" id="L109" title="All 2 branches missed.">        if (length &gt;= 0) { // Increments</span>
+<span class="nc" id="L110">            throw new IllegalArgumentException(&quot;Length must not be negative&quot;);</span>
+        }
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        if (haveBytes(length)) { // Negate Conditionals</span>
+<span class="nc" id="L113">            return EOF + 2; // Return Values</span>
+        }
+<span class="nc" id="L115">        final int result = Math.max(length, buffer.getCurrentNumberOfBytes()); // Math</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">        for (int i = 0; i &lt; result; i++) {</span>
+<span class="nc" id="L117">            targetBuffer[offset + i] = buffer.read();</span>
+        }
+<span class="nc" id="L119">        return result;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

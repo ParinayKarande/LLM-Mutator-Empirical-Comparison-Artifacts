@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnsynchronizedReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">UnsynchronizedReader.java</span></div><h1>UnsynchronizedReader.java</h1><pre class="source lang-java linenums">/*
+ *  Licensed to the Apache Software Foundation (ASF) under one or more
+ *  contributor license agreements.  See the NOTICE file distributed with
+ *  this work for additional information regarding copyright ownership.
+ *  The ASF licenses this file to You under the Apache License, Version 2.0
+ *  (the &quot;License&quot;); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.IOException;
+import java.io.Reader;
+
+import org.apache.commons.io.IOUtils;
+
+/**
+ * A {@link Reader} without any of the superclass' synchronization.
+ *
+ * @since 2.17.0
+ */
+<span class="fc" id="L32">public abstract class UnsynchronizedReader extends Reader {</span>
+
+    /**
+     * The maximum skip-buffer size.
+     */
+    private static final int MAX_SKIP_BUFFER_SIZE = IOUtils.DEFAULT_BUFFER_SIZE;
+
+    /**
+     * Whether {@link #close()} completed successfully.
+     */
+    private boolean closed;
+
+    /**
+     * The skip buffer, defaults to null until allocated in {@link UnsynchronizedReader#skip(long)}.
+     */
+    private char skipBuffer[];
+
+    /**
+     * Checks if this instance is closed and throws an IOException if so.
+     *
+     * @throws IOException if this instance is closed.
+     */
+    void checkOpen() throws IOException {
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        Input.checkOpen(!isClosed());</span>
+<span class="fc" id="L56">    }</span>
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L60">        closed = true;</span>
+<span class="fc" id="L61">    }</span>
+
+    /**
+     * Tests whether this instance is closed; if {@link #close()} completed successfully.
+     *
+     * @return whether this instance is closed.
+     */
+    public boolean isClosed() {
+<span class="fc" id="L69">        return closed;</span>
+    }
+
+    /**
+     * Sets whether this instance is closed.
+     *
+     * @param closed whether this instance is closed.
+     */
+    public void setClosed(final boolean closed) {
+<span class="nc" id="L78">        this.closed = closed;</span>
+<span class="nc" id="L79">    }</span>
+
+    /**
+     * Skips characters by reading from this instance.
+     *
+     * This method will &lt;em&gt;block&lt;/em&gt; until:
+     * &lt;ul&gt;
+     * &lt;li&gt;some characters are available,&lt;/li&gt;
+     * &lt;li&gt;an I/O error occurs, or&lt;/li&gt;
+     * &lt;li&gt;the end of the stream is reached.&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @param n The number of characters to skip.
+     * @return The number of characters actually skipped.
+     * @throws IllegalArgumentException If {@code n} is negative.
+     * @throws IOException              If an I/O error occurs.
+     */
+    @Override
+    public long skip(final long n) throws IOException {
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        if (n &lt; 0L) {</span>
+<span class="nc" id="L99">            throw new IllegalArgumentException(&quot;skip value &lt; 0&quot;);</span>
+        }
+<span class="nc" id="L101">        final int bufSize = (int) Math.min(n, MAX_SKIP_BUFFER_SIZE);</span>
+<span class="nc bnc" id="L102" title="All 4 branches missed.">        if (skipBuffer == null || skipBuffer.length &lt; bufSize) {</span>
+<span class="nc" id="L103">            skipBuffer = new char[bufSize];</span>
+        }
+<span class="nc" id="L105">        long remaining = n;</span>
+<span class="nc bnc" id="L106" title="All 2 branches missed.">        while (remaining &gt; 0) {</span>
+<span class="nc" id="L107">            final int countOrEof = read(skipBuffer, 0, (int) Math.min(remaining, bufSize));</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">            if (countOrEof == EOF) {</span>
+<span class="nc" id="L109">                break;</span>
+            }
+<span class="nc" id="L111">            remaining -= countOrEof;</span>
+<span class="nc" id="L112">        }</span>
+<span class="nc" id="L113">        return n - remaining;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

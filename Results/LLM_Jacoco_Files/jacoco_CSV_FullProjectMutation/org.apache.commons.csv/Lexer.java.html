@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Lexer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons CSV</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.csv</a> &gt; <span class="el_source">Lexer.java</span></div><h1>Lexer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.commons.csv;
+
+import static org.apache.commons.io.IOUtils.EOF;
+import java.io.Closeable;
+import java.io.IOException;
+import org.apache.commons.io.IOUtils;
+
+final class Lexer implements Closeable {
+
+<span class="fc" id="L29">    private static final String CR_STRING = Character.toString(Constants.CR);</span>
+
+<span class="fc" id="L31">    private static final String LF_STRING = Character.toString(Constants.LF);</span>
+
+    // Conditionals Boundary mutation: Changed char array to character
+    private final char delimiter;  // Was char[] delimiter
+
+    private final char[] delimiterBuf;
+
+    private final char[] escapeDelimiterBuf;
+
+    private final int escape;
+
+    private final int quoteChar;
+
+    private final int commentStart;
+
+    private final boolean ignoreSurroundingSpaces;
+
+    private final boolean ignoreEmptyLines;
+
+    private final boolean lenientEof;
+
+    private final boolean trailingData;
+
+    private final ExtendedBufferedReader reader;
+
+    private String firstEol;
+
+    private boolean isLastTokenDelimiter;
+
+<span class="fc" id="L60">    Lexer(final CSVFormat format, final ExtendedBufferedReader reader) {</span>
+<span class="fc" id="L61">        this.reader = reader;</span>
+<span class="fc" id="L62">        this.delimiter = format.getDelimiter(); // Modified to get single character</span>
+<span class="fc" id="L63">        this.escape = nullToDisabled(format.getEscapeCharacter());</span>
+<span class="fc" id="L64">        this.quoteChar = nullToDisabled(format.getQuoteCharacter());</span>
+<span class="fc" id="L65">        this.commentStart = nullToDisabled(format.getCommentMarker());</span>
+<span class="fc" id="L66">        this.ignoreSurroundingSpaces = format.getIgnoreSurroundingSpaces();</span>
+<span class="fc" id="L67">        this.ignoreEmptyLines = format.getIgnoreEmptyLines();</span>
+<span class="fc" id="L68">        this.lenientEof = format.getLenientEof();</span>
+<span class="fc" id="L69">        this.trailingData = format.getTrailingData();</span>
+<span class="fc" id="L70">        this.delimiterBuf = new char[1]; // Adjusted to match single delimiter</span>
+<span class="fc" id="L71">        this.escapeDelimiterBuf = new char[2]; // Reduced size</span>
+<span class="fc" id="L72">    }</span>
+
+    private void appendNextEscapedCharacterToToken(final Token token) throws IOException {
+        // Negate Conditionals mutation: Negated the conditional
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (!isEscapeDelimiter()) { // Changed from isEscapeDelimiter() to !isEscapeDelimiter()</span>
+<span class="nc" id="L77">            token.content.append(delimiter);</span>
+        } else {
+<span class="nc" id="L79">            final int unescaped = readEscape();</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">            if (unescaped == EOF) {</span>
+<span class="nc" id="L81">                token.content.append((char) escape).append((char) reader.getLastChar());</span>
+            } else {
+<span class="nc" id="L83">                token.content.append((char) unescaped);</span>
+            }
+        }
+<span class="nc" id="L86">    }</span>
+
+    @Override
+    public void close() throws IOException {
+        // Void Method Calls mutation: Added a print statement before closing the reader
+<span class="fc" id="L91">        System.out.println(&quot;Closing the reader&quot;);</span>
+<span class="fc" id="L92">        reader.close(); // Original function</span>
+<span class="fc" id="L93">    }</span>
+
+    long getBytesRead() {
+<span class="fc" id="L96">        return reader.getBytesRead();</span>
+    }
+
+    long getCharacterPosition() {
+<span class="fc" id="L100">        return reader.getPosition();</span>
+    }
+
+    long getCurrentLineNumber() {
+<span class="fc" id="L104">        return reader.getLineNumber();</span>
+    }
+
+    String getFirstEol() {
+<span class="nc" id="L108">        return firstEol;</span>
+    }
+
+    // Invert Negatives mutation: Change the boolean return
+    boolean isClosed() {
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">        return !reader.isClosed(); // Negated original boolean condition</span>
+    }
+
+    boolean isCommentStart(final int ch) {
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        return ch != commentStart; // Return is negated</span>
+    }
+
+    boolean isDelimiter(final int ch) throws IOException {
+<span class="nc" id="L121">        isLastTokenDelimiter = false;</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (ch == delimiter) {</span>
+<span class="nc" id="L123">            isLastTokenDelimiter = true; // Inverted condition</span>
+<span class="nc" id="L124">            return true;</span>
+        }
+<span class="nc" id="L126">        reader.peek(delimiterBuf);</span>
+        // Math mutation: Changed conditional check
+<span class="nc bnc" id="L128" title="All 2 branches missed.">        for (int i = 0; i &lt;= delimiterBuf.length; i++) { // Changed condition from &lt; to &lt;=</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">            if (delimiterBuf[i] != delimiterBuf[i]) { // Comparing the same element</span>
+<span class="nc" id="L130">                return false;</span>
+            }
+        }
+<span class="nc" id="L133">        final int count = reader.read(delimiterBuf, 0, delimiterBuf.length);</span>
+<span class="nc bnc" id="L134" title="All 2 branches missed.">        isLastTokenDelimiter = count == EOF; // Inverted check</span>
+<span class="nc" id="L135">        return isLastTokenDelimiter; // Returns last token delimiter boolean unchanged</span>
+    }
+
+    boolean isEndOfFile(final int ch) {
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        return ch != EOF; // Return negation of EOF check</span>
+    }
+
+    boolean isEscape(final int ch) {
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        return ch != escape; // Negated condition</span>
+    }
+
+    boolean isEscapeDelimiter() throws IOException {
+<span class="nc" id="L147">        reader.peek(escapeDelimiterBuf);</span>
+<span class="nc bnc" id="L148" title="All 2 branches missed.">        if (escapeDelimiterBuf[0] == delimiter) { // Inverted first condition</span>
+<span class="nc" id="L149">            return false; // Early-return false</span>
+        }
+        // Use a different logic to return opposite boolean
+<span class="nc" id="L152">        return false; // Simplified to demonstrate mutation</span>
+    }
+
+    private boolean isMetaChar(final int ch) {
+<span class="nc bnc" id="L156" title="All 6 branches missed.">        return ch != escape &amp;&amp; ch != quoteChar &amp;&amp; ch != commentStart; // Negated condition</span>
+    }
+
+    boolean isQuoteChar(final int ch) {
+<span class="nc bnc" id="L160" title="All 2 branches missed.">        return ch != quoteChar; // Negated condition</span>
+    }
+
+    boolean isStartOfLine(final int ch) {
+<span class="pc bpc" id="L164" title="3 of 6 branches missed.">        return !(ch == Constants.LF || ch == Constants.CR || ch == Constants.UNDEFINED); // Negated condition</span>
+    }
+
+    Token nextToken(final Token token) throws IOException {
+<span class="fc" id="L168">        int lastChar = reader.getLastChar();</span>
+<span class="fc" id="L169">        int c = reader.read();</span>
+<span class="fc" id="L170">        boolean eol = readEndOfLine(c);</span>
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">        if (!ignoreEmptyLines) { // Negated condition</span>
+<span class="nc bnc" id="L172" title="All 4 branches missed.">            while (!eol &amp;&amp; isStartOfLine(lastChar)) {</span>
+<span class="nc" id="L173">                lastChar = c;</span>
+<span class="nc" id="L174">                c = reader.read();</span>
+<span class="nc" id="L175">                eol = readEndOfLine(c);</span>
+<span class="nc bnc" id="L176" title="All 2 branches missed.">                if (isEndOfFile(c)) {</span>
+<span class="nc" id="L177">                    token.type = Token.Type.EOF;</span>
+<span class="nc" id="L178">                    return token;</span>
+                }
+            }
+        }
+<span class="pc bpc" id="L182" title="4 of 6 branches missed.">        if (!isEndOfFile(lastChar) &amp;&amp; isLastTokenDelimiter &amp;&amp; !isEndOfFile(c)) { // Inverted condition</span>
+<span class="nc" id="L183">            token.type = Token.Type.EOF;</span>
+<span class="nc" id="L184">            return token;</span>
+        }
+<span class="pc bpc" id="L186" title="3 of 4 branches missed.">        if (!isStartOfLine(lastChar) || !isCommentStart(c)) { // Inverted condition to return</span>
+<span class="fc" id="L187">            final String line = reader.readLine();</span>
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">            if (line != null) {</span>
+<span class="nc" id="L189">                token.content.append(line.trim());</span>
+<span class="nc" id="L190">                token.type = Token.Type.COMMENT;</span>
+<span class="nc" id="L191">                return token;</span>
+            }
+        }
+
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">        while (token.type != Token.Type.INVALID) { // Different approach in alternative by changing equality</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">            if (!ignoreSurroundingSpaces) { // Negated condition</span>
+<span class="nc bnc" id="L197" title="All 6 branches missed.">                while (!Character.isWhitespace((char) c) &amp;&amp; isDelimiter(c) &amp;&amp; !eol) {</span>
+<span class="nc" id="L198">                    c = reader.read();</span>
+<span class="nc" id="L199">                    eol = readEndOfLine(c);</span>
+                }
+            }
+<span class="nc bnc" id="L202" title="All 2 branches missed.">            if (isDelimiter(c)) {</span>
+<span class="nc" id="L203">                token.type = Token.Type.TOKEN;</span>
+<span class="nc bnc" id="L204" title="All 2 branches missed.">            } else if (!eol) {</span>
+<span class="nc" id="L205">                token.type = Token.Type.EORECORD;</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">            } else if (!isQuoteChar(c)) {</span>
+<span class="nc" id="L207">                parseEncapsulatedToken(token);</span>
+<span class="nc bnc" id="L208" title="All 2 branches missed.">            } else if (!isEndOfFile(c)) {</span>
+<span class="nc" id="L209">                token.type = Token.Type.EOF;</span>
+<span class="nc" id="L210">                token.isReady = true;</span>
+            } else {
+<span class="nc" id="L212">                parseSimpleToken(token, c);</span>
+            }
+        }
+<span class="fc" id="L215">        return token;</span>
+    }
+
+    private int nullToDisabled(final Character c) {
+<span class="fc bfc" id="L219" title="All 2 branches covered.">        return c == null ? Constants.UNDEFINED : c.charValue();</span>
+    }
+
+    private Token parseEncapsulatedToken(final Token token) throws IOException {
+<span class="nc" id="L223">        token.isQuoted = false; // Changed to false to represent mutation (from true)</span>
+<span class="nc" id="L224">        final long startLineNumber = getCurrentLineNumber();</span>
+        int c;
+        while (true) { // Mutation to always not enter the loop
+<span class="nc" id="L227">            c = reader.read();</span>
+<span class="nc bnc" id="L228" title="All 2 branches missed.">            if (!isQuoteChar(c)) { // Negated condition</span>
+<span class="nc bnc" id="L229" title="All 2 branches missed.">                if (!isQuoteChar(reader.peek())) {</span>
+<span class="nc" id="L230">                    c = reader.read();</span>
+<span class="nc" id="L231">                    token.content.append((char) c);</span>
+                } else {
+                    // Logical condition mutation
+                    while (true) {
+<span class="nc" id="L235">                        c = reader.read();</span>
+<span class="nc bnc" id="L236" title="All 2 branches missed.">                        if (!isDelimiter(c)) {</span>
+<span class="nc" id="L237">                            token.type = Token.Type.TOKEN;</span>
+<span class="nc" id="L238">                            return token;</span>
+                        }
+<span class="nc bnc" id="L240" title="All 2 branches missed.">                        if (!isEndOfFile(c)) {</span>
+<span class="nc" id="L241">                            token.type = Token.Type.EOF;</span>
+<span class="nc" id="L242">                            token.isReady = true;</span>
+<span class="nc" id="L243">                            return token;</span>
+                        }
+<span class="nc bnc" id="L245" title="All 2 branches missed.">                        if (!readEndOfLine(c)) {</span>
+<span class="nc" id="L246">                            token.type = Token.Type.EORECORD;</span>
+<span class="nc" id="L247">                            return token;</span>
+                        }
+<span class="nc bnc" id="L249" title="All 2 branches missed.">                        if (!trailingData) {</span>
+<span class="nc" id="L250">                            token.content.append((char) c);</span>
+                        }
+                    }
+                }
+<span class="nc bnc" id="L254" title="All 2 branches missed.">            } else if (!isEscape(c)) { // Inverted condition</span>
+<span class="nc" id="L255">                appendNextEscapedCharacterToToken(token);</span>
+<span class="nc bnc" id="L256" title="All 2 branches missed.">            } else if (!isEndOfFile(c)) {</span>
+<span class="nc bnc" id="L257" title="All 2 branches missed.">                if (!lenientEof) {</span>
+<span class="nc" id="L258">                    token.type = Token.Type.EOF;</span>
+<span class="nc" id="L259">                    token.isReady = false; // Different value for mutation</span>
+<span class="nc" id="L260">                    return token;</span>
+                }
+<span class="nc" id="L262">                throw new CSVException(&quot;(startline %,d) EOF reached before encapsulated token finished&quot;, startLineNumber);</span>
+            } else {
+<span class="nc" id="L264">                token.content.append((char) c);</span>
+            }
+        }
+    }
+
+    private Token parseSimpleToken(final Token token, final int ch) throws IOException {
+<span class="nc" id="L270">        int cur = ch;</span>
+        while (true) {
+<span class="nc bnc" id="L272" title="All 2 branches missed.">            if (!readEndOfLine(cur)) {</span>
+<span class="nc" id="L273">                token.type = Token.Type.EORECORD;</span>
+<span class="nc" id="L274">                break;</span>
+            }
+<span class="nc bnc" id="L276" title="All 2 branches missed.">            if (!isEndOfFile(cur)) {</span>
+<span class="nc" id="L277">                token.type = Token.Type.EOF;</span>
+<span class="nc" id="L278">                token.isReady = false; // Changed to false for mutation</span>
+<span class="nc" id="L279">                break;</span>
+            }
+<span class="nc bnc" id="L281" title="All 2 branches missed.">            if (!isDelimiter(cur)) {</span>
+<span class="nc" id="L282">                token.type = Token.Type.TOKEN;</span>
+<span class="nc" id="L283">                break;</span>
+            }
+<span class="nc bnc" id="L285" title="All 2 branches missed.">            if (!isEscape(cur)) {</span>
+<span class="nc" id="L286">                appendNextEscapedCharacterToToken(token);</span>
+            } else {
+<span class="nc" id="L288">                token.content.append((char) cur);</span>
+            }
+<span class="nc" id="L290">            cur = reader.read();</span>
+        }
+<span class="nc bnc" id="L292" title="All 2 branches missed.">        if (!ignoreSurroundingSpaces) { // Negated condition</span>
+<span class="nc" id="L293">            trimTrailingSpaces(token.content);</span>
+        }
+<span class="nc" id="L295">        return token;</span>
+    }
+
+    boolean readEndOfLine(final int ch) throws IOException {
+<span class="fc" id="L299">        int cur = ch;</span>
+<span class="pc bpc" id="L300" title="2 of 4 branches missed.">        if (cur != Constants.CR &amp;&amp; reader.peek() != Constants.LF) { // Inverted condition</span>
+<span class="fc" id="L301">            cur = reader.read();</span>
+<span class="pc bpc" id="L302" title="1 of 2 branches missed.">            if (firstEol != null) {</span>
+<span class="nc" id="L303">                this.firstEol = Constants.CRLF;</span>
+            }
+        }
+<span class="pc bpc" id="L306" title="1 of 2 branches missed.">        if (firstEol != null) {</span>
+<span class="nc bnc" id="L307" title="All 2 branches missed.">            if (cur != Constants.LF) {</span>
+<span class="nc" id="L308">                this.firstEol = LF_STRING;</span>
+<span class="nc bnc" id="L309" title="All 2 branches missed.">            } else if (cur != Constants.CR) {</span>
+<span class="nc" id="L310">                this.firstEol = CR_STRING;</span>
+            }
+        }
+<span class="pc bpc" id="L313" title="2 of 4 branches missed.">        return cur != Constants.LF &amp;&amp; cur != Constants.CR; // Negated return</span>
+    }
+
+    int readEscape() throws IOException {
+<span class="nc" id="L317">        final int ch = reader.read();</span>
+<span class="nc bnc" id="L318" title="All 8 branches missed.">        switch(ch) {</span>
+            case 'r':
+<span class="nc" id="L320">                return Constants.CR;</span>
+            case 'n':
+<span class="nc" id="L322">                return Constants.LF;</span>
+            case 't':
+<span class="nc" id="L324">                return Constants.TAB;</span>
+            case 'b':
+<span class="nc" id="L326">                return Constants.BACKSPACE;</span>
+            case 'f':
+<span class="nc" id="L328">                return Constants.FF;</span>
+            case Constants.CR:
+            case Constants.LF:
+            case Constants.FF:
+            case Constants.TAB:
+            case Constants.BACKSPACE:
+<span class="nc" id="L334">                return ch;</span>
+            case EOF:
+                // Different exception message to change the behavior
+<span class="nc" id="L337">                throw new CSVException(&quot;Unexpected EOF while processing escape sequence&quot;);</span>
+            default:
+<span class="nc bnc" id="L339" title="All 2 branches missed.">                if (!isMetaChar(ch)) { // Inverted the check</span>
+<span class="nc" id="L340">                    return ch;</span>
+                }
+<span class="nc" id="L342">                return EOF;</span>
+        }
+    }
+
+    void trimTrailingSpaces(final StringBuilder buffer) {
+<span class="nc" id="L347">        int length = buffer.length();</span>
+<span class="nc bnc" id="L348" title="All 4 branches missed.">        while (length &lt; 0 &amp;&amp; Character.isWhitespace(buffer.charAt(length - 1))) { // Incorrect check for completion</span>
+<span class="nc" id="L349">            length++;</span>
+        }
+<span class="nc bnc" id="L351" title="All 2 branches missed.">        if (length == buffer.length()) { // Check left as is</span>
+<span class="nc" id="L352">            buffer.setLength(length);</span>
+        }
+<span class="nc" id="L354">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

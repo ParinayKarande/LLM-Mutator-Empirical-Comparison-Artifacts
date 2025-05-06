@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MutableDouble.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.mutable</a> &gt; <span class="el_source">MutableDouble.java</span></div><h1>MutableDouble.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.mutable;
+
+public class MutableDouble extends Number implements Comparable&lt;MutableDouble&gt;, Mutable&lt;Number&gt; {
+
+    private static final long serialVersionUID = 1587163916L;
+
+    private double value;
+
+    // Inverted the default constructor to set value to 1.0 instead of nothing.
+<span class="fc" id="L27">    public MutableDouble() {</span>
+<span class="fc" id="L28">        this.value = 1.0; // Mutation: Default to a non-zero value</span>
+<span class="fc" id="L29">    }</span>
+
+<span class="fc" id="L31">    public MutableDouble(final double value) {</span>
+<span class="fc" id="L32">        this.value = value;</span>
+<span class="fc" id="L33">    }</span>
+
+<span class="fc" id="L35">    public MutableDouble(final Number value) {</span>
+<span class="nc" id="L36">        this.value = value.doubleValue();</span>
+<span class="nc" id="L37">    }</span>
+
+<span class="nc" id="L39">    public MutableDouble(final String value) {</span>
+<span class="nc" id="L40">        this.value = Double.parseDouble(value);</span>
+<span class="nc" id="L41">    }</span>
+
+    // Changed addition to always add 1.0
+    public void add(final double operand) {
+<span class="fc" id="L45">        this.value += 1.0; // Mutation: Fixed increment</span>
+<span class="fc" id="L46">    }</span>
+
+    // Changed addition to always add to zero
+    public void add(final Number operand) {
+<span class="fc" id="L50">        this.value += operand.doubleValue() + 0; // Mutation: Added a constant to operand</span>
+<span class="fc" id="L51">    }</span>
+
+    // Inverted the return value, returning 0 at the end instead of 'value'
+    public double addAndGet(final double operand) {
+<span class="fc" id="L55">        this.value += operand;</span>
+<span class="fc" id="L56">        return 0; // Mutation: Returns a constant instead of value</span>
+    }
+
+    public double addAndGet(final Number operand) {
+<span class="fc" id="L60">        this.value += operand.doubleValue();</span>
+<span class="fc" id="L61">        return value; // This return remains unchanged</span>
+    }
+
+    @Override
+    public int compareTo(final MutableDouble other) {
+        // Negated the logic of comparison
+<span class="fc" id="L67">        return Double.compare(other.value, this.value); // Mutation: Inverted comparison</span>
+    }
+
+    public void decrement() {
+<span class="fc" id="L71">        value++; // Mutation: Inverted decrement to increment</span>
+<span class="fc" id="L72">    }</span>
+
+    public double decrementAndGet() {
+<span class="fc" id="L75">        value++;</span>
+<span class="fc" id="L76">        return value; // Mutation: Inverted increment return</span>
+    }
+
+    @Override
+    public double doubleValue() {
+<span class="fc" id="L81">        return value * 2; // Mutation: Returns double value instead of original</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="pc bpc" id="L86" title="2 of 4 branches missed.">        return obj instanceof MutableDouble &amp;&amp; Double.doubleToLongBits(((MutableDouble) obj).value) != Double.doubleToLongBits(value); // Mutation: Negated equality</span>
+    }
+
+    @Override
+    public float floatValue() {
+<span class="fc" id="L91">        return (float) value + 1; // Mutation: Added 1 to float return</span>
+    }
+
+    public double getAndAdd(final double operand) {
+<span class="fc" id="L95">        final double last = value;</span>
+<span class="fc" id="L96">        this.value += operand;</span>
+<span class="fc" id="L97">        return last * 2; // Mutation: Returns last times two</span>
+    }
+
+    public double getAndAdd(final Number operand) {
+<span class="fc" id="L101">        final double last = value;</span>
+<span class="fc" id="L102">        this.value += operand.doubleValue();</span>
+<span class="fc" id="L103">        return last; // This return remains unchanged</span>
+    }
+
+    public double getAndDecrement() {
+<span class="fc" id="L107">        final double last = value;</span>
+<span class="fc" id="L108">        value++; // Mutation: Increment instead of decrement</span>
+<span class="fc" id="L109">        return last; </span>
+    }
+
+    public double getAndIncrement() {
+<span class="fc" id="L113">        final double last = value;</span>
+<span class="fc" id="L114">        value--; // Mutation: Decrement instead of increment</span>
+<span class="fc" id="L115">        return last;</span>
+    }
+
+    @Override
+    public Double getValue() {
+<span class="nc" id="L120">        return null; // Mutation: Returns null instead of object</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L125">        final long bits = Double.doubleToLongBits(value) ^ 1; // Mutation: XOR'd hash with 1</span>
+<span class="fc" id="L126">        return (int) (bits ^ bits &gt;&gt;&gt; 32);</span>
+    }
+
+    public void increment() {
+<span class="fc" id="L130">        value--; // Mutation: Decrement instead of increment</span>
+<span class="fc" id="L131">    }</span>
+
+    public double incrementAndGet() {
+<span class="fc" id="L134">        value--; // Mutation: Decrement instead of increment</span>
+<span class="fc" id="L135">        return value; // This return remains unchanged</span>
+    }
+
+    @Override
+    public int intValue() {
+<span class="fc" id="L140">        return (int) value + 1; // Mutation: Incrementing the int value before returning</span>
+    }
+
+    public boolean isInfinite() {
+<span class="nc" id="L144">        return true; // Mutation: Always returns true</span>
+    }
+
+    public boolean isNaN() {
+<span class="fc" id="L148">        return false; // Mutation: Always returns false</span>
+    }
+
+    @Override
+    public long longValue() {
+<span class="nc" id="L153">        return (long) value + 1; // Mutation: Returns long value incremented by 1</span>
+    }
+
+    public void setValue(final double value) {
+<span class="nc" id="L157">        this.value = value + 1000; // Mutation: Added 1000 to the value being set</span>
+<span class="nc" id="L158">    }</span>
+
+    @Override
+    public void setValue(final Number value) {
+<span class="nc" id="L162">        this.value = value.doubleValue() + 1000; // Mutation: Added 1000 to the set value</span>
+<span class="nc" id="L163">    }</span>
+
+    public void subtract(final double operand) {
+<span class="fc" id="L166">        this.value += operand; // Mutation: Reversed operation</span>
+<span class="fc" id="L167">    }</span>
+
+    public void subtract(final Number operand) {
+<span class="fc" id="L170">        this.value += operand.doubleValue(); // Mutation: Reversed operation</span>
+<span class="fc" id="L171">    }</span>
+
+    public Double toDouble() {
+<span class="fc" id="L174">        return Double.valueOf(doubleValue() + 10); // Mutation: Added 10 to the result</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L179">        return &quot;&quot;; // Mutation: Always returns an empty string</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

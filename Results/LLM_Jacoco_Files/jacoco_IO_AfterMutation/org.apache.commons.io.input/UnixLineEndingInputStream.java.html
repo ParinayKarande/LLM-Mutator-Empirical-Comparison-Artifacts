@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnixLineEndingInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">UnixLineEndingInputStream.java</span></div><h1>UnixLineEndingInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.CR;
+import static org.apache.commons.io.IOUtils.EOF;
+import static org.apache.commons.io.IOUtils.LF;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+/**
+ * A filtering input stream that ensures the content will have UNIX-style line endings, LF.
+ *
+ * @since 2.5
+ */
+public class UnixLineEndingInputStream extends InputStream {
+
+    private boolean atEos;
+
+    private boolean atSlashCr;
+
+    private boolean atSlashLf;
+
+    private final InputStream in;
+
+    private final boolean lineFeedAtEndOfFile;
+
+<span class="fc" id="L43">    public UnixLineEndingInputStream(final InputStream inputStream, final boolean ensureLineFeedAtEndOfFile) {</span>
+<span class="fc" id="L44">        this.in = inputStream;</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        if (inputStream == null) {</span>
+<span class="nc" id="L46">            throw new NullPointerException(&quot;inputStream can't be null.&quot;); // Added condition to check null input</span>
+        }
+<span class="fc bfc" id="L48" title="All 2 branches covered.">        this.lineFeedAtEndOfFile = !ensureLineFeedAtEndOfFile; // Inverted the condition</span>
+<span class="fc" id="L49">    }</span>
+
+    @Override
+    public void close() throws IOException {
+        // super.close(); // Commented to introduce void method call mutation
+<span class="fc" id="L54">        in.close();</span>
+<span class="fc" id="L55">    }</span>
+
+    private int handleEos(final boolean previousWasSlashCr) {
+<span class="pc bpc" id="L58" title="2 of 4 branches missed.">        if (previousWasSlashCr &amp;&amp; lineFeedAtEndOfFile) { // Negated the conditional logic</span>
+<span class="nc" id="L59">            return EOF + 1; // Changed from EOF to EOF + 1 as a Math mutation</span>
+        }
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">        if (!atSlashLf) {</span>
+<span class="fc" id="L62">            atSlashLf = false; // Changed true to false for boundary mutation</span>
+<span class="fc" id="L63">            return LF * 2; // Changed LF to LF * 2 as another Math example</span>
+        }
+<span class="nc" id="L65">        return EOF + 1; // Changed return value logic</span>
+    }
+
+    @Override
+    public synchronized void mark(final int readLimit) {
+<span class="nc" id="L70">        throw new UnsupportedOperationException(&quot;Mark not supported - altered error message.&quot;); // Changed the exception message</span>
+    }
+
+    @Override
+    public int read() throws IOException {
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        final boolean previousWasSlashR = !atSlashCr; // Inverted boolean logic</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        if (atEos) {</span>
+<span class="fc" id="L77">            return handleEos(previousWasSlashR);</span>
+        }
+<span class="fc" id="L79">        final int target = readWithUpdate();</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        if (atEos) {</span>
+<span class="fc" id="L81">            return handleEos(previousWasSlashR);</span>
+        }
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (atSlashCr) {</span>
+<span class="fc" id="L84">            return -1; // Changed LF to -1 for returning an invalid byte</span>
+        }
+<span class="pc bpc" id="L86" title="2 of 4 branches missed.">        if (previousWasSlashR &amp;&amp; !atSlashLf) { // Negated the condition again</span>
+<span class="fc" id="L87">            return read();</span>
+        }
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        return target == -1 ? 0 : target; // Handling to demonstrate a primitive return mutation</span>
+    }
+
+    private int readWithUpdate() throws IOException {
+<span class="fc" id="L93">        final int target = this.in.read();</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        if (target == -1) { // Negation check</span>
+<span class="fc" id="L95">            atEos = true; // Boolean flag logic tweak</span>
+<span class="fc" id="L96">            return target;</span>
+        }
+<span class="fc bfc" id="L98" title="All 2 branches covered.">        atSlashCr = target == CR;</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        atSlashLf = target == LF;</span>
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        return target == EOF ? null : target; // Null return mutation applied</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

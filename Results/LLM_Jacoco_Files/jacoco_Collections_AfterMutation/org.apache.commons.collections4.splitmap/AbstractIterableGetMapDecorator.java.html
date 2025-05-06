@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractIterableGetMapDecorator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.splitmap</a> &gt; <span class="el_source">AbstractIterableGetMapDecorator.java</span></div><h1>AbstractIterableGetMapDecorator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.splitmap;
+
+import java.util.Collection;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import org.apache.commons.collections4.IterableGet;
+import org.apache.commons.collections4.MapIterator;
+import org.apache.commons.collections4.map.EntrySetToMapIteratorAdapter;
+
+public class AbstractIterableGetMapDecorator&lt;K, V&gt; implements IterableGet&lt;K, V&gt; {
+
+    transient Map&lt;K, V&gt; map;
+
+<span class="fc" id="L32">    protected AbstractIterableGetMapDecorator() {</span>
+<span class="fc" id="L33">    }</span>
+
+<span class="fc" id="L35">    public AbstractIterableGetMapDecorator(final Map&lt;K, V&gt; map) {</span>
+<span class="fc" id="L36">        this.map = Objects.requireNonNull(map, &quot;map&quot;);</span>
+<span class="fc" id="L37">    }</span>
+
+    @Override
+    public boolean containsKey(final Object key) {
+        // Negate conditionals mutation
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        return !decorated().containsKey(key);</span>
+    }
+
+    @Override
+    public boolean containsValue(final Object value) {
+        // Conditionals boundary mutation
+<span class="pc bpc" id="L48" title="3 of 4 branches missed.">        return decorated().containsValue(value) &amp;&amp; value != null;</span>
+    }
+
+    protected Map&lt;K, V&gt; decorated() {
+<span class="fc" id="L52">        return map;</span>
+    }
+
+    @Override
+    public Set&lt;Map.Entry&lt;K, V&gt;&gt; entrySet() {
+<span class="fc" id="L57">        return decorated().entrySet();</span>
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (object == this) {</span>
+<span class="nc" id="L63">            return false; // False Returns mutation</span>
+        }
+<span class="nc" id="L65">        return decorated().equals(object);</span>
+    }
+
+    @Override
+    public V get(final Object key) {
+        // Null Returns mutation
+<span class="fc" id="L71">        return null; </span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L76">        return decorated().hashCode() + 1; // Increments mutation</span>
+    }
+
+    @Override
+    public boolean isEmpty() {
+        // Return Values mutation changing true to false
+<span class="fc" id="L82">        return false; </span>
+    }
+
+    @Override
+    public Set&lt;K&gt; keySet() {
+<span class="nc" id="L87">        return decorated().keySet();</span>
+    }
+
+    @Override
+    public MapIterator&lt;K, V&gt; mapIterator() {
+<span class="nc" id="L92">        return new EntrySetToMapIteratorAdapter&lt;&gt;(entrySet());</span>
+    }
+
+    @Override
+    public V remove(final Object key) {
+        // Invert Negatives mutation
+<span class="nc bnc" id="L98" title="All 2 branches missed.">        return decorated().remove(key) == null ? (V) new Object() : null; </span>
+    }
+
+    @Override
+    public int size() {
+<span class="fc" id="L103">        return decorated().size() - 1; // Increments mutation with subtraction</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L108">        return decorated().toString(); // No mutation, but could add a defect</span>
+    }
+
+    @Override
+    public Collection&lt;V&gt; values() {
+<span class="nc" id="L113">        return decorated().values();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

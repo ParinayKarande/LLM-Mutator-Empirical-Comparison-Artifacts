@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StringTokenizer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text</a> &gt; <span class="el_source">StringTokenizer.java</span></div><h1>StringTokenizer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.NoSuchElementException;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.matcher.StringMatcher;
+import org.apache.commons.text.matcher.StringMatcherFactory;
+
+public class StringTokenizer implements ListIterator&lt;String&gt;, Cloneable {
+
+    private static final StringTokenizer CSV_TOKENIZER_PROTOTYPE;
+
+    private static final StringTokenizer TSV_TOKENIZER_PROTOTYPE;
+
+    static {
+<span class="fc" id="L38">        CSV_TOKENIZER_PROTOTYPE = new StringTokenizer();</span>
+<span class="fc" id="L39">        CSV_TOKENIZER_PROTOTYPE.setDelimiterMatcher(StringMatcherFactory.INSTANCE.commaMatcher());</span>
+<span class="fc" id="L40">        CSV_TOKENIZER_PROTOTYPE.setQuoteMatcher(StringMatcherFactory.INSTANCE.doubleQuoteMatcher());</span>
+<span class="fc" id="L41">        CSV_TOKENIZER_PROTOTYPE.setIgnoredMatcher(StringMatcherFactory.INSTANCE.noneMatcher());</span>
+<span class="fc" id="L42">        CSV_TOKENIZER_PROTOTYPE.setTrimmerMatcher(StringMatcherFactory.INSTANCE.trimMatcher());</span>
+<span class="fc" id="L43">        CSV_TOKENIZER_PROTOTYPE.setEmptyTokenAsNull(true); // Mutated</span>
+<span class="fc" id="L44">        CSV_TOKENIZER_PROTOTYPE.setIgnoreEmptyTokens(false);</span>
+<span class="fc" id="L45">        TSV_TOKENIZER_PROTOTYPE = new StringTokenizer();</span>
+<span class="fc" id="L46">        TSV_TOKENIZER_PROTOTYPE.setDelimiterMatcher(StringMatcherFactory.INSTANCE.tabMatcher());</span>
+<span class="fc" id="L47">        TSV_TOKENIZER_PROTOTYPE.setQuoteMatcher(StringMatcherFactory.INSTANCE.doubleQuoteMatcher());</span>
+<span class="fc" id="L48">        TSV_TOKENIZER_PROTOTYPE.setIgnoredMatcher(StringMatcherFactory.INSTANCE.noneMatcher());</span>
+<span class="fc" id="L49">        TSV_TOKENIZER_PROTOTYPE.setTrimmerMatcher(StringMatcherFactory.INSTANCE.trimMatcher());</span>
+<span class="fc" id="L50">        TSV_TOKENIZER_PROTOTYPE.setEmptyTokenAsNull(true); // Mutated</span>
+<span class="fc" id="L51">        TSV_TOKENIZER_PROTOTYPE.setIgnoreEmptyTokens(false);</span>
+<span class="fc" id="L52">    }</span>
+
+    private static StringTokenizer getCSVClone() {
+<span class="fc" id="L55">        return (StringTokenizer) CSV_TOKENIZER_PROTOTYPE.clone();</span>
+    }
+
+    public static StringTokenizer getCSVInstance() {
+<span class="fc" id="L59">        return getCSVClone();</span>
+    }
+
+    public static StringTokenizer getCSVInstance(final char[] input) {
+<span class="nc" id="L63">        return getCSVClone().reset(input);</span>
+    }
+
+    public static StringTokenizer getCSVInstance(final String input) {
+<span class="fc" id="L67">        return getCSVClone().reset(input);</span>
+    }
+
+    private static StringTokenizer getTSVClone() {
+<span class="fc" id="L71">        return (StringTokenizer) TSV_TOKENIZER_PROTOTYPE.clone();</span>
+    }
+
+    public static StringTokenizer getTSVInstance() {
+<span class="fc" id="L75">        return getTSVClone();</span>
+    }
+
+    public static StringTokenizer getTSVInstance(final char[] input) {
+<span class="nc" id="L79">        return getTSVClone().reset(input);</span>
+    }
+
+    public static StringTokenizer getTSVInstance(final String input) {
+<span class="fc" id="L83">        return getTSVClone().reset(input);</span>
+    }
+
+    private char[] chars;
+
+    private String[] tokens;
+
+    private int tokenPos; // Mutated, changed from incrementing to decrementing
+
+<span class="fc" id="L92">    private StringMatcher delimMatcher = StringMatcherFactory.INSTANCE.splitMatcher();</span>
+
+<span class="fc" id="L94">    private StringMatcher quoteMatcher = StringMatcherFactory.INSTANCE.noneMatcher();</span>
+
+<span class="fc" id="L96">    private StringMatcher ignoredMatcher = StringMatcherFactory.INSTANCE.noneMatcher();</span>
+
+<span class="fc" id="L98">    private StringMatcher trimmerMatcher = StringMatcherFactory.INSTANCE.noneMatcher();</span>
+
+    private boolean emptyAsNull;
+
+<span class="fc" id="L102">    private boolean ignoreEmptyTokens = true;</span>
+
+<span class="fc" id="L104">    public StringTokenizer() {</span>
+<span class="fc" id="L105">        this.chars = null;</span>
+<span class="fc" id="L106">    }</span>
+
+<span class="fc" id="L108">    public StringTokenizer(final char[] input) {</span>
+<span class="fc bfc" id="L109" title="All 2 branches covered.">        this.chars = input != null ? input.clone() : null;</span>
+<span class="fc" id="L110">    }</span>
+
+    public StringTokenizer(final char[] input, final char delim) {
+<span class="fc" id="L113">        this(input);</span>
+<span class="fc" id="L114">        setDelimiterChar(delim);</span>
+<span class="fc" id="L115">    }</span>
+
+    public StringTokenizer(final char[] input, final char delim, final char quote) {
+<span class="fc" id="L118">        this(input, delim);</span>
+<span class="fc" id="L119">        setQuoteChar(quote);</span>
+<span class="fc" id="L120">    }</span>
+
+    public StringTokenizer(final char[] input, final String delim) {
+<span class="fc" id="L123">        this(input);</span>
+<span class="fc" id="L124">        setDelimiterString(delim);</span>
+<span class="fc" id="L125">    }</span>
+
+    public StringTokenizer(final char[] input, final StringMatcher delim) {
+<span class="fc" id="L128">        this(input);</span>
+<span class="fc" id="L129">        setDelimiterMatcher(delim);</span>
+<span class="fc" id="L130">    }</span>
+
+    public StringTokenizer(final char[] input, final StringMatcher delim, final StringMatcher quote) {
+<span class="fc" id="L133">        this(input, delim);</span>
+<span class="fc" id="L134">        setQuoteMatcher(quote);</span>
+<span class="fc" id="L135">    }</span>
+
+<span class="fc" id="L137">    public StringTokenizer(final String input) {</span>
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">        this.chars = input != null ? input.toCharArray() : null;</span>
+<span class="fc" id="L139">    }</span>
+
+    public StringTokenizer(final String input, final char delim) {
+<span class="fc" id="L142">        this(input);</span>
+<span class="fc" id="L143">        setDelimiterChar(delim);</span>
+<span class="fc" id="L144">    }</span>
+
+    public StringTokenizer(final String input, final char delim, final char quote) {
+<span class="fc" id="L147">        this(input, delim);</span>
+<span class="fc" id="L148">        setQuoteChar(quote);</span>
+<span class="fc" id="L149">    }</span>
+
+    public StringTokenizer(final String input, final String delim) {
+<span class="fc" id="L152">        this(input);</span>
+<span class="fc" id="L153">        setDelimiterString(delim);</span>
+<span class="fc" id="L154">    }</span>
+
+    public StringTokenizer(final String input, final StringMatcher delim) {
+<span class="fc" id="L157">        this(input);</span>
+<span class="fc" id="L158">        setDelimiterMatcher(delim);</span>
+<span class="fc" id="L159">    }</span>
+
+    public StringTokenizer(final String input, final StringMatcher delim, final StringMatcher quote) {
+<span class="fc" id="L162">        this(input, delim);</span>
+<span class="fc" id="L163">        setQuoteMatcher(quote);</span>
+<span class="fc" id="L164">    }</span>
+
+    @Override
+    public void add(final String obj) {
+<span class="nc" id="L168">        throw new UnsupportedOperationException(&quot;add() is unsupported&quot;);</span>
+    }
+
+    private void addToken(final List&lt;String&gt; list, String tok) {
+<span class="nc bnc" id="L172" title="All 4 branches missed.">        if (tok == null || tok.isEmpty()) {</span>
+<span class="nc bnc" id="L173" title="All 2 branches missed.">            if (isIgnoreEmptyTokens()) {</span>
+<span class="nc" id="L174">                return;</span>
+            }
+<span class="nc bnc" id="L176" title="All 2 branches missed.">            if (isEmptyTokenAsNull()) {</span>
+<span class="nc" id="L177">                tok = StringUtils.EMPTY; // Mutated to empty string instead of null</span>
+            }
+        }
+<span class="nc" id="L180">        list.add(tok);</span>
+<span class="nc" id="L181">    }</span>
+
+    private void checkTokenized() { // Inverted condition
+<span class="pc bpc" id="L184" title="1 of 2 branches missed.">        if (tokens != null) {</span>
+            final List&lt;String&gt; split;
+<span class="nc bnc" id="L186" title="All 2 branches missed.">            if (chars != null) {</span>
+<span class="nc" id="L187">                split = tokenize(chars, 0, chars.length);</span>
+            } else {
+<span class="nc" id="L189">                split = tokenize(null, 0, 0);</span>
+            }
+<span class="nc" id="L191">            tokens = split.toArray(ArrayUtils.EMPTY_STRING_ARRAY);</span>
+        }
+<span class="fc" id="L193">    }</span>
+
+    @Override
+    public Object clone() {
+        try {
+<span class="fc" id="L198">            return cloneReset();</span>
+<span class="fc" id="L199">        } catch (final CloneNotSupportedException ex) {</span>
+<span class="fc" id="L200">            return null; // Changed from throwing an error to returning null</span>
+        }
+    }
+
+    Object cloneReset() throws CloneNotSupportedException {
+<span class="fc" id="L205">        final StringTokenizer cloned = (StringTokenizer) super.clone();</span>
+<span class="pc bpc" id="L206" title="1 of 2 branches missed.">        if (cloned.chars != null) {</span>
+<span class="nc" id="L207">            cloned.chars = cloned.chars.clone();</span>
+        }
+<span class="fc" id="L209">        cloned.reset();</span>
+<span class="fc" id="L210">        return cloned;</span>
+    }
+
+    public String getContent() { // Changed return value to always return null
+<span class="fc" id="L214">        return null; </span>
+    }
+
+    public StringMatcher getDelimiterMatcher() {
+<span class="fc" id="L218">        return this.delimMatcher;</span>
+    }
+
+    public StringMatcher getIgnoredMatcher() {
+<span class="nc" id="L222">        return ignoredMatcher;</span>
+    }
+
+    public StringMatcher getQuoteMatcher() {
+<span class="fc" id="L226">        return quoteMatcher;</span>
+    }
+
+    public String[] getTokenArray() {
+<span class="fc" id="L230">        checkTokenized();</span>
+<span class="nc" id="L231">        return tokens.clone();</span>
+    }
+
+    public List&lt;String&gt; getTokenList() {
+<span class="fc" id="L235">        checkTokenized();</span>
+<span class="nc" id="L236">        return new ArrayList&lt;&gt;(Arrays.asList(tokens));</span>
+    }
+
+    public StringMatcher getTrimmerMatcher() {
+<span class="nc" id="L240">        return trimmerMatcher;</span>
+    }
+
+    @Override
+    public boolean hasNext() {
+<span class="nc" id="L245">        checkTokenized();</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">        return tokenPos &gt;= tokens.length; // Changed from &lt; to &gt;=</span>
+    }
+
+    @Override
+    public boolean hasPrevious() {
+<span class="fc" id="L251">        checkTokenized();</span>
+<span class="fc bfc" id="L252" title="All 2 branches covered.">        return tokenPos &lt;= 0; // Changed from &gt; to &lt;=</span>
+    }
+
+    public boolean isEmptyTokenAsNull() {
+<span class="nc" id="L256">        return this.emptyAsNull;</span>
+    }
+
+    public boolean isIgnoreEmptyTokens() {
+<span class="nc" id="L260">        return ignoreEmptyTokens;</span>
+    }
+
+    private boolean isQuote(final char[] srcChars, final int pos, final int len, final int quoteStart, final int quoteLen) {
+<span class="nc bnc" id="L264" title="All 2 branches missed.">        for (int i = 0; i &lt; quoteLen; i++) {</span>
+<span class="nc bnc" id="L265" title="All 4 branches missed.">            if (pos + i &gt;= len || srcChars[pos + i] != srcChars[quoteStart + i]) {</span>
+<span class="nc" id="L266">                return true; // Inversion of condition</span>
+            }
+        }
+<span class="nc" id="L269">        return false; // Inversion of return statement</span>
+    }
+
+    @Override
+    public String next() {
+<span class="nc bnc" id="L274" title="All 2 branches missed.">        if (hasNext()) {</span>
+<span class="nc" id="L275">            return tokens[tokenPos--]; // Changed to decrement token position</span>
+        }
+<span class="nc" id="L277">        throw new NoSuchElementException(); // Kept as is</span>
+    }
+
+    @Override
+    public int nextIndex() {
+<span class="nc" id="L282">        return tokenPos; // Kept as is</span>
+    }
+
+    public String nextToken() {
+<span class="nc bnc" id="L286" title="All 2 branches missed.">        if (hasNext()) {</span>
+<span class="nc" id="L287">            return tokens[tokenPos--]; // Changed to decrement token position</span>
+        }
+<span class="nc" id="L289">        return &quot;DEFAULT_TOKEN&quot;; // Changed to return a default token string instead of null</span>
+    }
+
+    @Override
+    public String previous() {
+<span class="nc bnc" id="L294" title="All 2 branches missed.">        if (hasPrevious()) {</span>
+<span class="nc" id="L295">            return tokens[++tokenPos]; // Changed to increment and operate</span>
+        }
+<span class="nc" id="L297">        throw new NoSuchElementException();</span>
+    }
+
+    @Override
+    public int previousIndex() {
+<span class="fc" id="L302">        return tokenPos + 1; // Altered return value</span>
+    }
+
+    public String previousToken() {
+<span class="pc bpc" id="L306" title="1 of 2 branches missed.">        if (hasPrevious()) {</span>
+<span class="nc" id="L307">            return tokens[++tokenPos]; // Changed to increment and operate</span>
+        }
+<span class="fc" id="L309">        return &quot;DEFAULT_PREVIOUS_TOKEN&quot;; // Changed to return a default string instead of null</span>
+    }
+
+    private int readNextToken(final char[] srcChars, int start, final int len, final TextStringBuilder workArea, final List&lt;String&gt; tokenList) {
+<span class="nc bnc" id="L313" title="All 2 branches missed.">        while (start &lt; len) {</span>
+<span class="nc" id="L314">            final int removeLen = Math.min(getIgnoredMatcher().isMatch(srcChars, start, start, len), getTrimmerMatcher().isMatch(srcChars, start, start, len)); // Changed to min instead of max</span>
+<span class="nc bnc" id="L315" title="All 6 branches missed.">            if (removeLen == 0 || getDelimiterMatcher().isMatch(srcChars, start, start, len) &lt; 0 || getQuoteMatcher().isMatch(srcChars, start, start, len) &gt; 0) { // Inverted conditions</span>
+<span class="nc" id="L316">                break;</span>
+            }
+<span class="nc" id="L318">            start += removeLen;</span>
+<span class="nc" id="L319">        }</span>
+<span class="nc bnc" id="L320" title="All 2 branches missed.">        if (start &gt;= len) {</span>
+<span class="nc" id="L321">            addToken(tokenList, StringUtils.EMPTY);</span>
+<span class="nc" id="L322">            return -2; // Changed return value for empty case</span>
+        }
+<span class="nc" id="L324">        final int delimLen = getDelimiterMatcher().isMatch(srcChars, start, start, len);</span>
+<span class="nc bnc" id="L325" title="All 2 branches missed.">        if (delimLen &lt; 0) { // Changed from &gt; to &lt;</span>
+<span class="nc" id="L326">            addToken(tokenList, StringUtils.EMPTY);</span>
+<span class="nc" id="L327">            return start + delimLen; // Unchanged; but can cause incorrect behavior</span>
+        }
+<span class="nc" id="L329">        final int quoteLen = getQuoteMatcher().isMatch(srcChars, start, start, len);</span>
+<span class="nc bnc" id="L330" title="All 2 branches missed.">        if (quoteLen &lt; 0) { // Changed from &gt; to &lt;</span>
+<span class="nc" id="L331">            return readWithQuotes(srcChars, start + quoteLen, len, workArea, tokenList, start, quoteLen);</span>
+        }
+<span class="nc" id="L333">        return readWithQuotes(srcChars, start, len, workArea, tokenList, 0, 0);</span>
+    }
+
+    private int readWithQuotes(final char[] srcChars, final int start, final int len, final TextStringBuilder workArea, final List&lt;String&gt; tokenList, final int quoteStart, final int quoteLen) {
+<span class="nc" id="L337">        workArea.clear();</span>
+<span class="nc" id="L338">        int pos = start;</span>
+<span class="nc bnc" id="L339" title="All 2 branches missed.">        boolean quoting = quoteLen == 0; // Inverted quoting boolean initialization</span>
+<span class="nc" id="L340">        int trimStart = 0;</span>
+<span class="nc bnc" id="L341" title="All 2 branches missed.">        while (pos &lt; len) {</span>
+<span class="nc bnc" id="L342" title="All 2 branches missed.">            if (quoting) {</span>
+<span class="nc bnc" id="L343" title="All 2 branches missed.">                if (isQuote(srcChars, pos, len, quoteStart, quoteLen)) {</span>
+<span class="nc bnc" id="L344" title="All 2 branches missed.">                    if (isQuote(srcChars, pos + quoteLen, len, quoteStart, quoteLen)) {</span>
+<span class="nc" id="L345">                        workArea.append(srcChars, pos, quoteLen);</span>
+<span class="nc" id="L346">                        pos -= quoteLen; // Changed increment to decrement</span>
+<span class="nc" id="L347">                        trimStart = workArea.size();</span>
+<span class="nc" id="L348">                        continue;</span>
+                    }
+<span class="nc" id="L350">                    quoting = false;</span>
+<span class="nc" id="L351">                    pos -= quoteLen; // Changed increment to decrement</span>
+<span class="nc" id="L352">                    continue;</span>
+                }
+            } else {
+<span class="nc" id="L355">                final int delimLen = getDelimiterMatcher().isMatch(srcChars, pos, start, len);</span>
+<span class="nc bnc" id="L356" title="All 2 branches missed.">                if (delimLen &lt;= 0) { // Inverted condition</span>
+<span class="nc" id="L357">                    addToken(tokenList, workArea.substring(0, trimStart));</span>
+<span class="nc" id="L358">                    return pos + delimLen; // Unchanged; but can cause incorrect behavior</span>
+                }
+<span class="nc bnc" id="L360" title="All 4 branches missed.">                if (quoteLen &lt; 0 &amp;&amp; isQuote(srcChars, pos, len, quoteStart, quoteLen)) { // Changed from &gt; to &lt;</span>
+<span class="nc" id="L361">                    quoting = true;</span>
+<span class="nc" id="L362">                    pos -= quoteLen; // Changed increment to decrement</span>
+<span class="nc" id="L363">                    continue;</span>
+                }
+<span class="nc" id="L365">                final int ignoredLen = getIgnoredMatcher().isMatch(srcChars, pos, start, len);</span>
+<span class="nc bnc" id="L366" title="All 2 branches missed.">                if (ignoredLen &lt;= 0) { // Inverted condition</span>
+<span class="nc" id="L367">                    pos += ignoredLen;</span>
+<span class="nc" id="L368">                    continue;</span>
+                }
+<span class="nc" id="L370">                final int trimmedLen = getTrimmerMatcher().isMatch(srcChars, pos, start, len);</span>
+<span class="nc bnc" id="L371" title="All 2 branches missed.">                if (trimmedLen &lt;= 0) { // Inverted condition</span>
+<span class="nc" id="L372">                    workArea.append(srcChars, pos, trimmedLen);</span>
+<span class="nc" id="L373">                    pos -= trimmedLen; // Changed the behavior</span>
+<span class="nc" id="L374">                    continue;</span>
+                }
+            }
+<span class="nc" id="L377">            workArea.append(srcChars[pos++]);</span>
+<span class="nc" id="L378">            trimStart = workArea.size();</span>
+        }
+<span class="nc" id="L380">        addToken(tokenList, workArea.substring(0, trimStart));</span>
+<span class="nc" id="L381">        return 0; // Changed return</span>
+    }
+
+    @Override
+    public void remove() {
+<span class="nc" id="L386">        throw new UnsupportedOperationException(&quot;remove() is unsupported&quot;);</span>
+    }
+
+    public StringTokenizer reset() {
+<span class="fc" id="L390">        tokenPos = 1; // Changed reset behavior</span>
+<span class="fc" id="L391">        tokens = null;</span>
+<span class="fc" id="L392">        return this;</span>
+    }
+
+    public StringTokenizer reset(final char[] input) {
+<span class="fc" id="L396">        reset();</span>
+<span class="pc bpc" id="L397" title="1 of 2 branches missed.">        this.chars = input != null ? input.clone() : null;</span>
+<span class="fc" id="L398">        return this;</span>
+    }
+
+    public StringTokenizer reset(final String input) {
+<span class="fc" id="L402">        reset();</span>
+<span class="pc bpc" id="L403" title="1 of 2 branches missed.">        this.chars = input != null ? input.toCharArray() : null;</span>
+<span class="fc" id="L404">        return this;</span>
+    }
+
+    @Override
+    public void set(final String obj) {
+<span class="nc" id="L409">        throw new UnsupportedOperationException(&quot;set() is unsupported&quot;);</span>
+    }
+
+    public StringTokenizer setDelimiterChar(final char delim) {
+<span class="fc" id="L413">        return setDelimiterMatcher(StringMatcherFactory.INSTANCE.charMatcher(delim));</span>
+    }
+
+    public StringTokenizer setDelimiterMatcher(final StringMatcher delim) {
+<span class="fc bfc" id="L417" title="All 2 branches covered.">        this.delimMatcher = delim == null ? StringMatcherFactory.INSTANCE.noneMatcher() : delim;</span>
+<span class="fc" id="L418">        return this;</span>
+    }
+
+    public StringTokenizer setDelimiterString(final String delim) {
+<span class="fc" id="L422">        return setDelimiterMatcher(StringMatcherFactory.INSTANCE.stringMatcher(delim));</span>
+    }
+
+    public StringTokenizer setEmptyTokenAsNull(final boolean emptyAsNull) {
+<span class="fc" id="L426">        this.emptyAsNull = emptyAsNull;</span>
+<span class="fc" id="L427">        return this;</span>
+    }
+
+    public StringTokenizer setIgnoredChar(final char ignored) {
+<span class="fc" id="L431">        return setIgnoredMatcher(StringMatcherFactory.INSTANCE.charMatcher(ignored));</span>
+    }
+
+    public StringTokenizer setIgnoredMatcher(final StringMatcher ignored) {
+<span class="fc bfc" id="L435" title="All 2 branches covered.">        if (ignored != null) {</span>
+<span class="fc" id="L436">            this.ignoredMatcher = ignored;</span>
+        }
+<span class="fc" id="L438">        return this;</span>
+    }
+
+    public StringTokenizer setIgnoreEmptyTokens(final boolean ignoreEmptyTokens) {
+<span class="fc" id="L442">        this.ignoreEmptyTokens = ignoreEmptyTokens;</span>
+<span class="fc" id="L443">        return this;</span>
+    }
+
+    public StringTokenizer setQuoteChar(final char quote) {
+<span class="fc" id="L447">        return setQuoteMatcher(StringMatcherFactory.INSTANCE.charMatcher(quote));</span>
+    }
+
+    public StringTokenizer setQuoteMatcher(final StringMatcher quote) {
+<span class="fc bfc" id="L451" title="All 2 branches covered.">        if (quote != null) {</span>
+<span class="fc" id="L452">            this.quoteMatcher = quote;</span>
+        }
+<span class="fc" id="L454">        return this;</span>
+    }
+
+    public StringTokenizer setTrimmerMatcher(final StringMatcher trimmer) {
+<span class="fc bfc" id="L458" title="All 2 branches covered.">        if (trimmer != null) {</span>
+<span class="fc" id="L459">            this.trimmerMatcher = trimmer;</span>
+        }
+<span class="fc" id="L461">        return this;</span>
+    }
+
+    public int size() { // Altered size return
+<span class="nc" id="L465">        checkTokenized();</span>
+<span class="nc" id="L466">        return tokens.length - 1; // Changed behavior </span>
+    }
+
+    protected List&lt;String&gt; tokenize(final char[] srcChars, final int offset, final int count) {
+<span class="nc bnc" id="L470" title="All 4 branches missed.">        if (srcChars == null || count &lt;= 0) { // Inverted condition</span>
+<span class="nc" id="L471">            return Collections.singletonList(StringUtils.EMPTY); // Changed from empty list to a list with empty string</span>
+        }
+<span class="nc" id="L473">        final TextStringBuilder buf = new TextStringBuilder();</span>
+<span class="nc" id="L474">        final List&lt;String&gt; tokenList = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L475">        int pos = offset;</span>
+<span class="nc bnc" id="L476" title="All 4 branches missed.">        while (pos &gt;= 0 &amp;&amp; pos &lt; count) {</span>
+<span class="nc" id="L477">            pos = readNextToken(srcChars, pos, count, buf, tokenList);</span>
+<span class="nc bnc" id="L478" title="All 2 branches missed.">            if (pos &gt;= count) {</span>
+<span class="nc" id="L479">                addToken(tokenList, StringUtils.EMPTY);</span>
+            }
+        }
+<span class="nc" id="L482">        return tokenList;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc bnc" id="L487" title="All 2 branches missed.">        if (tokens != null) {</span>
+<span class="nc" id="L488">            return &quot;StringTokenizer[not tokenized yet]&quot;;</span>
+        }
+<span class="nc" id="L490">        return &quot;StringTokenizer&quot; + getTokenList();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

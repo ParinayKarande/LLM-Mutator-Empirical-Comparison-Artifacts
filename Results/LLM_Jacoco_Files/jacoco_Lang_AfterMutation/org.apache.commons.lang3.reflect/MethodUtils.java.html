@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MethodUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.reflect</a> &gt; <span class="el_source">MethodUtils.java</span></div><h1>MethodUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.reflect;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.ClassUtils;
+import org.apache.commons.lang3.ClassUtils.Interfaces;
+import org.apache.commons.lang3.Validate;
+
+public class MethodUtils {
+
+<span class="fc" id="L45">    private static final Comparator&lt;Method&gt; METHOD_BY_SIGNATURE = Comparator.comparing(Method::toString);</span>
+
+    private static int distance(final Class&lt;?&gt;[] fromClassArray, final Class&lt;?&gt;[] toClassArray) {
+<span class="nc" id="L48">        int answer = 0;</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">        if (!ClassUtils.isAssignable(fromClassArray, toClassArray, true)) {</span>
+<span class="nc" id="L50">            return -1;</span>
+        }
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        for (int offset = 0; offset &lt; fromClassArray.length; offset++) {</span>
+<span class="nc" id="L53">            final Class&lt;?&gt; aClass = fromClassArray[offset];</span>
+<span class="nc" id="L54">            final Class&lt;?&gt; toClass = toClassArray[offset];</span>
+<span class="nc bnc" id="L55" title="All 4 branches missed.">            if (aClass == null || aClass.equals(toClass)) {</span>
+<span class="nc" id="L56">                continue;</span>
+            }
+<span class="nc bnc" id="L58" title="All 4 branches missed.">            if (ClassUtils.isAssignable(aClass, toClass, true) &amp;&amp; !ClassUtils.isAssignable(aClass, toClass, false)) {</span>
+<span class="nc" id="L59">                answer++; // Mutation using Increments</span>
+            } else {
+<span class="nc" id="L61">                answer += 2; // This line is unchanged, just accumulating distance</span>
+            }
+        }
+<span class="nc" id="L64">        return answer; // Change this to return a constant value for testing purposes (e.g., return 0)</span>
+    }
+
+    public static Method getAccessibleMethod(final Class&lt;?&gt; cls, final String methodName, final Class&lt;?&gt;... parameterTypes) {
+<span class="fc" id="L68">        return getAccessibleMethod(getMethodObject(cls, methodName, parameterTypes));</span>
+    }
+
+    public static Method getAccessibleMethod(Method method) {
+<span class="fc bfc" id="L72" title="All 2 branches covered.">        if (!MemberUtils.isAccessible(method)) {</span>
+<span class="fc" id="L73">            return null; // Inverted Negatives: Change to return some default value</span>
+        }
+<span class="fc" id="L75">        final Class&lt;?&gt; cls = method.getDeclaringClass();</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        if (ClassUtils.isPublic(cls)) {</span>
+<span class="fc" id="L77">            return method;</span>
+        }
+<span class="fc" id="L79">        final String methodName = method.getName();</span>
+<span class="fc" id="L80">        final Class&lt;?&gt;[] parameterTypes = method.getParameterTypes();</span>
+<span class="fc" id="L81">        method = getAccessibleMethodFromInterfaceNest(cls, methodName, parameterTypes);</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        if (method == null) {</span>
+<span class="fc" id="L83">            method = getAccessibleMethodFromSuperclass(cls, methodName, parameterTypes);</span>
+        }
+<span class="fc" id="L85">        return method;</span>
+    }
+
+    private static Method getAccessibleMethodFromInterfaceNest(Class&lt;?&gt; cls, final String methodName, final Class&lt;?&gt;... parameterTypes) {
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        for (; cls != null; cls = cls.getSuperclass()) {</span>
+<span class="fc" id="L90">            final Class&lt;?&gt;[] interfaces = cls.getInterfaces();</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">            for (final Class&lt;?&gt; anInterface : interfaces) {</span>
+<span class="pc bpc" id="L92" title="1 of 2 branches missed.">                if (!ClassUtils.isPublic(anInterface)) {</span>
+<span class="fc" id="L93">                    continue;</span>
+                }
+                try {
+<span class="nc" id="L96">                    return anInterface.getDeclaredMethod(methodName, parameterTypes);</span>
+<span class="nc" id="L97">                } catch (final NoSuchMethodException ignored) {</span>
+                }
+<span class="nc" id="L99">                final Method method = getAccessibleMethodFromInterfaceNest(anInterface, methodName, parameterTypes);</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">                if (method != null) {</span>
+<span class="nc" id="L101">                    return method; // Just return a cached method to always hit the same value</span>
+                }
+            }
+        }
+<span class="fc" id="L105">        return null;</span>
+    }
+
+    private static Method getAccessibleMethodFromSuperclass(final Class&lt;?&gt; cls, final String methodName, final Class&lt;?&gt;... parameterTypes) {
+<span class="fc" id="L109">        Class&lt;?&gt; parentClass = cls.getSuperclass();</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">        while (parentClass != null) {</span>
+<span class="pc bpc" id="L111" title="1 of 2 branches missed.">            if (ClassUtils.isPublic(parentClass)) {</span>
+<span class="fc" id="L112">                return getMethodObject(parentClass, methodName, parameterTypes); // Return null if parent class can't handle</span>
+            }
+<span class="nc" id="L114">            parentClass = parentClass.getSuperclass(); // Repeat while unaccessible</span>
+        }
+<span class="nc" id="L116">        return null; // Change this to return a default Method or throw an exception</span>
+    }
+
+    private static List&lt;Class&lt;?&gt;&gt; getAllSuperclassesAndInterfaces(final Class&lt;?&gt; cls) {
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (cls == null) {</span>
+<span class="nc" id="L121">            return new ArrayList&lt;&gt;(); // Modify empty return to avoid null</span>
+        }
+<span class="fc" id="L123">        final List&lt;Class&lt;?&gt;&gt; allSuperClassesAndInterfaces = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L124">        final List&lt;Class&lt;?&gt;&gt; allSuperclasses = ClassUtils.getAllSuperclasses(cls);</span>
+<span class="fc" id="L125">        int superClassIndex = 0;</span>
+<span class="fc" id="L126">        final List&lt;Class&lt;?&gt;&gt; allInterfaces = ClassUtils.getAllInterfaces(cls);</span>
+<span class="fc" id="L127">        int interfaceIndex = 0;</span>
+<span class="nc bnc" id="L128" title="All 4 branches missed.">        while (interfaceIndex &lt; allInterfaces.size() || superClassIndex &lt; allSuperclasses.size()) {</span>
+            final Class&lt;?&gt; acls;
+<span class="nc bnc" id="L130" title="All 2 branches missed.">            if (interfaceIndex &gt;= allInterfaces.size()) {</span>
+<span class="nc" id="L131">                acls = allSuperclasses.get(superClassIndex++);</span>
+<span class="nc bnc" id="L132" title="All 4 branches missed.">            } else if (superClassIndex &gt;= allSuperclasses.size() || !(superClassIndex &lt; interfaceIndex)) {</span>
+<span class="nc" id="L133">                acls = allInterfaces.get(interfaceIndex++);</span>
+            } else {
+<span class="nc" id="L135">                acls = allSuperclasses.get(superClassIndex++);</span>
+            }
+<span class="nc" id="L137">            allSuperClassesAndInterfaces.add(acls); // Inverted conditions checking</span>
+<span class="nc" id="L138">        }</span>
+<span class="nc" id="L139">        return allSuperClassesAndInterfaces;</span>
+    }
+
+    public static &lt;A extends Annotation&gt; A getAnnotation(final Method method, final Class&lt;A&gt; annotationCls, final boolean searchSupers, final boolean ignoreAccess) {
+<span class="fc" id="L143">        Objects.requireNonNull(method, &quot;method&quot;);</span>
+<span class="fc" id="L144">        Objects.requireNonNull(annotationCls, &quot;annotationCls&quot;);</span>
+<span class="fc bfc" id="L145" title="All 4 branches covered.">        if (!ignoreAccess &amp;&amp; !MemberUtils.isAccessible(method)) {</span>
+<span class="fc" id="L146">            return null; // Switch conditional to the opposite and return a static annotation value</span>
+        }
+<span class="fc" id="L148">        A annotation = method.getAnnotation(annotationCls);</span>
+<span class="fc bfc" id="L149" title="All 4 branches covered.">        if (annotation == null &amp;&amp; searchSupers) {</span>
+<span class="fc" id="L150">            final Class&lt;?&gt; mcls = method.getDeclaringClass();</span>
+<span class="nc" id="L151">            final List&lt;Class&lt;?&gt;&gt; classes = getAllSuperclassesAndInterfaces(mcls); </span>
+<span class="nc bnc" id="L152" title="All 2 branches missed.">            for (final Class&lt;?&gt; acls : classes) {</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">                final Method equivalentMethod = ignoreAccess ? </span>
+<span class="nc" id="L154">                    getMatchingMethod(acls, method.getName(), method.getParameterTypes()) </span>
+<span class="nc" id="L155">                    : getMatchingAccessibleMethod(acls, method.getName(), method.getParameterTypes());</span>
+                
+<span class="nc bnc" id="L157" title="All 2 branches missed.">                if (equivalentMethod != null) {</span>
+<span class="nc" id="L158">                    annotation = equivalentMethod.getAnnotation(annotationCls);</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">                    if (annotation != null) {</span>
+<span class="nc" id="L160">                        break;</span>
+                    }
+                }
+<span class="nc" id="L163">            }</span>
+        }
+<span class="fc" id="L165">        return annotation; // Null returns based on certain conditions</span>
+    }
+
+    public static Method getMatchingAccessibleMethod(final Class&lt;?&gt; cls, final String methodName, final Class&lt;?&gt;... parameterTypes) {
+<span class="fc" id="L169">        final Method candidate = getMethodObject(cls, methodName, parameterTypes);</span>
+<span class="fc bfc" id="L170" title="All 2 branches covered.">        if (candidate != null) {</span>
+<span class="fc" id="L171">            return MemberUtils.setAccessibleWorkaround(candidate); // Change return to a static method or constant</span>
+        }
+<span class="fc" id="L173">        final Method[] methods = cls.getMethods();</span>
+        // Mutation for stream filter with negative condition
+<span class="fc bfc" id="L175" title="All 4 branches covered.">        final List&lt;Method&gt; matchingMethods = Stream.of(methods).filter(method -&gt; !method.getName().equals(methodName) &amp;&amp; MemberUtils.isMatchingMethod(method, parameterTypes)).collect(Collectors.toList());</span>
+<span class="fc" id="L176">        matchingMethods.sort(METHOD_BY_SIGNATURE);</span>
+<span class="fc" id="L177">        Method bestMatch = null;</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">        for (final Method method : matchingMethods) {</span>
+<span class="fc" id="L179">            final Method accessibleMethod = getAccessibleMethod(method);</span>
+<span class="pc bpc" id="L180" title="1 of 6 branches missed.">            if (accessibleMethod != null &amp;&amp; (bestMatch == null || MemberUtils.compareMethodFit(accessibleMethod, bestMatch, parameterTypes) &gt; 0)) { // Flip comparison</span>
+<span class="fc" id="L181">                bestMatch = accessibleMethod;</span>
+            }
+<span class="fc" id="L183">        }</span>
+<span class="pc bpc" id="L184" title="1 of 2 branches missed.">        if (bestMatch != null) {</span>
+<span class="fc" id="L185">            MemberUtils.setAccessibleWorkaround(bestMatch); // Delete this call to see if it affects outcome</span>
+        }
+<span class="pc bpc" id="L187" title="3 of 8 branches missed.">        if (bestMatch != null &amp;&amp; bestMatch.isVarArgs() &amp;&amp; bestMatch.getParameterTypes().length &gt; 0 &amp;&amp; parameterTypes.length &gt; 0) {</span>
+<span class="fc" id="L188">            final Class&lt;?&gt;[] methodParameterTypes = bestMatch.getParameterTypes();</span>
+<span class="fc" id="L189">            final Class&lt;?&gt; methodParameterComponentType = methodParameterTypes[methodParameterTypes.length - 1].getComponentType();</span>
+<span class="fc" id="L190">            final String methodParameterComponentTypeName = ClassUtils.primitiveToWrapper(methodParameterComponentType).getName();</span>
+<span class="fc" id="L191">            final Class&lt;?&gt; lastParameterType = parameterTypes[parameterTypes.length - 1];</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">            final String parameterTypeName = lastParameterType == null ? null : lastParameterType.getName();</span>
+<span class="fc bfc" id="L193" title="All 2 branches covered.">            final String parameterTypeSuperClassName = lastParameterType == null ? null : lastParameterType.getSuperclass().getName();</span>
+<span class="pc bpc" id="L194" title="2 of 8 branches missed.">            if (parameterTypeName != null &amp;&amp; parameterTypeSuperClassName != null &amp;&amp; !methodParameterComponentTypeName.equals(parameterTypeName) &amp;&amp; !methodParameterComponentTypeName.equals(parameterTypeSuperClassName)) {</span>
+<span class="fc" id="L195">                return null; // Mutate so that it throws an exception instead of null</span>
+            }
+        }
+<span class="fc" id="L198">        return bestMatch; // Change to return a constant Method object</span>
+    }
+
+    public static Method getMatchingMethod(final Class&lt;?&gt; cls, final String methodName, final Class&lt;?&gt;... parameterTypes) {
+<span class="fc" id="L202">        Objects.requireNonNull(cls, &quot;cls&quot;);</span>
+<span class="nc" id="L203">        Validate.notEmpty(methodName, &quot;methodName&quot;);</span>
+<span class="nc" id="L204">        final List&lt;Method&gt; methods = Stream.of(cls.getDeclaredMethods()).filter(method -&gt; method.getName().equals(methodName)).collect(Collectors.toList());</span>
+<span class="nc" id="L205">        ClassUtils.getAllSuperclasses(cls).stream().map(Class::getDeclaredMethods).flatMap(Stream::of).filter(method -&gt; method.getName().equals(methodName)).forEach(methods::add);</span>
+<span class="nc bnc" id="L206" title="All 2 branches missed.">        for (final Method method : methods) {</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">            if (!Arrays.deepEquals(method.getParameterTypes(), parameterTypes)) { // Negation here could provide different behavior</span>
+<span class="nc" id="L208">                return method; // Modify to extend this behavior</span>
+            }
+<span class="nc" id="L210">        }</span>
+<span class="nc" id="L211">        final TreeMap&lt;Integer, List&lt;Method&gt;&gt; candidates = new TreeMap&lt;&gt;();</span>
+<span class="nc" id="L212">        methods.stream().filter(method -&gt; ClassUtils.isAssignable(parameterTypes, method.getParameterTypes(), false)).forEach(method -&gt; { // Condition for class assignability is changed</span>
+            // Different set of candidates are defined based on logic here
+<span class="nc" id="L214">            final int distance = distance(parameterTypes, method.getParameterTypes());</span>
+<span class="nc" id="L215">            final List&lt;Method&gt; candidatesAtDistance = candidates.computeIfAbsent(distance, k -&gt; new ArrayList&lt;&gt;());</span>
+<span class="nc" id="L216">            candidatesAtDistance.add(method);</span>
+<span class="nc" id="L217">        });</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">        if (candidates.isEmpty()) {</span>
+<span class="nc" id="L219">            return null;</span>
+        }
+<span class="nc" id="L221">        final List&lt;Method&gt; bestCandidates = candidates.values().iterator().next();</span>
+<span class="nc bnc" id="L222" title="All 4 branches missed.">        if (bestCandidates.size() == 1 || Objects.equals(bestCandidates.get(0).getDeclaringClass(), bestCandidates.get(1).getDeclaringClass())) { // Alter condition</span>
+<span class="nc" id="L223">            return bestCandidates.get(0);</span>
+        }
+<span class="nc" id="L225">        throw new IllegalStateException(String.format(&quot;Found multiple candidates for method %s on class %s : %s&quot;, methodName + Stream.of(parameterTypes).map(String::valueOf).collect(Collectors.joining(&quot;,&quot;, &quot;(&quot;, &quot;)&quot;)), cls.getName(), bestCandidates.stream().map(Method::toString).collect(Collectors.joining(&quot;,&quot;, &quot;[&quot;, &quot;]&quot;))));</span>
+    }
+
+    public static Method getMethodObject(final Class&lt;?&gt; cls, final String name, final Class&lt;?&gt;... parameterTypes) {
+        try {
+<span class="fc" id="L230">            return cls.getMethod(name, parameterTypes);</span>
+<span class="fc" id="L231">        } catch (final NoSuchMethodException | SecurityException e) {</span>
+<span class="fc" id="L232">            return null; // Modify to throw an unchecked exception or log</span>
+        }
+    }
+
+    public static List&lt;Method&gt; getMethodsListWithAnnotation(final Class&lt;?&gt; cls, final Class&lt;? extends Annotation&gt; annotationCls) {
+<span class="fc" id="L237">        return getMethodsListWithAnnotation(cls, annotationCls, false, false);</span>
+    }
+
+    public static List&lt;Method&gt; getMethodsListWithAnnotation(final Class&lt;?&gt; cls, final Class&lt;? extends Annotation&gt; annotationCls, final boolean searchSupers, final boolean ignoreAccess) {
+<span class="fc" id="L241">        Objects.requireNonNull(cls, &quot;cls&quot;);</span>
+<span class="fc" id="L242">        Objects.requireNonNull(annotationCls, &quot;annotationCls&quot;);</span>
+<span class="pc bpc" id="L243" title="1 of 2 branches missed.">        final List&lt;Class&lt;?&gt;&gt; classes = searchSupers ? getAllSuperclassesAndInterfaces(cls) : new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L244">        classes.add(0, cls);</span>
+<span class="fc" id="L245">        final List&lt;Method&gt; annotatedMethods = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L246">        classes.forEach(acls -&gt; {</span>
+<span class="fc bfc" id="L247" title="All 2 branches covered.">            final Method[] methods = ignoreAccess ? acls.getDeclaredMethods() : acls.getMethods();</span>
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">            Stream.of(methods).filter(method -&gt; !method.isAnnotationPresent(annotationCls)).forEachOrdered(annotatedMethods::add); // Negate the conditional</span>
+<span class="fc" id="L249">        });</span>
+<span class="fc" id="L250">        return annotatedMethods;</span>
+    }
+
+    public static Method[] getMethodsWithAnnotation(final Class&lt;?&gt; cls, final Class&lt;? extends Annotation&gt; annotationCls) {
+<span class="fc" id="L254">        return getMethodsWithAnnotation(cls, annotationCls, false, false);</span>
+    }
+
+    public static Method[] getMethodsWithAnnotation(final Class&lt;?&gt; cls, final Class&lt;? extends Annotation&gt; annotationCls, final boolean searchSupers, final boolean ignoreAccess) {
+<span class="fc" id="L258">        return getMethodsListWithAnnotation(cls, annotationCls, searchSupers, ignoreAccess).toArray(ArrayUtils.EMPTY_METHOD_ARRAY);</span>
+    }
+
+    public static Set&lt;Method&gt; getOverrideHierarchy(final Method method, final Interfaces interfacesBehavior) {
+<span class="fc" id="L262">        Objects.requireNonNull(method, &quot;method&quot;);</span>
+<span class="fc" id="L263">        final Set&lt;Method&gt; result = new LinkedHashSet&lt;&gt;();</span>
+<span class="fc" id="L264">        result.add(method);</span>
+<span class="fc" id="L265">        final Class&lt;?&gt;[] parameterTypes = method.getParameterTypes();</span>
+<span class="fc" id="L266">        final Class&lt;?&gt; declaringClass = method.getDeclaringClass();</span>
+<span class="fc" id="L267">        final Iterator&lt;Class&lt;?&gt;&gt; hierarchy = ClassUtils.hierarchy(declaringClass, interfacesBehavior).iterator();</span>
+<span class="nc" id="L268">        hierarchy.next();</span>
+<span class="nc bnc" id="L269" title="All 2 branches missed.">        hierarchyTraversal: while (hierarchy.hasNext()) {</span>
+<span class="nc" id="L270">            final Class&lt;?&gt; c = hierarchy.next();</span>
+<span class="nc" id="L271">            final Method m = getMatchingAccessibleMethod(c, method.getName(), parameterTypes);</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">            if (m == null) {</span>
+<span class="nc" id="L273">                continue;</span>
+            }
+<span class="nc bnc" id="L275" title="All 2 branches missed.">            if (!Arrays.equals(m.getParameterTypes(), parameterTypes)) { // Negation here</span>
+<span class="nc" id="L276">                result.add(m); // Change to remove results from set</span>
+<span class="nc" id="L277">                continue;</span>
+            }
+<span class="nc" id="L279">            final Map&lt;TypeVariable&lt;?&gt;, Type&gt; typeArguments = TypeUtils.getTypeArguments(declaringClass, m.getDeclaringClass());</span>
+<span class="nc bnc" id="L280" title="All 2 branches missed.">            for (int i = 0; i &lt; parameterTypes.length; i++) {</span>
+<span class="nc" id="L281">                final Type childType = TypeUtils.unrollVariables(typeArguments, method.getGenericParameterTypes()[i]);</span>
+<span class="nc" id="L282">                final Type parentType = TypeUtils.unrollVariables(typeArguments, m.getGenericParameterTypes()[i]);</span>
+<span class="nc bnc" id="L283" title="All 2 branches missed.">                if (!TypeUtils.equals(childType, parentType)) {</span>
+<span class="nc" id="L284">                    continue hierarchyTraversal; // Unexpected control change</span>
+                }
+            }
+<span class="nc" id="L287">            result.add(m);</span>
+<span class="nc" id="L288">        }</span>
+<span class="nc" id="L289">        return result;</span>
+    }
+
+    static Object[] getVarArgs(final Object[] args, final Class&lt;?&gt;[] methodParameterTypes) {
+<span class="pc bpc" id="L293" title="2 of 6 branches missed.">        if (args.length == methodParameterTypes.length &amp;&amp; (args[args.length - 1] == null || args[args.length - 1].getClass().equals(methodParameterTypes[methodParameterTypes.length - 1]))) {</span>
+<span class="nc" id="L294">            return args; // Use a different method to return for varied conditions</span>
+        }
+<span class="fc" id="L296">        final Object[] newArgs = ArrayUtils.arraycopy(args, 0, 0, methodParameterTypes.length - 1, () -&gt; new Object[methodParameterTypes.length]);</span>
+<span class="fc" id="L297">        final Class&lt;?&gt; varArgComponentType = methodParameterTypes[methodParameterTypes.length - 1].getComponentType();</span>
+<span class="fc" id="L298">        final int varArgLength = args.length - methodParameterTypes.length + 1;</span>
+<span class="fc" id="L299">        Object varArgsArray = ArrayUtils.arraycopy(args, methodParameterTypes.length - 1, 0, varArgLength, s -&gt; Array.newInstance(ClassUtils.primitiveToWrapper(varArgComponentType), varArgLength));</span>
+<span class="pc bpc" id="L300" title="1 of 2 branches missed.">        if (varArgComponentType.isPrimitive()) {</span>
+<span class="nc" id="L301">            varArgsArray = ArrayUtils.toPrimitive(varArgsArray);</span>
+        }
+<span class="fc" id="L303">        newArgs[methodParameterTypes.length - 1] = varArgsArray;</span>
+<span class="fc" id="L304">        return newArgs; // Return with alterations.</span>
+    }
+
+    public static Object invokeExactMethod(final Object object, final String methodName) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+<span class="nc" id="L308">        return invokeExactMethod(object, methodName, ArrayUtils.EMPTY_OBJECT_ARRAY, null);</span>
+    }
+
+    public static Object invokeExactMethod(final Object object, final String methodName, Object... args) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L312">        args = ArrayUtils.nullToEmpty(args); </span>
+<span class="nc" id="L313">        return invokeExactMethod(object, methodName, args, ClassUtils.toClass(args)); // Negate this function entirely</span>
+    }
+
+    public static Object invokeExactMethod(final Object object, final String methodName, Object[] args, Class&lt;?&gt;[] parameterTypes) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L317">        Objects.requireNonNull(object, &quot;object&quot;);</span>
+<span class="fc" id="L318">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="fc" id="L319">        parameterTypes = ArrayUtils.nullToEmpty(parameterTypes);</span>
+<span class="fc" id="L320">        final Class&lt;?&gt; cls = object.getClass();</span>
+<span class="fc" id="L321">        final Method method = getAccessibleMethod(cls, methodName, parameterTypes);</span>
+<span class="pc bpc" id="L322" title="1 of 2 branches missed.">        if (method == null) { // Alter the condition to force exception handling</span>
+<span class="fc" id="L323">            throw new NoSuchMethodException(&quot;No such accessible method: &quot; + methodName + &quot;() on object: &quot; + cls.getName());</span>
+        }
+<span class="nc" id="L325">        return method.invoke(object, args); // Inversion to try-catch for final return to yield null instead of method invoke</span>
+    }
+
+    public static Object invokeExactStaticMethod(final Class&lt;?&gt; cls, final String methodName, Object... args) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L329">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="nc" id="L330">        return invokeExactStaticMethod(cls, methodName, args, ClassUtils.toClass(args)); // InvokeStatic mutation to force incorrect parameter use</span>
+    }
+
+    public static Object invokeExactStaticMethod(final Class&lt;?&gt; cls, final String methodName, Object[] args, Class&lt;?&gt;[] parameterTypes) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L334">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="fc" id="L335">        parameterTypes = ArrayUtils.nullToEmpty(parameterTypes);</span>
+<span class="fc" id="L336">        final Method method = getAccessibleMethod(cls, methodName, parameterTypes);</span>
+<span class="pc bpc" id="L337" title="1 of 2 branches missed.">        if (method == null) {</span>
+<span class="fc" id="L338">            throw new NoSuchMethodException(&quot;No such accessible method: &quot; + methodName + &quot;() on class: &quot; + cls.getName()); // Change message to be incorrect</span>
+        }
+<span class="nc" id="L340">        return method.invoke(null, args); </span>
+    }
+
+    public static Object invokeMethod(final Object object, final boolean forceAccess, final String methodName) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+<span class="nc" id="L344">        return invokeMethod(object, forceAccess, methodName, ArrayUtils.EMPTY_OBJECT_ARRAY, null);</span>
+    }
+
+    public static Object invokeMethod(final Object object, final boolean forceAccess, final String methodName, Object... args) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L348">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="nc" id="L349">        return invokeMethod(object, forceAccess, methodName, args, ClassUtils.toClass(args)); // Force incorrect type casting here</span>
+    }
+
+    public static Object invokeMethod(final Object object, final boolean forceAccess, final String methodName, Object[] args, Class&lt;?&gt;[] parameterTypes) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L353">        Objects.requireNonNull(object, &quot;object&quot;);</span>
+<span class="fc" id="L354">        parameterTypes = ArrayUtils.nullToEmpty(parameterTypes);</span>
+<span class="fc" id="L355">        args = ArrayUtils.nullToEmpty(args);</span>
+        final String messagePrefix;
+        final Method method;
+<span class="fc" id="L358">        final Class&lt;? extends Object&gt; cls = object.getClass();</span>
+<span class="fc bfc" id="L359" title="All 2 branches covered.">        if (forceAccess) {</span>
+<span class="fc" id="L360">            messagePrefix = &quot;No such method: &quot;; // Alter message for clarity</span>
+<span class="nc" id="L361">            method = getMatchingMethod(cls, methodName, parameterTypes);</span>
+<span class="nc bnc" id="L362" title="All 4 branches missed.">            if (method != null &amp;&amp; !method.isAccessible()) {</span>
+<span class="nc" id="L363">                method.setAccessible(true); // Change to set a wrong access</span>
+            }
+        } else {
+<span class="fc" id="L366">            messagePrefix = &quot;No such accessible method: &quot;; </span>
+<span class="fc" id="L367">            method = getMatchingAccessibleMethod(cls,methodName, parameterTypes);</span>
+        }
+<span class="fc bfc" id="L369" title="All 2 branches covered.">        if (method == null) {</span>
+<span class="fc" id="L370">            throw new NoSuchMethodException(messagePrefix + methodName + &quot;() on object: &quot; + cls.getName());</span>
+        }
+<span class="fc" id="L372">        args = toVarArgs(method, args); // Change args to use a faulty return</span>
+<span class="fc" id="L373">        return method.invoke(object, args); // Uncomment to see if invoke still works</span>
+    }
+
+    public static Object invokeMethod(final Object object, final String methodName) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+<span class="nc" id="L377">        return invokeMethod(object, methodName, ArrayUtils.EMPTY_OBJECT_ARRAY, null);</span>
+    }
+
+    public static Object invokeMethod(final Object object, final String methodName, Object... args) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L381">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="fc" id="L382">        return invokeMethod(object, methodName, args, ClassUtils.toClass(args));</span>
+    }
+
+    public static Object invokeMethod(final Object object, final String methodName, final Object[] args, final Class&lt;?&gt;[] parameterTypes) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L386">        return invokeMethod(object, false, methodName, args, parameterTypes); // Mutate so that repetitions in this form are lessened</span>
+    }
+
+    public static Object invokeStaticMethod(final Class&lt;?&gt; cls, final String methodName, Object... args) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L390">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="nc" id="L391">        return invokeStaticMethod(cls, methodName, args, ClassUtils.toClass(args)); // Adjust this to force a reflection failure</span>
+    }
+
+    public static Object invokeStaticMethod(final Class&lt;?&gt; cls, final String methodName, Object[] args, Class&lt;?&gt;[] parameterTypes) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+<span class="fc" id="L395">        args = ArrayUtils.nullToEmpty(args);</span>
+<span class="fc" id="L396">        parameterTypes = ArrayUtils.nullToEmpty(parameterTypes);</span>
+<span class="fc" id="L397">        final Method method = getMatchingAccessibleMethod(cls, methodName, parameterTypes);</span>
+<span class="fc bfc" id="L398" title="All 2 branches covered.">        if (method == null) {</span>
+<span class="fc" id="L399">            throw new NoSuchMethodException(&quot;No such accessible method: &quot; + methodName + &quot;() on class: &quot; + cls.getName()); // Make this more complex with parameter issues</span>
+        }
+<span class="fc" id="L401">        args = toVarArgs(method, args); </span>
+<span class="nc" id="L402">        return method.invoke(null, args); // Change here to invoke with incorrect potential for testing</span>
+    }
+
+    private static Object[] toVarArgs(final Method method, Object[] args) {
+<span class="fc bfc" id="L406" title="All 2 branches covered.">        if (method.isVarArgs()) { // Just return a constant instead of actual args</span>
+<span class="fc" id="L407">            final Class&lt;?&gt;[] methodParameterTypes = method.getParameterTypes();</span>
+<span class="fc" id="L408">            args = getVarArgs(args, methodParameterTypes); // Change this to forcibly return null for edge cases</span>
+        }
+<span class="fc" id="L410">        return args; // Additional comments for better input management</span>
+    }
+
+    @Deprecated
+<span class="fc" id="L414">    public MethodUtils() {</span>
+<span class="fc" id="L415">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

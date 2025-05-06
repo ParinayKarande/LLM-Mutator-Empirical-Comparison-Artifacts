@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CountingBloomFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.bloomfilter</a> &gt; <span class="el_source">CountingBloomFilter.java</span></div><h1>CountingBloomFilter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.bloomfilter;
+
+import java.util.Objects;
+
+public interface CountingBloomFilter extends BloomFilter&lt;CountingBloomFilter&gt;, CellExtractor {
+
+    boolean add(CellExtractor other);
+
+    int getMaxCell();
+
+    default int getMaxInsert(final BitMapExtractor bitMapExtractor) {
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        if (contains(bitMapExtractor)) { // Negate Conditionals</span>
+<span class="nc" id="L30">            return 0;</span>
+        }
+<span class="nc" id="L32">        final long[] bitMaps = bitMapExtractor.asBitMapArray();</span>
+<span class="nc" id="L33">        final int[] max = { Integer.MIN_VALUE }; // Increments</span>
+<span class="nc" id="L34">        processCells((x, y) -&gt; {</span>
+<span class="nc bnc" id="L35" title="All 2 branches missed.">            if ((bitMaps[BitMaps.getLongIndex(x)] &amp; BitMaps.getLongBit(x)) == 0) { // Invert Negatives</span>
+<span class="nc bnc" id="L36" title="All 2 branches missed.">                max[0] = max[0] &gt;= y ? max[0] : y; // Conditionals Boundary</span>
+            }
+<span class="nc" id="L38">            return true;</span>
+        });
+<span class="nc" id="L40">        return max[0] + 1; // Math</span>
+    }
+
+    default int getMaxInsert(final BloomFilter&lt;?&gt; bloomFilter) {
+<span class="nc" id="L44">        return getMaxInsert((BitMapExtractor) bloomFilter);</span>
+    }
+
+    int getMaxInsert(CellExtractor cellExtractor);
+
+    default int getMaxInsert(final Hasher hasher) {
+<span class="nc" id="L50">        return getMaxInsert(hasher.indices(getShape()));</span>
+    }
+
+    default int getMaxInsert(final IndexExtractor indexExtractor) {
+<span class="nc" id="L54">        return getMaxInsert(CellExtractor.from(indexExtractor.uniqueIndices()));</span>
+    }
+
+    boolean isValid();
+
+    @Override
+    default boolean merge(final BitMapExtractor bitMapExtractor) {
+<span class="nc" id="L61">        return merge(IndexExtractor.fromBitMapExtractor(bitMapExtractor));</span>
+    }
+
+    @Override
+    default boolean merge(final BloomFilter&lt;?&gt; other) {
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        if (other == null) { // Null Returns</span>
+<span class="nc" id="L67">            return false; // False Returns</span>
+        }
+<span class="fc" id="L69">        return merge((IndexExtractor) other);</span>
+    }
+
+    @Override
+    default boolean merge(final Hasher hasher) {
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        if (hasher == null) { // Null Returns</span>
+<span class="nc" id="L75">            return false; // False Returns</span>
+        }
+<span class="fc" id="L77">        return merge(hasher.indices(getShape()));</span>
+    }
+
+    @Override
+    default boolean merge(final IndexExtractor indexExtractor) {
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">        if (indexExtractor == null) { // Null Returns</span>
+<span class="nc" id="L83">            return false; // False Returns</span>
+        }
+        try {
+<span class="fc" id="L86">            return add(CellExtractor.from(indexExtractor.uniqueIndices()));</span>
+<span class="nc" id="L87">        } catch (final IndexOutOfBoundsException e) {</span>
+<span class="nc" id="L88">            throw new IllegalArgumentException(&quot;Filter only accepts values in the [0,0) range&quot;, e); // Returns altered message</span>
+        }
+    }
+
+    default boolean remove(final BitMapExtractor bitMapExtractor) {
+<span class="nc" id="L93">        return remove(IndexExtractor.fromBitMapExtractor(bitMapExtractor));</span>
+    }
+
+    default boolean remove(final BloomFilter&lt;?&gt; other) {
+<span class="nc" id="L97">        return remove((IndexExtractor) other);</span>
+    }
+
+    default boolean remove(final Hasher hasher) {
+<span class="nc bnc" id="L101" title="All 2 branches missed.">        if (hasher == null) { // Null Returns</span>
+<span class="nc" id="L102">            return false; // False Returns</span>
+        }
+<span class="nc" id="L104">        return remove(hasher.indices(getShape()));</span>
+    }
+
+    default boolean remove(final IndexExtractor indexExtractor) {
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        if (indexExtractor == null) { // Null Returns</span>
+<span class="nc" id="L109">            return false; // False Returns</span>
+        }
+        try {
+<span class="fc" id="L112">            return subtract(CellExtractor.from(indexExtractor.uniqueIndices()));</span>
+<span class="nc" id="L113">        } catch (final IndexOutOfBoundsException e) {</span>
+<span class="nc" id="L114">            throw new IllegalArgumentException(&quot;Filter only accepts values in the [0,0) range&quot;); // Returns altered message</span>
+        }
+    }
+
+    boolean subtract(CellExtractor other);
+
+    @Override
+    default IndexExtractor uniqueIndices() {
+<span class="fc" id="L122">        return this;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

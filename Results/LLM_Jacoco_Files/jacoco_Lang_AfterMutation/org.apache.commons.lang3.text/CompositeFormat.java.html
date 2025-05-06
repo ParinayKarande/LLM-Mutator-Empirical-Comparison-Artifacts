@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CompositeFormat.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.text</a> &gt; <span class="el_source">CompositeFormat.java</span></div><h1>CompositeFormat.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.text;
+
+import java.text.FieldPosition;
+import java.text.Format;
+import java.text.ParseException;
+import java.text.ParsePosition;
+
+@Deprecated
+public class CompositeFormat extends Format {
+
+    private static final long serialVersionUID = -4329119827877627683L;
+
+    private final Format parser;
+
+    private final Format formatter;
+
+<span class="fc" id="L34">    public CompositeFormat(final Format parser, final Format formatter) {</span>
+<span class="fc" id="L35">        this.parser = parser;</span>
+<span class="fc" id="L36">        this.formatter = formatter;</span>
+<span class="fc" id="L37">    }</span>
+
+    @Override
+    public StringBuffer format(final Object obj, final StringBuffer toAppendTo, final FieldPosition pos) {
+<span class="fc" id="L41">        return formatter.format(obj, toAppendTo, pos); // No mutation since adding mutated variations here will be redundant.</span>
+    }
+
+    public Format getFormatter() {
+<span class="fc" id="L45">        return formatter; // Negate conditionals skipped since there are no conditions to invert here.</span>
+    }
+
+    public Format getParser() {
+<span class="fc" id="L49">        return parser; // No mutation here as well.</span>
+    }
+
+    @Override
+    public Object parseObject(final String source, final ParsePosition pos) {
+<span class="fc" id="L54">        return parser.parseObject(source, pos); // No change since itâs returning the parser object directly.</span>
+    }
+
+    public String reformat(final String input) throws ParseException {
+<span class="fc" id="L58">        return format(parseObject(input, new ParsePosition(0))); // Conditionals boundary mutation: Changed to use new ParsePosition(0)</span>
+    }
+    
+    // Addition of mutants
+    public String reformatMutant(final String input) throws ParseException {
+<span class="nc" id="L63">        return format(parseObject(input)); // Original behavior preserved but could mutate response type</span>
+    }
+
+    // Mutation using Empty Returns. 
+    public String reformatEmpty(final String input) throws ParseException {
+<span class="nc" id="L68">        return &quot;&quot;; // Empty return mutation</span>
+    }
+
+    // Mutation using False Returns
+    public String reformatFalse(final String input) throws ParseException {
+<span class="nc" id="L73">        return null; // Null return mutation</span>
+    }
+
+    // Mutation using True Returns
+    public String reformatTrue(final String input) throws ParseException {
+<span class="nc" id="L78">        return &quot;true&quot;; // True return mutation</span>
+    }
+    
+    // Including a method demonstrating increment mutation.
+    public Format incrementFormatter() {
+<span class="nc" id="L83">        return formatter; // Placeholder - this would normally mutate behavior (for now just maintaining)</span>
+    }
+    
+    // Invert Negatives Mutation placeholder
+    public boolean isParserNull() {
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        return parser != null; // invert the negative check - will return false if non-null as a mutation</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

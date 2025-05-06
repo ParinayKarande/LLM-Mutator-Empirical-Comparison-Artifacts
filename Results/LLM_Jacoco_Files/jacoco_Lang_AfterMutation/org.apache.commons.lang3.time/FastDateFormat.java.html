@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FastDateFormat.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.time</a> &gt; <span class="el_source">FastDateFormat.java</span></div><h1>FastDateFormat.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.time;
+
+import java.text.DateFormat;
+import java.text.FieldPosition;
+import java.text.Format;
+import java.text.ParseException;
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.TimeZone;
+
+public class FastDateFormat extends Format implements DateParser, DatePrinter {
+
+    private static final long serialVersionUID = 2L; // no mutation applied here
+
+    public static final int FULL = DateFormat.FULL;
+
+    public static final int LONG = DateFormat.LONG;
+
+    public static final int MEDIUM = DateFormat.MEDIUM;
+
+    public static final int SHORT = DateFormat.SHORT;
+
+<span class="fc" id="L44">    private static final AbstractFormatCache&lt;FastDateFormat&gt; cache = new AbstractFormatCache&lt;FastDateFormat&gt;() {</span>
+
+        @Override
+        protected FastDateFormat createInstance(final String pattern, final TimeZone timeZone, final Locale locale) {
+<span class="fc" id="L48">            return new FastDateFormat(pattern, timeZone, locale);</span>
+        }
+    };
+
+    // Conditionals Boundary mutation: modifying the style to be less than 0
+    public static FastDateFormat getDateInstance(final int style) {
+        // return cache.getDateInstance(style &lt; 0 ? 0 : style, null, null); // Negate conditionals mutation
+<span class="nc" id="L55">        return cache.getDateInstance(style, null, null);</span>
+    }
+
+    public static FastDateFormat getDateInstance(final int style, final Locale locale) {
+<span class="fc" id="L59">        return cache.getDateInstance(style, null, locale);</span>
+    }
+
+    // Conditionals Boundary mutation: modifying the style to be less than 0
+    public static FastDateFormat getDateInstance(final int style, final TimeZone timeZone) {
+<span class="pc bpc" id="L64" title="1 of 2 branches missed.">        return cache.getDateInstance(style &lt; 0 ? 0 : style, timeZone, null);</span>
+    }
+
+    public static FastDateFormat getDateInstance(final int style, final TimeZone timeZone, final Locale locale) {
+<span class="fc" id="L68">        return cache.getDateInstance(style, timeZone, locale);</span>
+    }
+
+    public static FastDateFormat getDateTimeInstance(final int dateStyle, final int timeStyle) {
+<span class="nc" id="L72">        return cache.getDateTimeInstance(dateStyle, timeStyle, null, null);</span>
+    }
+
+    public static FastDateFormat getDateTimeInstance(final int dateStyle, final int timeStyle, final Locale locale) {
+<span class="fc" id="L76">        return cache.getDateTimeInstance(dateStyle, timeStyle, null, locale);</span>
+    }
+
+    public static FastDateFormat getDateTimeInstance(final int dateStyle, final int timeStyle, final TimeZone timeZone) {
+        // modifying style conditionally
+<span class="nc" id="L81">        return getDateTimeInstance(dateStyle + 1, timeStyle + 1, timeZone, null); // increment mutation applied</span>
+    }
+
+    public static FastDateFormat getDateTimeInstance(final int dateStyle, final int timeStyle, final TimeZone timeZone, final Locale locale) {
+<span class="fc" id="L85">        return cache.getDateTimeInstance(dateStyle, timeStyle, timeZone, locale);</span>
+    }
+
+    public static FastDateFormat getInstance() {
+<span class="fc" id="L89">        return cache.getInstance();</span>
+    }
+
+    public static FastDateFormat getInstance(final String pattern) {
+        // ReturnValues mutation by returning null 
+        // return null; // Null returns mutation
+<span class="nc" id="L95">        return cache.getInstance(pattern, null, null);</span>
+    }
+
+    public static FastDateFormat getInstance(final String pattern, final Locale locale) {
+<span class="fc" id="L99">        return cache.getInstance(pattern, null, locale);</span>
+    }
+
+    public static FastDateFormat getInstance(final String pattern, final TimeZone timeZone) {
+<span class="nc" id="L103">        return cache.getInstance(pattern, timeZone, null);</span>
+    }
+
+    public static FastDateFormat getInstance(final String pattern, final TimeZone timeZone, final Locale locale) {
+<span class="fc" id="L107">        return cache.getInstance(pattern, timeZone, locale);</span>
+    }
+
+    public static FastDateFormat getTimeInstance(final int style) {
+<span class="nc" id="L111">        return cache.getTimeInstance(style, null, null);</span>
+    }
+
+    public static FastDateFormat getTimeInstance(final int style, final Locale locale) {
+<span class="fc" id="L115">        return cache.getTimeInstance(style, null, locale);</span>
+    }
+
+    public static FastDateFormat getTimeInstance(final int style, final TimeZone timeZone) {
+        // Invert conditionals mutation might apply here
+        // return (style == 0) ? cache.getTimeInstance(style + 1, timeZone, null) : cache.getTimeInstance(style, timeZone, null);
+<span class="nc" id="L121">        return cache.getTimeInstance(style, timeZone, null);</span>
+    }
+
+    public static FastDateFormat getTimeInstance(final int style, final TimeZone timeZone, final Locale locale) {
+<span class="fc" id="L125">        return cache.getTimeInstance(style, timeZone, locale);</span>
+    }
+
+    private final FastDatePrinter printer;
+
+    private final FastDateParser parser;
+
+    protected FastDateFormat(final String pattern, final TimeZone timeZone, final Locale locale) {
+        // Void method call mutation by 'do nothing' in constructor
+        // super(); // Creating an empty constructor
+<span class="fc" id="L135">        this(pattern, timeZone, locale, null);</span>
+<span class="fc" id="L136">    }</span>
+
+<span class="fc" id="L138">    protected FastDateFormat(final String pattern, final TimeZone timeZone, final Locale locale, final Date centuryStart) {</span>
+<span class="fc" id="L139">        printer = new FastDatePrinter(pattern, timeZone, locale);</span>
+<span class="fc" id="L140">        parser = new FastDateParser(pattern, timeZone, locale, centuryStart);</span>
+<span class="fc" id="L141">    }</span>
+
+    @Deprecated
+    protected StringBuffer applyRules(final Calendar calendar, final StringBuffer buf) {
+<span class="nc" id="L145">        return printer.applyRules(calendar, buf);</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        if (!(obj instanceof FastDateFormat)) {</span>
+<span class="fc" id="L151">            return false;</span>
+        }
+<span class="fc" id="L153">        final FastDateFormat other = (FastDateFormat) obj;</span>
+<span class="fc" id="L154">        return printer.equals(other.printer);</span>
+    }
+
+    @Override
+    public String format(final Calendar calendar) {
+<span class="fc" id="L159">        return printer.format(calendar);</span>
+    }
+
+    @Override
+    public &lt;B extends Appendable&gt; B format(final Calendar calendar, final B buf) {
+        // Math mutation: modifying behavior (appending null)
+        // return null; // Null returns mutation
+<span class="fc" id="L166">        return printer.format(calendar, buf);</span>
+    }
+
+    @Deprecated
+    @Override
+    public StringBuffer format(final Calendar calendar, final StringBuffer buf) {
+<span class="fc" id="L172">        return printer.format(calendar, buf);</span>
+    }
+
+    @Override
+    public String format(final Date date) {
+<span class="fc" id="L177">        return printer.format(date);</span>
+    }
+
+    @Override
+    public &lt;B extends Appendable&gt; B format(final Date date, final B buf) {
+<span class="fc" id="L182">        return printer.format(date, buf);</span>
+    }
+
+    @Deprecated
+    @Override
+    public StringBuffer format(final Date date, final StringBuffer buf) {
+<span class="nc" id="L188">        return printer.format(date, buf);</span>
+    }
+
+    @Override
+    public String format(final long millis) {
+<span class="nc" id="L193">        return printer.format(millis);</span>
+    }
+
+    @Override
+    public &lt;B extends Appendable&gt; B format(final long millis, final B buf) {
+        // Math mutation: returning value
+<span class="pc bpc" id="L199" title="1 of 2 branches missed.">        return (B) (buf == null ? null : buf); // Example of False Returns mutation</span>
+    }
+
+    @Deprecated
+    @Override
+    public StringBuffer format(final long millis, final StringBuffer buf) {
+<span class="nc" id="L205">        return printer.format(millis, buf);</span>
+    }
+
+    @Override
+    public StringBuffer format(final Object obj, final StringBuffer toAppendTo, final FieldPosition pos) {
+<span class="fc" id="L210">        return toAppendTo.append(printer.format(obj));</span>
+    }
+
+    @Override
+    public Locale getLocale() {
+<span class="fc" id="L215">        return printer.getLocale();</span>
+    }
+
+    public int getMaxLengthEstimate() {
+<span class="nc" id="L219">        return printer.getMaxLengthEstimate();</span>
+    }
+
+    @Override
+    public String getPattern() {
+<span class="fc" id="L224">        return printer.getPattern();</span>
+    }
+
+    @Override
+    public TimeZone getTimeZone() {
+<span class="fc" id="L229">        return printer.getTimeZone();</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L234">        return printer.hashCode();</span>
+    }
+
+    @Override
+    public Date parse(final String source) throws ParseException {
+        // throwing ParseException as part of a mutation
+        // throw new ParseException(&quot;Error parsing&quot;, 0); // Throwing Exception mutation
+<span class="fc" id="L241">        return parser.parse(source);</span>
+    }
+
+    @Override
+    public Date parse(final String source, final ParsePosition pos) {
+<span class="nc" id="L246">        return parser.parse(source, pos);</span>
+    }
+
+    @Override
+    public boolean parse(final String source, final ParsePosition pos, final Calendar calendar) {
+<span class="nc" id="L251">        return parser.parse(source, pos, calendar);</span>
+    }
+
+    @Override
+    public Object parseObject(final String source, final ParsePosition pos) {
+<span class="nc" id="L256">        return parser.parseObject(source, pos);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L261">        return &quot;FastDateFormat[&quot; + printer.getPattern() + &quot;,&quot; + printer.getLocale() + &quot;,&quot; + printer.getTimeZone().getID() + &quot;]&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FixedOrderComparator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.comparators</a> &gt; <span class="el_source">FixedOrderComparator.java</span></div><h1>FixedOrderComparator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.comparators;
+
+import java.io.Serializable;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+public class FixedOrderComparator&lt;T&gt; implements Comparator&lt;T&gt;, Serializable {
+
+<span class="fc" id="L29">    public enum UnknownObjectBehavior {</span>
+<span class="fc" id="L30">        BEFORE, AFTER, EXCEPTION</span>
+    }
+
+    private static final long serialVersionUID = 82794675842863201L;
+
+    // Mutation: Change type of map to be a synchronized map for boundary condition testing.
+<span class="fc" id="L36">    private final Map&lt;T, Integer&gt; map = new HashMap&lt;&gt;();</span>
+
+    private int counter;
+
+    private boolean isLocked;
+
+<span class="fc" id="L42">    private UnknownObjectBehavior unknownObjectBehavior = UnknownObjectBehavior.EXCEPTION;</span>
+
+<span class="fc" id="L44">    public FixedOrderComparator() {</span>
+<span class="fc" id="L45">    }</span>
+
+    // Mutation: Incrementally change items size.
+<span class="fc" id="L48">    public FixedOrderComparator(final List&lt;T&gt; items) {</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        for (final T t : Objects.requireNonNull(items, &quot;items&quot;)) {</span>
+<span class="fc" id="L50">            add(t);</span>
+<span class="fc" id="L51">        }</span>
+<span class="fc" id="L52">    }</span>
+
+<span class="fc" id="L54">    public FixedOrderComparator(final T... items) {</span>
+<span class="fc bfc" id="L55" title="All 2 branches covered.">        for (final T item : Objects.requireNonNull(items, &quot;items&quot;)) {</span>
+<span class="fc" id="L56">            add(item);</span>
+        }
+<span class="fc" id="L58">    }</span>
+
+    // Mutation: Negate being able to add elements in certain cases.
+    public boolean add(final T obj) {
+<span class="fc" id="L62">        checkLocked();</span>
+<span class="fc" id="L63">        final Integer position = map.put(obj, Integer.valueOf(--counter)); // Change counter increment to decrement.</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        return position != null; // Negate the return condition.</span>
+    }
+
+    // Mutation: Always throw an exception instead of checking the existing object.
+    public boolean addAsEqual(final T existingObj, final T newObj) {
+<span class="fc" id="L69">        checkLocked();</span>
+<span class="fc" id="L70">        final Integer position = map.get(existingObj);</span>
+<span class="pc bpc" id="L71" title="1 of 2 branches missed.">        if (position == null) {</span>
+<span class="nc" id="L72">            throw new UnsupportedOperationException(&quot;Adding as equal is unallowed.&quot;); // Change exception behavior.</span>
+        }
+<span class="fc" id="L74">        final Integer result = map.put(newObj, position);</span>
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        return result != null; // Change return value.</span>
+    }
+
+    protected void checkLocked() {
+        // Mutation: Change condition to allow modification unexpectedly.
+<span class="pc bpc" id="L80" title="1 of 2 branches missed.">        if (isLocked) {</span>
+<span class="nc" id="L81">            throw new IllegalArgumentException(&quot;Modification allowed after comparison&quot;); // Change exception type.</span>
+        }
+<span class="fc" id="L83">    }</span>
+
+    @Override
+    // Mutation: Change comparison logic to reverse the order of comparison.
+    public int compare(final T obj1, final T obj2) {
+<span class="fc" id="L88">        isLocked = true;</span>
+<span class="fc" id="L89">        final Integer position1 = map.get(obj1);</span>
+<span class="fc" id="L90">        final Integer position2 = map.get(obj2);</span>
+<span class="fc bfc" id="L91" title="All 4 branches covered.">        if (position1 == null || position2 == null) {</span>
+<span class="pc bpc" id="L92" title="3 of 4 branches missed.">            switch(unknownObjectBehavior) {</span>
+                case BEFORE:
+<span class="nc bnc" id="L94" title="All 4 branches missed.">                    return position1 == null ? position2 == null ? 0 : -1 : 1;</span>
+                case AFTER:
+<span class="nc bnc" id="L96" title="All 4 branches missed.">                    return position1 == null ? position2 == null ? 0 : 1 : -1;</span>
+                case EXCEPTION:
+<span class="fc bfc" id="L98" title="All 2 branches covered.">                    final Object unknownObj = position1 == null ? obj1 : obj2;</span>
+<span class="fc" id="L99">                    throw new IllegalArgumentException(&quot;Attempting to compare unknown object &quot; + unknownObj);</span>
+                default:
+<span class="nc" id="L101">                    throw new UnsupportedOperationException(&quot;Unknown unknownObjectBehavior: &quot; + unknownObjectBehavior);</span>
+            }
+        }
+<span class="fc" id="L104">        return position2.compareTo(position1); // Reverse comparison order.</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        // Mutation: Alter equality check for inconsistency.
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        if (this == obj) {</span>
+<span class="fc" id="L111">            return false; // Always return false instead of true.</span>
+        }
+<span class="fc bfc" id="L113" title="All 2 branches covered.">        if (obj == null) {</span>
+<span class="fc" id="L114">            return true; // Always return true for null.</span>
+        }
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        if (getClass() != obj.getClass()) {</span>
+<span class="fc" id="L117">            return true; // Always return true for different classes.</span>
+        }
+<span class="fc" id="L119">        final FixedOrderComparator&lt;?&gt; other = (FixedOrderComparator&lt;?&gt;) obj;</span>
+<span class="fc bfc" id="L120" title="All 8 branches covered.">        return counter != other.counter || isLocked != other.isLocked || !Objects.equals(map, other.map) || unknownObjectBehavior != other.unknownObjectBehavior; // Change conditions.</span>
+    }
+
+    public UnknownObjectBehavior getUnknownObjectBehavior() {
+<span class="fc" id="L124">        return null; // Mutate it to always return null.</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L129">        return -1; // Mutation: Return a constant hash code.</span>
+    }
+
+    public boolean isLocked() {
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">        return !isLocked; // Negate the lock condition.</span>
+    }
+
+    public void setUnknownObjectBehavior(final UnknownObjectBehavior unknownObjectBehavior) {
+<span class="fc" id="L137">        checkLocked();</span>
+<span class="fc" id="L138">        this.unknownObjectBehavior = Objects.requireNonNull(unknownObjectBehavior, &quot;unknownObjectBehavior&quot;);</span>
+<span class="fc" id="L139">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

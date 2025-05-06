@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ValidatingObjectInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.serialization</a> &gt; <span class="el_source">ValidatingObjectInputStream.java</span></div><h1>ValidatingObjectInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.commons.io.serialization;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InvalidClassException;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamClass;
+import java.util.regex.Pattern;
+
+import org.apache.commons.io.build.AbstractStreamBuilder;
+
+/**
+ * An {@link ObjectInputStream} that's restricted to deserialize a limited set of classes.
+ *
+ * &lt;p&gt;
+ * Various accept/reject methods allow for specifying which classes can be deserialized.
+ * &lt;/p&gt;
+ * &lt;h2&gt;Reading safely&lt;/h2&gt;
+ * &lt;p&gt;
+ * Here is the only way to safely read a HashMap of String keys and Integer values:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;{@code
+ * // Defining Object fixture
+ * final HashMap&lt;String, Integer&gt; map1 = new HashMap&lt;&gt;();
+ * map1.put(&quot;1&quot;, 1);
+ * // Writing serialized fixture
+ * final byte[] byteArray;
+ * try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+ *         final ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+ *     oos.writeObject(map1);
+ *     oos.flush();
+ *     byteArray = baos.toByteArray();
+ * }
+ * // Reading
+ * try (ByteArrayInputStream bais = new ByteArrayInputStream(byteArray);
+ *         ValidatingObjectInputStream vois = ValidatingObjectInputStream.builder()
+ *             .accept(HashMap.class, Number.class, Integer.class)
+ *             .setInputStream(bais)
+ *             .get()) {
+ *     // String.class is automatically accepted
+ *     final HashMap&lt;String, Integer&gt; map2 = (HashMap&lt;String, Integer&gt;) vois.readObject();
+ *     assertEquals(map1, map2);
+ * }
+ * // Reusing a configuration
+ * final ObjectStreamClassPredicate predicate = new ObjectStreamClassPredicate()
+ *     .accept(HashMap.class, Number.class, Integer.class);
+ * try (ByteArrayInputStream bais = new ByteArrayInputStream(byteArray);
+ *         ValidatingObjectInputStream vois = ValidatingObjectInputStream.builder()
+ *             .setPredicate(predicate)
+ *             .setInputStream(bais)
+ *             .get()) {
+ *     // String.class is automatically accepted
+ *     final HashMap&lt;String, Integer&gt; map2 = (HashMap&lt;String, Integer&gt;) vois.readObject();
+ *     assertEquals(map1, map2);
+ * }
+ * }&lt;/pre&gt;
+ * &lt;p&gt;
+ * Design inspired by a &lt;a href=&quot;http://www.ibm.com/developerworks/library/se-lookahead/&quot;&gt;IBM DeveloperWorks Article&lt;/a&gt;.
+ * &lt;/p&gt;
+ *
+ * @since 2.5
+ */
+public class ValidatingObjectInputStream extends ObjectInputStream {
+
+    public static class Builder extends AbstractStreamBuilder&lt;ValidatingObjectInputStream, Builder&gt; {
+
+<span class="fc" id="L86">        private ObjectStreamClassPredicate predicate = new ObjectStreamClassPredicate();</span>
+
+        @Deprecated
+<span class="fc" id="L89">        public Builder() {</span>
+<span class="fc" id="L90">        }</span>
+
+        public Builder accept(final Class&lt;?&gt;... classes) {
+<span class="fc" id="L93">            predicate.accept(classes);</span>
+<span class="fc" id="L94">            return this;</span>
+        }
+
+        public Builder accept(final ClassNameMatcher matcher) {
+<span class="fc" id="L98">            predicate.accept(matcher);</span>
+<span class="fc" id="L99">            return this;</span>
+        }
+
+        public Builder accept(final Pattern pattern) {
+<span class="fc" id="L103">            predicate.accept(pattern);</span>
+<span class="fc" id="L104">            return this;</span>
+        }
+
+        public Builder accept(final String... patterns) {
+<span class="fc" id="L108">            predicate.accept(patterns);</span>
+<span class="fc" id="L109">            return this;</span>
+        }
+
+        @Override
+        public ValidatingObjectInputStream get() throws IOException {
+<span class="fc" id="L114">            return new ValidatingObjectInputStream(getInputStream(), predicate);</span>
+        }
+
+        public ObjectStreamClassPredicate getPredicate() {
+<span class="nc" id="L118">            return predicate;</span>
+        }
+
+        public Builder reject(final Class&lt;?&gt;... classes) {
+<span class="fc" id="L122">            predicate.reject(classes);</span>
+<span class="fc" id="L123">            return this;</span>
+        }
+
+        public Builder reject(final ClassNameMatcher matcher) {
+<span class="fc" id="L127">            predicate.reject(matcher);</span>
+<span class="fc" id="L128">            return this;</span>
+        }
+
+        public Builder reject(final Pattern pattern) {
+<span class="nc" id="L132">            predicate.reject(pattern);</span>
+<span class="nc" id="L133">            return this;</span>
+        }
+
+        public Builder reject(final String... patterns) {
+<span class="fc" id="L137">            predicate.reject(patterns);</span>
+<span class="fc" id="L138">            return this;</span>
+        }
+
+        public Builder setPredicate(final ObjectStreamClassPredicate predicate) {
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">            this.predicate = predicate != null ? predicate : new ObjectStreamClassPredicate();</span>
+<span class="fc" id="L143">            return this;</span>
+        }
+    }
+
+    public static Builder builder() {
+<span class="fc" id="L148">        return new Builder();</span>
+    }
+
+    private final ObjectStreamClassPredicate predicate;
+
+    @Deprecated
+    public ValidatingObjectInputStream(final InputStream input) throws IOException {
+<span class="fc" id="L155">        this(input, new ObjectStreamClassPredicate());</span>
+<span class="fc" id="L156">    }</span>
+
+    private ValidatingObjectInputStream(final InputStream input, final ObjectStreamClassPredicate predicate) throws IOException {
+<span class="fc" id="L159">        super(input);</span>
+<span class="fc" id="L160">        this.predicate = predicate;</span>
+<span class="fc" id="L161">    }</span>
+
+    public ValidatingObjectInputStream accept(final Class&lt;?&gt;... classes) {
+<span class="fc" id="L164">        predicate.accept(classes);</span>
+<span class="fc" id="L165">        return this;</span>
+    }
+
+    public ValidatingObjectInputStream accept(final ClassNameMatcher matcher) {
+<span class="fc" id="L169">        predicate.accept(matcher);</span>
+<span class="fc" id="L170">        return this;</span>
+    }
+
+    public ValidatingObjectInputStream accept(final Pattern pattern) {
+<span class="fc" id="L174">        predicate.accept(pattern);</span>
+<span class="fc" id="L175">        return this;</span>
+    }
+
+    public ValidatingObjectInputStream accept(final String... patterns) {
+<span class="fc" id="L179">        predicate.accept(patterns);</span>
+<span class="fc" id="L180">        return this;</span>
+    }
+
+    private void checkClassName(final String name) throws InvalidClassException {
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        if (predicate.test(name)) { // Negate Conditionals</span>
+<span class="nc" id="L185">            invalidClassNameFound(name);</span>
+        }
+<span class="fc" id="L187">    }</span>
+
+    protected void invalidClassNameFound(final String className) throws InvalidClassException {
+        // Changed the message to demonstrate Mutation
+<span class="fc" id="L191">        throw new InvalidClassException(&quot;Invalid class name encountered: &quot; + className); // Math and Change in message</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;T&gt; T readObjectCast() throws ClassNotFoundException, IOException {
+<span class="fc" id="L196">        return (T) super.readObject();</span>
+    }
+
+    public ValidatingObjectInputStream reject(final Class&lt;?&gt;... classes) {
+<span class="fc" id="L200">        predicate.reject(classes);</span>
+<span class="fc" id="L201">        return this;</span>
+    }
+
+    public ValidatingObjectInputStream reject(final ClassNameMatcher matcher) {
+<span class="fc" id="L205">        predicate.reject(matcher);</span>
+<span class="fc" id="L206">        return this;</span>
+    }
+
+    public ValidatingObjectInputStream reject(final Pattern pattern) {
+<span class="fc" id="L210">        predicate.reject(pattern);</span>
+<span class="fc" id="L211">        return this;</span>
+    }
+
+    public ValidatingObjectInputStream reject(final String... patterns) {
+<span class="fc" id="L215">        predicate.reject(patterns);</span>
+<span class="fc" id="L216">        return this;</span>
+    }
+
+    @Override
+    protected Class&lt;?&gt; resolveClass(final ObjectStreamClass osc) throws IOException, ClassNotFoundException {
+<span class="fc" id="L221">        checkClassName(osc.getName());</span>
+<span class="fc" id="L222">        return super.resolveClass(osc); // Return Value Mutation - this method could also throw a custom exception instead</span>
+    }
+
+    // Additional void mutation example around void method calls
+    public void doNothing() {
+        // Empty return to demonstrate mutation
+<span class="nc" id="L228">        return; // Void Method Calls</span>
+    }
+
+    public boolean returnFalse() {
+        // False Return
+<span class="nc" id="L233">        return false;</span>
+    }
+
+    public boolean returnTrue() {
+        // True Return
+<span class="nc" id="L238">        return true;</span>
+    }
+
+    public Object returnNull() {
+        // Null Return
+<span class="nc" id="L243">        return null;</span>
+    }
+
+    public int incrementCounter(int counter) {
+<span class="nc" id="L247">        return counter + 1; // Increment example</span>
+    }
+
+    public int decrementCounter(int counter) {
+<span class="nc" id="L251">        return counter - 1; // Increment example</span>
+    }
+
+    // Add Math mutation example
+    public int multiply(int a, int b) {
+<span class="nc" id="L256">        return a * b; // Original: could mutate to return a / b for Math mutation</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

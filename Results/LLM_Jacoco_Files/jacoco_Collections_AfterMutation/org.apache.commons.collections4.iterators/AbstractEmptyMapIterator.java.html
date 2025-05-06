@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractEmptyMapIterator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.iterators</a> &gt; <span class="el_source">AbstractEmptyMapIterator.java</span></div><h1>AbstractEmptyMapIterator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.iterators;
+
+public abstract class AbstractEmptyMapIterator&lt;K, V&gt; extends AbstractEmptyIterator&lt;K&gt; {
+
+<span class="fc" id="L22">    public AbstractEmptyMapIterator() {</span>
+<span class="fc" id="L23">    }</span>
+
+    // Mutant 1: Change to returning null instead of throwing an exception
+    public K getKey() {
+<span class="fc" id="L27">        return null; // Null Returns</span>
+    }
+
+    // Mutant 2: Change to returning null instead of throwing an exception
+    public V getValue() {
+<span class="nc" id="L32">        return null; // Null Returns</span>
+    }
+
+    // Mutant 3: Change exception message
+    public V setValue(final V ignored) {
+<span class="nc" id="L37">        throw new IllegalStateException(&quot;Empty iterator operation attempted&quot;); // Adjusted error message</span>
+    }
+    
+    // Mutant 4: Change to a simplified logic (Negate conditionals)
+    public K getKeyAlternative() {
+        if (true) { // Negate Conditionals
+<span class="nc" id="L43">            return null; // Null Returns</span>
+        } else {
+            throw new IllegalStateException(&quot;Iterator contains no elements&quot;);
+        }
+    }
+
+    // Mutant 5: Change the return value to false
+    public boolean isEmpty() {
+<span class="nc" id="L51">        return false; // False Return</span>
+    }
+
+    // Mutant 6: Change following variable to primitive; adding a method that operates with primitives
+    public int size() {
+<span class="nc" id="L56">        return 0; // Return a primitive value (size)</span>
+    }
+    
+    // Mutant 7: Change the getValue to return a default value
+    public V getValueDefault() {
+<span class="nc" id="L61">        return (V) new Object(); // Primitive Returns with a default object</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

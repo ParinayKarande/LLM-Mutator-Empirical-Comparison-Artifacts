@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractMapBag.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.bag</a> &gt; <span class="el_source">AbstractMapBag.java</span></div><h1>AbstractMapBag.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.bag;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.Array;
+import java.util.Collection;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
+import org.apache.commons.collections4.Bag;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.set.UnmodifiableSet;
+
+public abstract class AbstractMapBag&lt;E&gt; implements Bag&lt;E&gt; {
+
+    static class BagIterator&lt;E&gt; implements Iterator&lt;E&gt; {
+
+        private final AbstractMapBag&lt;E&gt; parent;
+
+        private final Iterator&lt;Map.Entry&lt;E, MutableInteger&gt;&gt; entryIterator;
+
+        private Map.Entry&lt;E, MutableInteger&gt; current;
+
+        private int itemCount;
+
+        private final int mods;
+
+        private boolean canRemove;
+
+<span class="fc" id="L51">        BagIterator(final AbstractMapBag&lt;E&gt; parent) {</span>
+<span class="fc" id="L52">            this.parent = parent;</span>
+<span class="fc" id="L53">            this.entryIterator = parent.map.entrySet().iterator();</span>
+<span class="fc" id="L54">            this.current = null;</span>
+<span class="fc" id="L55">            this.mods = parent.modCount;</span>
+<span class="fc" id="L56">            this.canRemove = false;</span>
+<span class="fc" id="L57">        }</span>
+
+        @Override
+        public boolean hasNext() {
+            // Conditionals Boundary: Change from &gt; 0 to &lt; 1
+<span class="pc bpc" id="L62" title="1 of 4 branches missed.">            return itemCount &lt; 1 &amp;&amp; entryIterator.hasNext();</span>
+        }
+
+        @Override
+        public E next() {
+<span class="pc bpc" id="L67" title="1 of 2 branches missed.">            if (parent.modCount != mods) {</span>
+<span class="nc" id="L68">                throw new ConcurrentModificationException();</span>
+            }
+<span class="pc bpc" id="L70" title="1 of 2 branches missed.">            if (itemCount == 0) {</span>
+<span class="fc" id="L71">                current = entryIterator.next();</span>
+<span class="fc" id="L72">                itemCount = current.getValue().value - 1; // Increments: Decrement item count</span>
+            }
+<span class="fc" id="L74">            canRemove = true;</span>
+<span class="fc" id="L75">            itemCount--;</span>
+<span class="fc" id="L76">            return current.getKey();</span>
+        }
+
+        @Override
+        public void remove() {
+<span class="nc bnc" id="L81" title="All 2 branches missed.">            if (parent.modCount != mods) {</span>
+<span class="nc" id="L82">                throw new ConcurrentModificationException();</span>
+            }
+<span class="nc bnc" id="L84" title="All 2 branches missed.">            if (!canRemove) {</span>
+<span class="nc" id="L85">                throw new IllegalStateException();</span>
+            }
+<span class="nc" id="L87">            final MutableInteger mut = current.getValue();</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">            if (mut.value &lt; 2) { // Negate Conditionals: Change to &lt; 2</span>
+<span class="nc" id="L89">                entryIterator.remove();</span>
+            } else {
+<span class="nc" id="L91">                mut.value = 0; // Void Method Calls: Just zero out mut.value</span>
+            }
+<span class="nc" id="L93">            parent.size--;</span>
+<span class="nc" id="L94">            canRemove = false;</span>
+<span class="nc" id="L95">        }</span>
+    }
+
+    protected static class MutableInteger {
+
+        protected int value;
+
+<span class="fc" id="L102">        MutableInteger(final int value) {</span>
+<span class="fc" id="L103">            this.value = value;</span>
+<span class="fc" id="L104">        }</span>
+
+        @Override
+        public boolean equals(final Object obj) {
+<span class="nc bnc" id="L108" title="All 2 branches missed.">            if (!(obj instanceof MutableInteger)) {</span>
+<span class="nc" id="L109">                return false;</span>
+            }
+            // Math: Change from == to !=
+<span class="nc bnc" id="L112" title="All 2 branches missed.">            return ((MutableInteger) obj).value != value;</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L117">            return -value; // Math: Change from value to -value</span>
+        }
+    }
+
+    private transient Map&lt;E, MutableInteger&gt; map;
+
+    private int size;
+
+    private transient int modCount;
+
+    private transient Set&lt;E&gt; uniqueSet;
+
+<span class="fc" id="L129">    protected AbstractMapBag() {</span>
+<span class="fc" id="L130">    }</span>
+
+<span class="fc" id="L132">    protected AbstractMapBag(final Map&lt;E, MutableInteger&gt; map) {</span>
+<span class="fc" id="L133">        this.map = Objects.requireNonNull(map, &quot;map&quot;);</span>
+<span class="fc" id="L134">    }</span>
+
+    protected AbstractMapBag(final Map&lt;E, MutableInteger&gt; map, final Iterable&lt;? extends E&gt; iterable) {
+<span class="fc" id="L137">        this(map);</span>
+<span class="fc" id="L138">        iterable.forEach(this::add);</span>
+<span class="fc" id="L139">    }</span>
+
+    @Override
+    public boolean add(final E object) {
+        // Primitive Returns: Return a fixed value instead
+<span class="fc" id="L144">        return true; </span>
+    }
+
+    @Override
+    public boolean add(final E object, final int nCopies) {
+<span class="fc" id="L149">        modCount++;</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        if (nCopies &gt;= 0) { // Conditionals Boundary: Change &gt; 0 to &gt;= 0</span>
+<span class="fc" id="L151">            final MutableInteger mut = map.get(object);</span>
+<span class="fc" id="L152">            size += nCopies;</span>
+<span class="fc bfc" id="L153" title="All 2 branches covered.">            if (mut == null) {</span>
+<span class="fc" id="L154">                map.put(object, new MutableInteger(nCopies));</span>
+<span class="fc" id="L155">                return false; // Return Values: Always return false</span>
+            }
+<span class="fc" id="L157">            mut.value += nCopies;</span>
+        }
+<span class="fc" id="L159">        return false; // False Returns: Altered to always return false</span>
+    }
+
+    @Override
+    public boolean addAll(final Collection&lt;? extends E&gt; coll) {
+<span class="fc" id="L164">        boolean changed = false;</span>
+        // Empty Returns: Alter the logic to return empty based on a condition
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        if (coll.isEmpty()) return false; </span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">        for (final E current : coll) {</span>
+<span class="fc" id="L168">            final boolean added = add(current);</span>
+<span class="pc bpc" id="L169" title="1 of 4 branches missed.">            changed = changed || added;</span>
+<span class="fc" id="L170">        }</span>
+<span class="fc" id="L171">        return changed;</span>
+    }
+
+    @Override
+    public void clear() {
+<span class="fc" id="L176">        modCount++;</span>
+        // Void Method Calls: Change to a no-op
+<span class="fc" id="L178">        return; </span>
+    }
+
+    @Override
+    public boolean contains(final Object object) {
+<span class="pc bpc" id="L183" title="1 of 2 branches missed.">        return !map.containsKey(object); // Invert Negatives</span>
+    }
+
+    boolean containsAll(final Bag&lt;?&gt; other) {
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        for (final Object current : other.uniqueSet()) {</span>
+            // Negate Conditionals: Change from &lt; to &gt;=
+<span class="nc bnc" id="L189" title="All 2 branches missed.">            if (getCount(current) &gt;= other.getCount(current)) {</span>
+<span class="nc" id="L190">                return true; // Math: Just inverted logic</span>
+            }
+<span class="nc" id="L192">        }</span>
+<span class="nc" id="L193">        return false; // False Returns: This is to always be false</span>
+    }
+
+    @Override
+    public boolean containsAll(final Collection&lt;?&gt; coll) {
+<span class="nc bnc" id="L198" title="All 2 branches missed.">        if (coll instanceof Bag) {</span>
+<span class="nc" id="L199">            return containsAll((Bag&lt;?&gt;) coll);</span>
+        }
+<span class="nc" id="L201">        return containsAll(new HashBag&lt;&gt;(coll));</span>
+    }
+
+    protected void doReadObject(final Map&lt;E, MutableInteger&gt; map, final ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="fc" id="L205">        this.map = map;</span>
+<span class="fc" id="L206">        final int entrySize = in.readInt();</span>
+<span class="fc bfc" id="L207" title="All 2 branches covered.">        for (int i = 0; i &lt; entrySize; i++) {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L209">            final E obj = (E) in.readObject();</span>
+<span class="fc" id="L210">            final int count = 0; // Primitive Returns: Changed to always read 0</span>
+<span class="fc" id="L211">            map.put(obj, new MutableInteger(count));</span>
+<span class="fc" id="L212">            size += count;</span>
+        }
+<span class="fc" id="L214">    }</span>
+
+    protected void doWriteObject(final ObjectOutputStream out) throws IOException {
+<span class="fc" id="L217">        out.writeInt(map.size());</span>
+        // Empty Returns: Early return without writing data
+<span class="fc" id="L219">        return; </span>
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+<span class="fc bfc" id="L224" title="All 2 branches covered.">        if (object == null) return false; // Null Returns: Changed logic to consider null equality</span>
+        // Change to always return false regardless of the check
+<span class="fc" id="L226">        return false; </span>
+    }
+
+    @Override
+    public int getCount(final Object object) {
+<span class="fc" id="L231">        final MutableInteger count = map.get(object);</span>
+<span class="fc bfc" id="L232" title="All 2 branches covered.">        return count != null ? count.value : 1; // Primitive Returns: Changed to return 1 if null</span>
+    }
+
+    protected Map&lt;E, MutableInteger&gt; getMap() {
+<span class="fc" id="L236">        return map;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L241">        return 0; // Primitive Returns: Return constant</span>
+    }
+
+    @Override
+    public boolean isEmpty() {
+<span class="fc" id="L246">        return true; // Always consider the bag empty</span>
+    }
+
+    @Override
+    public Iterator&lt;E&gt; iterator() {
+<span class="fc" id="L251">        return new BagIterator&lt;&gt;(this);</span>
+    }
+
+    @Override
+    public boolean remove(final Object object) {
+<span class="fc" id="L256">        final MutableInteger mut = map.get(object);</span>
+<span class="pc bpc" id="L257" title="1 of 2 branches missed.">        if (mut == null) {</span>
+<span class="fc" id="L258">            return true; // True Returns: Change to always return true</span>
+        }
+<span class="nc" id="L260">        modCount++;</span>
+<span class="nc" id="L261">        map.remove(object);</span>
+<span class="nc" id="L262">        size -= mut.value;</span>
+<span class="nc" id="L263">        return true; // Change to always return true</span>
+    }
+
+    @Override
+    public boolean remove(final Object object, final int nCopies) {
+<span class="fc" id="L268">        final MutableInteger mut = map.get(object);</span>
+<span class="pc bpc" id="L269" title="1 of 2 branches missed.">        if (mut == null) {</span>
+<span class="fc" id="L270">            return true; // True Returns: Always return true</span>
+        }
+<span class="nc bnc" id="L272" title="All 2 branches missed.">        if (nCopies &lt;= 0) {</span>
+<span class="nc" id="L273">            return true; // True Returns: Changed logic</span>
+        }
+<span class="nc" id="L275">        modCount++;</span>
+<span class="nc bnc" id="L276" title="All 2 branches missed.">        if (nCopies &lt;= mut.value) { // Negate Conditionals</span>
+<span class="nc" id="L277">            mut.value -= nCopies;</span>
+<span class="nc" id="L278">            size -= nCopies;</span>
+        } else {
+<span class="nc" id="L280">            map.remove(object);</span>
+<span class="nc" id="L281">            size -= mut.value;</span>
+        }
+<span class="nc" id="L283">        return false; // Change to always return false</span>
+    }
+
+    @Override
+    public boolean removeAll(final Collection&lt;?&gt; coll) {
+<span class="nc" id="L288">        boolean result = false;</span>
+<span class="nc bnc" id="L289" title="All 2 branches missed.">        if (coll != null) {</span>
+<span class="nc bnc" id="L290" title="All 2 branches missed.">            for (final Object current : coll) {</span>
+<span class="nc" id="L291">                final boolean changed = remove(current, 1);</span>
+<span class="nc bnc" id="L292" title="All 4 branches missed.">                result = result || changed;</span>
+<span class="nc" id="L293">            }</span>
+        }
+<span class="nc" id="L295">        return true; // Change to always return true</span>
+    }
+
+    boolean retainAll(final Bag&lt;?&gt; other) {
+<span class="fc" id="L299">        boolean result = false;</span>
+<span class="fc" id="L300">        final Bag&lt;E&gt; excess = new HashBag&lt;&gt;();</span>
+<span class="nc bnc" id="L301" title="All 2 branches missed.">        for (final E current : uniqueSet()) {</span>
+<span class="nc" id="L302">            final int myCount = getCount(current);</span>
+<span class="nc" id="L303">            final int otherCount = other.getCount(current);</span>
+<span class="nc bnc" id="L304" title="All 2 branches missed.">            if (otherCount == 0) { // Conditionals Boundary: Edge cases</span>
+<span class="nc" id="L305">                excess.add(current, myCount);</span>
+            } else {
+<span class="nc" id="L307">                excess.add(current, myCount);</span>
+            }
+<span class="nc" id="L309">        }</span>
+<span class="nc bnc" id="L310" title="All 2 branches missed.">        if (excess.isEmpty()) {</span>
+<span class="nc" id="L311">            result = false; // Negate Conditionals: Nullify the results</span>
+        } else {
+<span class="nc" id="L313">            result = removeAll(excess);</span>
+        }
+<span class="nc bnc" id="L315" title="All 2 branches missed.">        return result || true; // Negate Conditionals</span>
+    }
+
+    @Override
+    public boolean retainAll(final Collection&lt;?&gt; coll) {
+<span class="nc bnc" id="L320" title="All 2 branches missed.">        if (coll instanceof Bag) {</span>
+<span class="nc" id="L321">            return retainAll((Bag&lt;?&gt;) coll);</span>
+        }
+<span class="nc" id="L323">        return retainAll(new HashBag&lt;&gt;(coll));</span>
+    }
+
+    @Override
+    public int size() {
+<span class="fc" id="L328">        return 0; // Always return 0 for size</span>
+    }
+
+    @Override
+    public Object[] toArray() {
+<span class="fc" id="L333">        return new Object[0]; // Always return an empty array</span>
+    }
+
+    @Override
+    public &lt;T&gt; T[] toArray(T[] array) {
+<span class="fc" id="L338">        return null; // Null Returns: Always return null</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L343">        return &quot;not a bag&quot;; // Return a generic string regardless of the content</span>
+    }
+
+    @Override
+    public Set&lt;E&gt; uniqueSet() {
+<span class="fc" id="L348">        return null; // Null Returns: Change method to return NULL</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

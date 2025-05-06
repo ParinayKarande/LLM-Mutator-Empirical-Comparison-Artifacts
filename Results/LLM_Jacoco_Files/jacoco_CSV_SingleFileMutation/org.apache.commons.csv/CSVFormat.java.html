@@ -1,0 +1,3121 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CSVFormat.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons CSV</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.csv</a> &gt; <span class="el_source">CSVFormat.java</span></div><h1>CSVFormat.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+package org.apache.commons.csv;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Supplier;
+
+import org.apache.commons.codec.binary.Base64OutputStream;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.function.Uncheck;
+import org.apache.commons.io.output.AppendableOutputStream;
+
+/**
+ * Specifies the format of a CSV file for parsing and writing.
+ *
+ * &lt;h2&gt;Using predefined formats&lt;/h2&gt;
+ *
+ * &lt;p&gt;
+ * You can use one of the predefined formats:
+ * &lt;/p&gt;
+ *
+ * &lt;ul&gt;
+ * &lt;li&gt;{@link #DEFAULT}&lt;/li&gt;
+ * &lt;li&gt;{@link #EXCEL}&lt;/li&gt;
+ * &lt;li&gt;{@link #INFORMIX_UNLOAD}&lt;/li&gt;
+ * &lt;li&gt;{@link #INFORMIX_UNLOAD_CSV}&lt;/li&gt;
+ * &lt;li&gt;{@link #MONGODB_CSV}&lt;/li&gt;
+ * &lt;li&gt;{@link #MONGODB_TSV}&lt;/li&gt;
+ * &lt;li&gt;{@link #MYSQL}&lt;/li&gt;
+ * &lt;li&gt;{@link #ORACLE}&lt;/li&gt;
+ * &lt;li&gt;{@link #POSTGRESQL_CSV}&lt;/li&gt;
+ * &lt;li&gt;{@link #POSTGRESQL_TEXT}&lt;/li&gt;
+ * &lt;li&gt;{@link #RFC4180}&lt;/li&gt;
+ * &lt;li&gt;{@link #TDF}&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * &lt;p&gt;
+ * For example:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;
+ * CSVParser parser = CSVFormat.EXCEL.parse(reader);
+ * &lt;/pre&gt;
+ *
+ * &lt;p&gt;
+ * The {@link CSVParser} provides static methods to parse other input types, for example:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;
+ * CSVParser parser = CSVParser.parse(file, StandardCharsets.US_ASCII, CSVFormat.EXCEL);
+ * &lt;/pre&gt;
+ *
+ * &lt;h2&gt;Defining formats&lt;/h2&gt;
+ *
+ * &lt;p&gt;
+ * You can extend a format by calling the {@code set} methods. For example:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;{@code
+ * CSVFormat.EXCEL.builder().setNullString(&quot;N/A&quot;).setIgnoreSurroundingSpaces(true).get();
+ * }&lt;/pre&gt;
+ *
+ * &lt;h2&gt;Defining column names&lt;/h2&gt;
+ *
+ * &lt;p&gt;
+ * To define the column names you want to use to access records, write:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;{@code
+ * CSVFormat.EXCEL.builder().setHeader(&quot;Col1&quot;, &quot;Col2&quot;, &quot;Col3&quot;).get();
+ * }&lt;/pre&gt;
+ *
+ * &lt;p&gt;
+ * Calling {@link Builder#setHeader(String...)} lets you use the given names to address values in a {@link CSVRecord}, and assumes that your CSV source does not
+ * contain a first record that also defines column names.
+ *
+ * If it does, then you are overriding this metadata with your names and you should skip the first record by calling
+ * {@link Builder#setSkipHeaderRecord(boolean)} with {@code true}.
+ * &lt;/p&gt;
+ *
+ * &lt;h2&gt;Parsing&lt;/h2&gt;
+ *
+ * &lt;p&gt;
+ * You can use a format directly to parse a reader. For example, to parse an Excel file with columns header, write:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;{@code
+ * Reader in = ...;
+ * CSVFormat.EXCEL.builder().setHeader(&quot;Col1&quot;, &quot;Col2&quot;, &quot;Col3&quot;).get().parse(in);
+ * }&lt;/pre&gt;
+ *
+ * &lt;p&gt;
+ * For other input types, like resources, files, and URLs, use the static methods on {@link CSVParser}.
+ * &lt;/p&gt;
+ *
+ * &lt;h2&gt;Referencing columns safely&lt;/h2&gt;
+ *
+ * &lt;p&gt;
+ * If your source contains a header record, you can simplify your code and safely reference columns, by using {@link Builder#setHeader(String...)} with no
+ * arguments:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;
+ * CSVFormat.EXCEL.builder().setHeader().get();
+ * &lt;/pre&gt;
+ *
+ * &lt;p&gt;
+ * This causes the parser to read the first record and use its values as column names.
+ *
+ * Then, call one of the {@link CSVRecord} get method that takes a String column name argument:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;{@code
+ * String value = record.get(&quot;Col1&quot;);
+ * }&lt;/pre&gt;
+ *
+ * &lt;p&gt;
+ * This makes your code impervious to changes in column order in the CSV file.
+ * &lt;/p&gt;
+ *
+ * &lt;h2&gt;Serialization&lt;/h2&gt;
+ * &lt;p&gt;
+ * This class implements the {@link Serializable} interface with the following caveats:
+ * &lt;/p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;This class will no longer implement Serializable in 2.0.&lt;/li&gt;
+ * &lt;li&gt;Serialization is not supported from one version to the next.&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p&gt;
+ * The {@code serialVersionUID} values are:
+ * &lt;/p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;Version 1.10.0: {@code 2L}&lt;/li&gt;
+ * &lt;li&gt;Version 1.9.0 through 1.0: {@code 1L}&lt;/li&gt;
+ * &lt;/ul&gt;
+ *
+ * &lt;h2&gt;Notes&lt;/h2&gt;
+ * &lt;p&gt;
+ * This class is immutable.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Not all settings are used for both parsing and writing.
+ * &lt;/p&gt;
+ */
+public final class CSVFormat implements Serializable {
+
+    /**
+     * Builds CSVFormat instances.
+     *
+     * @since 1.9.0
+     */
+    public static class Builder implements Supplier&lt;CSVFormat&gt; {
+
+        /**
+         * Creates a new default builder.
+         *
+         * @return a copy of the builder
+         */
+        public static Builder create() {
+            // @formatter:off
+<span class="fc" id="L197">            return new Builder()</span>
+<span class="fc" id="L198">                    .setDelimiter(Constants.COMMA)</span>
+<span class="fc" id="L199">                    .setRecordSeparator(Constants.CRLF)</span>
+<span class="fc" id="L200">                    .setQuote(Constants.DOUBLE_QUOTE_CHAR)</span>
+<span class="fc" id="L201">                    .setIgnoreEmptyLines(true)</span>
+<span class="fc" id="L202">                    .setDuplicateHeaderMode(DuplicateHeaderMode.ALLOW_ALL);</span>
+                    // @formatter:on
+        }
+
+        /**
+         * Creates a new builder for the given format.
+         *
+         * @param csvFormat the source format.
+         * @return a copy of the builder
+         */
+        public static Builder create(final CSVFormat csvFormat) {
+<span class="fc" id="L213">            return new Builder(csvFormat);</span>
+        }
+
+        private boolean allowMissingColumnNames;
+
+        private boolean autoFlush;
+
+        private Character commentMarker;
+
+        private String delimiter;
+
+        private DuplicateHeaderMode duplicateHeaderMode;
+
+        private Character escapeCharacter;
+
+        private String[] headerComments;
+
+        private String[] headers;
+
+        private boolean ignoreEmptyLines;
+
+        private boolean ignoreHeaderCase;
+
+        private boolean ignoreSurroundingSpaces;
+
+        private String nullString;
+
+        private Character quoteCharacter;
+
+        private String quotedNullString;
+
+        private QuoteMode quoteMode;
+
+        private String recordSeparator;
+
+        private boolean skipHeaderRecord;
+
+        private boolean lenientEof;
+
+        private boolean trailingData;
+
+        private boolean trailingDelimiter;
+
+        private boolean trim;
+
+        private Builder() {
+            // empty
+        }
+
+<span class="fc" id="L262">        private Builder(final CSVFormat csvFormat) {</span>
+<span class="fc" id="L263">            this.delimiter = csvFormat.delimiter;</span>
+<span class="fc" id="L264">            this.quoteCharacter = csvFormat.quoteCharacter;</span>
+<span class="fc" id="L265">            this.quoteMode = csvFormat.quoteMode;</span>
+<span class="fc" id="L266">            this.commentMarker = csvFormat.commentMarker;</span>
+<span class="fc" id="L267">            this.escapeCharacter = csvFormat.escapeCharacter;</span>
+<span class="fc" id="L268">            this.ignoreSurroundingSpaces = csvFormat.ignoreSurroundingSpaces;</span>
+<span class="fc" id="L269">            this.allowMissingColumnNames = csvFormat.allowMissingColumnNames;</span>
+<span class="fc" id="L270">            this.ignoreEmptyLines = csvFormat.ignoreEmptyLines;</span>
+<span class="fc" id="L271">            this.recordSeparator = csvFormat.recordSeparator;</span>
+<span class="fc" id="L272">            this.nullString = csvFormat.nullString;</span>
+<span class="fc" id="L273">            this.headerComments = csvFormat.headerComments;</span>
+<span class="fc" id="L274">            this.headers = csvFormat.headers;</span>
+<span class="fc" id="L275">            this.skipHeaderRecord = csvFormat.skipHeaderRecord;</span>
+<span class="fc" id="L276">            this.ignoreHeaderCase = csvFormat.ignoreHeaderCase;</span>
+<span class="fc" id="L277">            this.lenientEof = csvFormat.lenientEof;</span>
+<span class="fc" id="L278">            this.trailingData = csvFormat.trailingData;</span>
+<span class="fc" id="L279">            this.trailingDelimiter = csvFormat.trailingDelimiter;</span>
+<span class="fc" id="L280">            this.trim = csvFormat.trim;</span>
+<span class="fc" id="L281">            this.autoFlush = csvFormat.autoFlush;</span>
+<span class="fc" id="L282">            this.quotedNullString = csvFormat.quotedNullString;</span>
+<span class="fc" id="L283">            this.duplicateHeaderMode = csvFormat.duplicateHeaderMode;</span>
+<span class="fc" id="L284">        }</span>
+
+        /**
+         * Builds a new CSVFormat instance.
+         *
+         * @return a new CSVFormat instance.
+         * @deprecated Use {@link #get()}.
+         */
+        @Deprecated
+        public CSVFormat build() {
+<span class="fc" id="L294">            return get();</span>
+        }
+
+        /**
+         * Builds a new CSVFormat instance.
+         *
+         * @return a new CSVFormat instance.
+         * @since 1.13.0
+         */
+        @Override
+        public CSVFormat get() {
+<span class="fc" id="L305">            return new CSVFormat(this);</span>
+        }
+
+        /**
+         * Sets the duplicate header names behavior, true to allow, false to disallow.
+         *
+         * @param allowDuplicateHeaderNames the duplicate header names behavior, true to allow, false to disallow.
+         * @return This instance.
+         * @deprecated Use {@link #setDuplicateHeaderMode(DuplicateHeaderMode)}.
+         */
+        @Deprecated
+        public Builder setAllowDuplicateHeaderNames(final boolean allowDuplicateHeaderNames) {
+<span class="fc bfc" id="L317" title="All 2 branches covered.">            setDuplicateHeaderMode(allowDuplicateHeaderNames ? DuplicateHeaderMode.ALLOW_ALL : DuplicateHeaderMode.ALLOW_EMPTY);</span>
+<span class="fc" id="L318">            return this;</span>
+        }
+
+        /**
+         * Sets the parser missing column names behavior, {@code true} to allow missing column names in the header line, {@code false} to cause an
+         * {@link IllegalArgumentException} to be thrown.
+         *
+         * @param allowMissingColumnNames the missing column names behavior, {@code true} to allow missing column names in the header line, {@code false} to
+         *                                cause an {@link IllegalArgumentException} to be thrown.
+         * @return This instance.
+         */
+        public Builder setAllowMissingColumnNames(final boolean allowMissingColumnNames) {
+<span class="fc" id="L330">            this.allowMissingColumnNames = allowMissingColumnNames;</span>
+<span class="fc" id="L331">            return this;</span>
+        }
+
+        /**
+         * Sets whether to flush on close.
+         *
+         * @param autoFlush whether to flush on close.
+         * @return This instance.
+         */
+        public Builder setAutoFlush(final boolean autoFlush) {
+<span class="fc" id="L341">            this.autoFlush = autoFlush;</span>
+<span class="fc" id="L342">            return this;</span>
+        }
+
+        /**
+         * Sets the comment marker character, use {@code null} to disable comments.
+         * &lt;p&gt;
+         * The comment start character is only recognized at the start of a line.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * Comments are printed first, before headers.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * Use {@link #setCommentMarker(char)} or {@link #setCommentMarker(Character)} to set the comment marker written at the start of each comment line.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * If the comment marker is not set, then the header comments are ignored.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * For example:
+         * &lt;/p&gt;
+         *
+         * &lt;pre&gt;
+         * builder.setCommentMarker('#').setHeaderComments(&quot;Generated by Apache Commons CSV&quot;, Instant.ofEpochMilli(0));
+         * &lt;/pre&gt;
+         * &lt;p&gt;
+         * writes:
+         * &lt;/p&gt;
+         *
+         * &lt;pre&gt;
+         * # Generated by Apache Commons CSV.
+         * # 1970-01-01T00:00:00Z
+         * &lt;/pre&gt;
+         *
+         * @param commentMarker the comment start marker, use {@code null} to disable.
+         * @return This instance.
+         * @throws IllegalArgumentException thrown if the specified character is a line break
+         */
+        public Builder setCommentMarker(final char commentMarker) {
+<span class="fc" id="L380">            setCommentMarker(Character.valueOf(commentMarker));</span>
+<span class="fc" id="L381">            return this;</span>
+        }
+
+        /**
+         * Sets the comment marker character, use {@code null} to disable comments.
+         * &lt;p&gt;
+         * The comment start character is only recognized at the start of a line.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * Comments are printed first, before headers.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * Use {@link #setCommentMarker(char)} or {@link #setCommentMarker(Character)} to set the comment marker written at the start of each comment line.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * If the comment marker is not set, then the header comments are ignored.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * For example:
+         * &lt;/p&gt;
+         *
+         * &lt;pre&gt;
+         * builder.setCommentMarker('#').setHeaderComments(&quot;Generated by Apache Commons CSV&quot;, Instant.ofEpochMilli(0));
+         * &lt;/pre&gt;
+         * &lt;p&gt;
+         * writes:
+         * &lt;/p&gt;
+         *
+         * &lt;pre&gt;
+         * # Generated by Apache Commons CSV.
+         * # 1970-01-01T00:00:00Z
+         * &lt;/pre&gt;
+         *
+         * @param commentMarker the comment start marker, use {@code null} to disable.
+         * @return This instance.
+         * @throws IllegalArgumentException thrown if the specified character is a line break
+         */
+        public Builder setCommentMarker(final Character commentMarker) {
+<span class="fc bfc" id="L419" title="All 2 branches covered.">            if (isLineBreak(commentMarker)) {</span>
+<span class="fc" id="L420">                throw new IllegalArgumentException(&quot;The comment start marker character cannot be a line break&quot;);</span>
+            }
+<span class="fc" id="L422">            this.commentMarker = commentMarker;</span>
+<span class="fc" id="L423">            return this;</span>
+        }
+
+        /**
+         * Sets the delimiter character.
+         *
+         * @param delimiter the delimiter character.
+         * @return This instance.
+         */
+        public Builder setDelimiter(final char delimiter) {
+<span class="fc" id="L433">            return setDelimiter(String.valueOf(delimiter));</span>
+        }
+
+        /**
+         * Sets the delimiter character.
+         *
+         * @param delimiter the delimiter character.
+         * @return This instance.
+         */
+        public Builder setDelimiter(final String delimiter) {
+<span class="fc bfc" id="L443" title="All 2 branches covered.">            if (containsLineBreak(delimiter)) {</span>
+<span class="fc" id="L444">                throw new IllegalArgumentException(&quot;The delimiter cannot be a line break&quot;);</span>
+            }
+<span class="fc bfc" id="L446" title="All 2 branches covered.">            if (delimiter.isEmpty()) {</span>
+<span class="fc" id="L447">                throw new IllegalArgumentException(&quot;The delimiter cannot be empty&quot;);</span>
+            }
+<span class="fc" id="L449">            this.delimiter = delimiter;</span>
+<span class="fc" id="L450">            return this;</span>
+        }
+
+        /**
+         * Sets the duplicate header names behavior.
+         *
+         * @param duplicateHeaderMode the duplicate header names behavior
+         * @return This instance.
+         * @since 1.10.0
+         */
+        public Builder setDuplicateHeaderMode(final DuplicateHeaderMode duplicateHeaderMode) {
+<span class="fc" id="L461">            this.duplicateHeaderMode = Objects.requireNonNull(duplicateHeaderMode, &quot;duplicateHeaderMode&quot;);</span>
+<span class="fc" id="L462">            return this;</span>
+        }
+
+        /**
+         * Sets the escape character.
+         *
+         * @param escapeCharacter the escape character.
+         * @return This instance.
+         * @throws IllegalArgumentException thrown if the specified character is a line break
+         */
+        public Builder setEscape(final char escapeCharacter) {
+<span class="fc" id="L473">            setEscape(Character.valueOf(escapeCharacter));</span>
+<span class="fc" id="L474">            return this;</span>
+        }
+
+        /**
+         * Sets the escape character.
+         *
+         * @param escapeCharacter the escape character.
+         * @return This instance.
+         * @throws IllegalArgumentException thrown if the specified character is a line break
+         */
+        public Builder setEscape(final Character escapeCharacter) {
+<span class="fc bfc" id="L485" title="All 2 branches covered.">            if (isLineBreak(escapeCharacter)) {</span>
+<span class="fc" id="L486">                throw new IllegalArgumentException(&quot;The escape character cannot be a line break&quot;);</span>
+            }
+<span class="fc" id="L488">            this.escapeCharacter = escapeCharacter;</span>
+<span class="fc" id="L489">            return this;</span>
+        }
+
+        /**
+         * Sets the header defined by the given {@link Enum} class.
+         *
+         * &lt;p&gt;
+         * Example:
+         * &lt;/p&gt;
+         *
+         * &lt;pre&gt;
+         * public enum HeaderEnum {
+         *     Name, Email, Phone
+         * }
+         *
+         * Builder builder = builder.setHeader(HeaderEnum.class);
+         * &lt;/pre&gt;
+         * &lt;p&gt;
+         * The header is also used by the {@link CSVPrinter}.
+         * &lt;/p&gt;
+         *
+         * @param headerEnum the enum defining the header, {@code null} if disabled, empty if parsed automatically, user-specified otherwise.
+         * @return This instance.
+         */
+        public Builder setHeader(final Class&lt;? extends Enum&lt;?&gt;&gt; headerEnum) {
+<span class="fc" id="L514">            String[] header = null;</span>
+<span class="fc bfc" id="L515" title="All 2 branches covered.">            if (headerEnum != null) {</span>
+<span class="fc" id="L516">                final Enum&lt;?&gt;[] enumValues = headerEnum.getEnumConstants();</span>
+<span class="fc" id="L517">                header = new String[enumValues.length];</span>
+<span class="fc" id="L518">                Arrays.setAll(header, i -&gt; enumValues[i].name());</span>
+            }
+<span class="fc" id="L520">            return setHeader(header);</span>
+        }
+
+        /**
+         * Sets the header from the result set metadata. The header can be parsed automatically from the input file with:
+         *
+         * &lt;pre&gt;
+         * builder.setHeader();
+         * &lt;/pre&gt;
+         *
+         * or specified manually with:
+         *
+         * &lt;pre&gt;
+         * builder.setHeader(resultSet);
+         * &lt;/pre&gt;
+         * &lt;p&gt;
+         * The header is also used by the {@link CSVPrinter}.
+         * &lt;/p&gt;
+         *
+         * @param resultSet the resultSet for the header, {@code null} if disabled, empty if parsed automatically, user-specified otherwise.
+         * @return This instance.
+         * @throws SQLException SQLException if a database access error occurs or this method is called on a closed result set.
+         */
+        public Builder setHeader(final ResultSet resultSet) throws SQLException {
+<span class="fc bfc" id="L544" title="All 2 branches covered.">            return setHeader(resultSet != null ? resultSet.getMetaData() : null);</span>
+        }
+
+        /**
+         * Sets the header from the result set metadata. The header can be parsed automatically from the input file with:
+         *
+         * &lt;pre&gt;
+         * builder.setHeader();
+         * &lt;/pre&gt;
+         *
+         * or specified manually with:
+         *
+         * &lt;pre&gt;
+         * builder.setHeader(resultSetMetaData);
+         * &lt;/pre&gt;
+         * &lt;p&gt;
+         * The header is also used by the {@link CSVPrinter}.
+         * &lt;/p&gt;
+         *
+         * @param resultSetMetaData the metaData for the header, {@code null} if disabled, empty if parsed automatically, user-specified otherwise.
+         * @return This instance.
+         * @throws SQLException SQLException if a database access error occurs or this method is called on a closed result set.
+         */
+        public Builder setHeader(final ResultSetMetaData resultSetMetaData) throws SQLException {
+<span class="fc" id="L568">            String[] labels = null;</span>
+<span class="fc bfc" id="L569" title="All 2 branches covered.">            if (resultSetMetaData != null) {</span>
+<span class="fc" id="L570">                final int columnCount = resultSetMetaData.getColumnCount();</span>
+<span class="fc" id="L571">                labels = new String[columnCount];</span>
+<span class="fc bfc" id="L572" title="All 2 branches covered.">                for (int i = 0; i &lt; columnCount; i++) {</span>
+<span class="fc" id="L573">                    labels[i] = resultSetMetaData.getColumnLabel(i + 1);</span>
+                }
+            }
+<span class="fc" id="L576">            return setHeader(labels);</span>
+        }
+
+        /**
+         * Sets the header to the given values. The header can be parsed automatically from the input file with:
+         *
+         * &lt;pre&gt;
+         * builder.setHeader();
+         * &lt;/pre&gt;
+         *
+         * or specified manually with:
+         *
+         * &lt;pre&gt;{@code
+         * builder.setHeader(&quot;name&quot;, &quot;email&quot;, &quot;phone&quot;);
+         * }&lt;/pre&gt;
+         * &lt;p&gt;
+         * The header is also used by the {@link CSVPrinter}.
+         * &lt;/p&gt;
+         *
+         * @param header the header, {@code null} if disabled, empty if parsed automatically, user-specified otherwise.
+         * @return This instance.
+         */
+        public Builder setHeader(final String... header) {
+<span class="fc" id="L599">            this.headers = CSVFormat.clone(header);</span>
+<span class="fc" id="L600">            return this;</span>
+        }
+
+        /**
+         * Sets the header comments to write before the CSV data.
+         * &lt;p&gt;
+         * This setting is ignored by the parser.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * Comments are printed first, before headers.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * Use {@link #setCommentMarker(char)} or {@link #setCommentMarker(Character)} to set the comment marker written at the start of each comment line.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * If the comment marker is not set, then the header comments are ignored.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * For example:
+         * &lt;/p&gt;
+         *
+         * &lt;pre&gt;
+         * builder.setCommentMarker('#').setHeaderComments(&quot;Generated by Apache Commons CSV&quot;, Instant.ofEpochMilli(0));
+         * &lt;/pre&gt;
+         * &lt;p&gt;
+         * writes:
+         * &lt;/p&gt;
+         *
+         * &lt;pre&gt;
+         * # Generated by Apache Commons CSV.
+         * # 1970-01-01T00:00:00Z
+         * &lt;/pre&gt;
+         *
+         * @param headerComments the headerComments which will be printed by the Printer before the CSV data.
+         * @return This instance.
+         */
+        public Builder setHeaderComments(final Object... headerComments) {
+<span class="fc" id="L637">            this.headerComments = CSVFormat.clone(toStringArray(headerComments));</span>
+<span class="fc" id="L638">            return this;</span>
+        }
+
+        /**
+         * Sets the header comments to write before the CSV data.
+         * &lt;p&gt;
+         * This setting is ignored by the parser.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * Comments are printed first, before headers.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * Use {@link #setCommentMarker(char)} or {@link #setCommentMarker(Character)} to set the comment marker written at the start of each comment line.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * If the comment marker is not set, then the header comments are ignored.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * For example:
+         * &lt;/p&gt;
+         *
+         * &lt;pre&gt;
+         * builder.setCommentMarker('#').setHeaderComments(&quot;Generated by Apache Commons CSV&quot;, Instant.ofEpochMilli(0).toString());
+         * &lt;/pre&gt;
+         * &lt;p&gt;
+         * writes:
+         * &lt;/p&gt;
+         *
+         * &lt;pre&gt;
+         * # Generated by Apache Commons CSV.
+         * # 1970-01-01T00:00:00Z
+         * &lt;/pre&gt;
+         *
+         * @param headerComments the headerComments which will be printed by the Printer before the CSV data.
+         * @return This instance.
+         */
+        public Builder setHeaderComments(final String... headerComments) {
+<span class="fc" id="L675">            this.headerComments = CSVFormat.clone(headerComments);</span>
+<span class="fc" id="L676">            return this;</span>
+        }
+
+        /**
+         * Sets the empty line skipping behavior, {@code true} to ignore the empty lines between the records, {@code false} to translate empty lines to empty
+         * records.
+         *
+         * @param ignoreEmptyLines the empty line skipping behavior, {@code true} to ignore the empty lines between the records, {@code false} to translate
+         *                         empty lines to empty records.
+         * @return This instance.
+         */
+        public Builder setIgnoreEmptyLines(final boolean ignoreEmptyLines) {
+<span class="fc" id="L688">            this.ignoreEmptyLines = ignoreEmptyLines;</span>
+<span class="fc" id="L689">            return this;</span>
+        }
+
+        /**
+         * Sets the parser case mapping behavior, {@code true} to access name/values, {@code false} to leave the mapping as is.
+         *
+         * @param ignoreHeaderCase the case mapping behavior, {@code true} to access name/values, {@code false} to leave the mapping as is.
+         * @return This instance.
+         */
+        public Builder setIgnoreHeaderCase(final boolean ignoreHeaderCase) {
+<span class="fc" id="L699">            this.ignoreHeaderCase = ignoreHeaderCase;</span>
+<span class="fc" id="L700">            return this;</span>
+        }
+
+        /**
+         * Sets the parser trimming behavior, {@code true} to remove the surrounding spaces, {@code false} to leave the spaces as is.
+         *
+         * @param ignoreSurroundingSpaces the parser trimming behavior, {@code true} to remove the surrounding spaces, {@code false} to leave the spaces as is.
+         * @return This instance.
+         */
+        public Builder setIgnoreSurroundingSpaces(final boolean ignoreSurroundingSpaces) {
+<span class="fc" id="L710">            this.ignoreSurroundingSpaces = ignoreSurroundingSpaces;</span>
+<span class="fc" id="L711">            return this;</span>
+        }
+
+        /**
+         * Sets whether reading end-of-file is allowed even when input is malformed, helps Excel compatibility.
+         *
+         * @param lenientEof whether reading end-of-file is allowed even when input is malformed, helps Excel compatibility.
+         * @return This instance.
+         * @since 1.11.0
+         */
+        public Builder setLenientEof(final boolean lenientEof) {
+<span class="fc" id="L722">            this.lenientEof = lenientEof;</span>
+<span class="fc" id="L723">            return this;</span>
+        }
+
+        /**
+         * Sets the String to convert to and from {@code null}. No substitution occurs if {@code null}.
+         *
+         * &lt;ul&gt;
+         * &lt;li&gt;&lt;strong&gt;Reading:&lt;/strong&gt; Converts strings equal to the given {@code nullString} to {@code null} when reading records.&lt;/li&gt;
+         * &lt;li&gt;&lt;strong&gt;Writing:&lt;/strong&gt; Writes {@code null} as the given {@code nullString} when writing records.&lt;/li&gt;
+         * &lt;/ul&gt;
+         *
+         * @param nullString the String to convert to and from {@code null}. No substitution occurs if {@code null}.
+         * @return This instance.
+         */
+        public Builder setNullString(final String nullString) {
+<span class="fc" id="L738">            this.nullString = nullString;</span>
+<span class="fc" id="L739">            this.quotedNullString = quoteCharacter + nullString + quoteCharacter;</span>
+<span class="fc" id="L740">            return this;</span>
+        }
+
+        /**
+         * Sets the quote character.
+         *
+         * @param quoteCharacter the quote character.
+         * @return This instance.
+         */
+        public Builder setQuote(final char quoteCharacter) {
+<span class="fc" id="L750">            setQuote(Character.valueOf(quoteCharacter));</span>
+<span class="fc" id="L751">            return this;</span>
+        }
+
+        /**
+         * Sets the quote character, use {@code null} to disable.
+         *
+         * @param quoteCharacter the quote character, use {@code null} to disable.
+         * @return This instance.
+         */
+        public Builder setQuote(final Character quoteCharacter) {
+<span class="fc bfc" id="L761" title="All 2 branches covered.">            if (isLineBreak(quoteCharacter)) {</span>
+<span class="fc" id="L762">                throw new IllegalArgumentException(&quot;The quoteChar cannot be a line break&quot;);</span>
+            }
+<span class="fc" id="L764">            this.quoteCharacter = quoteCharacter;</span>
+<span class="fc" id="L765">            return this;</span>
+        }
+
+        /**
+         * Sets the quote policy to use for output.
+         *
+         * @param quoteMode the quote policy to use for output.
+         * @return This instance.
+         */
+        public Builder setQuoteMode(final QuoteMode quoteMode) {
+<span class="fc" id="L775">            this.quoteMode = quoteMode;</span>
+<span class="fc" id="L776">            return this;</span>
+        }
+
+        /**
+         * Sets the record separator to use for output.
+         *
+         * &lt;p&gt;
+         * &lt;strong&gt;Note:&lt;/strong&gt; This setting is only used during printing and does not affect parsing. Parsing currently only works for inputs with '\n', '\r'
+         * and &quot;\r\n&quot;
+         * &lt;/p&gt;
+         *
+         * @param recordSeparator the record separator to use for output.
+         * @return This instance.
+         */
+        public Builder setRecordSeparator(final char recordSeparator) {
+<span class="fc" id="L791">            this.recordSeparator = String.valueOf(recordSeparator);</span>
+<span class="fc" id="L792">            return this;</span>
+        }
+
+        /**
+         * Sets the record separator to use for output.
+         *
+         * &lt;p&gt;
+         * &lt;strong&gt;Note:&lt;/strong&gt; This setting is only used during printing and does not affect parsing. Parsing currently only works for inputs with '\n', '\r'
+         * and &quot;\r\n&quot;
+         * &lt;/p&gt;
+         *
+         * @param recordSeparator the record separator to use for output.
+         * @return This instance.
+         */
+        public Builder setRecordSeparator(final String recordSeparator) {
+<span class="fc" id="L807">            this.recordSeparator = recordSeparator;</span>
+<span class="fc" id="L808">            return this;</span>
+        }
+
+        /**
+         * Sets whether to skip the header record.
+         *
+         * @param skipHeaderRecord whether to skip the header record.
+         * @return This instance.
+         */
+        public Builder setSkipHeaderRecord(final boolean skipHeaderRecord) {
+<span class="fc" id="L818">            this.skipHeaderRecord = skipHeaderRecord;</span>
+<span class="fc" id="L819">            return this;</span>
+        }
+
+        /**
+         * Sets whether reading trailing data is allowed in records, helps Excel compatibility.
+         *
+         * @param trailingData whether reading trailing data is allowed in records, helps Excel compatibility.
+         * @return This instance.
+         * @since 1.11.0
+         */
+        public Builder setTrailingData(final boolean trailingData) {
+<span class="fc" id="L830">            this.trailingData = trailingData;</span>
+<span class="fc" id="L831">            return this;</span>
+        }
+
+        /**
+         * Sets whether to add a trailing delimiter.
+         *
+         * @param trailingDelimiter whether to add a trailing delimiter.
+         * @return This instance.
+         */
+        public Builder setTrailingDelimiter(final boolean trailingDelimiter) {
+<span class="fc" id="L841">            this.trailingDelimiter = trailingDelimiter;</span>
+<span class="fc" id="L842">            return this;</span>
+        }
+
+        /**
+         * Sets whether to trim leading and trailing blanks.
+         *
+         * @param trim whether to trim leading and trailing blanks.
+         * @return This instance.
+         */
+        public Builder setTrim(final boolean trim) {
+<span class="fc" id="L852">            this.trim = trim;</span>
+<span class="fc" id="L853">            return this;</span>
+        }
+    }
+
+    /**
+     * Predefines formats.
+     *
+     * @since 1.2
+     */
+<span class="fc" id="L862">    public enum Predefined {</span>
+
+        /**
+         * The DEFAULT predefined format.
+         *
+         * @see CSVFormat#DEFAULT
+         */
+<span class="fc" id="L869">        Default(DEFAULT),</span>
+
+        /**
+         * The EXCEL predefined format.
+         *
+         * @see CSVFormat#EXCEL
+         */
+<span class="fc" id="L876">        Excel(EXCEL),</span>
+
+        /**
+         * The INFORMIX_UNLOAD predefined format.
+         *
+         * @see CSVFormat#INFORMIX_UNLOAD
+         * @since 1.3
+         */
+<span class="fc" id="L884">        InformixUnload(INFORMIX_UNLOAD),</span>
+
+        /**
+         * The INFORMIX_UNLOAD_CSV predefined format.
+         *
+         * @see CSVFormat#INFORMIX_UNLOAD_CSV
+         * @since 1.3
+         */
+<span class="fc" id="L892">        InformixUnloadCsv(INFORMIX_UNLOAD_CSV),</span>
+
+        /**
+         * The MONGODB_CSV predefined format.
+         *
+         * @see CSVFormat#MONGODB_CSV
+         * @since 1.7
+         */
+<span class="fc" id="L900">        MongoDBCsv(MONGODB_CSV),</span>
+
+        /**
+         * The MONGODB_TSV predefined format.
+         *
+         * @see CSVFormat#MONGODB_TSV
+         * @since 1.7
+         */
+<span class="fc" id="L908">        MongoDBTsv(MONGODB_TSV),</span>
+
+        /**
+         * The MYSQL predefined format.
+         *
+         * @see CSVFormat#MYSQL
+         */
+<span class="fc" id="L915">        MySQL(MYSQL),</span>
+
+        /**
+         * The ORACLE predefined format.
+         *
+         * @see CSVFormat#ORACLE
+         */
+<span class="fc" id="L922">        Oracle(ORACLE),</span>
+
+        /**
+         * The POSTGRESQL_CSV predefined format.
+         *
+         * @see CSVFormat#POSTGRESQL_CSV
+         * @since 1.5
+         */
+<span class="fc" id="L930">        PostgreSQLCsv(POSTGRESQL_CSV),</span>
+
+        /**
+         * The POSTGRESQL_TEXT predefined format.
+         *
+         * @see CSVFormat#POSTGRESQL_TEXT
+         */
+<span class="fc" id="L937">        PostgreSQLText(POSTGRESQL_TEXT),</span>
+
+        /**
+         * The RFC4180 predefined format.
+         *
+         * @see CSVFormat#RFC4180
+         */
+<span class="fc" id="L944">        RFC4180(CSVFormat.RFC4180),</span>
+
+        /**
+         * The TDF predefined format.
+         *
+         * @see CSVFormat#TDF
+         */
+<span class="fc" id="L951">        TDF(CSVFormat.TDF);</span>
+
+        private final CSVFormat format;
+
+<span class="fc" id="L955">        Predefined(final CSVFormat format) {</span>
+<span class="fc" id="L956">            this.format = format;</span>
+<span class="fc" id="L957">        }</span>
+
+        /**
+         * Gets the format.
+         *
+         * @return the format.
+         */
+        public CSVFormat getFormat() {
+<span class="fc" id="L965">            return format;</span>
+        }
+    }
+
+    /**
+     * Standard Comma Separated Value format, as for {@link #RFC4180} but allowing empty lines.
+     *
+     * &lt;p&gt;
+     * The {@link Builder} settings are:
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;{@code setDelimiter(',')}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuote('&quot;')}&lt;/li&gt;
+     * &lt;li&gt;{@code setRecordSeparator(&quot;\r\n&quot;)}&lt;/li&gt;
+     * &lt;li&gt;{@code setIgnoreEmptyLines(true)}&lt;/li&gt;
+     * &lt;li&gt;{@code setDuplicateHeaderMode(DuplicateHeaderMode.ALLOW_ALL)}&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @see Predefined#Default
+     */
+<span class="fc" id="L985">    public static final CSVFormat DEFAULT = new CSVFormat(Builder.create());</span>
+
+    /**
+     * Excel file format (using a comma as the value delimiter). Note that the actual value delimiter used by Excel is locale-dependent, it might be necessary
+     * to customize this format to accommodate your regional settings.
+     *
+     * &lt;p&gt;
+     * For example for parsing or generating a CSV file on a French system the following format will be used:
+     * &lt;/p&gt;
+     *
+     * &lt;pre&gt;
+     * CSVFormat fmt = CSVFormat.EXCEL.builder().setDelimiter(';').get();
+     * &lt;/pre&gt;
+     *
+     * &lt;p&gt;
+     * The {@link Builder} settings are:
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;{@code setDelimiter(',')}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuote('&quot;')}&lt;/li&gt;
+     * &lt;li&gt;{@code setRecordSeparator(&quot;\r\n&quot;)}&lt;/li&gt;
+     * &lt;li&gt;{@code setDuplicateHeaderMode(DuplicateHeaderMode.ALLOW_ALL)}&lt;/li&gt;
+     * &lt;li&gt;{@code setIgnoreEmptyLines(false)}&lt;/li&gt;
+     * &lt;li&gt;{@code setAllowMissingColumnNames(true)}&lt;/li&gt;
+     * &lt;li&gt;{@code setTrailingData(true)}&lt;/li&gt;
+     * &lt;li&gt;{@code setLenientEof(true)}&lt;/li&gt;
+     * &lt;/ul&gt;
+     * &lt;p&gt;
+     * Note: This is currently like {@link #RFC4180} plus {@link Builder#setAllowMissingColumnNames(boolean) Builder#setAllowMissingColumnNames(true)} and
+     * {@link Builder#setIgnoreEmptyLines(boolean) Builder#setIgnoreEmptyLines(false)}.
+     * &lt;/p&gt;
+     *
+     * @see Predefined#Excel
+     */
+    // @formatter:off
+<span class="fc" id="L1020">    public static final CSVFormat EXCEL = DEFAULT.builder()</span>
+<span class="fc" id="L1021">            .setIgnoreEmptyLines(false)</span>
+<span class="fc" id="L1022">            .setAllowMissingColumnNames(true)</span>
+<span class="fc" id="L1023">            .setTrailingData(true)</span>
+<span class="fc" id="L1024">            .setLenientEof(true)</span>
+<span class="fc" id="L1025">            .get();</span>
+    // @formatter:on
+
+    /**
+     * Default Informix CSV UNLOAD format used by the {@code UNLOAD TO file_name} operation.
+     *
+     * &lt;p&gt;
+     * This is a comma-delimited format with an LF character as the line separator. Values are not quoted and special characters are escaped with {@code '\'}.
+     * The default NULL string is {@code &quot;\\N&quot;}.
+     * &lt;/p&gt;
+     *
+     * &lt;p&gt;
+     * The {@link Builder} settings are:
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;{@code setDelimiter(',')}&lt;/li&gt;
+     * &lt;li&gt;{@code setEscape('\\')}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuote(&quot;\&quot;&quot;)}&lt;/li&gt;
+     * &lt;li&gt;{@code setRecordSeparator('\n')}&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @see Predefined#MySQL
+     * @see &lt;a href= &quot;http://www.ibm.com/support/knowledgecenter/SSBJG3_2.5.0/com.ibm.gen_busug.doc/c_fgl_InOutSql_UNLOAD.htm&quot;&gt;
+     *      http://www.ibm.com/support/knowledgecenter/SSBJG3_2.5.0/com.ibm.gen_busug.doc/c_fgl_InOutSql_UNLOAD.htm&lt;/a&gt;
+     * @since 1.3
+     */
+    // @formatter:off
+<span class="fc" id="L1052">    public static final CSVFormat INFORMIX_UNLOAD = DEFAULT.builder()</span>
+<span class="fc" id="L1053">            .setDelimiter(Constants.PIPE)</span>
+<span class="fc" id="L1054">            .setEscape(Constants.BACKSLASH)</span>
+<span class="fc" id="L1055">            .setQuote(Constants.DOUBLE_QUOTE_CHAR)</span>
+<span class="fc" id="L1056">            .setRecordSeparator(Constants.LF)</span>
+<span class="fc" id="L1057">            .get();</span>
+    // @formatter:on
+
+    /**
+     * Default Informix CSV UNLOAD format used by the {@code UNLOAD TO file_name} operation (escaping is disabled.)
+     *
+     * &lt;p&gt;
+     * This is a comma-delimited format with an LF character as the line separator. Values are not quoted and special characters are escaped with {@code '\'}.
+     * The default NULL string is {@code &quot;\\N&quot;}.
+     * &lt;/p&gt;
+     *
+     * &lt;p&gt;
+     * The {@link Builder} settings are:
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;{@code setDelimiter(',')}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuote(&quot;\&quot;&quot;)}&lt;/li&gt;
+     * &lt;li&gt;{@code setRecordSeparator('\n')}&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @see Predefined#MySQL
+     * @see &lt;a href= &quot;http://www.ibm.com/support/knowledgecenter/SSBJG3_2.5.0/com.ibm.gen_busug.doc/c_fgl_InOutSql_UNLOAD.htm&quot;&gt;
+     *      http://www.ibm.com/support/knowledgecenter/SSBJG3_2.5.0/com.ibm.gen_busug.doc/c_fgl_InOutSql_UNLOAD.htm&lt;/a&gt;
+     * @since 1.3
+     */
+    // @formatter:off
+<span class="fc" id="L1083">    public static final CSVFormat INFORMIX_UNLOAD_CSV = DEFAULT.builder()</span>
+<span class="fc" id="L1084">            .setDelimiter(Constants.COMMA)</span>
+<span class="fc" id="L1085">            .setQuote(Constants.DOUBLE_QUOTE_CHAR)</span>
+<span class="fc" id="L1086">            .setRecordSeparator(Constants.LF)</span>
+<span class="fc" id="L1087">            .get();</span>
+    // @formatter:on
+
+    /**
+     * Default MongoDB CSV format used by the {@code mongoexport} operation.
+     * &lt;p&gt;
+     * &lt;strong&gt;Parsing is not supported yet.&lt;/strong&gt;
+     * &lt;/p&gt;
+     *
+     * &lt;p&gt;
+     * This is a comma-delimited format. Values are double quoted only if needed and special characters are escaped with {@code '&quot;'}. A header line with field
+     * names is expected.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * As of 2024-04-05, the MongoDB documentation for {@code mongoimport} states:
+     * &lt;/p&gt;
+     * &lt;blockquote&gt;The csv parser accepts that data that complies with RFC &lt;a href=&quot;https://tools.ietf.org/html/4180&quot;&gt;RFC-4180&lt;/a&gt;. As a result, backslashes are
+     * not a valid escape character. If you use double-quotes to enclose fields in the CSV data, you must escape internal double-quote marks by prepending
+     * another double-quote. &lt;/blockquote&gt;
+     * &lt;p&gt;
+     * The {@link Builder} settings are:
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;{@code setDelimiter(',')}&lt;/li&gt;
+     * &lt;li&gt;{@code setEscape('&quot;')}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuote('&quot;')}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuoteMode(QuoteMode.ALL_NON_NULL)}&lt;/li&gt;
+     * &lt;li&gt;{@code setSkipHeaderRecord(false)}&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @see Predefined#MongoDBCsv
+     * @see &lt;a href=&quot;https://docs.mongodb.com/manual/reference/program/mongoexport/&quot;&gt;MongoDB mongoexport command documentation&lt;/a&gt;
+     * @since 1.7
+     */
+    // @formatter:off
+<span class="fc" id="L1122">    public static final CSVFormat MONGODB_CSV = DEFAULT.builder()</span>
+<span class="fc" id="L1123">            .setDelimiter(Constants.COMMA)</span>
+<span class="fc" id="L1124">            .setEscape(Constants.DOUBLE_QUOTE_CHAR)</span>
+<span class="fc" id="L1125">            .setQuote(Constants.DOUBLE_QUOTE_CHAR)</span>
+<span class="fc" id="L1126">            .setQuoteMode(QuoteMode.MINIMAL)</span>
+<span class="fc" id="L1127">            .setSkipHeaderRecord(false)</span>
+<span class="fc" id="L1128">            .get();</span>
+    // @formatter:off
+
+    /**
+     * Default MongoDB TSV format used by the {@code mongoexport} operation.
+     * &lt;p&gt;
+     * &lt;strong&gt;Parsing is not supported yet.&lt;/strong&gt;
+     * &lt;/p&gt;
+     *
+     * &lt;p&gt;
+     * This is a tab-delimited format. Values are double quoted only if needed and special
+     * characters are escaped with {@code '&quot;'}. A header line with field names is expected.
+     * &lt;/p&gt;
+     *
+     * &lt;p&gt;
+     * The {@link Builder} settings are:
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;{@code setDelimiter('\t')}&lt;/li&gt;
+     * &lt;li&gt;{@code setEscape('&quot;')}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuote('&quot;')}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuoteMode(QuoteMode.ALL_NON_NULL)}&lt;/li&gt;
+     * &lt;li&gt;{@code setSkipHeaderRecord(false)}&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @see Predefined#MongoDBCsv
+     * @see &lt;a href=&quot;https://docs.mongodb.com/manual/reference/program/mongoexport/&quot;&gt;MongoDB mongoexport command
+     *          documentation&lt;/a&gt;
+     * @since 1.7
+     */
+    // @formatter:off
+<span class="fc" id="L1159">    public static final CSVFormat MONGODB_TSV = DEFAULT.builder()</span>
+<span class="fc" id="L1160">            .setDelimiter(Constants.TAB)</span>
+<span class="fc" id="L1161">            .setEscape(Constants.DOUBLE_QUOTE_CHAR)</span>
+<span class="fc" id="L1162">            .setQuote(Constants.DOUBLE_QUOTE_CHAR)</span>
+<span class="fc" id="L1163">            .setQuoteMode(QuoteMode.MINIMAL)</span>
+<span class="fc" id="L1164">            .setSkipHeaderRecord(false)</span>
+<span class="fc" id="L1165">            .get();</span>
+    // @formatter:off
+
+    /**
+     * Default MySQL format used by the {@code SELECT INTO OUTFILE} and {@code LOAD DATA INFILE} operations.
+     *
+     * &lt;p&gt;
+     * This is a tab-delimited format with an LF character as the line separator. Values are not quoted and special
+     * characters are escaped with {@code '\'}. The default NULL string is {@code &quot;\\N&quot;}.
+     * &lt;/p&gt;
+     *
+     * &lt;p&gt;
+     * The {@link Builder} settings are:
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;{@code setDelimiter('\t')}&lt;/li&gt;
+     * &lt;li&gt;{@code setEscape('\\')}&lt;/li&gt;
+     * &lt;li&gt;{@code setIgnoreEmptyLines(false)}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuote(null)}&lt;/li&gt;
+     * &lt;li&gt;{@code setRecordSeparator('\n')}&lt;/li&gt;
+     * &lt;li&gt;{@code setNullString(&quot;\\N&quot;)}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuoteMode(QuoteMode.ALL_NON_NULL)}&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @see Predefined#MySQL
+     * @see &lt;a href=&quot;https://dev.mysql.com/doc/refman/5.1/en/load-data.html&quot;&gt; https://dev.mysql.com/doc/refman/5.1/en/load
+     *      -data.html&lt;/a&gt;
+     */
+    // @formatter:off
+<span class="fc" id="L1194">    public static final CSVFormat MYSQL = DEFAULT.builder()</span>
+<span class="fc" id="L1195">            .setDelimiter(Constants.TAB)</span>
+<span class="fc" id="L1196">            .setEscape(Constants.BACKSLASH)</span>
+<span class="fc" id="L1197">            .setIgnoreEmptyLines(false)</span>
+<span class="fc" id="L1198">            .setQuote(null)</span>
+<span class="fc" id="L1199">            .setRecordSeparator(Constants.LF)</span>
+<span class="fc" id="L1200">            .setNullString(Constants.SQL_NULL_STRING)</span>
+<span class="fc" id="L1201">            .setQuoteMode(QuoteMode.ALL_NON_NULL)</span>
+<span class="fc" id="L1202">            .get();</span>
+    // @formatter:off
+
+    /**
+     * Default Oracle format used by the SQL*Loader utility.
+     *
+     * &lt;p&gt;
+     * This is a comma-delimited format with the system line separator character as the record separator. Values are
+     * double quoted when needed and special characters are escaped with {@code '&quot;'}. The default NULL string is
+     * {@code &quot;&quot;}. Values are trimmed.
+     * &lt;/p&gt;
+     *
+     * &lt;p&gt;
+     * The {@link Builder} settings are:
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;{@code setDelimiter(',') // default is {@code FIELDS TERMINATED BY ','}}&lt;/li&gt;
+     * &lt;li&gt;{@code setEscape('\\')}&lt;/li&gt;
+     * &lt;li&gt;{@code setIgnoreEmptyLines(false)}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuote('&quot;')  // default is {@code OPTIONALLY ENCLOSED BY '&quot;'}}&lt;/li&gt;
+     * &lt;li&gt;{@code setNullString(&quot;\\N&quot;)}&lt;/li&gt;
+     * &lt;li&gt;{@code setTrim()}&lt;/li&gt;
+     * &lt;li&gt;{@code setSystemRecordSeparator()}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuoteMode(QuoteMode.MINIMAL)}&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @see Predefined#Oracle
+     * @see &lt;a href=&quot;https://s.apache.org/CGXG&quot;&gt;Oracle CSV Format Specification&lt;/a&gt;
+     * @since 1.6
+     */
+    // @formatter:off
+<span class="fc" id="L1233">    public static final CSVFormat ORACLE = DEFAULT.builder()</span>
+<span class="fc" id="L1234">            .setDelimiter(Constants.COMMA)</span>
+<span class="fc" id="L1235">            .setEscape(Constants.BACKSLASH)</span>
+<span class="fc" id="L1236">            .setIgnoreEmptyLines(false)</span>
+<span class="fc" id="L1237">            .setQuote(Constants.DOUBLE_QUOTE_CHAR)</span>
+<span class="fc" id="L1238">            .setNullString(Constants.SQL_NULL_STRING)</span>
+<span class="fc" id="L1239">            .setTrim(true)</span>
+<span class="fc" id="L1240">            .setRecordSeparator(System.lineSeparator())</span>
+<span class="fc" id="L1241">            .setQuoteMode(QuoteMode.MINIMAL)</span>
+<span class="fc" id="L1242">            .get();</span>
+    // @formatter:off
+
+    /**
+     * Default PostgreSQL CSV format used by the {@code COPY} operation.
+     *
+     * &lt;p&gt;
+     * This is a comma-delimited format with an LF character as the line separator. Values are double quoted and special
+     * characters are not escaped. The default NULL string is {@code &quot;&quot;}.
+     * &lt;/p&gt;
+     *
+     * &lt;p&gt;
+     * The {@link Builder} settings are:
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;{@code setDelimiter(',')}&lt;/li&gt;
+     * &lt;li&gt;{@code setEscape(null)}&lt;/li&gt;
+     * &lt;li&gt;{@code setIgnoreEmptyLines(false)}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuote('&quot;')}&lt;/li&gt;
+     * &lt;li&gt;{@code setRecordSeparator('\n')}&lt;/li&gt;
+     * &lt;li&gt;{@code setNullString(&quot;&quot;)}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuoteMode(QuoteMode.ALL_NON_NULL)}&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @see Predefined#MySQL
+     * @see &lt;a href=&quot;https://www.postgresql.org/docs/current/static/sql-copy.html&quot;&gt;PostgreSQL COPY command
+     *          documentation&lt;/a&gt;
+     * @since 1.5
+     */
+    // @formatter:off
+<span class="fc" id="L1272">    public static final CSVFormat POSTGRESQL_CSV = DEFAULT.builder()</span>
+<span class="fc" id="L1273">            .setDelimiter(Constants.COMMA)</span>
+<span class="fc" id="L1274">            .setEscape(null)</span>
+<span class="fc" id="L1275">            .setIgnoreEmptyLines(false)</span>
+<span class="fc" id="L1276">            .setQuote(Constants.DOUBLE_QUOTE_CHAR)</span>
+<span class="fc" id="L1277">            .setRecordSeparator(Constants.LF)</span>
+<span class="fc" id="L1278">            .setNullString(Constants.EMPTY)</span>
+<span class="fc" id="L1279">            .setQuoteMode(QuoteMode.ALL_NON_NULL)</span>
+<span class="fc" id="L1280">            .get();</span>
+    // @formatter:off
+
+    /**
+     * Default PostgreSQL text format used by the {@code COPY} operation.
+     *
+     * &lt;p&gt;
+     * This is a tab-delimited format with an LF character as the line separator. Values are not quoted and special
+     * characters are escaped with {@code '\\'}. The default NULL string is {@code &quot;\\N&quot;}.
+     * &lt;/p&gt;
+     *
+     * &lt;p&gt;
+     * The {@link Builder} settings are:
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;{@code setDelimiter('\t')}&lt;/li&gt;
+     * &lt;li&gt;{@code setEscape('\\')}&lt;/li&gt;
+     * &lt;li&gt;{@code setIgnoreEmptyLines(false)}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuote(null)}&lt;/li&gt;
+     * &lt;li&gt;{@code setRecordSeparator('\n')}&lt;/li&gt;
+     * &lt;li&gt;{@code setNullString(&quot;\\N&quot;)}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuoteMode(QuoteMode.ALL_NON_NULL)}&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @see Predefined#MySQL
+     * @see &lt;a href=&quot;https://www.postgresql.org/docs/current/static/sql-copy.html&quot;&gt;PostgreSQL COPY command
+     *          documentation&lt;/a&gt;
+     * @since 1.5
+     */
+    // @formatter:off
+<span class="fc" id="L1310">    public static final CSVFormat POSTGRESQL_TEXT = DEFAULT.builder()</span>
+<span class="fc" id="L1311">            .setDelimiter(Constants.TAB)</span>
+<span class="fc" id="L1312">            .setEscape(Constants.BACKSLASH)</span>
+<span class="fc" id="L1313">            .setIgnoreEmptyLines(false)</span>
+<span class="fc" id="L1314">            .setQuote(null)</span>
+<span class="fc" id="L1315">            .setRecordSeparator(Constants.LF)</span>
+<span class="fc" id="L1316">            .setNullString(Constants.SQL_NULL_STRING)</span>
+<span class="fc" id="L1317">            .setQuoteMode(QuoteMode.ALL_NON_NULL)</span>
+<span class="fc" id="L1318">            .get();</span>
+    // @formatter:off
+
+    /**
+     * Comma separated format as defined by &lt;a href=&quot;https://tools.ietf.org/html/rfc4180&quot;&gt;RFC 4180&lt;/a&gt;.
+     *
+     * &lt;p&gt;
+     * The {@link Builder} settings are:
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;{@code setDelimiter(',')}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuote('&quot;')}&lt;/li&gt;
+     * &lt;li&gt;{@code setRecordSeparator(&quot;\r\n&quot;)}&lt;/li&gt;
+     * &lt;li&gt;{@code setIgnoreEmptyLines(false)}&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @see Predefined#RFC4180
+     */
+<span class="fc" id="L1336">    public static final CSVFormat RFC4180 = DEFAULT.builder().setIgnoreEmptyLines(false).get();</span>
+
+    private static final long serialVersionUID = 2L;
+
+    /**
+     * Tab-delimited format.
+     *
+     * &lt;p&gt;
+     * The {@link Builder} settings are:
+     * &lt;/p&gt;
+     * &lt;ul&gt;
+     * &lt;li&gt;{@code setDelimiter('\t')}&lt;/li&gt;
+     * &lt;li&gt;{@code setQuote('&quot;')}&lt;/li&gt;
+     * &lt;li&gt;{@code setRecordSeparator(&quot;\r\n&quot;)}&lt;/li&gt;
+     * &lt;li&gt;{@code setIgnoreSurroundingSpaces(true)}&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @see Predefined#TDF
+     */
+    // @formatter:off
+<span class="fc" id="L1356">    public static final CSVFormat TDF = DEFAULT.builder()</span>
+<span class="fc" id="L1357">            .setDelimiter(Constants.TAB)</span>
+<span class="fc" id="L1358">            .setIgnoreSurroundingSpaces(true)</span>
+<span class="fc" id="L1359">            .get();</span>
+    // @formatter:on
+
+    /**
+     * Null-safe clone of an array.
+     *
+     * @param &lt;T&gt;    The array element type.
+     * @param values the source array
+     * @return the cloned array.
+     */
+    @SafeVarargs
+    static &lt;T&gt; T[] clone(final T... values) {
+<span class="fc bfc" id="L1371" title="All 2 branches covered.">        return values == null ? null : values.clone();</span>
+    }
+
+    /**
+     * Returns true if the given string contains the search char.
+     *
+     * @param source   the string to check.
+     * @param searchCh the character to search.
+     * @return true if {@code c} contains a line break character
+     */
+    private static boolean contains(final String source, final char searchCh) {
+<span class="fc bfc" id="L1382" title="All 2 branches covered.">        return Objects.requireNonNull(source, &quot;source&quot;).indexOf(searchCh) &gt;= 0;</span>
+    }
+
+    /**
+     * Returns true if the given string contains a line break character.
+     *
+     * @param source the string to check.
+     * @return true if {@code c} contains a line break character.
+     */
+    private static boolean containsLineBreak(final String source) {
+<span class="fc bfc" id="L1392" title="All 4 branches covered.">        return contains(source, Constants.CR) || contains(source, Constants.LF);</span>
+    }
+
+    /**
+     * Creates a null-safe copy of the given instance.
+     *
+     * @return a copy of the given instance or null if the input is null.
+     */
+    static CSVFormat copy(final CSVFormat format) {
+<span class="pc bpc" id="L1401" title="1 of 2 branches missed.">        return format != null ? format.copy() : null;</span>
+    }
+
+    static boolean isBlank(final String value) {
+<span class="fc bfc" id="L1405" title="All 4 branches covered.">        return value == null || value.trim().isEmpty();</span>
+    }
+
+    /**
+     * Returns true if the given character is a line break character.
+     *
+     * @param c the character to check.
+     * @return true if {@code c} is a line break character.
+     */
+    private static boolean isLineBreak(final char c) {
+<span class="fc bfc" id="L1415" title="All 4 branches covered.">        return c == Constants.LF || c == Constants.CR;</span>
+    }
+
+    /**
+     * Returns true if the given character is a line break character.
+     *
+     * @param c the character to check, may be null.
+     * @return true if {@code c} is a line break character (and not null).
+     */
+    private static boolean isLineBreak(final Character c) {
+<span class="fc bfc" id="L1425" title="All 4 branches covered.">        return c != null &amp;&amp; isLineBreak(c.charValue()); // N.B. Explicit (un)boxing is intentional</span>
+    }
+
+    /** Same test as in as {@link String#trim()}. */
+    private static boolean isTrimChar(final char ch) {
+<span class="fc bfc" id="L1430" title="All 2 branches covered.">        return ch &lt;= Constants.SP;</span>
+    }
+
+    /** Same test as in as {@link String#trim()}. */
+    private static boolean isTrimChar(final CharSequence charSequence, final int pos) {
+<span class="fc" id="L1435">        return isTrimChar(charSequence.charAt(pos));</span>
+    }
+
+    /**
+     * Creates a new CSV format with the specified delimiter.
+     *
+     * &lt;p&gt;
+     * Use this method if you want to create a CSVFormat from scratch. All fields but the delimiter will be initialized with null/false.
+     * &lt;/p&gt;
+     *
+     * @param delimiter the char used for value separation, must not be a line break character
+     * @return a new CSV format.
+     * @throws IllegalArgumentException if the delimiter is a line break character
+     * @see #DEFAULT
+     * @see #RFC4180
+     * @see #MYSQL
+     * @see #EXCEL
+     * @see #TDF
+     */
+    public static CSVFormat newFormat(final char delimiter) {
+<span class="fc" id="L1455">        return new CSVFormat(new Builder().setDelimiter(delimiter));</span>
+    }
+
+    static String[] toStringArray(final Object[] values) {
+<span class="fc bfc" id="L1459" title="All 2 branches covered.">        if (values == null) {</span>
+<span class="fc" id="L1460">            return null;</span>
+        }
+<span class="fc" id="L1462">        final String[] strings = new String[values.length];</span>
+<span class="fc" id="L1463">        Arrays.setAll(strings, i -&gt; Objects.toString(values[i], null));</span>
+<span class="fc" id="L1464">        return strings;</span>
+    }
+
+    static CharSequence trim(final CharSequence charSequence) {
+<span class="fc bfc" id="L1468" title="All 2 branches covered.">        if (charSequence instanceof String) {</span>
+<span class="fc" id="L1469">            return ((String) charSequence).trim();</span>
+        }
+<span class="fc" id="L1471">        final int count = charSequence.length();</span>
+<span class="fc" id="L1472">        int len = count;</span>
+<span class="fc" id="L1473">        int pos = 0;</span>
+
+<span class="fc bfc" id="L1475" title="All 4 branches covered.">        while (pos &lt; len &amp;&amp; isTrimChar(charSequence, pos)) {</span>
+<span class="fc" id="L1476">            pos++;</span>
+        }
+<span class="fc bfc" id="L1478" title="All 4 branches covered.">        while (pos &lt; len &amp;&amp; isTrimChar(charSequence, len - 1)) {</span>
+<span class="fc" id="L1479">            len--;</span>
+        }
+<span class="fc bfc" id="L1481" title="All 4 branches covered.">        return pos &gt; 0 || len &lt; count ? charSequence.subSequence(pos, len) : charSequence;</span>
+    }
+
+    /**
+     * Gets one of the predefined formats from {@link CSVFormat.Predefined}.
+     *
+     * @param format name
+     * @return one of the predefined formats
+     * @since 1.2
+     */
+    public static CSVFormat valueOf(final String format) {
+<span class="fc" id="L1492">        return CSVFormat.Predefined.valueOf(format).getFormat();</span>
+    }
+
+    /** How duplicate headers are handled. */
+    private final DuplicateHeaderMode duplicateHeaderMode;
+
+    /** Whether missing column names are allowed when parsing the header line. */
+    private final boolean allowMissingColumnNames;
+
+    /** Whether to flush on close. */
+    private final boolean autoFlush;
+
+    /** Set to null if commenting is disabled. */
+    private final Character commentMarker;
+
+    /** The character delimiting the values (typically &quot;;&quot;, &quot;,&quot; or &quot;\t&quot;). */
+    private final String delimiter;
+
+    /** Set to null if escaping is disabled. */
+    private final Character escapeCharacter;
+
+    /** Array of header column names. */
+    private final String[] headers;
+
+    /** Array of header comment lines. */
+    private final String[] headerComments;
+
+    /** Whether empty lines between records are ignored when parsing input. */
+    private final boolean ignoreEmptyLines;
+
+    /** Should ignore header names case. */
+    private final boolean ignoreHeaderCase;
+
+    /** Should leading/trailing spaces be ignored around values?. */
+    private final boolean ignoreSurroundingSpaces;
+
+    /** The string to be used for null values. */
+    private final String nullString;
+
+    /** Set to null if quoting is disabled. */
+    private final Character quoteCharacter;
+
+    /** Set to {@code quoteCharacter + nullString + quoteCharacter} */
+    private final String quotedNullString;
+
+    /** The quote policy output fields. */
+    private final QuoteMode quoteMode;
+
+    /** For output. */
+    private final String recordSeparator;
+
+    /** Whether to skip the header record. */
+    private final boolean skipHeaderRecord;
+
+    /** Whether reading end-of-file is allowed even when input is malformed, helps Excel compatibility. */
+    private final boolean lenientEof;
+
+    /** Whether reading trailing data is allowed in records, helps Excel compatibility. */
+    private final boolean trailingData;
+
+    /** Whether to add a trailing delimiter. */
+    private final boolean trailingDelimiter;
+
+    /** Whether to trim leading and trailing blanks. */
+    private final boolean trim;
+
+<span class="fc" id="L1558">    private CSVFormat(final Builder builder) {</span>
+<span class="fc" id="L1559">        this.delimiter = builder.delimiter;</span>
+<span class="fc" id="L1560">        this.quoteCharacter = builder.quoteCharacter;</span>
+<span class="fc" id="L1561">        this.quoteMode = builder.quoteMode;</span>
+<span class="fc" id="L1562">        this.commentMarker = builder.commentMarker;</span>
+<span class="fc" id="L1563">        this.escapeCharacter = builder.escapeCharacter;</span>
+<span class="fc" id="L1564">        this.ignoreSurroundingSpaces = builder.ignoreSurroundingSpaces;</span>
+<span class="fc" id="L1565">        this.allowMissingColumnNames = builder.allowMissingColumnNames;</span>
+<span class="fc" id="L1566">        this.ignoreEmptyLines = builder.ignoreEmptyLines;</span>
+<span class="fc" id="L1567">        this.recordSeparator = builder.recordSeparator;</span>
+<span class="fc" id="L1568">        this.nullString = builder.nullString;</span>
+<span class="fc" id="L1569">        this.headerComments = builder.headerComments;</span>
+<span class="fc" id="L1570">        this.headers = builder.headers;</span>
+<span class="fc" id="L1571">        this.skipHeaderRecord = builder.skipHeaderRecord;</span>
+<span class="fc" id="L1572">        this.ignoreHeaderCase = builder.ignoreHeaderCase;</span>
+<span class="fc" id="L1573">        this.lenientEof = builder.lenientEof;</span>
+<span class="fc" id="L1574">        this.trailingData = builder.trailingData;</span>
+<span class="fc" id="L1575">        this.trailingDelimiter = builder.trailingDelimiter;</span>
+<span class="fc" id="L1576">        this.trim = builder.trim;</span>
+<span class="fc" id="L1577">        this.autoFlush = builder.autoFlush;</span>
+<span class="fc" id="L1578">        this.quotedNullString = builder.quotedNullString;</span>
+<span class="fc" id="L1579">        this.duplicateHeaderMode = builder.duplicateHeaderMode;</span>
+<span class="fc" id="L1580">        validate();</span>
+<span class="fc" id="L1581">    }</span>
+
+    private void append(final char c, final Appendable appendable) throws IOException {
+        // try {
+<span class="fc" id="L1585">        appendable.append(c);</span>
+        // } catch (final IOException e) {
+        // throw new UncheckedIOException(e);
+        // }
+<span class="fc" id="L1589">    }</span>
+
+    private void append(final CharSequence csq, final Appendable appendable) throws IOException {
+        // try {
+<span class="fc" id="L1593">        appendable.append(csq);</span>
+        // } catch (final IOException e) {
+        // throw new UncheckedIOException(e);
+        // }
+<span class="fc" id="L1597">    }</span>
+
+    /**
+     * Creates a new Builder for this instance.
+     *
+     * @return a new Builder.
+     */
+    public Builder builder() {
+<span class="fc" id="L1605">        return Builder.create(this);</span>
+    }
+
+    /**
+     * Creates a copy of this instance.
+     *
+     * @return a copy of this instance.
+     */
+    CSVFormat copy() {
+<span class="fc" id="L1614">        return builder().get();</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L1619" title="All 2 branches covered.">        if (this == obj) {</span>
+<span class="fc" id="L1620">            return true;</span>
+        }
+<span class="fc bfc" id="L1622" title="All 2 branches covered.">        if (obj == null) {</span>
+<span class="fc" id="L1623">            return false;</span>
+        }
+<span class="fc bfc" id="L1625" title="All 2 branches covered.">        if (getClass() != obj.getClass()) {</span>
+<span class="fc" id="L1626">            return false;</span>
+        }
+<span class="fc" id="L1628">        final CSVFormat other = (CSVFormat) obj;</span>
+<span class="fc bfc" id="L1629" title="All 4 branches covered.">        return allowMissingColumnNames == other.allowMissingColumnNames &amp;&amp; autoFlush == other.autoFlush &amp;&amp;</span>
+<span class="fc bfc" id="L1630" title="All 6 branches covered.">                Objects.equals(commentMarker, other.commentMarker) &amp;&amp; Objects.equals(delimiter, other.delimiter) &amp;&amp;</span>
+<span class="fc bfc" id="L1631" title="All 2 branches covered.">                duplicateHeaderMode == other.duplicateHeaderMode &amp;&amp; Objects.equals(escapeCharacter, other.escapeCharacter) &amp;&amp;</span>
+<span class="pc bpc" id="L1632" title="1 of 12 branches missed.">                Arrays.equals(headerComments, other.headerComments) &amp;&amp; Arrays.equals(headers, other.headers) &amp;&amp;</span>
+                ignoreEmptyLines == other.ignoreEmptyLines &amp;&amp; ignoreHeaderCase == other.ignoreHeaderCase &amp;&amp;
+                ignoreSurroundingSpaces == other.ignoreSurroundingSpaces &amp;&amp; lenientEof == other.lenientEof &amp;&amp;
+<span class="fc bfc" id="L1635" title="All 6 branches covered.">                Objects.equals(nullString, other.nullString) &amp;&amp; Objects.equals(quoteCharacter, other.quoteCharacter) &amp;&amp;</span>
+<span class="pc bpc" id="L1636" title="1 of 2 branches missed.">                quoteMode == other.quoteMode &amp;&amp; Objects.equals(quotedNullString, other.quotedNullString) &amp;&amp;</span>
+<span class="pc bpc" id="L1637" title="1 of 10 branches missed.">                Objects.equals(recordSeparator, other.recordSeparator) &amp;&amp; skipHeaderRecord == other.skipHeaderRecord &amp;&amp;</span>
+                trailingData == other.trailingData &amp;&amp; trailingDelimiter == other.trailingDelimiter &amp;&amp; trim == other.trim;
+    }
+
+    private void escape(final char c, final Appendable appendable) throws IOException {
+<span class="fc" id="L1642">        append(escapeCharacter.charValue(), appendable); // N.B. Explicit (un)boxing is intentional</span>
+<span class="fc" id="L1643">        append(c, appendable);</span>
+<span class="fc" id="L1644">    }</span>
+
+    /**
+     * Formats the specified values.
+     *
+     * @param values the values to format
+     * @return the formatted values
+     */
+    public String format(final Object... values) {
+<span class="fc" id="L1653">        return Uncheck.get(() -&gt; format_(values));</span>
+    }
+
+    private String format_(final Object... values) throws IOException {
+<span class="fc" id="L1657">        final StringWriter out = new StringWriter();</span>
+<span class="fc" id="L1658">        try (CSVPrinter csvPrinter = new CSVPrinter(out, this)) {</span>
+<span class="fc" id="L1659">            csvPrinter.printRecord(values);</span>
+<span class="fc" id="L1660">            final String res = out.toString();</span>
+<span class="fc bfc" id="L1661" title="All 2 branches covered.">            final int len = recordSeparator != null ? res.length() - recordSeparator.length() : res.length();</span>
+<span class="fc" id="L1662">            return res.substring(0, len);</span>
+        }
+    }
+
+    /**
+     * Gets whether duplicate names are allowed in the headers.
+     *
+     * @return whether duplicate header names are allowed
+     * @since 1.7
+     * @deprecated Use {@link #getDuplicateHeaderMode()}.
+     */
+    @Deprecated
+    public boolean getAllowDuplicateHeaderNames() {
+<span class="fc bfc" id="L1675" title="All 2 branches covered.">        return duplicateHeaderMode == DuplicateHeaderMode.ALLOW_ALL;</span>
+    }
+
+    /**
+     * Gets whether missing column names are allowed when parsing the header line.
+     *
+     * @return {@code true} if missing column names are allowed when parsing the header line, {@code false} to throw an {@link IllegalArgumentException}.
+     */
+    public boolean getAllowMissingColumnNames() {
+<span class="fc" id="L1684">        return allowMissingColumnNames;</span>
+    }
+
+    /**
+     * Gets whether to flush on close.
+     *
+     * @return whether to flush on close.
+     * @since 1.6
+     */
+    public boolean getAutoFlush() {
+<span class="fc" id="L1694">        return autoFlush;</span>
+    }
+
+    /**
+     * Gets the comment marker character, {@code null} disables comments.
+     * &lt;p&gt;
+     * The comment start character is only recognized at the start of a line.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Comments are printed first, before headers.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Use {@link Builder#setCommentMarker(char)} or {@link Builder#setCommentMarker(Character)} to set the comment marker written at the start of each comment
+     * line.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * If the comment marker is not set, then the header comments are ignored.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * For example:
+     * &lt;/p&gt;
+     *
+     * &lt;pre&gt;
+     * builder.setCommentMarker('#').setHeaderComments(&quot;Generated by Apache Commons CSV&quot;, Instant.ofEpochMilli(0));
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * writes:
+     * &lt;/p&gt;
+     *
+     * &lt;pre&gt;
+     * # Generated by Apache Commons CSV.
+     * # 1970-01-01T00:00:00Z
+     * &lt;/pre&gt;
+     *
+     * @return the comment start marker, may be {@code null}
+     */
+    public Character getCommentMarker() {
+<span class="fc" id="L1731">        return commentMarker;</span>
+    }
+
+    /**
+     * Gets the first character delimiting the values (typically ';', ',' or '\t').
+     *
+     * @return the first delimiter character.
+     * @deprecated Use {@link #getDelimiterString()}.
+     */
+    @Deprecated
+    public char getDelimiter() {
+<span class="fc" id="L1742">        return delimiter.charAt(0);</span>
+    }
+
+    /**
+     * Gets the character delimiting the values (typically &quot;;&quot;, &quot;,&quot; or &quot;\t&quot;).
+     *
+     * @return the delimiter.
+     */
+    char[] getDelimiterCharArray() {
+<span class="fc" id="L1751">        return delimiter.toCharArray();</span>
+    }
+
+    /**
+     * Gets the character delimiting the values (typically &quot;;&quot;, &quot;,&quot; or &quot;\t&quot;).
+     *
+     * @return the delimiter.
+     * @since 1.9.0
+     */
+    public String getDelimiterString() {
+<span class="fc" id="L1761">        return delimiter;</span>
+    }
+
+    /**
+     * Gets how duplicate headers are handled.
+     *
+     * @return if duplicate header values are allowed, allowed conditionally, or disallowed.
+     * @since 1.10.0
+     */
+    public DuplicateHeaderMode getDuplicateHeaderMode() {
+<span class="fc" id="L1771">        return duplicateHeaderMode;</span>
+    }
+
+    /**
+     * Gets the escape character.
+     *
+     * @return the escape character, may be {@code 0}
+     */
+    char getEscapeChar() {
+<span class="pc bpc" id="L1780" title="1 of 2 branches missed.">        return escapeCharacter != null ? escapeCharacter.charValue() : 0; // N.B. Explicit (un)boxing is intentional</span>
+    }
+
+    /**
+     * Gets the escape character.
+     *
+     * @return the escape character, may be {@code null}
+     */
+    public Character getEscapeCharacter() {
+<span class="fc" id="L1789">        return escapeCharacter;</span>
+    }
+
+    /**
+     * Gets a copy of the header array.
+     *
+     * @return a copy of the header array; {@code null} if disabled, the empty array if to be read from the file
+     */
+    public String[] getHeader() {
+<span class="fc bfc" id="L1798" title="All 2 branches covered.">        return headers != null ? headers.clone() : null;</span>
+    }
+
+    /**
+     * Gets a copy of the header comment array to write before the CSV data.
+     * &lt;p&gt;
+     * This setting is ignored by the parser.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Comments are printed first, before headers.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Use {@link Builder#setCommentMarker(char)} or {@link Builder#setCommentMarker(Character)} to set the comment marker written at the start of each comment
+     * line.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * If the comment marker is not set, then the header comments are ignored.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * For example:
+     * &lt;/p&gt;
+     *
+     * &lt;pre&gt;
+     * builder.setCommentMarker('#').setHeaderComments(&quot;Generated by Apache Commons CSV&quot;, Instant.ofEpochMilli(0));
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * writes:
+     * &lt;/p&gt;
+     *
+     * &lt;pre&gt;
+     * # Generated by Apache Commons CSV.
+     * # 1970-01-01T00:00:00Z
+     * &lt;/pre&gt;
+     *
+     * @return a copy of the header comment array; {@code null} if disabled.
+     */
+    public String[] getHeaderComments() {
+<span class="fc bfc" id="L1835" title="All 2 branches covered.">        return headerComments != null ? headerComments.clone() : null;</span>
+    }
+
+    /**
+     * Gets whether empty lines between records are ignored when parsing input.
+     *
+     * @return {@code true} if empty lines between records are ignored, {@code false} if they are turned into empty records.
+     */
+    public boolean getIgnoreEmptyLines() {
+<span class="fc" id="L1844">        return ignoreEmptyLines;</span>
+    }
+
+    /**
+     * Gets whether header names will be accessed ignoring case when parsing input.
+     *
+     * @return {@code true} if header names cases are ignored, {@code false} if they are case-sensitive.
+     * @since 1.3
+     */
+    public boolean getIgnoreHeaderCase() {
+<span class="fc" id="L1854">        return ignoreHeaderCase;</span>
+    }
+
+    /**
+     * Gets whether spaces around values are ignored when parsing input.
+     *
+     * @return {@code true} if spaces around values are ignored, {@code false} if they are treated as part of the value.
+     */
+    public boolean getIgnoreSurroundingSpaces() {
+<span class="fc" id="L1863">        return ignoreSurroundingSpaces;</span>
+    }
+
+    /**
+     * Gets whether reading end-of-file is allowed even when input is malformed, helps Excel compatibility.
+     *
+     * @return whether reading end-of-file is allowed even when input is malformed, helps Excel compatibility.
+     * @since 1.11.0
+     */
+    public boolean getLenientEof() {
+<span class="fc" id="L1873">        return lenientEof;</span>
+    }
+
+    /**
+     * Gets the String to convert to and from {@code null}.
+     * &lt;ul&gt;
+     * &lt;li&gt;&lt;strong&gt;Reading:&lt;/strong&gt; Converts strings equal to the given {@code nullString} to {@code null} when reading records.&lt;/li&gt;
+     * &lt;li&gt;&lt;strong&gt;Writing:&lt;/strong&gt; Writes {@code null} as the given {@code nullString} when writing records.&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @return the String to convert to and from {@code null}. No substitution occurs if {@code null}
+     */
+    public String getNullString() {
+<span class="fc" id="L1886">        return nullString;</span>
+    }
+
+    /**
+     * Gets the character used to encapsulate values containing special characters.
+     *
+     * @return the quoteChar character, may be {@code null}
+     */
+    public Character getQuoteCharacter() {
+<span class="fc" id="L1895">        return quoteCharacter;</span>
+    }
+
+    /**
+     * Gets the quote policy output fields.
+     *
+     * @return the quote policy
+     */
+    public QuoteMode getQuoteMode() {
+<span class="fc" id="L1904">        return quoteMode;</span>
+    }
+
+    /**
+     * Gets the record separator delimiting output records.
+     *
+     * @return the record separator
+     */
+    public String getRecordSeparator() {
+<span class="fc" id="L1913">        return recordSeparator;</span>
+    }
+
+    /**
+     * Gets whether to skip the header record.
+     *
+     * @return whether to skip the header record.
+     */
+    public boolean getSkipHeaderRecord() {
+<span class="fc" id="L1922">        return skipHeaderRecord;</span>
+    }
+
+    /**
+     * Gets whether reading trailing data is allowed in records, helps Excel compatibility.
+     *
+     * @return whether reading trailing data is allowed in records, helps Excel compatibility.
+     * @since 1.11.0
+     */
+    public boolean getTrailingData() {
+<span class="fc" id="L1932">        return trailingData;</span>
+    }
+
+    /**
+     * Gets whether to add a trailing delimiter.
+     *
+     * @return whether to add a trailing delimiter.
+     * @since 1.3
+     */
+    public boolean getTrailingDelimiter() {
+<span class="fc" id="L1942">        return trailingDelimiter;</span>
+    }
+
+    /**
+     * Gets whether to trim leading and trailing blanks. This is used by {@link #print(Object, Appendable, boolean)} Also by {CSVParser#addRecordValue(boolean)}
+     *
+     * @return whether to trim leading and trailing blanks.
+     */
+    public boolean getTrim() {
+<span class="fc" id="L1951">        return trim;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L1956">        final int prime = 31;</span>
+<span class="fc" id="L1957">        int result = 1;</span>
+<span class="fc" id="L1958">        result = prime * result + Arrays.hashCode(headerComments);</span>
+<span class="fc" id="L1959">        result = prime * result + Arrays.hashCode(headers);</span>
+<span class="fc" id="L1960">        result = prime * result + Objects.hash(allowMissingColumnNames, autoFlush, commentMarker, delimiter, duplicateHeaderMode, escapeCharacter,</span>
+<span class="fc" id="L1961">                ignoreEmptyLines, ignoreHeaderCase, ignoreSurroundingSpaces, lenientEof, nullString, quoteCharacter, quoteMode, quotedNullString,</span>
+<span class="fc" id="L1962">                recordSeparator, skipHeaderRecord, trailingData, trailingDelimiter, trim);</span>
+<span class="fc" id="L1963">        return result;</span>
+    }
+
+    /**
+     * Tests whether comments are supported by this format.
+     *
+     * Note that the comment introducer character is only recognized at the start of a line.
+     *
+     * @return {@code true} is comments are supported, {@code false} otherwise
+     */
+    public boolean isCommentMarkerSet() {
+<span class="fc bfc" id="L1974" title="All 2 branches covered.">        return commentMarker != null;</span>
+    }
+
+    /**
+     * Tests whether the next characters constitute a delimiter
+     *
+     * @param ch0             the first char (index 0).
+     * @param charSeq         the match char sequence
+     * @param startIndex      where start to match
+     * @param delimiter       the delimiter
+     * @param delimiterLength the delimiter length
+     * @return true if the match is successful
+     */
+    private boolean isDelimiter(final char ch0, final CharSequence charSeq, final int startIndex, final char[] delimiter, final int delimiterLength) {
+<span class="fc bfc" id="L1988" title="All 2 branches covered.">        if (ch0 != delimiter[0]) {</span>
+<span class="fc" id="L1989">            return false;</span>
+        }
+<span class="fc" id="L1991">        final int len = charSeq.length();</span>
+<span class="fc bfc" id="L1992" title="All 2 branches covered.">        if (startIndex + delimiterLength &gt; len) {</span>
+<span class="fc" id="L1993">            return false;</span>
+        }
+<span class="fc bfc" id="L1995" title="All 2 branches covered.">        for (int i = 1; i &lt; delimiterLength; i++) {</span>
+<span class="fc bfc" id="L1996" title="All 2 branches covered.">            if (charSeq.charAt(startIndex + i) != delimiter[i]) {</span>
+<span class="fc" id="L1997">                return false;</span>
+            }
+        }
+<span class="fc" id="L2000">        return true;</span>
+    }
+
+    /**
+     * Tests whether escapes are being processed.
+     *
+     * @return {@code true} if escapes are processed
+     */
+    public boolean isEscapeCharacterSet() {
+<span class="fc bfc" id="L2009" title="All 2 branches covered.">        return escapeCharacter != null;</span>
+    }
+
+    /**
+     * Tests whether a null string has been defined.
+     *
+     * @return {@code true} if a nullString is defined
+     */
+    public boolean isNullStringSet() {
+<span class="fc bfc" id="L2018" title="All 2 branches covered.">        return nullString != null;</span>
+    }
+
+    /**
+     * Tests whether a quoteChar has been defined.
+     *
+     * @return {@code true} if a quoteChar is defined
+     */
+    public boolean isQuoteCharacterSet() {
+<span class="fc bfc" id="L2027" title="All 2 branches covered.">        return quoteCharacter != null;</span>
+    }
+
+    /**
+     * Parses the specified content.
+     *
+     * &lt;p&gt;
+     * See also the various static parse methods on {@link CSVParser}.
+     * &lt;/p&gt;
+     *
+     * @param reader the input stream
+     * @return a parser over a stream of {@link CSVRecord}s.
+     * @throws IOException  If an I/O error occurs
+     * @throws CSVException Thrown on invalid input.
+     */
+    public CSVParser parse(final Reader reader) throws IOException {
+<span class="fc" id="L2043">        return CSVParser.builder().setReader(reader).setFormat(this).get();</span>
+    }
+
+    /**
+     * Prints to the specified output.
+     *
+     * &lt;p&gt;
+     * See also {@link CSVPrinter}.
+     * &lt;/p&gt;
+     *
+     * @param out the output.
+     * @return a printer to an output.
+     * @throws IOException thrown if the optional header cannot be printed.
+     */
+    public CSVPrinter print(final Appendable out) throws IOException {
+<span class="fc" id="L2058">        return new CSVPrinter(out, this);</span>
+    }
+
+    /**
+     * Prints to the specified {@code File} with given {@code Charset}.
+     *
+     * &lt;p&gt;
+     * See also {@link CSVPrinter}.
+     * &lt;/p&gt;
+     *
+     * @param out     the output.
+     * @param charset A charset.
+     * @return a printer to an output.
+     * @throws IOException thrown if the optional header cannot be printed.
+     * @since 1.5
+     */
+    public CSVPrinter print(final File out, final Charset charset) throws IOException {
+<span class="fc" id="L2075">        return print(out.toPath(), charset);</span>
+    }
+
+    private void print(final InputStream inputStream, final Appendable out, final boolean newRecord) throws IOException {
+        // InputStream is never null here
+        // There is nothing to escape when quoting is used which is the default.
+<span class="pc bpc" id="L2081" title="1 of 2 branches missed.">        if (!newRecord) {</span>
+<span class="fc" id="L2082">            append(getDelimiterString(), out);</span>
+        }
+<span class="fc" id="L2084">        final boolean quoteCharacterSet = isQuoteCharacterSet();</span>
+<span class="pc bpc" id="L2085" title="1 of 2 branches missed.">        if (quoteCharacterSet) {</span>
+<span class="fc" id="L2086">            append(getQuoteCharacter().charValue(), out); // N.B. Explicit (un)boxing is intentional</span>
+        }
+        // Stream the input to the output without reading or holding the whole value in memory.
+        // AppendableOutputStream cannot &quot;close&quot; an Appendable.
+<span class="fc" id="L2090">        try (OutputStream outputStream = new Base64OutputStream(new AppendableOutputStream&lt;&gt;(out))) {</span>
+<span class="fc" id="L2091">            IOUtils.copy(inputStream, outputStream);</span>
+        }
+<span class="pc bpc" id="L2093" title="1 of 2 branches missed.">        if (quoteCharacterSet) {</span>
+<span class="fc" id="L2094">            append(getQuoteCharacter().charValue(), out); // N.B. Explicit (un)boxing is intentional</span>
+        }
+<span class="fc" id="L2096">    }</span>
+
+    /**
+     * Prints the {@code value} as the next value on the line to {@code out}. The value will be escaped or encapsulated as needed. Useful when one wants to
+     * avoid creating CSVPrinters. Trims the value if {@link #getTrim()} is true.
+     *
+     * @param value     value to output.
+     * @param out       where to print the value.
+     * @param newRecord if this a new record.
+     * @throws IOException If an I/O error occurs.
+     * @since 1.4
+     */
+    public synchronized void print(final Object value, final Appendable out, final boolean newRecord) throws IOException {
+        // null values are considered empty
+        // Only call CharSequence.toString() if you have to, helps GC-free use cases.
+        CharSequence charSequence;
+<span class="fc bfc" id="L2112" title="All 2 branches covered.">        if (value == null) {</span>
+            // https://issues.apache.org/jira/browse/CSV-203
+<span class="fc bfc" id="L2114" title="All 2 branches covered.">            if (null == nullString) {</span>
+<span class="fc" id="L2115">                charSequence = Constants.EMPTY;</span>
+<span class="fc bfc" id="L2116" title="All 2 branches covered.">            } else if (QuoteMode.ALL == quoteMode) {</span>
+<span class="fc" id="L2117">                charSequence = quotedNullString;</span>
+            } else {
+<span class="fc" id="L2119">                charSequence = nullString;</span>
+            }
+<span class="fc bfc" id="L2121" title="All 2 branches covered.">        } else if (value instanceof CharSequence) {</span>
+<span class="fc" id="L2122">            charSequence = (CharSequence) value;</span>
+<span class="fc bfc" id="L2123" title="All 2 branches covered.">        } else if (value instanceof Reader) {</span>
+<span class="fc" id="L2124">            print((Reader) value, out, newRecord);</span>
+<span class="fc" id="L2125">            return;</span>
+<span class="fc bfc" id="L2126" title="All 2 branches covered.">        } else if (value instanceof InputStream) {</span>
+<span class="fc" id="L2127">            print((InputStream) value, out, newRecord);</span>
+<span class="fc" id="L2128">            return;</span>
+        } else {
+<span class="fc" id="L2130">            charSequence = value.toString();</span>
+        }
+<span class="fc bfc" id="L2132" title="All 2 branches covered.">        charSequence = getTrim() ? trim(charSequence) : charSequence;</span>
+<span class="fc" id="L2133">        print(value, charSequence, out, newRecord);</span>
+<span class="fc" id="L2134">    }</span>
+
+    private synchronized void print(final Object object, final CharSequence value, final Appendable out, final boolean newRecord) throws IOException {
+<span class="fc" id="L2137">        final int offset = 0;</span>
+<span class="fc" id="L2138">        final int len = value.length();</span>
+<span class="fc bfc" id="L2139" title="All 2 branches covered.">        if (!newRecord) {</span>
+<span class="fc" id="L2140">            out.append(getDelimiterString());</span>
+        }
+<span class="fc bfc" id="L2142" title="All 2 branches covered.">        if (object == null) {</span>
+<span class="fc" id="L2143">            out.append(value);</span>
+<span class="fc bfc" id="L2144" title="All 2 branches covered.">        } else if (isQuoteCharacterSet()) {</span>
+            // The original object is needed so can check for Number
+<span class="fc" id="L2146">            printWithQuotes(object, value, out, newRecord);</span>
+<span class="fc bfc" id="L2147" title="All 2 branches covered.">        } else if (isEscapeCharacterSet()) {</span>
+<span class="fc" id="L2148">            printWithEscapes(value, out);</span>
+        } else {
+<span class="fc" id="L2150">            out.append(value, offset, len);</span>
+        }
+<span class="fc" id="L2152">    }</span>
+
+    /**
+     * Prints to the specified {@code Path} with given {@code Charset}, returns a {@code CSVPrinter} which the caller MUST close.
+     *
+     * &lt;p&gt;
+     * See also {@link CSVPrinter}.
+     * &lt;/p&gt;
+     *
+     * @param out     the output.
+     * @param charset A charset.
+     * @return a printer to an output.
+     * @throws IOException thrown if the optional header cannot be printed.
+     * @since 1.5
+     */
+    @SuppressWarnings(&quot;resource&quot;)
+    public CSVPrinter print(final Path out, final Charset charset) throws IOException {
+<span class="fc" id="L2169">        return print(Files.newBufferedWriter(out, charset));</span>
+    }
+
+    private void print(final Reader reader, final Appendable out, final boolean newRecord) throws IOException {
+        // Reader is never null here
+<span class="fc bfc" id="L2174" title="All 2 branches covered.">        if (!newRecord) {</span>
+<span class="fc" id="L2175">            append(getDelimiterString(), out);</span>
+        }
+<span class="fc bfc" id="L2177" title="All 2 branches covered.">        if (isQuoteCharacterSet()) {</span>
+<span class="fc" id="L2178">            printWithQuotes(reader, out);</span>
+<span class="fc bfc" id="L2179" title="All 2 branches covered.">        } else if (isEscapeCharacterSet()) {</span>
+<span class="fc" id="L2180">            printWithEscapes(reader, out);</span>
+<span class="fc bfc" id="L2181" title="All 2 branches covered.">        } else if (out instanceof Writer) {</span>
+<span class="fc" id="L2182">            IOUtils.copyLarge(reader, (Writer) out);</span>
+        } else {
+<span class="fc" id="L2184">            IOUtils.copy(reader, out);</span>
+        }
+<span class="fc" id="L2186">    }</span>
+
+    /**
+     * Prints to the {@link System#out}.
+     *
+     * &lt;p&gt;
+     * See also {@link CSVPrinter}.
+     * &lt;/p&gt;
+     *
+     * @return a printer to {@link System#out}.
+     * @throws IOException thrown if the optional header cannot be printed.
+     * @since 1.5
+     */
+    public CSVPrinter printer() throws IOException {
+<span class="fc" id="L2200">        return new CSVPrinter(System.out, this);</span>
+    }
+
+    /**
+     * Outputs the trailing delimiter (if set) followed by the record separator (if set).
+     *
+     * @param appendable where to write
+     * @throws IOException If an I/O error occurs.
+     * @since 1.4
+     */
+    public synchronized void println(final Appendable appendable) throws IOException {
+<span class="fc bfc" id="L2211" title="All 2 branches covered.">        if (getTrailingDelimiter()) {</span>
+<span class="fc" id="L2212">            append(getDelimiterString(), appendable);</span>
+        }
+<span class="fc bfc" id="L2214" title="All 2 branches covered.">        if (recordSeparator != null) {</span>
+<span class="fc" id="L2215">            append(recordSeparator, appendable);</span>
+        }
+<span class="fc" id="L2217">    }</span>
+
+    /**
+     * Prints the given {@code values} to {@code out} as a single record of delimiter-separated values followed by the record separator.
+     *
+     * &lt;p&gt;
+     * The values will be quoted if needed. Quotes and new-line characters will be escaped. This method adds the record separator to the output after printing
+     * the record, so there is no need to call {@link #println(Appendable)}.
+     * &lt;/p&gt;
+     *
+     * @param appendable where to write.
+     * @param values     values to output.
+     * @throws IOException If an I/O error occurs.
+     * @since 1.4
+     */
+    public synchronized void printRecord(final Appendable appendable, final Object... values) throws IOException {
+<span class="fc bfc" id="L2233" title="All 2 branches covered.">        for (int i = 0; i &lt; values.length; i++) {</span>
+<span class="fc bfc" id="L2234" title="All 2 branches covered.">            print(values[i], appendable, i == 0);</span>
+        }
+<span class="fc" id="L2236">        println(appendable);</span>
+<span class="fc" id="L2237">    }</span>
+
+    /*
+     * Note: Must only be called if escaping is enabled, otherwise can throw exceptions.
+     */
+    private void printWithEscapes(final CharSequence charSeq, final Appendable appendable) throws IOException {
+<span class="fc" id="L2243">        int start = 0;</span>
+<span class="fc" id="L2244">        int pos = 0;</span>
+<span class="fc" id="L2245">        final int end = charSeq.length();</span>
+<span class="fc" id="L2246">        final char[] delimArray = getDelimiterCharArray();</span>
+<span class="fc" id="L2247">        final int delimLength = delimArray.length;</span>
+<span class="fc" id="L2248">        final char escape = getEscapeChar();</span>
+<span class="fc bfc" id="L2249" title="All 2 branches covered.">        while (pos &lt; end) {</span>
+<span class="fc" id="L2250">            char c = charSeq.charAt(pos);</span>
+<span class="fc" id="L2251">            final boolean isDelimiterStart = isDelimiter(c, charSeq, pos, delimArray, delimLength);</span>
+<span class="fc bfc" id="L2252" title="All 2 branches covered.">            final boolean isCr = c == Constants.CR;</span>
+<span class="fc bfc" id="L2253" title="All 2 branches covered.">            final boolean isLf = c == Constants.LF;</span>
+<span class="fc bfc" id="L2254" title="All 8 branches covered.">            if (isCr || isLf || c == escape || isDelimiterStart) {</span>
+                // write out segment up until this char
+<span class="fc bfc" id="L2256" title="All 2 branches covered.">                if (pos &gt; start) {</span>
+<span class="fc" id="L2257">                    appendable.append(charSeq, start, pos);</span>
+                }
+<span class="fc bfc" id="L2259" title="All 2 branches covered.">                if (isLf) {</span>
+<span class="fc" id="L2260">                    c = 'n';</span>
+<span class="fc bfc" id="L2261" title="All 2 branches covered.">                } else if (isCr) {</span>
+<span class="fc" id="L2262">                    c = 'r';</span>
+                }
+<span class="fc" id="L2264">                escape(c, appendable);</span>
+<span class="fc bfc" id="L2265" title="All 2 branches covered.">                if (isDelimiterStart) {</span>
+<span class="fc bfc" id="L2266" title="All 2 branches covered.">                    for (int i = 1; i &lt; delimLength; i++) {</span>
+<span class="fc" id="L2267">                        pos++;</span>
+<span class="fc" id="L2268">                        escape(charSeq.charAt(pos), appendable);</span>
+                    }
+                }
+<span class="fc" id="L2271">                start = pos + 1; // start on the current char after this one</span>
+            }
+<span class="fc" id="L2273">            pos++;</span>
+<span class="fc" id="L2274">        }</span>
+
+        // write last segment
+<span class="fc bfc" id="L2277" title="All 2 branches covered.">        if (pos &gt; start) {</span>
+<span class="fc" id="L2278">            appendable.append(charSeq, start, pos);</span>
+        }
+<span class="fc" id="L2280">    }</span>
+
+    /*
+     * Note: Must only be called if escaping is enabled, otherwise can throw exceptions.
+     */
+    private void printWithEscapes(final Reader reader, final Appendable appendable) throws IOException {
+<span class="fc" id="L2286">        int start = 0;</span>
+<span class="fc" id="L2287">        int pos = 0;</span>
+        @SuppressWarnings(&quot;resource&quot;) // Temp reader on input reader.
+<span class="fc" id="L2289">        final ExtendedBufferedReader bufferedReader = new ExtendedBufferedReader(reader);</span>
+<span class="fc" id="L2290">        final char[] delimArray = getDelimiterCharArray();</span>
+<span class="fc" id="L2291">        final int delimLength = delimArray.length;</span>
+<span class="fc" id="L2292">        final char escape = getEscapeChar();</span>
+<span class="fc" id="L2293">        final StringBuilder builder = new StringBuilder(IOUtils.DEFAULT_BUFFER_SIZE);</span>
+        int c;
+<span class="fc" id="L2295">        final char[] lookAheadBuffer = new char[delimLength - 1];</span>
+<span class="fc bfc" id="L2296" title="All 2 branches covered.">        while (EOF != (c = bufferedReader.read())) {</span>
+<span class="fc" id="L2297">            builder.append((char) c);</span>
+<span class="fc" id="L2298">            Arrays.fill(lookAheadBuffer, (char) 0);</span>
+<span class="fc" id="L2299">            bufferedReader.peek(lookAheadBuffer);</span>
+<span class="fc" id="L2300">            final String test = builder.toString() + new String(lookAheadBuffer);</span>
+<span class="fc" id="L2301">            final boolean isDelimiterStart = isDelimiter((char) c, test, pos, delimArray, delimLength);</span>
+<span class="fc bfc" id="L2302" title="All 2 branches covered.">            final boolean isCr = c == Constants.CR;</span>
+<span class="fc bfc" id="L2303" title="All 2 branches covered.">            final boolean isLf = c == Constants.LF;</span>
+<span class="fc bfc" id="L2304" title="All 8 branches covered.">            if (isCr || isLf || c == escape || isDelimiterStart) {</span>
+                // write out segment up until this char
+<span class="fc bfc" id="L2306" title="All 2 branches covered.">                if (pos &gt; start) {</span>
+<span class="fc" id="L2307">                    append(builder.substring(start, pos), appendable);</span>
+<span class="fc" id="L2308">                    builder.setLength(0);</span>
+<span class="fc" id="L2309">                    pos = -1;</span>
+                }
+<span class="fc bfc" id="L2311" title="All 2 branches covered.">                if (isLf) {</span>
+<span class="fc" id="L2312">                    c = 'n';</span>
+<span class="fc bfc" id="L2313" title="All 2 branches covered.">                } else if (isCr) {</span>
+<span class="fc" id="L2314">                    c = 'r';</span>
+                }
+<span class="fc" id="L2316">                escape((char) c, appendable);</span>
+<span class="fc bfc" id="L2317" title="All 2 branches covered.">                if (isDelimiterStart) {</span>
+<span class="pc bpc" id="L2318" title="1 of 2 branches missed.">                    for (int i = 1; i &lt; delimLength; i++) {</span>
+<span class="nc" id="L2319">                        escape((char) bufferedReader.read(), appendable);</span>
+                    }
+                }
+<span class="fc" id="L2322">                start = pos + 1; // start on the current char after this one</span>
+            }
+<span class="fc" id="L2324">            pos++;</span>
+<span class="fc" id="L2325">        }</span>
+        // write last segment
+<span class="fc bfc" id="L2327" title="All 2 branches covered.">        if (pos &gt; start) {</span>
+<span class="fc" id="L2328">            appendable.append(builder, start, pos);</span>
+        }
+<span class="fc" id="L2330">    }</span>
+
+    /*
+     * Note: must only be called if quoting is enabled, otherwise will generate NPE
+     */
+    // the original object is needed so can check for Number
+    private void printWithQuotes(final Object object, final CharSequence charSeq, final Appendable out, final boolean newRecord) throws IOException {
+<span class="fc" id="L2337">        boolean quote = false;</span>
+<span class="fc" id="L2338">        int start = 0;</span>
+<span class="fc" id="L2339">        int pos = 0;</span>
+<span class="fc" id="L2340">        final int len = charSeq.length();</span>
+<span class="fc" id="L2341">        final char[] delim = getDelimiterCharArray();</span>
+<span class="fc" id="L2342">        final int delimLength = delim.length;</span>
+<span class="fc" id="L2343">        final char quoteChar = getQuoteCharacter().charValue(); // N.B. Explicit (un)boxing is intentional</span>
+        // If escape char not specified, default to the quote char
+        // This avoids having to keep checking whether there is an escape character
+        // at the cost of checking against quote twice
+<span class="fc bfc" id="L2347" title="All 2 branches covered.">        final char escapeChar = isEscapeCharacterSet() ? getEscapeChar() : quoteChar;</span>
+<span class="fc" id="L2348">        QuoteMode quoteModePolicy = getQuoteMode();</span>
+<span class="fc bfc" id="L2349" title="All 2 branches covered.">        if (quoteModePolicy == null) {</span>
+<span class="fc" id="L2350">            quoteModePolicy = QuoteMode.MINIMAL;</span>
+        }
+<span class="pc bpc" id="L2352" title="1 of 5 branches missed.">        switch (quoteModePolicy) {</span>
+        case ALL:
+        case ALL_NON_NULL:
+<span class="fc" id="L2355">            quote = true;</span>
+<span class="fc" id="L2356">            break;</span>
+        case NON_NUMERIC:
+<span class="fc bfc" id="L2358" title="All 2 branches covered.">            quote = !(object instanceof Number);</span>
+<span class="fc" id="L2359">            break;</span>
+        case NONE:
+            // Use the existing escaping code
+<span class="fc" id="L2362">            printWithEscapes(charSeq, out);</span>
+<span class="fc" id="L2363">            return;</span>
+        case MINIMAL:
+<span class="fc bfc" id="L2365" title="All 2 branches covered.">            if (len &lt;= 0) {</span>
+                // Always quote an empty token that is the first
+                // on the line, as it may be the only thing on the
+                // line. If it were not quoted in that case,
+                // an empty line has no tokens.
+<span class="fc bfc" id="L2370" title="All 2 branches covered.">                if (newRecord) {</span>
+<span class="fc" id="L2371">                    quote = true;</span>
+                }
+            } else {
+<span class="fc" id="L2374">                char c = charSeq.charAt(pos);</span>
+<span class="fc bfc" id="L2375" title="All 2 branches covered.">                if (c &lt;= Constants.COMMENT) {</span>
+                    // Some other chars at the start of a value caused the parser to fail, so for now
+                    // encapsulate if we start in anything less than '#'. We are being conservative
+                    // by including the default comment char too.
+<span class="fc" id="L2379">                    quote = true;</span>
+                } else {
+<span class="fc bfc" id="L2381" title="All 2 branches covered.">                    while (pos &lt; len) {</span>
+<span class="fc" id="L2382">                        c = charSeq.charAt(pos);</span>
+<span class="fc bfc" id="L2383" title="All 10 branches covered.">                        if (c == Constants.LF || c == Constants.CR || c == quoteChar || c == escapeChar || isDelimiter(c, charSeq, pos, delim, delimLength)) {</span>
+<span class="fc" id="L2384">                            quote = true;</span>
+<span class="fc" id="L2385">                            break;</span>
+                        }
+<span class="fc" id="L2387">                        pos++;</span>
+                    }
+
+<span class="fc bfc" id="L2390" title="All 2 branches covered.">                    if (!quote) {</span>
+<span class="fc" id="L2391">                        pos = len - 1;</span>
+<span class="fc" id="L2392">                        c = charSeq.charAt(pos);</span>
+                        // Some other chars at the end caused the parser to fail, so for now
+                        // encapsulate if we end in anything less than ' '
+<span class="fc bfc" id="L2395" title="All 2 branches covered.">                        if (isTrimChar(c)) {</span>
+<span class="fc" id="L2396">                            quote = true;</span>
+                        }
+                    }
+                }
+            }
+<span class="fc bfc" id="L2401" title="All 2 branches covered.">            if (!quote) {</span>
+                // No encapsulation needed - write out the original value
+<span class="fc" id="L2403">                out.append(charSeq, start, len);</span>
+<span class="fc" id="L2404">                return;</span>
+            }
+            break;
+        default:
+<span class="nc" id="L2408">            throw new IllegalStateException(&quot;Unexpected Quote value: &quot; + quoteModePolicy);</span>
+        }
+<span class="fc bfc" id="L2410" title="All 2 branches covered.">        if (!quote) {</span>
+            // No encapsulation needed - write out the original value
+<span class="fc" id="L2412">            out.append(charSeq, start, len);</span>
+<span class="fc" id="L2413">            return;</span>
+        }
+        // We hit something that needed encapsulation
+<span class="fc" id="L2416">        out.append(quoteChar);</span>
+        // Pick up where we left off: pos should be positioned on the first character that caused
+        // the need for encapsulation.
+<span class="fc bfc" id="L2419" title="All 2 branches covered.">        while (pos &lt; len) {</span>
+<span class="fc" id="L2420">            final char c = charSeq.charAt(pos);</span>
+<span class="fc bfc" id="L2421" title="All 4 branches covered.">            if (c == quoteChar || c == escapeChar) {</span>
+                // write out the chunk up until this point
+<span class="fc" id="L2423">                out.append(charSeq, start, pos);</span>
+<span class="fc" id="L2424">                out.append(escapeChar); // now output the escape</span>
+<span class="fc" id="L2425">                start = pos; // and restart with the matched char</span>
+            }
+<span class="fc" id="L2427">            pos++;</span>
+<span class="fc" id="L2428">        }</span>
+        // Write the last segment
+<span class="fc" id="L2430">        out.append(charSeq, start, pos);</span>
+<span class="fc" id="L2431">        out.append(quoteChar);</span>
+<span class="fc" id="L2432">    }</span>
+
+    /**
+     * Always use quotes unless QuoteMode is NONE, so we do not have to look ahead.
+     *
+     * @param reader     What to print
+     * @param appendable Where to print it
+     * @throws IOException If an I/O error occurs
+     */
+    private void printWithQuotes(final Reader reader, final Appendable appendable) throws IOException {
+<span class="fc bfc" id="L2442" title="All 2 branches covered.">        if (getQuoteMode() == QuoteMode.NONE) {</span>
+<span class="fc" id="L2443">            printWithEscapes(reader, appendable);</span>
+<span class="fc" id="L2444">            return;</span>
+        }
+<span class="fc" id="L2446">        final char quote = getQuoteCharacter().charValue(); // N.B. Explicit (un)boxing is intentional</span>
+        // (1) Append opening quote
+<span class="fc" id="L2448">        append(quote, appendable);</span>
+        // (2) Append Reader contents, doubling quotes
+        int c;
+<span class="fc bfc" id="L2451" title="All 2 branches covered.">        while (EOF != (c = reader.read())) {</span>
+<span class="fc" id="L2452">            append((char) c, appendable);</span>
+<span class="fc bfc" id="L2453" title="All 2 branches covered.">            if (c == quote) {</span>
+<span class="fc" id="L2454">                append(quote, appendable);</span>
+            }
+        }
+        // (3) Append closing quote
+<span class="fc" id="L2458">        append(quote, appendable);</span>
+<span class="fc" id="L2459">    }</span>
+
+    @Override
+    public String toString() {
+<span class="fc" id="L2463">        final StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L2464">        sb.append(&quot;Delimiter=&lt;&quot;).append(delimiter).append('&gt;');</span>
+<span class="fc bfc" id="L2465" title="All 2 branches covered.">        if (isEscapeCharacterSet()) {</span>
+<span class="fc" id="L2466">            sb.append(' ');</span>
+<span class="fc" id="L2467">            sb.append(&quot;Escape=&lt;&quot;).append(escapeCharacter).append('&gt;');</span>
+        }
+<span class="pc bpc" id="L2469" title="1 of 2 branches missed.">        if (isQuoteCharacterSet()) {</span>
+<span class="fc" id="L2470">            sb.append(' ');</span>
+<span class="fc" id="L2471">            sb.append(&quot;QuoteChar=&lt;&quot;).append(quoteCharacter).append('&gt;');</span>
+        }
+<span class="fc bfc" id="L2473" title="All 2 branches covered.">        if (quoteMode != null) {</span>
+<span class="fc" id="L2474">            sb.append(' ');</span>
+<span class="fc" id="L2475">            sb.append(&quot;QuoteMode=&lt;&quot;).append(quoteMode).append('&gt;');</span>
+        }
+<span class="fc bfc" id="L2477" title="All 2 branches covered.">        if (isCommentMarkerSet()) {</span>
+<span class="fc" id="L2478">            sb.append(' ');</span>
+<span class="fc" id="L2479">            sb.append(&quot;CommentStart=&lt;&quot;).append(commentMarker).append('&gt;');</span>
+        }
+<span class="fc bfc" id="L2481" title="All 2 branches covered.">        if (isNullStringSet()) {</span>
+<span class="fc" id="L2482">            sb.append(' ');</span>
+<span class="fc" id="L2483">            sb.append(&quot;NullString=&lt;&quot;).append(nullString).append('&gt;');</span>
+        }
+<span class="fc bfc" id="L2485" title="All 2 branches covered.">        if (recordSeparator != null) {</span>
+<span class="fc" id="L2486">            sb.append(' ');</span>
+<span class="fc" id="L2487">            sb.append(&quot;RecordSeparator=&lt;&quot;).append(recordSeparator).append('&gt;');</span>
+        }
+<span class="fc bfc" id="L2489" title="All 2 branches covered.">        if (getIgnoreEmptyLines()) {</span>
+<span class="fc" id="L2490">            sb.append(&quot; EmptyLines:ignored&quot;);</span>
+        }
+<span class="fc bfc" id="L2492" title="All 2 branches covered.">        if (getIgnoreSurroundingSpaces()) {</span>
+<span class="fc" id="L2493">            sb.append(&quot; SurroundingSpaces:ignored&quot;);</span>
+        }
+<span class="fc bfc" id="L2495" title="All 2 branches covered.">        if (getIgnoreHeaderCase()) {</span>
+<span class="fc" id="L2496">            sb.append(&quot; IgnoreHeaderCase:ignored&quot;);</span>
+        }
+<span class="fc" id="L2498">        sb.append(&quot; SkipHeaderRecord:&quot;).append(skipHeaderRecord);</span>
+<span class="fc bfc" id="L2499" title="All 2 branches covered.">        if (headerComments != null) {</span>
+<span class="fc" id="L2500">            sb.append(' ');</span>
+<span class="fc" id="L2501">            sb.append(&quot;HeaderComments:&quot;).append(Arrays.toString(headerComments));</span>
+        }
+<span class="fc bfc" id="L2503" title="All 2 branches covered.">        if (headers != null) {</span>
+<span class="fc" id="L2504">            sb.append(' ');</span>
+<span class="fc" id="L2505">            sb.append(&quot;Header:&quot;).append(Arrays.toString(headers));</span>
+        }
+<span class="fc" id="L2507">        return sb.toString();</span>
+    }
+
+    String trim(final String value) {
+<span class="fc bfc" id="L2511" title="All 2 branches covered.">        return getTrim() ? value.trim() : value;</span>
+    }
+
+    /**
+     * Verifies the validity and consistency of the attributes, and throws an {@link IllegalArgumentException} if necessary.
+     * &lt;p&gt;
+     * Because an instance can be used for both writing and parsing, not all conditions can be tested here. For example, allowMissingColumnNames is only used
+     * for parsing, so it cannot be used here.
+     * &lt;/p&gt;
+     *
+     * @throws IllegalArgumentException Throw when any attribute is invalid or inconsistent with other attributes.
+     */
+    private void validate() throws IllegalArgumentException {
+<span class="pc bpc" id="L2524" title="1 of 2 branches missed.">        if (containsLineBreak(delimiter)) {</span>
+<span class="nc" id="L2525">            throw new IllegalArgumentException(&quot;The delimiter cannot be a line break&quot;);</span>
+        }
+<span class="fc bfc" id="L2527" title="All 4 branches covered.">        if (quoteCharacter != null &amp;&amp; contains(delimiter, quoteCharacter.charValue())) { // N.B. Explicit (un)boxing is intentional</span>
+<span class="fc" id="L2528">            throw new IllegalArgumentException(&quot;The quoteChar character and the delimiter cannot be the same ('&quot; + quoteCharacter + &quot;')&quot;);</span>
+        }
+<span class="fc bfc" id="L2530" title="All 4 branches covered.">        if (escapeCharacter != null &amp;&amp; contains(delimiter, escapeCharacter.charValue())) { // N.B. Explicit (un)boxing is intentional</span>
+<span class="fc" id="L2531">            throw new IllegalArgumentException(&quot;The escape character and the delimiter cannot be the same ('&quot; + escapeCharacter + &quot;')&quot;);</span>
+        }
+<span class="fc bfc" id="L2533" title="All 4 branches covered.">        if (commentMarker != null &amp;&amp; contains(delimiter, commentMarker.charValue())) { // N.B. Explicit (un)boxing is intentional</span>
+<span class="fc" id="L2534">            throw new IllegalArgumentException(&quot;The comment start character and the delimiter cannot be the same ('&quot; + commentMarker + &quot;')&quot;);</span>
+        }
+<span class="fc bfc" id="L2536" title="All 4 branches covered.">        if (quoteCharacter != null &amp;&amp; quoteCharacter.equals(commentMarker)) {</span>
+<span class="fc" id="L2537">            throw new IllegalArgumentException(&quot;The comment start character and the quoteChar cannot be the same ('&quot; + commentMarker + &quot;')&quot;);</span>
+        }
+<span class="fc bfc" id="L2539" title="All 4 branches covered.">        if (escapeCharacter != null &amp;&amp; escapeCharacter.equals(commentMarker)) {</span>
+<span class="fc" id="L2540">            throw new IllegalArgumentException(&quot;The comment start and the escape character cannot be the same ('&quot; + commentMarker + &quot;')&quot;);</span>
+        }
+<span class="fc bfc" id="L2542" title="All 4 branches covered.">        if (escapeCharacter == null &amp;&amp; quoteMode == QuoteMode.NONE) {</span>
+<span class="fc" id="L2543">            throw new IllegalArgumentException(&quot;Quote mode set to NONE but no escape character is set&quot;);</span>
+        }
+        // Validate headers
+<span class="fc bfc" id="L2546" title="All 4 branches covered.">        if (headers != null &amp;&amp; duplicateHeaderMode != DuplicateHeaderMode.ALLOW_ALL) {</span>
+<span class="fc" id="L2547">            final Set&lt;String&gt; dupCheckSet = new HashSet&lt;&gt;(headers.length);</span>
+<span class="fc bfc" id="L2548" title="All 2 branches covered.">            final boolean emptyDuplicatesAllowed = duplicateHeaderMode == DuplicateHeaderMode.ALLOW_EMPTY;</span>
+<span class="fc bfc" id="L2549" title="All 2 branches covered.">            for (final String header : headers) {</span>
+<span class="fc" id="L2550">                final boolean blank = isBlank(header);</span>
+                // Sanitize all empty headers to the empty string &quot;&quot; when checking duplicates
+<span class="fc bfc" id="L2552" title="All 4 branches covered.">                final boolean containsHeader = !dupCheckSet.add(blank ? &quot;&quot; : header);</span>
+<span class="fc bfc" id="L2553" title="All 6 branches covered.">                if (containsHeader &amp;&amp; !(blank &amp;&amp; emptyDuplicatesAllowed)) {</span>
+<span class="fc" id="L2554">                    throw new IllegalArgumentException(String.format(</span>
+                            &quot;The header contains a duplicate name: \&quot;%s\&quot; in %s. If this is valid then use CSVFormat.Builder.setDuplicateHeaderMode().&quot;, header,
+<span class="fc" id="L2556">                            Arrays.toString(headers)));</span>
+                }
+            }
+        }
+<span class="fc" id="L2560">    }</span>
+
+    /**
+     * Builds a new {@code CSVFormat} that allows duplicate header names.
+     *
+     * @return a new {@code CSVFormat} that allows duplicate header names
+     * @since 1.7
+     * @deprecated Use {@link Builder#setAllowDuplicateHeaderNames(boolean) Builder#setAllowDuplicateHeaderNames(true)}
+     */
+    @Deprecated
+    public CSVFormat withAllowDuplicateHeaderNames() {
+<span class="fc" id="L2571">        return builder().setDuplicateHeaderMode(DuplicateHeaderMode.ALLOW_ALL).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with duplicate header names behavior set to the given value.
+     *
+     * @param allowDuplicateHeaderNames the duplicate header names behavior, true to allow, false to disallow.
+     * @return a new {@code CSVFormat} with duplicate header names behavior set to the given value.
+     * @since 1.7
+     * @deprecated Use {@link Builder#setAllowDuplicateHeaderNames(boolean)}
+     */
+    @Deprecated
+    public CSVFormat withAllowDuplicateHeaderNames(final boolean allowDuplicateHeaderNames) {
+<span class="fc bfc" id="L2584" title="All 2 branches covered.">        final DuplicateHeaderMode mode = allowDuplicateHeaderNames ? DuplicateHeaderMode.ALLOW_ALL : DuplicateHeaderMode.ALLOW_EMPTY;</span>
+<span class="fc" id="L2585">        return builder().setDuplicateHeaderMode(mode).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the missing column names behavior of the format set to {@code true}.
+     *
+     * @return A new CSVFormat that is equal to this but with the specified missing column names behavior.
+     * @see Builder#setAllowMissingColumnNames(boolean)
+     * @since 1.1
+     * @deprecated Use {@link Builder#setAllowMissingColumnNames(boolean) Builder#setAllowMissingColumnNames(true)}
+     */
+    @Deprecated
+    public CSVFormat withAllowMissingColumnNames() {
+<span class="fc" id="L2598">        return builder().setAllowMissingColumnNames(true).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the missing column names behavior of the format set to the given value.
+     *
+     * @param allowMissingColumnNames the missing column names behavior, {@code true} to allow missing column names in the header line, {@code false} to cause
+     *                                an {@link IllegalArgumentException} to be thrown.
+     * @return A new CSVFormat that is equal to this but with the specified missing column names behavior.
+     * @deprecated Use {@link Builder#setAllowMissingColumnNames(boolean)}
+     */
+    @Deprecated
+    public CSVFormat withAllowMissingColumnNames(final boolean allowMissingColumnNames) {
+<span class="fc" id="L2611">        return builder().setAllowMissingColumnNames(allowMissingColumnNames).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with whether to flush on close.
+     *
+     * @param autoFlush whether to flush on close.
+     * @return A new CSVFormat that is equal to this but with the specified autoFlush setting.
+     * @since 1.6
+     * @deprecated Use {@link Builder#setAutoFlush(boolean)}
+     */
+    @Deprecated
+    public CSVFormat withAutoFlush(final boolean autoFlush) {
+<span class="fc" id="L2624">        return builder().setAutoFlush(autoFlush).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the comment start marker of the format set to the specified character.
+     *
+     * Note that the comment start character is only recognized at the start of a line.
+     *
+     * @param commentMarker the comment start marker
+     * @return A new CSVFormat that is equal to this one but with the specified character as the comment start marker
+     * @throws IllegalArgumentException thrown if the specified character is a line break
+     * @deprecated Use {@link Builder#setCommentMarker(char)}
+     */
+    @Deprecated
+    public CSVFormat withCommentMarker(final char commentMarker) {
+<span class="fc" id="L2639">        return builder().setCommentMarker(commentMarker).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the comment start marker of the format set to the specified character.
+     *
+     * Note that the comment start character is only recognized at the start of a line.
+     *
+     * @param commentMarker the comment start marker, use {@code null} to disable
+     * @return A new CSVFormat that is equal to this one but with the specified character as the comment start marker
+     * @throws IllegalArgumentException thrown if the specified character is a line break
+     * @deprecated Use {@link Builder#setCommentMarker(Character)}
+     */
+    @Deprecated
+    public CSVFormat withCommentMarker(final Character commentMarker) {
+<span class="fc" id="L2654">        return builder().setCommentMarker(commentMarker).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the delimiter of the format set to the specified character.
+     *
+     * @param delimiter the delimiter character
+     * @return A new CSVFormat that is equal to this with the specified character as a delimiter
+     * @throws IllegalArgumentException thrown if the specified character is a line break
+     * @deprecated Use {@link Builder#setDelimiter(char)}
+     */
+    @Deprecated
+    public CSVFormat withDelimiter(final char delimiter) {
+<span class="fc" id="L2667">        return builder().setDelimiter(delimiter).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the escape character of the format set to the specified character.
+     *
+     * @param escape the escape character
+     * @return A new CSVFormat that is equal to this but with the specified character as the escape character
+     * @throws IllegalArgumentException thrown if the specified character is a line break
+     * @deprecated Use {@link Builder#setEscape(char)}
+     */
+    @Deprecated
+    public CSVFormat withEscape(final char escape) {
+<span class="fc" id="L2680">        return builder().setEscape(escape).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the escape character of the format set to the specified character.
+     *
+     * @param escape the escape character, use {@code null} to disable
+     * @return A new CSVFormat that is equal to this but with the specified character as the escape character
+     * @throws IllegalArgumentException thrown if the specified character is a line break
+     * @deprecated Use {@link Builder#setEscape(Character)}
+     */
+    @Deprecated
+    public CSVFormat withEscape(final Character escape) {
+<span class="fc" id="L2693">        return builder().setEscape(escape).get();</span>
+    }
+
+    // @formatter:off
+    /**
+     * Builds a new {@code CSVFormat} using the first record as header.
+     *
+     * &lt;p&gt;
+     * Calling this method is equivalent to calling:
+     * &lt;/p&gt;
+     *
+     * &lt;pre&gt;
+     * CSVFormat format = aFormat.builder()
+     *                           .setHeader()
+     *                           .setSkipHeaderRecord(true)
+     *                           .get();
+     * &lt;/pre&gt;
+     *
+     * @return A new CSVFormat that is equal to this but using the first record as header.
+     * @see Builder#setSkipHeaderRecord(boolean)
+     * @see Builder#setHeader(String...)
+     * @since 1.3
+     * @deprecated Use {@link Builder#setHeader(String...) Builder#setHeader()}.{@link Builder#setSkipHeaderRecord(boolean) setSkipHeaderRecord(true)}.
+     */
+    // @formatter:on
+    @Deprecated
+    public CSVFormat withFirstRecordAsHeader() {
+        // @formatter:off
+<span class="fc" id="L2721">        return builder()</span>
+<span class="fc" id="L2722">                .setHeader()</span>
+<span class="fc" id="L2723">                .setSkipHeaderRecord(true)</span>
+<span class="fc" id="L2724">                .get();</span>
+        // @formatter:on
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the header of the format defined by the enum class.
+     *
+     * &lt;p&gt;
+     * Example:
+     * &lt;/p&gt;
+     *
+     * &lt;pre&gt;
+     * public enum MyHeader {
+     *     Name, Email, Phone
+     * }
+     * ...
+     * CSVFormat format = aFormat.builder().setHeader(MyHeader.class).get();
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * The header is also used by the {@link CSVPrinter}.
+     * &lt;/p&gt;
+     *
+     * @param headerEnum the enum defining the header, {@code null} if disabled, empty if parsed automatically, user specified otherwise.
+     * @return A new CSVFormat that is equal to this but with the specified header
+     * @see Builder#setHeader(String...)
+     * @see Builder#setSkipHeaderRecord(boolean)
+     * @since 1.3
+     * @deprecated Use {@link Builder#setHeader(Class)}
+     */
+    @Deprecated
+    public CSVFormat withHeader(final Class&lt;? extends Enum&lt;?&gt;&gt; headerEnum) {
+<span class="fc" id="L2755">        return builder().setHeader(headerEnum).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the header of the format set from the result set metadata. The header can either be parsed automatically from the
+     * input file with:
+     *
+     * &lt;pre&gt;
+     * CSVFormat format = aFormat.builder().setHeader().get();
+     * &lt;/pre&gt;
+     *
+     * or specified manually with:
+     *
+     * &lt;pre&gt;
+     * CSVFormat format = aFormat.builder().setHeader(resultSet).get();
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * The header is also used by the {@link CSVPrinter}.
+     * &lt;/p&gt;
+     *
+     * @param resultSet the resultSet for the header, {@code null} if disabled, empty if parsed automatically, user-specified otherwise.
+     * @return A new CSVFormat that is equal to this but with the specified header
+     * @throws SQLException SQLException if a database access error occurs or this method is called on a closed result set.
+     * @since 1.1
+     * @deprecated Use {@link Builder#setHeader(ResultSet)}
+     */
+    @Deprecated
+    public CSVFormat withHeader(final ResultSet resultSet) throws SQLException {
+<span class="fc" id="L2783">        return builder().setHeader(resultSet).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the header of the format set from the result set metadata. The header can either be parsed automatically from the
+     * input file with:
+     *
+     * &lt;pre&gt;
+     * CSVFormat format = aFormat.builder().setHeader().get()
+     * &lt;/pre&gt;
+     *
+     * or specified manually with:
+     *
+     * &lt;pre&gt;
+     * CSVFormat format = aFormat.builder().setHeader(resultSetMetaData).get()
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * The header is also used by the {@link CSVPrinter}.
+     * &lt;/p&gt;
+     *
+     * @param resultSetMetaData the metaData for the header, {@code null} if disabled, empty if parsed automatically, user specified otherwise.
+     * @return A new CSVFormat that is equal to this but with the specified header
+     * @throws SQLException SQLException if a database access error occurs or this method is called on a closed result set.
+     * @since 1.1
+     * @deprecated Use {@link Builder#setHeader(ResultSetMetaData)}
+     */
+    @Deprecated
+    public CSVFormat withHeader(final ResultSetMetaData resultSetMetaData) throws SQLException {
+<span class="fc" id="L2811">        return builder().setHeader(resultSetMetaData).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the header of the format set to the given values. The header can either be parsed automatically from the input file
+     * with:
+     *
+     * &lt;pre&gt;
+     * CSVFormat format = aFormat.builder().setHeader().get();
+     * &lt;/pre&gt;
+     *
+     * or specified manually with:
+     *
+     * &lt;pre&gt;{@code
+     * CSVFormat format = aFormat.builder().setHeader(&quot;name&quot;, &quot;email&quot;, &quot;phone&quot;).get();
+     * }&lt;/pre&gt;
+     * &lt;p&gt;
+     * The header is also used by the {@link CSVPrinter}.
+     * &lt;/p&gt;
+     *
+     * @param header the header, {@code null} if disabled, empty if parsed automatically, user-specified otherwise.
+     * @return A new CSVFormat that is equal to this but with the specified header
+     * @see Builder#setSkipHeaderRecord(boolean)
+     * @deprecated Use {@link Builder#setHeader(String...)}
+     */
+    @Deprecated
+    public CSVFormat withHeader(final String... header) {
+<span class="fc" id="L2838">        return builder().setHeader(header).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the header comments of the format set to the given values. The comments will be printed first, before the headers.
+     * This setting is ignored by the parser.
+     *
+     * &lt;pre&gt;{@code
+     * CSVFormat format = aFormat.builder().setHeaderComments(&quot;Generated by Apache Commons CSV.&quot;, Instant.now()).get();
+     * }&lt;/pre&gt;
+     *
+     * @param headerComments the headerComments which will be printed by the Printer before the actual CSV data.
+     * @return A new CSVFormat that is equal to this but with the specified header
+     * @see Builder#setSkipHeaderRecord(boolean)
+     * @since 1.1
+     * @deprecated Use {@link Builder#setHeaderComments(Object...)}
+     */
+    @Deprecated
+    public CSVFormat withHeaderComments(final Object... headerComments) {
+<span class="fc" id="L2857">        return builder().setHeaderComments(headerComments).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the empty line skipping behavior of the format set to {@code true}.
+     *
+     * @return A new CSVFormat that is equal to this but with the specified empty line skipping behavior.
+     * @see Builder#setIgnoreEmptyLines(boolean)
+     * @since 1.1
+     * @deprecated Use {@link Builder#setIgnoreEmptyLines(boolean) Builder#setIgnoreEmptyLines(true)}
+     */
+    @Deprecated
+    public CSVFormat withIgnoreEmptyLines() {
+<span class="fc" id="L2870">        return builder().setIgnoreEmptyLines(true).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the empty line skipping behavior of the format set to the given value.
+     *
+     * @param ignoreEmptyLines the empty line skipping behavior, {@code true} to ignore the empty lines between the records, {@code false} to translate empty
+     *                         lines to empty records.
+     * @return A new CSVFormat that is equal to this but with the specified empty line skipping behavior.
+     * @deprecated Use {@link Builder#setIgnoreEmptyLines(boolean)}
+     */
+    @Deprecated
+    public CSVFormat withIgnoreEmptyLines(final boolean ignoreEmptyLines) {
+<span class="fc" id="L2883">        return builder().setIgnoreEmptyLines(ignoreEmptyLines).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the header ignore case behavior set to {@code true}.
+     *
+     * @return A new CSVFormat that will ignore the new case header name behavior.
+     * @see Builder#setIgnoreHeaderCase(boolean)
+     * @since 1.3
+     * @deprecated Use {@link Builder#setIgnoreHeaderCase(boolean) Builder#setIgnoreHeaderCase(true)}
+     */
+    @Deprecated
+    public CSVFormat withIgnoreHeaderCase() {
+<span class="fc" id="L2896">        return builder().setIgnoreHeaderCase(true).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with whether header names should be accessed ignoring case.
+     *
+     * @param ignoreHeaderCase the case mapping behavior, {@code true} to access name/values, {@code false} to leave the mapping as is.
+     * @return A new CSVFormat that will ignore case header name if specified as {@code true}
+     * @since 1.3
+     * @deprecated Use {@link Builder#setIgnoreHeaderCase(boolean)}
+     */
+    @Deprecated
+    public CSVFormat withIgnoreHeaderCase(final boolean ignoreHeaderCase) {
+<span class="fc" id="L2909">        return builder().setIgnoreHeaderCase(ignoreHeaderCase).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the parser trimming behavior of the format set to {@code true}.
+     *
+     * @return A new CSVFormat that is equal to this but with the specified parser trimming behavior.
+     * @see Builder#setIgnoreSurroundingSpaces(boolean)
+     * @since 1.1
+     * @deprecated Use {@link Builder#setIgnoreSurroundingSpaces(boolean) Builder#setIgnoreSurroundingSpaces(true)}
+     */
+    @Deprecated
+    public CSVFormat withIgnoreSurroundingSpaces() {
+<span class="fc" id="L2922">        return builder().setIgnoreSurroundingSpaces(true).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the parser trimming behavior of the format set to the given value.
+     *
+     * @param ignoreSurroundingSpaces the parser trimming behavior, {@code true} to remove the surrounding spaces, {@code false} to leave the spaces as is.
+     * @return A new CSVFormat that is equal to this but with the specified trimming behavior.
+     * @deprecated Use {@link Builder#setIgnoreSurroundingSpaces(boolean)}
+     */
+    @Deprecated
+    public CSVFormat withIgnoreSurroundingSpaces(final boolean ignoreSurroundingSpaces) {
+<span class="fc" id="L2934">        return builder().setIgnoreSurroundingSpaces(ignoreSurroundingSpaces).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with conversions to and from null for strings on input and output.
+     * &lt;ul&gt;
+     * &lt;li&gt;&lt;strong&gt;Reading:&lt;/strong&gt; Converts strings equal to the given {@code nullString} to {@code null} when reading records.&lt;/li&gt;
+     * &lt;li&gt;&lt;strong&gt;Writing:&lt;/strong&gt; Writes {@code null} as the given {@code nullString} when writing records.&lt;/li&gt;
+     * &lt;/ul&gt;
+     *
+     * @param nullString the String to convert to and from {@code null}. No substitution occurs if {@code null}
+     * @return A new CSVFormat that is equal to this but with the specified null conversion string.
+     * @deprecated Use {@link Builder#setNullString(String)}
+     */
+    @Deprecated
+    public CSVFormat withNullString(final String nullString) {
+<span class="fc" id="L2950">        return builder().setNullString(nullString).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the quoteChar of the format set to the specified character.
+     *
+     * @param quoteChar the quote character
+     * @return A new CSVFormat that is equal to this but with the specified character as quoteChar
+     * @throws IllegalArgumentException thrown if the specified character is a line break
+     * @deprecated Use {@link Builder#setQuote(char)}
+     */
+    @Deprecated
+    public CSVFormat withQuote(final char quoteChar) {
+<span class="fc" id="L2963">        return builder().setQuote(quoteChar).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the quoteChar of the format set to the specified character.
+     *
+     * @param quoteChar the quote character, use {@code null} to disable.
+     * @return A new CSVFormat that is equal to this but with the specified character as quoteChar
+     * @throws IllegalArgumentException thrown if the specified character is a line break
+     * @deprecated Use {@link Builder#setQuote(Character)}
+     */
+    @Deprecated
+    public CSVFormat withQuote(final Character quoteChar) {
+<span class="fc" id="L2976">        return builder().setQuote(quoteChar).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the output quote policy of the format set to the specified value.
+     *
+     * @param quoteMode the quote policy to use for output.
+     * @return A new CSVFormat that is equal to this but with the specified quote policy
+     * @deprecated Use {@link Builder#setQuoteMode(QuoteMode)}
+     */
+    @Deprecated
+    public CSVFormat withQuoteMode(final QuoteMode quoteMode) {
+<span class="fc" id="L2988">        return builder().setQuoteMode(quoteMode).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the record separator of the format set to the specified character.
+     *
+     * &lt;p&gt;
+     * &lt;strong&gt;Note:&lt;/strong&gt; This setting is only used during printing and does not affect parsing. Parsing currently only works for inputs with '\n', '\r' and
+     * &quot;\r\n&quot;
+     * &lt;/p&gt;
+     *
+     * @param recordSeparator the record separator to use for output.
+     * @return A new CSVFormat that is equal to this but with the specified output record separator
+     * @deprecated Use {@link Builder#setRecordSeparator(char)}
+     */
+    @Deprecated
+    public CSVFormat withRecordSeparator(final char recordSeparator) {
+<span class="fc" id="L3005">        return builder().setRecordSeparator(recordSeparator).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the record separator of the format set to the specified String.
+     *
+     * &lt;p&gt;
+     * &lt;strong&gt;Note:&lt;/strong&gt; This setting is only used during printing and does not affect parsing. Parsing currently only works for inputs with '\n', '\r' and
+     * &quot;\r\n&quot;
+     * &lt;/p&gt;
+     *
+     * @param recordSeparator the record separator to use for output.
+     * @return A new CSVFormat that is equal to this but with the specified output record separator
+     * @throws IllegalArgumentException if recordSeparator is none of CR, LF or CRLF
+     * @deprecated Use {@link Builder#setRecordSeparator(String)}
+     */
+    @Deprecated
+    public CSVFormat withRecordSeparator(final String recordSeparator) {
+<span class="fc" id="L3023">        return builder().setRecordSeparator(recordSeparator).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with skipping the header record set to {@code true}.
+     *
+     * @return A new CSVFormat that is equal to this but with the specified skipHeaderRecord setting.
+     * @see Builder#setSkipHeaderRecord(boolean)
+     * @see Builder#setHeader(String...)
+     * @since 1.1
+     * @deprecated Use {@link Builder#setSkipHeaderRecord(boolean) Builder#setSkipHeaderRecord(true)}
+     */
+    @Deprecated
+    public CSVFormat withSkipHeaderRecord() {
+<span class="fc" id="L3037">        return builder().setSkipHeaderRecord(true).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with whether to skip the header record.
+     *
+     * @param skipHeaderRecord whether to skip the header record.
+     * @return A new CSVFormat that is equal to this but with the specified skipHeaderRecord setting.
+     * @see Builder#setHeader(String...)
+     * @deprecated Use {@link Builder#setSkipHeaderRecord(boolean)}
+     */
+    @Deprecated
+    public CSVFormat withSkipHeaderRecord(final boolean skipHeaderRecord) {
+<span class="fc" id="L3050">        return builder().setSkipHeaderRecord(skipHeaderRecord).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with the record separator of the format set to the operating system's line separator string, typically CR+LF on Windows
+     * and LF on Linux.
+     *
+     * &lt;p&gt;
+     * &lt;strong&gt;Note:&lt;/strong&gt; This setting is only used during printing and does not affect parsing. Parsing currently only works for inputs with '\n', '\r' and
+     * &quot;\r\n&quot;
+     * &lt;/p&gt;
+     *
+     * @return A new CSVFormat that is equal to this but with the operating system's line separator string.
+     * @since 1.6
+     * @deprecated Use {@link Builder#setRecordSeparator(String) setRecordSeparator(System.lineSeparator())}
+     */
+    @Deprecated
+    public CSVFormat withSystemRecordSeparator() {
+<span class="fc" id="L3068">        return builder().setRecordSeparator(System.lineSeparator()).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} to add a trailing delimiter.
+     *
+     * @return A new CSVFormat that is equal to this but with the trailing delimiter setting.
+     * @since 1.3
+     * @deprecated Use {@link Builder#setTrailingDelimiter(boolean) Builder#setTrailingDelimiter(true)}
+     */
+    @Deprecated
+    public CSVFormat withTrailingDelimiter() {
+<span class="fc" id="L3080">        return builder().setTrailingDelimiter(true).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with whether to add a trailing delimiter.
+     *
+     * @param trailingDelimiter whether to add a trailing delimiter.
+     * @return A new CSVFormat that is equal to this but with the specified trailing delimiter setting.
+     * @since 1.3
+     * @deprecated Use {@link Builder#setTrailingDelimiter(boolean)}
+     */
+    @Deprecated
+    public CSVFormat withTrailingDelimiter(final boolean trailingDelimiter) {
+<span class="fc" id="L3093">        return builder().setTrailingDelimiter(trailingDelimiter).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} to trim leading and trailing blanks. See {@link #getTrim()} for details of where this is used.
+     *
+     * @return A new CSVFormat that is equal to this but with the trim setting on.
+     * @since 1.3
+     * @deprecated Use {@link Builder#setTrim(boolean) Builder#setTrim(true)}
+     */
+    @Deprecated
+    public CSVFormat withTrim() {
+<span class="fc" id="L3105">        return builder().setTrim(true).get();</span>
+    }
+
+    /**
+     * Builds a new {@code CSVFormat} with whether to trim leading and trailing blanks. See {@link #getTrim()} for details of where this is used.
+     *
+     * @param trim whether to trim leading and trailing blanks.
+     * @return A new CSVFormat that is equal to this but with the specified trim setting.
+     * @since 1.3
+     * @deprecated Use {@link Builder#setTrim(boolean)}
+     */
+    @Deprecated
+    public CSVFormat withTrim(final boolean trim) {
+<span class="fc" id="L3118">        return builder().setTrim(trim).get();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

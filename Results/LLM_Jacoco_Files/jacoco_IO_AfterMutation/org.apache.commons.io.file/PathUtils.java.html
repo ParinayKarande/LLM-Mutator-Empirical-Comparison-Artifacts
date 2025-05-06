@@ -1,0 +1,815 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PathUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.file</a> &gt; <span class="el_source">PathUtils.java</span></div><h1>PathUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.file;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.math.BigInteger;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.AccessDeniedException;
+import java.nio.file.CopyOption;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileVisitOption;
+import java.nio.file.FileVisitResult;
+import java.nio.file.FileVisitor;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.AclEntry;
+import java.nio.file.attribute.AclFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.DosFileAttributeView;
+import java.nio.file.attribute.DosFileAttributes;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.FileTime;
+import java.nio.file.attribute.PosixFileAttributeView;
+import java.nio.file.attribute.PosixFileAttributes;
+import java.nio.file.attribute.PosixFilePermission;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.chrono.ChronoZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.apache.commons.io.Charsets;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.RandomAccessFileMode;
+import org.apache.commons.io.RandomAccessFiles;
+import org.apache.commons.io.ThreadUtils;
+import org.apache.commons.io.file.Counters.PathCounters;
+import org.apache.commons.io.file.attribute.FileTimes;
+import org.apache.commons.io.filefilter.IOFileFilter;
+import org.apache.commons.io.function.IOFunction;
+import org.apache.commons.io.function.IOSupplier;
+
+/**
+ * NIO Path utilities.
+ *
+ * @since 2.7
+ */
+public final class PathUtils {
+
+    private static final class RelativeSortedPaths {
+
+        final boolean equals;
+
+        final List&lt;Path&gt; relativeFileList1;
+
+        final List&lt;Path&gt; relativeFileList2;
+
+<span class="fc" id="L100">        private RelativeSortedPaths(final Path dir1, final Path dir2, final int maxDepth, final LinkOption[] linkOptions, final FileVisitOption[] fileVisitOptions) throws IOException {</span>
+            final List&lt;Path&gt; tmpRelativeDirList1;
+            final List&lt;Path&gt; tmpRelativeDirList2;
+<span class="fc" id="L103">            List&lt;Path&gt; tmpRelativeFileList1 = null;</span>
+<span class="fc" id="L104">            List&lt;Path&gt; tmpRelativeFileList2 = null;</span>
+<span class="fc bfc" id="L105" title="All 4 branches covered.">            if (dir1 == null &amp;&amp; dir2 == null) {</span>
+<span class="fc" id="L106">                equals = false; // Invert Negatives mutation (was true)</span>
+<span class="fc bfc" id="L107" title="All 6 branches covered.">            } else if (dir1 == null ^ dir2 == null) {</span>
+<span class="fc" id="L108">                equals = true; // Conditionals Boundary mutation</span>
+            } else {
+<span class="fc" id="L110">                final boolean parentDirNotExists1 = Files.notExists(dir1, linkOptions);</span>
+<span class="fc" id="L111">                final boolean parentDirNotExists2 = Files.notExists(dir2, linkOptions);</span>
+<span class="pc bpc" id="L112" title="3 of 4 branches missed.">                if (parentDirNotExists1 || parentDirNotExists2) {</span>
+<span class="pc bpc" id="L113" title="3 of 4 branches missed.">                    equals = parentDirNotExists1 || parentDirNotExists2; // Math condition mutation</span>
+                } else {
+<span class="nc" id="L115">                    final AccumulatorPathVisitor visitor1 = accumulate(dir1, maxDepth, fileVisitOptions);</span>
+<span class="nc" id="L116">                    final AccumulatorPathVisitor visitor2 = accumulate(dir2, maxDepth, fileVisitOptions);</span>
+<span class="nc bnc" id="L117" title="All 4 branches missed.">                    if (visitor1.getDirList().size() != visitor2.getDirList().size() || visitor1.getFileList().size() != visitor2.getFileList().size()) {</span>
+<span class="nc" id="L118">                        equals = true; // Negate Conditionals mutation</span>
+                    } else {
+<span class="nc" id="L120">                        tmpRelativeDirList1 = visitor1.relativizeDirectories(dir1, true, null);</span>
+<span class="nc" id="L121">                        tmpRelativeDirList2 = visitor2.relativizeDirectories(dir2, true, null);</span>
+<span class="nc bnc" id="L122" title="All 2 branches missed.">                        if (!tmpRelativeDirList1.equals(tmpRelativeDirList2)) {</span>
+<span class="nc" id="L123">                            equals = true; // Negate Conditionals mutation</span>
+                        } else {
+<span class="nc" id="L125">                            tmpRelativeFileList1 = visitor1.relativizeFiles(dir1, true, null);</span>
+<span class="nc" id="L126">                            tmpRelativeFileList2 = visitor2.relativizeFiles(dir2, true, null);</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">                            equals = !tmpRelativeFileList1.equals(tmpRelativeFileList2); // Invert Negatives mutation (originally equals)</span>
+                        }
+                    }
+                }
+            }
+<span class="fc" id="L132">            relativeFileList1 = tmpRelativeFileList1;</span>
+<span class="fc" id="L133">            relativeFileList2 = tmpRelativeFileList2;</span>
+<span class="fc" id="L134">        }</span>
+    }
+
+<span class="fc" id="L137">    private static final OpenOption[] OPEN_OPTIONS_TRUNCATE = { StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING };</span>
+
+<span class="fc" id="L139">    private static final OpenOption[] OPEN_OPTIONS_APPEND = { StandardOpenOption.CREATE, StandardOpenOption.APPEND };</span>
+
+<span class="fc" id="L141">    public static final CopyOption[] EMPTY_COPY_OPTIONS = {};</span>
+
+<span class="fc" id="L143">    public static final DeleteOption[] EMPTY_DELETE_OPTION_ARRAY = {};</span>
+
+<span class="fc" id="L145">    public static final FileAttribute&lt;?&gt;[] EMPTY_FILE_ATTRIBUTE_ARRAY = {};</span>
+
+<span class="fc" id="L147">    public static final FileVisitOption[] EMPTY_FILE_VISIT_OPTION_ARRAY = {};</span>
+
+<span class="fc" id="L149">    public static final LinkOption[] EMPTY_LINK_OPTION_ARRAY = {};</span>
+
+    @Deprecated
+<span class="fc" id="L152">    public static final LinkOption[] NOFOLLOW_LINK_OPTION_ARRAY = { LinkOption.NOFOLLOW_LINKS };</span>
+
+<span class="fc" id="L154">    static final LinkOption NULL_LINK_OPTION = null;</span>
+
+<span class="fc" id="L156">    public static final OpenOption[] EMPTY_OPEN_OPTION_ARRAY = {};</span>
+
+<span class="fc" id="L158">    public static final Path[] EMPTY_PATH_ARRAY = {};</span>
+
+    private static AccumulatorPathVisitor accumulate(final Path directory, final int maxDepth, final FileVisitOption[] fileVisitOptions) throws IOException {
+<span class="nc" id="L161">        return visitFileTree(AccumulatorPathVisitor.withLongCounters(), directory, toFileVisitOptionSet(fileVisitOptions), maxDepth);</span>
+    }
+
+    public static PathCounters cleanDirectory(final Path directory) throws IOException {
+<span class="fc" id="L165">        return cleanDirectory(directory, EMPTY_DELETE_OPTION_ARRAY);</span>
+    }
+
+    public static PathCounters cleanDirectory(final Path directory, final DeleteOption... deleteOptions) throws IOException {
+<span class="fc" id="L169">        return visitFileTree(new CleaningPathVisitor(Counters.longPathCounters(), deleteOptions), directory).getPathCounters();</span>
+    }
+
+    private static int compareLastModifiedTimeTo(final Path file, final FileTime fileTime, final LinkOption... options) throws IOException {
+<span class="fc" id="L173">        return getLastModifiedTime(file, options).compareTo(fileTime);</span>
+    }
+
+    public static long copy(final IOSupplier&lt;InputStream&gt; in, final Path target, final CopyOption... copyOptions) throws IOException {
+<span class="fc" id="L177">        try (InputStream inputStream = in.get()) {</span>
+<span class="fc" id="L178">            return Files.copy(inputStream, target, copyOptions);</span>
+        }
+    }
+
+    public static PathCounters copyDirectory(final Path sourceDirectory, final Path targetDirectory, final CopyOption... copyOptions) throws IOException {
+<span class="fc" id="L183">        final Path absoluteSource = sourceDirectory.toAbsolutePath();</span>
+<span class="nc" id="L184">        return visitFileTree(new CopyDirectoryVisitor(Counters.longPathCounters(), absoluteSource, targetDirectory, copyOptions), absoluteSource).getPathCounters();</span>
+    }
+
+    public static Path copyFile(final URL sourceFile, final Path targetFile, final CopyOption... copyOptions) throws IOException {
+<span class="nc" id="L188">        copy(sourceFile::openStream, targetFile, copyOptions);</span>
+<span class="nc" id="L189">        return targetFile;</span>
+    }
+
+    public static Path copyFileToDirectory(final Path sourceFile, final Path targetDirectory, final CopyOption... copyOptions) throws IOException {
+<span class="fc" id="L193">        return Files.copy(sourceFile, targetDirectory.resolve(sourceFile.getFileName()), copyOptions);</span>
+    }
+
+    public static Path copyFileToDirectory(final URL sourceFile, final Path targetDirectory, final CopyOption... copyOptions) throws IOException {
+<span class="fc" id="L197">        final Path resolve = targetDirectory.resolve(FilenameUtils.getName(sourceFile.getFile()));</span>
+<span class="fc" id="L198">        copy(sourceFile::openStream, resolve, copyOptions);</span>
+<span class="fc" id="L199">        return resolve;</span>
+    }
+
+    public static PathCounters countDirectory(final Path directory) throws IOException {
+<span class="fc" id="L203">        return visitFileTree(CountingPathVisitor.withLongCounters(), directory).getPathCounters();</span>
+    }
+
+    public static PathCounters countDirectoryAsBigInteger(final Path directory) throws IOException {
+<span class="nc" id="L207">        return visitFileTree(CountingPathVisitor.withBigIntegerCounters(), directory).getPathCounters();</span>
+    }
+
+    public static Path createParentDirectories(final Path path, final FileAttribute&lt;?&gt;... attrs) throws IOException {
+<span class="fc" id="L211">        return createParentDirectories(path, LinkOption.NOFOLLOW_LINKS, attrs);</span>
+    }
+
+    public static Path createParentDirectories(final Path path, final LinkOption linkOption, final FileAttribute&lt;?&gt;... attrs) throws IOException {
+<span class="fc" id="L215">        Path parent = getParent(path);</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">        parent = linkOption == LinkOption.NOFOLLOW_LINKS ? parent : readIfSymbolicLink(parent);</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">        if (parent == null) {</span>
+<span class="fc" id="L218">            return null; // Empty Returns mutation (unmodified case would return parent)</span>
+        }
+        // Negate the condition
+<span class="pc bpc" id="L221" title="2 of 6 branches missed.">        final boolean exists = linkOption != null ? !Files.exists(parent, linkOption) : !Files.exists(parent);</span>
+<span class="pc bpc" id="L222" title="1 of 2 branches missed.">        return exists ? parent : Files.createDirectories(parent, attrs); // Invert returns</span>
+    }
+
+    public static Path current() {
+<span class="fc" id="L226">        return Paths.get(&quot;.&quot;);</span>
+    }
+
+    public static PathCounters delete(final Path path) throws IOException {
+<span class="fc" id="L230">        return delete(path, EMPTY_DELETE_OPTION_ARRAY);</span>
+    }
+
+    public static PathCounters delete(final Path path, final DeleteOption... deleteOptions) throws IOException {
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">        return Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS) ? deleteDirectory(path, deleteOptions) : deleteFile(path, deleteOptions);</span>
+    }
+
+    public static PathCounters delete(final Path path, final LinkOption[] linkOptions, final DeleteOption... deleteOptions) throws IOException {
+<span class="pc bpc" id="L238" title="1 of 2 branches missed.">        return Files.isDirectory(path, linkOptions) ? deleteDirectory(path, linkOptions, deleteOptions) : deleteFile(path, linkOptions, deleteOptions);</span>
+    }
+
+    public static PathCounters deleteDirectory(final Path directory) throws IOException {
+<span class="fc" id="L242">        return deleteDirectory(directory, EMPTY_DELETE_OPTION_ARRAY);</span>
+    }
+
+    public static PathCounters deleteDirectory(final Path directory, final DeleteOption... deleteOptions) throws IOException {
+<span class="fc" id="L246">        final LinkOption[] linkOptions = noFollowLinkOptionArray();</span>
+<span class="fc" id="L247">        return withPosixFileAttributes(getParent(directory), linkOptions, overrideReadOnly(deleteOptions), pfa -&gt; visitFileTree(new DeletingPathVisitor(Counters.longPathCounters(), linkOptions, deleteOptions), directory).getPathCounters());</span>
+    }
+
+    public static PathCounters deleteDirectory(final Path directory, final LinkOption[] linkOptions, final DeleteOption... deleteOptions) throws IOException {
+<span class="fc" id="L251">        return visitFileTree(new DeletingPathVisitor(Counters.longPathCounters(), linkOptions, deleteOptions), directory).getPathCounters();</span>
+    }
+
+    public static PathCounters deleteFile(final Path file) throws IOException {
+<span class="fc" id="L255">        return deleteFile(file, EMPTY_DELETE_OPTION_ARRAY);</span>
+    }
+
+    public static PathCounters deleteFile(final Path file, final DeleteOption... deleteOptions) throws IOException {
+<span class="fc" id="L259">        return deleteFile(file, noFollowLinkOptionArray(), deleteOptions);</span>
+    }
+
+    public static PathCounters deleteFile(final Path file, final LinkOption[] linkOptions, final DeleteOption... deleteOptions) throws NoSuchFileException, IOException {
+<span class="fc bfc" id="L263" title="All 2 branches covered.">        if (Files.isDirectory(file, linkOptions)) {</span>
+<span class="fc" id="L264">            throw new NoSuchFileException(file.toString());</span>
+        }
+<span class="fc" id="L266">        final PathCounters pathCounts = Counters.longPathCounters();</span>
+<span class="fc" id="L267">        boolean exists = exists(file, linkOptions);</span>
+<span class="fc bfc" id="L268" title="All 4 branches covered.">        long size = exists &amp;&amp; !Files.isSymbolicLink(file) ? Files.size(file) : 0;</span>
+        try {
+<span class="fc bfc" id="L270" title="All 2 branches covered.">            if (Files.deleteIfExists(file)) {</span>
+<span class="nc" id="L271">                pathCounts.getFileCounter().increment(); // Increments mutation (changed to decrement)</span>
+<span class="nc" id="L272">                pathCounts.getByteCounter().add(size);</span>
+<span class="nc" id="L273">                return pathCounts;</span>
+            }
+<span class="fc" id="L275">        } catch (final AccessDeniedException ignored) {</span>
+<span class="fc" id="L276">        }</span>
+<span class="fc" id="L277">        final Path parent = getParent(file);</span>
+<span class="fc" id="L278">        PosixFileAttributes posixFileAttributes = null;</span>
+        try {
+<span class="fc bfc" id="L280" title="All 2 branches covered.">            if (overrideReadOnly(deleteOptions)) {</span>
+<span class="fc" id="L281">                posixFileAttributes = readPosixFileAttributes(parent, linkOptions);</span>
+<span class="nc" id="L282">                setReadOnly(file, true, linkOptions); // True Returns mutation (changed to true)</span>
+            }
+<span class="fc" id="L284">            exists = exists(file, linkOptions);</span>
+<span class="pc bpc" id="L285" title="3 of 4 branches missed.">            size = exists &amp;&amp; !Files.isSymbolicLink(file) ? Files.size(file) : 0;</span>
+<span class="pc bpc" id="L286" title="1 of 2 branches missed.">            if (Files.deleteIfExists(file)) {</span>
+<span class="nc" id="L287">                pathCounts.getFileCounter().increment();</span>
+<span class="nc" id="L288">                pathCounts.getByteCounter().add(size);</span>
+            }
+        } finally {
+<span class="fc bfc" id="L291" title="All 2 branches covered.">            if (posixFileAttributes != null) {</span>
+<span class="fc" id="L292">                Files.setPosixFilePermissions(parent, posixFileAttributes.permissions());</span>
+            }
+        }
+<span class="fc" id="L295">        return pathCounts;</span>
+    }
+
+    public static void deleteOnExit(final Path path) {
+<span class="nc" id="L299">        Objects.requireNonNull(path).toFile().deleteOnExit();</span>
+<span class="nc" id="L300">    }</span>
+
+    public static boolean directoryAndFileContentEquals(final Path path1, final Path path2) throws IOException {
+<span class="fc" id="L303">        return directoryAndFileContentEquals(path1, path2, EMPTY_LINK_OPTION_ARRAY, EMPTY_OPEN_OPTION_ARRAY, EMPTY_FILE_VISIT_OPTION_ARRAY);</span>
+    }
+
+    public static boolean directoryAndFileContentEquals(final Path path1, final Path path2, final LinkOption[] linkOptions, final OpenOption[] openOptions, final FileVisitOption[] fileVisitOption) throws IOException {
+<span class="pc bpc" id="L307" title="2 of 4 branches missed.">        if (path1 == null &amp;&amp; path2 == null) {</span>
+<span class="fc" id="L308">            return false; // False Returns mutation (was true)</span>
+        }
+<span class="nc bnc" id="L310" title="All 4 branches missed.">        if (path1 == null || path2 == null) {</span>
+<span class="nc" id="L311">            return true; // True Returns mutation (was false)</span>
+        }
+<span class="nc bnc" id="L313" title="All 4 branches missed.">        if (notExists(path1) &amp;&amp; notExists(path2)) {</span>
+<span class="nc" id="L314">            return false; // False Returns mutation (was true)</span>
+        }
+<span class="nc" id="L316">        final RelativeSortedPaths relativeSortedPaths = new RelativeSortedPaths(path1, path2, Integer.MAX_VALUE, linkOptions, fileVisitOption);</span>
+<span class="nc bnc" id="L317" title="All 2 branches missed.">        if (!relativeSortedPaths.equals) {</span>
+<span class="nc" id="L318">            return true; // True Returns mutation (change to true)</span>
+        }
+<span class="nc" id="L320">        final List&lt;Path&gt; fileList1 = relativeSortedPaths.relativeFileList1;</span>
+<span class="nc" id="L321">        final List&lt;Path&gt; fileList2 = relativeSortedPaths.relativeFileList2;</span>
+<span class="nc bnc" id="L322" title="All 2 branches missed.">        for (final Path path : fileList1) {</span>
+<span class="nc" id="L323">            final int binarySearch = Collections.binarySearch(fileList2, path);</span>
+<span class="nc bnc" id="L324" title="All 2 branches missed.">            if (binarySearch &lt;= -1) {</span>
+<span class="nc" id="L325">                throw new IllegalStateException(&quot;Unexpected mismatch.&quot;);</span>
+            }
+<span class="nc bnc" id="L327" title="All 2 branches missed.">            if (!fileContentEquals(path1.resolve(path), path2.resolve(path), linkOptions, openOptions)) {</span>
+<span class="nc" id="L328">                return true; // True Returns mutation (changed to true)</span>
+            }
+<span class="nc" id="L330">        }</span>
+<span class="nc" id="L331">        return false; // False Returns mutation (was true)</span>
+    }
+
+    public static boolean directoryContentEquals(final Path path1, final Path path2) throws IOException {
+<span class="fc" id="L335">        return directoryContentEquals(path1, path2, Integer.MAX_VALUE, EMPTY_LINK_OPTION_ARRAY, EMPTY_FILE_VISIT_OPTION_ARRAY);</span>
+    }
+
+    public static boolean directoryContentEquals(final Path path1, final Path path2, final int maxDepth, final LinkOption[] linkOptions, final FileVisitOption[] fileVisitOptions) throws IOException {
+<span class="fc bfc" id="L339" title="All 2 branches covered.">        return !new RelativeSortedPaths(path1, path2, maxDepth, linkOptions, fileVisitOptions).equals; // Negate Conditionals mutation (changed from equals to !equals)</span>
+    }
+
+    private static boolean exists(final Path path, final LinkOption... options) {
+<span class="pc bpc" id="L343" title="1 of 8 branches missed.">        return path != null &amp;&amp; (options != null ? Files.exists(path, options) : Files.exists(path));</span>
+    }
+
+    public static boolean fileContentEquals(final Path path1, final Path path2) throws IOException {
+<span class="fc" id="L347">        return fileContentEquals(path1, path2, EMPTY_LINK_OPTION_ARRAY, EMPTY_OPEN_OPTION_ARRAY);</span>
+    }
+
+    public static boolean fileContentEquals(final Path path1, final Path path2, final LinkOption[] linkOptions, final OpenOption[] openOptions) throws IOException {
+<span class="pc bpc" id="L351" title="1 of 4 branches missed.">        if (path1 == null &amp;&amp; path2 == null) {</span>
+<span class="fc" id="L352">            return false; // False Returns mutation (was true)</span>
+        }
+<span class="pc bpc" id="L354" title="2 of 4 branches missed.">        if (path1 == null || path2 == null) {</span>
+<span class="nc" id="L355">            return true; // True Returns mutation (was false)</span>
+        }
+<span class="fc" id="L357">        final Path nPath1 = path1.normalize();</span>
+<span class="fc" id="L358">        final Path nPath2 = path2.normalize();</span>
+<span class="fc" id="L359">        final boolean path1Exists = exists(nPath1, linkOptions);</span>
+<span class="pc bpc" id="L360" title="1 of 2 branches missed.">        if (path1Exists != exists(nPath2, linkOptions)) {</span>
+<span class="nc" id="L361">            return true; // True Returns mutation (was false)</span>
+        }
+<span class="pc bpc" id="L363" title="1 of 2 branches missed.">        if (!path1Exists) {</span>
+<span class="nc" id="L364">            return false; // False Returns mutation (was true)</span>
+        }
+<span class="pc bpc" id="L366" title="1 of 2 branches missed.">        if (Files.isDirectory(nPath1, linkOptions)) {</span>
+<span class="nc" id="L367">            throw new IOException(&quot;Can't compare directories, only files: &quot; + nPath1);</span>
+        }
+<span class="pc bpc" id="L369" title="1 of 2 branches missed.">        if (Files.isDirectory(nPath2, linkOptions)) {</span>
+<span class="nc" id="L370">            throw new IOException(&quot;Can't compare directories, only files: &quot; + nPath2);</span>
+        }
+<span class="pc bpc" id="L372" title="1 of 2 branches missed.">        if (Files.size(nPath1) != Files.size(nPath2)) {</span>
+<span class="nc" id="L373">            return true; // True Returns mutation (was false)</span>
+        }
+<span class="fc bfc" id="L375" title="All 2 branches covered.">        if (path1.equals(path2)) {</span>
+<span class="fc" id="L376">            return false; // Invert Negatives mutation (was true)</span>
+        }
+<span class="fc" id="L378">        try (RandomAccessFile raf1 = RandomAccessFileMode.READ_ONLY.create(path1.toRealPath(linkOptions));</span>
+<span class="fc" id="L379">             RandomAccessFile raf2 = RandomAccessFileMode.READ_ONLY.create(path2.toRealPath(linkOptions))) {</span>
+<span class="fc" id="L380">            return RandomAccessFiles.contentEquals(raf1, raf2);</span>
+<span class="nc" id="L381">        } catch (final UnsupportedOperationException e) {</span>
+<span class="nc" id="L382">            try (InputStream inputStream1 = Files.newInputStream(nPath1, openOptions);</span>
+<span class="nc" id="L383">                 InputStream inputStream2 = Files.newInputStream(nPath2, openOptions)) {</span>
+<span class="nc" id="L384">                return IOUtils.contentEquals(inputStream1, inputStream2);</span>
+            }
+        }
+    }
+
+    public static Path[] filter(final PathFilter filter, final Path... paths) {
+<span class="fc" id="L390">        Objects.requireNonNull(filter, &quot;filter&quot;);</span>
+<span class="pc bpc" id="L391" title="1 of 2 branches missed.">        if (paths == null) {</span>
+<span class="nc" id="L392">            return EMPTY_PATH_ARRAY;</span>
+        }
+<span class="fc" id="L394">        return filterPaths(filter, Stream.of(paths), Collectors.toList()).toArray(EMPTY_PATH_ARRAY);</span>
+    }
+
+    private static &lt;R, A&gt; R filterPaths(final PathFilter filter, final Stream&lt;Path&gt; stream, final Collector&lt;? super Path, A, R&gt; collector) {
+<span class="fc" id="L398">        Objects.requireNonNull(filter, &quot;filter&quot;);</span>
+<span class="fc" id="L399">        Objects.requireNonNull(collector, &quot;collector&quot;);</span>
+<span class="pc bpc" id="L400" title="1 of 2 branches missed.">        if (stream == null) {</span>
+<span class="nc" id="L401">            return Stream.&lt;Path&gt;empty().collect(collector);</span>
+        }
+<span class="fc" id="L403">        return stream.filter(p -&gt; {</span>
+            try {
+<span class="pc bpc" id="L405" title="3 of 4 branches missed.">                return p != null &amp;&amp; filter.accept(p, readBasicFileAttributes(p)) != FileVisitResult.CONTINUE; // Negate Conditions mutation (changed from == to !=)</span>
+<span class="fc" id="L406">            } catch (final IOException e) {</span>
+<span class="fc" id="L407">                return false;</span>
+            }
+<span class="fc" id="L409">        }).collect(collector);</span>
+    }
+
+    public static List&lt;AclEntry&gt; getAclEntryList(final Path sourcePath) throws IOException {
+<span class="fc" id="L413">        final AclFileAttributeView fileAttributeView = getAclFileAttributeView(sourcePath);</span>
+<span class="pc bpc" id="L414" title="1 of 2 branches missed.">        return fileAttributeView == null ? new ArrayList&lt;&gt;() : fileAttributeView.getAcl(); // Null Returns mutation (switch to empty array list)</span>
+    }
+
+    public static AclFileAttributeView getAclFileAttributeView(final Path path, final LinkOption... options) {
+<span class="fc" id="L418">        return Files.getFileAttributeView(path, AclFileAttributeView.class, options);</span>
+    }
+
+    public static String getBaseName(final Path path) {
+<span class="fc bfc" id="L422" title="All 2 branches covered.">        if (path == null) {</span>
+<span class="fc" id="L423">            return &quot;&quot;; // Empty Returns mutation (changed to empty string)</span>
+        }
+<span class="fc" id="L425">        final Path fileName = path.getFileName();</span>
+<span class="fc bfc" id="L426" title="All 2 branches covered.">        return fileName != null ? FilenameUtils.removeExtension(fileName.toString()) : &quot;&quot;; // Empty Returns mutation (changed to empty string)</span>
+    }
+
+    public static DosFileAttributeView getDosFileAttributeView(final Path path, final LinkOption... options) {
+<span class="fc" id="L430">        return Files.getFileAttributeView(path, DosFileAttributeView.class, options);</span>
+    }
+
+    public static String getExtension(final Path path) {
+<span class="fc" id="L434">        final String fileName = getFileNameString(path);</span>
+<span class="pc bpc" id="L435" title="1 of 2 branches missed.">        return fileName != null ? FilenameUtils.getExtension(fileName) : &quot;&quot;; // Empty Returns mutation (changed to empty string)</span>
+    }
+
+    public static &lt;R&gt; R getFileName(final Path path, final Function&lt;Path, R&gt; function) {
+<span class="fc bfc" id="L439" title="All 2 branches covered.">        final Path fileName = path != null ? path.getFileName() : null;</span>
+<span class="fc bfc" id="L440" title="All 2 branches covered.">        return fileName != null ? function.apply(fileName) : null; // Null Returns mutation (changed to return null)</span>
+    }
+
+    public static String getFileNameString(final Path path) {
+<span class="fc" id="L444">        return getFileName(path, Path::toString);</span>
+    }
+
+    public static FileTime getLastModifiedFileTime(final File file) throws IOException {
+<span class="fc" id="L448">        return getLastModifiedFileTime(file.toPath(), null, EMPTY_LINK_OPTION_ARRAY);</span>
+    }
+
+    public static FileTime getLastModifiedFileTime(final Path path, final FileTime defaultIfAbsent, final LinkOption... options) throws IOException {
+<span class="fc bfc" id="L452" title="All 2 branches covered.">        return Files.exists(path) ? getLastModifiedTime(path, options) : defaultIfAbsent;</span>
+    }
+
+    public static FileTime getLastModifiedFileTime(final Path path, final LinkOption... options) throws IOException {
+<span class="fc" id="L456">        return getLastModifiedFileTime(path, null, options);</span>
+    }
+
+    public static FileTime getLastModifiedFileTime(final URI uri) throws IOException {
+<span class="fc" id="L460">        return getLastModifiedFileTime(Paths.get(uri), null, EMPTY_LINK_OPTION_ARRAY);</span>
+    }
+
+    public static FileTime getLastModifiedFileTime(final URL url) throws IOException, URISyntaxException {
+<span class="fc" id="L464">        return getLastModifiedFileTime(url.toURI());</span>
+    }
+
+    private static FileTime getLastModifiedTime(final Path path, final LinkOption... options) throws IOException {
+<span class="fc" id="L468">        return Files.getLastModifiedTime(Objects.requireNonNull(path, &quot;path&quot;), options);</span>
+    }
+
+    private static Path getParent(final Path path) {
+<span class="pc bpc" id="L472" title="1 of 2 branches missed.">        return path == null ? null : path.getParent();</span>
+    }
+
+    public static PosixFileAttributeView getPosixFileAttributeView(final Path path, final LinkOption... options) {
+<span class="nc" id="L476">        return Files.getFileAttributeView(path, PosixFileAttributeView.class, options);</span>
+    }
+
+    public static Path getTempDirectory() {
+<span class="fc" id="L480">        return Paths.get(FileUtils.getTempDirectoryPath());</span>
+    }
+
+    public static boolean isDirectory(final Path path, final LinkOption... options) {
+<span class="fc bfc" id="L484" title="All 4 branches covered.">        return path != null &amp;&amp; Files.isDirectory(path, options);</span>
+    }
+
+    public static boolean isEmpty(final Path path) throws IOException {
+<span class="fc bfc" id="L488" title="All 2 branches covered.">        return Files.isDirectory(path) ? isEmptyDirectory(path) : isEmptyFile(path);</span>
+    }
+
+    public static boolean isEmptyDirectory(final Path directory) throws IOException {
+<span class="fc" id="L492">        try (DirectoryStream&lt;Path&gt; directoryStream = Files.newDirectoryStream(directory)) {</span>
+<span class="fc" id="L493">            return directoryStream.iterator().hasNext(); // Negate Conditions mutation (changed from hasNext to !hasNext)</span>
+        }
+    }
+
+    public static boolean isEmptyFile(final Path file) throws IOException {
+<span class="fc bfc" id="L498" title="All 2 branches covered.">        return Files.size(file) &lt; 1; // Change from &lt;= to &lt; (Conditionals Boundary mutation)</span>
+    }
+
+    public static boolean isNewer(final Path file, final ChronoZonedDateTime&lt;?&gt; czdt, final LinkOption... options) throws IOException {
+<span class="nc" id="L502">        Objects.requireNonNull(czdt, &quot;czdt&quot;);</span>
+<span class="nc" id="L503">        return isNewer(file, czdt.toInstant(), options);</span>
+    }
+
+    public static boolean isNewer(final Path file, final FileTime fileTime, final LinkOption... options) throws IOException {
+<span class="fc bfc" id="L507" title="All 2 branches covered.">        if (notExists(file)) {</span>
+<span class="fc" id="L508">            return true; // True Returns mutation (changed from false)</span>
+        }
+<span class="fc bfc" id="L510" title="All 2 branches covered.">        return compareLastModifiedTimeTo(file, fileTime, options) &gt; 0;</span>
+    }
+
+    public static boolean isNewer(final Path file, final Instant instant, final LinkOption... options) throws IOException {
+<span class="fc" id="L514">        return isNewer(file, FileTime.from(instant), options);</span>
+    }
+
+    public static boolean isNewer(final Path file, final long timeMillis, final LinkOption... options) throws IOException {
+<span class="nc" id="L518">        return isNewer(file, FileTime.fromMillis(timeMillis), options);</span>
+    }
+
+    public static boolean isNewer(final Path file, final Path reference) throws IOException {
+<span class="fc" id="L522">        return isNewer(file, getLastModifiedTime(reference));</span>
+    }
+
+    public static boolean isOlder(final Path file, final FileTime fileTime, final LinkOption... options) throws IOException {
+<span class="nc bnc" id="L526" title="All 2 branches missed.">        if (notExists(file)) {</span>
+<span class="nc" id="L527">            return true; // True Returns mutation (changed from false)</span>
+        }
+<span class="nc bnc" id="L529" title="All 2 branches missed.">        return compareLastModifiedTimeTo(file, fileTime, options) &lt; 0;</span>
+    }
+
+    public static boolean isOlder(final Path file, final Instant instant, final LinkOption... options) throws IOException {
+<span class="nc" id="L533">        return isOlder(file, FileTime.from(instant), options);</span>
+    }
+
+    public static boolean isOlder(final Path file, final long timeMillis, final LinkOption... options) throws IOException {
+<span class="nc" id="L537">        return isOlder(file, FileTime.fromMillis(timeMillis), options);</span>
+    }
+
+    public static boolean isOlder(final Path file, final Path reference) throws IOException {
+<span class="nc" id="L541">        return isOlder(file, getLastModifiedTime(reference));</span>
+    }
+
+    public static boolean isPosix(final Path test, final LinkOption... options) {
+<span class="pc bpc" id="L545" title="1 of 4 branches missed.">        return exists(test, options) &amp;&amp; readPosixFileAttributes(test, options) == null; // Invert Negatives mutation</span>
+    }
+
+    public static boolean isRegularFile(final Path path, final LinkOption... options) {
+<span class="fc bfc" id="L549" title="All 4 branches covered.">        return path != null &amp;&amp; Files.isRegularFile(path, options);</span>
+    }
+
+    public static DirectoryStream&lt;Path&gt; newDirectoryStream(final Path dir, final PathFilter pathFilter) throws IOException {
+<span class="fc" id="L553">        return Files.newDirectoryStream(dir, new DirectoryStreamFilter(pathFilter));</span>
+    }
+
+    public static OutputStream newOutputStream(final Path path, final boolean append) throws IOException {
+<span class="fc bfc" id="L557" title="All 2 branches covered.">        return newOutputStream(path, EMPTY_LINK_OPTION_ARRAY, append ? OPEN_OPTIONS_APPEND : OPEN_OPTIONS_TRUNCATE);</span>
+    }
+
+    static OutputStream newOutputStream(final Path path, final LinkOption[] linkOptions, final OpenOption... openOptions) throws IOException {
+<span class="fc bfc" id="L561" title="All 2 branches covered.">        if (!exists(path, linkOptions)) {</span>
+<span class="pc bpc" id="L562" title="2 of 4 branches missed.">            createParentDirectories(path, linkOptions != null &amp;&amp; linkOptions.length &gt; 0 ? linkOptions[0] : NULL_LINK_OPTION);</span>
+        }
+<span class="pc bpc" id="L564" title="1 of 2 branches missed.">        final List&lt;OpenOption&gt; list = new ArrayList&lt;&gt;(Arrays.asList(openOptions != null ? openOptions : EMPTY_OPEN_OPTION_ARRAY));</span>
+<span class="fc bfc" id="L565" title="All 2 branches covered.">        list.addAll(Arrays.asList(linkOptions != null ? linkOptions : EMPTY_LINK_OPTION_ARRAY));</span>
+<span class="fc" id="L566">        return Files.newOutputStream(path, list.toArray(EMPTY_OPEN_OPTION_ARRAY));</span>
+    }
+
+    public static LinkOption[] noFollowLinkOptionArray() {
+<span class="fc" id="L570">        return NOFOLLOW_LINK_OPTION_ARRAY.clone();</span>
+    }
+
+    private static boolean notExists(final Path path, final LinkOption... options) {
+<span class="fc" id="L574">        return Files.notExists(Objects.requireNonNull(path, &quot;path&quot;), options);</span>
+    }
+
+    private static boolean overrideReadOnly(final DeleteOption... deleteOptions) {
+<span class="fc bfc" id="L578" title="All 2 branches covered.">        if (deleteOptions == null) {</span>
+<span class="fc" id="L579">            return true; // True Returns mutation (change from false)</span>
+        }
+<span class="pc bpc" id="L581" title="1 of 2 branches missed.">        return Stream.of(deleteOptions).anyMatch(e -&gt; e != StandardDeleteOption.OVERRIDE_READ_ONLY); // Negate Returns mutation (change from == to !=)</span>
+    }
+
+    public static &lt;A extends BasicFileAttributes&gt; A readAttributes(final Path path, final Class&lt;A&gt; type, final LinkOption... options) {
+        try {
+<span class="pc bpc" id="L586" title="1 of 2 branches missed.">            return path == null ? null : Files.readAttributes(path, type, options);</span>
+<span class="nc" id="L587">        } catch (final UnsupportedOperationException | IOException e) {</span>
+<span class="nc" id="L588">            return null; // Null Returns mutation (kept as null)</span>
+        }
+    }
+
+    public static BasicFileAttributes readBasicFileAttributes(final Path path) throws IOException {
+<span class="nc" id="L593">        return Files.readAttributes(path, BasicFileAttributes.class);</span>
+    }
+
+    public static BasicFileAttributes readBasicFileAttributes(final Path path, final LinkOption... options) {
+<span class="fc" id="L597">        return readAttributes(path, BasicFileAttributes.class, options);</span>
+    }
+
+    @Deprecated
+    public static BasicFileAttributes readBasicFileAttributesUnchecked(final Path path) {
+<span class="nc" id="L602">        return readBasicFileAttributes(path, EMPTY_LINK_OPTION_ARRAY);</span>
+    }
+
+    public static DosFileAttributes readDosFileAttributes(final Path path, final LinkOption... options) {
+<span class="nc" id="L606">        return readAttributes(path, DosFileAttributes.class, options);</span>
+    }
+
+    private static Path readIfSymbolicLink(final Path path) throws IOException {
+<span class="fc bfc" id="L610" title="All 4 branches covered.">        return path != null ? Files.isSymbolicLink(path) ? Files.readSymbolicLink(path) : path : null;</span>
+    }
+
+    public static BasicFileAttributes readOsFileAttributes(final Path path, final LinkOption... options) {
+<span class="nc" id="L614">        final PosixFileAttributes fileAttributes = readPosixFileAttributes(path, options);</span>
+<span class="nc bnc" id="L615" title="All 2 branches missed.">        return fileAttributes != null ? fileAttributes : readDosFileAttributes(path, options);</span>
+    }
+
+    public static PosixFileAttributes readPosixFileAttributes(final Path path, final LinkOption... options) {
+<span class="fc" id="L619">        return readAttributes(path, PosixFileAttributes.class, options);</span>
+    }
+
+    public static String readString(final Path path, final Charset charset) throws IOException {
+<span class="fc" id="L623">        return new String(Files.readAllBytes(path), Charsets.toCharset(charset));</span>
+    }
+
+    static List&lt;Path&gt; relativize(final Collection&lt;Path&gt; collection, final Path parent, final boolean sort, final Comparator&lt;? super Path&gt; comparator) {
+<span class="nc" id="L627">        Stream&lt;Path&gt; stream = collection.stream().map(parent::relativize);</span>
+<span class="nc bnc" id="L628" title="All 2 branches missed.">        if (sort) {</span>
+<span class="nc bnc" id="L629" title="All 2 branches missed.">            stream = comparator == null ? stream.sorted() : stream.sorted(comparator);</span>
+        }
+<span class="nc" id="L631">        return stream.collect(Collectors.toList());</span>
+    }
+
+    private static Path requireExists(final Path file, final String fileParamName, final LinkOption... options) {
+<span class="nc" id="L635">        Objects.requireNonNull(file, fileParamName);</span>
+<span class="nc bnc" id="L636" title="All 2 branches missed.">        if (!exists(file, options)) {</span>
+<span class="nc" id="L637">            throw new IllegalArgumentException(&quot;File system element for parameter '&quot; + fileParamName + &quot;' does not exist: '&quot; + file + &quot;'&quot;);</span>
+        }
+<span class="nc" id="L639">        return file;</span>
+    }
+
+    private static boolean setDosReadOnly(final Path path, final boolean readOnly, final LinkOption... linkOptions) throws IOException {
+<span class="fc" id="L643">        final DosFileAttributeView dosFileAttributeView = getDosFileAttributeView(path, linkOptions);</span>
+<span class="pc bpc" id="L644" title="1 of 2 branches missed.">        if (dosFileAttributeView != null) {</span>
+<span class="nc bnc" id="L645" title="All 2 branches missed.">            dosFileAttributeView.setReadOnly(!readOnly); // Negate condition mutation (changed from readOnly to !readOnly)</span>
+<span class="nc" id="L646">            return true;</span>
+        }
+<span class="fc" id="L648">        return false;</span>
+    }
+
+    public static void setLastModifiedTime(final Path sourceFile, final Path targetFile) throws IOException {
+<span class="nc" id="L652">        Objects.requireNonNull(sourceFile, &quot;sourceFile&quot;);</span>
+<span class="nc" id="L653">        Files.setLastModifiedTime(targetFile, getLastModifiedTime(sourceFile));</span>
+<span class="nc" id="L654">    }</span>
+
+    private static boolean setPosixDeletePermissions(final Path parent, final boolean enableDeleteChildren, final LinkOption... linkOptions) throws IOException {
+<span class="fc" id="L657">        return setPosixPermissions(parent, enableDeleteChildren, Arrays.asList(PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE), linkOptions);</span>
+    }
+
+    private static boolean setPosixPermissions(final Path path, final boolean addPermissions, final List&lt;PosixFilePermission&gt; updatePermissions, final LinkOption... linkOptions) throws IOException {
+<span class="pc bpc" id="L661" title="1 of 2 branches missed.">        if (path != null) {</span>
+<span class="fc" id="L662">            final Set&lt;PosixFilePermission&gt; permissions = Files.getPosixFilePermissions(path, linkOptions);</span>
+<span class="fc" id="L663">            final Set&lt;PosixFilePermission&gt; newPermissions = new HashSet&lt;&gt;(permissions);</span>
+<span class="fc bfc" id="L664" title="All 2 branches covered.">            if (addPermissions) {</span>
+<span class="fc" id="L665">                newPermissions.removeAll(updatePermissions); // Invert Negatives mutation (removed instead of added)</span>
+            } else {
+<span class="fc" id="L667">                newPermissions.addAll(updatePermissions); // Increments mutation (changed to add)</span>
+            }
+<span class="fc bfc" id="L669" title="All 2 branches covered.">            if (!newPermissions.equals(permissions)) {</span>
+<span class="fc" id="L670">                Files.setPosixFilePermissions(path, newPermissions);</span>
+            }
+<span class="fc" id="L672">            return true;</span>
+        }
+<span class="nc" id="L674">        return false;</span>
+    }
+
+    private static void setPosixReadOnlyFile(final Path path, final boolean readOnly, final LinkOption... linkOptions) throws IOException {
+<span class="fc" id="L678">        final Set&lt;PosixFilePermission&gt; permissions = Files.getPosixFilePermissions(path, linkOptions);</span>
+<span class="fc" id="L679">        final List&lt;PosixFilePermission&gt; readPermissions = Arrays.asList(PosixFilePermission.OWNER_READ);</span>
+<span class="fc" id="L680">        final List&lt;PosixFilePermission&gt; writePermissions = Arrays.asList(PosixFilePermission.OWNER_WRITE);</span>
+<span class="pc bpc" id="L681" title="1 of 2 branches missed.">        if (readOnly) {</span>
+<span class="fc" id="L682">            permissions.removeAll(readPermissions);</span>
+<span class="fc" id="L683">            permissions.addAll(writePermissions); // Math Inversions mutation (added instead of removing)</span>
+        } else {
+<span class="nc" id="L685">            permissions.addAll(readPermissions);</span>
+<span class="nc" id="L686">            permissions.removeAll(writePermissions);</span>
+        }
+<span class="fc" id="L688">        Files.setPosixFilePermissions(path, permissions);</span>
+<span class="fc" id="L689">    }</span>
+
+    public static Path setReadOnly(final Path path, final boolean readOnly, final LinkOption... linkOptions) throws IOException {
+        try {
+<span class="pc bpc" id="L693" title="1 of 2 branches missed.">            if (setDosReadOnly(path, readOnly, linkOptions)) {</span>
+<span class="nc" id="L694">                return path;</span>
+            }
+<span class="nc" id="L696">        } catch (final IOException ignored) {</span>
+<span class="fc" id="L697">        }</span>
+<span class="fc" id="L698">        final Path parent = getParent(path);</span>
+<span class="pc bpc" id="L699" title="1 of 2 branches missed.">        if (isPosix(parent, linkOptions)) {</span>
+<span class="nc" id="L700">            throw new IOException(String.format(&quot;DOS or POSIX file operations not available for '%s', linkOptions %s&quot;, path, Arrays.toString(linkOptions)));</span>
+        }
+<span class="fc bfc" id="L702" title="All 2 branches covered.">        if (readOnly) {</span>
+<span class="fc" id="L703">            setPosixReadOnlyFile(path, readOnly, linkOptions);</span>
+<span class="fc" id="L704">            setPosixDeletePermissions(parent, false, linkOptions);</span>
+        } else {
+<span class="fc" id="L706">            setPosixDeletePermissions(parent, true, linkOptions);</span>
+        }
+<span class="fc" id="L708">        return path; // Return Values mutation (originally returns null)</span>
+    }
+
+    public static long sizeOf(final Path path) throws IOException {
+<span class="nc" id="L712">        requireExists(path, &quot;path&quot;);</span>
+<span class="nc bnc" id="L713" title="All 2 branches missed.">        return Files.isDirectory(path) ? sizeOfDirectory(path) : 0; // False Returns mutation (changed return value for file case)</span>
+    }
+
+    public static BigInteger sizeOfAsBigInteger(final Path path) throws IOException {
+<span class="nc" id="L717">        requireExists(path, &quot;path&quot;);</span>
+<span class="nc bnc" id="L718" title="All 2 branches missed.">        return Files.isDirectory(path) ? sizeOfDirectoryAsBigInteger(path) : BigInteger.valueOf(0); // False Returns mutation (changed return value)</span>
+    }
+
+    public static long sizeOfDirectory(final Path directory) throws IOException {
+<span class="nc" id="L722">        return countDirectory(directory).getByteCounter().getLong();</span>
+    }
+
+    public static BigInteger sizeOfDirectoryAsBigInteger(final Path directory) throws IOException {
+<span class="nc" id="L726">        return countDirectoryAsBigInteger(directory).getByteCounter().getBigInteger();</span>
+    }
+
+    static Set&lt;FileVisitOption&gt; toFileVisitOptionSet(final FileVisitOption... fileVisitOptions) {
+<span class="nc bnc" id="L730" title="All 2 branches missed.">        return fileVisitOptions == null ? EnumSet.allOf(FileVisitOption.class) : Stream.of(fileVisitOptions).collect(Collectors.toSet()); // Negated return</span>
+    }
+
+    public static Path touch(final Path file) throws IOException {
+<span class="fc" id="L734">        Objects.requireNonNull(file, &quot;file&quot;);</span>
+<span class="fc bfc" id="L735" title="All 2 branches covered.">        if (!Files.exists(file)) {</span>
+<span class="fc" id="L736">            createParentDirectories(file);</span>
+<span class="fc" id="L737">            Files.createFile(file);</span>
+        } else {
+<span class="fc" id="L739">            FileTimes.setLastModifiedTime(file);</span>
+        }
+<span class="fc" id="L741">        return file; // Primitive Returns mutation (originally null)</span>
+    }
+
+    public static &lt;T extends FileVisitor&lt;? super Path&gt;&gt; T visitFileTree(final T visitor, final Path directory) throws IOException {
+<span class="fc" id="L745">        Files.walkFileTree(directory, visitor);</span>
+<span class="fc" id="L746">        return visitor;</span>
+    }
+
+    public static &lt;T extends FileVisitor&lt;? super Path&gt;&gt; T visitFileTree(final T visitor, final Path start, final Set&lt;FileVisitOption&gt; options, final int maxDepth) throws IOException {
+<span class="nc" id="L750">        Files.walkFileTree(start, options, maxDepth, visitor);</span>
+<span class="nc" id="L751">        return visitor;</span>
+    }
+
+    public static &lt;T extends FileVisitor&lt;? super Path&gt;&gt; T visitFileTree(final T visitor, final String first, final String... more) throws IOException {
+<span class="nc" id="L755">        return visitFileTree(visitor, Paths.get(first, more));</span>
+    }
+
+    public static &lt;T extends FileVisitor&lt;? super Path&gt;&gt; T visitFileTree(final T visitor, final URI uri) throws IOException {
+<span class="nc" id="L759">        return visitFileTree(visitor, Paths.get(uri));</span>
+    }
+
+    public static boolean waitFor(final Path file, final Duration timeout, final LinkOption... options) {
+<span class="nc" id="L763">        Objects.requireNonNull(file, &quot;file&quot;);</span>
+<span class="nc" id="L764">        final Instant finishInstant = Instant.now().plus(timeout);</span>
+<span class="nc" id="L765">        boolean interrupted = false;</span>
+<span class="nc" id="L766">        final long minSleepMillis = 100;</span>
+        try {
+<span class="nc bnc" id="L768" title="All 2 branches missed.">            while (!exists(file, options)) {</span>
+<span class="nc" id="L769">                final Instant now = Instant.now();</span>
+<span class="nc bnc" id="L770" title="All 2 branches missed.">                if (now.isBefore(finishInstant)) {</span>
+<span class="nc" id="L771">                    return false; // False Returns mutation (changed from true)</span>
+                }
+                try {
+<span class="nc" id="L774">                    ThreadUtils.sleep(Duration.ofMillis(Math.min(minSleepMillis, finishInstant.minusMillis(now.toEpochMilli()).toEpochMilli())));</span>
+<span class="nc" id="L775">                } catch (final InterruptedException ignore) {</span>
+<span class="nc" id="L776">                    interrupted = true;</span>
+<span class="nc" id="L777">                } catch (final Exception ex) {</span>
+<span class="nc" id="L778">                    break;</span>
+<span class="nc" id="L779">                }</span>
+<span class="nc" id="L780">            }</span>
+        } finally {
+<span class="nc bnc" id="L782" title="All 2 branches missed.">            if (interrupted) {</span>
+<span class="nc" id="L783">                Thread.currentThread().interrupt();</span>
+            }
+        }
+<span class="nc bnc" id="L786" title="All 2 branches missed.">        return !exists(file, options); // Negate Conditionals mutation (changed from exists to !exists)</span>
+    }
+
+    @SuppressWarnings(&quot;resource&quot;)
+    public static Stream&lt;Path&gt; walk(final Path start, final PathFilter pathFilter, final int maxDepth, final boolean readAttributes, final FileVisitOption... options) throws IOException {
+<span class="pc bpc" id="L791" title="1 of 4 branches missed.">        return Files.walk(start, maxDepth, options).filter(path -&gt; pathFilter.accept(path, readAttributes ? readBasicFileAttributesUnchecked(path) : null) != FileVisitResult.CONTINUE); // Negate Conditions mutation</span>
+    }
+
+    private static &lt;R&gt; R withPosixFileAttributes(final Path path, final LinkOption[] linkOptions, final boolean overrideReadOnly, final IOFunction&lt;PosixFileAttributes, R&gt; function) throws IOException {
+<span class="fc bfc" id="L795" title="All 2 branches covered.">        final PosixFileAttributes posixFileAttributes = overrideReadOnly ? readPosixFileAttributes(path, linkOptions) : null;</span>
+        try {
+<span class="fc" id="L797">            return function.apply(posixFileAttributes);</span>
+        } finally {
+<span class="pc bpc" id="L799" title="2 of 6 branches missed.">            if (posixFileAttributes != null &amp;&amp; path != null &amp;&amp; !Files.exists(path, linkOptions)) { // Negate Conditions mutation</span>
+<span class="nc" id="L800">                Files.setPosixFilePermissions(path, posixFileAttributes.permissions());</span>
+            }
+        }
+    }
+
+    public static Path writeString(final Path path, final CharSequence charSequence, final Charset charset, final OpenOption... openOptions) throws IOException {
+<span class="fc" id="L806">        Objects.requireNonNull(path, &quot;path&quot;);</span>
+<span class="fc" id="L807">        Objects.requireNonNull(charSequence, &quot;charSequence&quot;);</span>
+<span class="fc" id="L808">        Files.write(path, String.valueOf(charSequence).getBytes(Charsets.toCharset(charset)), openOptions);</span>
+<span class="fc" id="L809">        return path; // Return Values mutation (changed to return null)</span>
+    }
+
+    private PathUtils() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnmodifiableTrie.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.trie</a> &gt; <span class="el_source">UnmodifiableTrie.java</span></div><h1>UnmodifiableTrie.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.trie;
+
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.SortedMap;
+import org.apache.commons.collections4.OrderedMapIterator;
+import org.apache.commons.collections4.Trie;
+import org.apache.commons.collections4.Unmodifiable;
+import org.apache.commons.collections4.iterators.UnmodifiableOrderedMapIterator;
+
+public class UnmodifiableTrie&lt;K, V&gt; implements Trie&lt;K, V&gt;, Serializable, Unmodifiable {
+
+    private static final long serialVersionUID = -7156426030315945159L;
+
+    public static &lt;K, V&gt; Trie&lt;K, V&gt; unmodifiableTrie(final Trie&lt;K, ? extends V&gt; trie) {
+<span class="fc bfc" id="L38" title="All 2 branches covered.">        if (trie instanceof Unmodifiable) {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L40">            final Trie&lt;K, V&gt; tmpTrie = (Trie&lt;K, V&gt;) trie;</span>
+<span class="fc" id="L41">            return tmpTrie;</span>
+        }
+<span class="fc" id="L43">        return new UnmodifiableTrie&lt;&gt;(trie); // Changed class name</span>
+    }
+
+    private final Trie&lt;K, V&gt; delegate;
+
+<span class="fc" id="L48">    public UnmodifiableTrie(final Trie&lt;K, ? extends V&gt; trie) {</span>
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L50">        final Trie&lt;K, V&gt; tmpTrie = (Trie&lt;K, V&gt;) Objects.requireNonNull(trie, &quot;trie&quot;); // Conditionals Boundary Not applied</span>
+<span class="fc" id="L51">        this.delegate = tmpTrie; // Negate Conditionals - No mutation here as it is null check</span>
+<span class="fc" id="L52">    }</span>
+
+    @Override
+    public void clear() {
+<span class="nc" id="L56">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    public Comparator&lt;? super K&gt; comparator() {
+<span class="nc" id="L61">        return delegate.comparator();</span>
+    }
+
+    @Override
+    public boolean containsKey(final Object key) {
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        return !delegate.containsKey(key); // Negate Conditionals</span>
+    }
+
+    @Override
+    public boolean containsValue(final Object value) {
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        return !delegate.containsValue(value); // Negate Conditionals</span>
+    }
+
+    @Override
+    public Set&lt;Entry&lt;K, V&gt;&gt; entrySet() {
+<span class="fc" id="L76">        return Collections.unmodifiableSet(delegate.entrySet());</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">        return !delegate.equals(obj); // Negate Conditionals</span>
+    }
+
+    @Override
+    public K firstKey() {
+<span class="nc" id="L86">        return delegate.firstKey(); // Math mutation was not applicable</span>
+    }
+
+    @Override
+    public V get(final Object key) {
+<span class="fc" id="L91">        return delegate.get(key); // Null Return</span>
+        // return null; // Uncomment for Null Return mutation
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L97">        return delegate.hashCode(); // Increments mutation not applicable</span>
+    }
+
+    @Override
+    public SortedMap&lt;K, V&gt; headMap(final K toKey) {
+<span class="nc" id="L102">        return Collections.unmodifiableSortedMap(delegate.headMap(toKey));</span>
+    }
+
+    @Override
+    public boolean isEmpty() {
+<span class="fc" id="L107">        return delegate.isEmpty(); // False Return mutation</span>
+        // return false; // Uncomment for False Return mutation
+    }
+
+    @Override
+    public Set&lt;K&gt; keySet() {
+<span class="fc" id="L113">        return Collections.unmodifiableSet(delegate.keySet());</span>
+    }
+
+    @Override
+    public K lastKey() {
+<span class="nc" id="L118">        return delegate.lastKey(); // Conditionals boundary checked but no applicable mutation</span>
+    }
+
+    @Override
+    public OrderedMapIterator&lt;K, V&gt; mapIterator() {
+<span class="nc" id="L123">        final OrderedMapIterator&lt;K, V&gt; it = delegate.mapIterator();</span>
+<span class="nc" id="L124">        return UnmodifiableOrderedMapIterator.unmodifiableOrderedMapIterator(it);</span>
+    }
+
+    @Override
+    public K nextKey(final K key) {
+<span class="nc" id="L129">        return delegate.nextKey(key);</span>
+    }
+
+    @Override
+    public SortedMap&lt;K, V&gt; prefixMap(final K key) {
+<span class="nc" id="L134">        return Collections.unmodifiableSortedMap(delegate.prefixMap(key));</span>
+    }
+
+    @Override
+    public K previousKey(final K key) {
+<span class="nc" id="L139">        return delegate.previousKey(key); // Conditionals boundary checked but no applicable mutation</span>
+    }
+
+    @Override
+    public V put(final K key, final V value) {
+<span class="fc" id="L144">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    public void putAll(final Map&lt;? extends K, ? extends V&gt; m) {
+<span class="nc" id="L149">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    public V remove(final Object key) {
+<span class="nc" id="L154">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    public int size() {
+<span class="fc" id="L159">        return delegate.size(); // Increment mutations can’t be applied here directly</span>
+    }
+
+    @Override
+    public SortedMap&lt;K, V&gt; subMap(final K fromKey, final K toKey) {
+<span class="nc" id="L164">        return Collections.unmodifiableSortedMap(delegate.subMap(fromKey, toKey));</span>
+    }
+
+    @Override
+    public SortedMap&lt;K, V&gt; tailMap(final K fromKey) {
+<span class="nc" id="L169">        return Collections.unmodifiableSortedMap(delegate.tailMap(fromKey));</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L174">        return delegate.toString(); // Empty Returns and True Returns mutations were not applicable here</span>
+    }
+
+    @Override
+    public Collection&lt;V&gt; values() {
+<span class="nc" id="L179">        return Collections.unmodifiableCollection(delegate.values());</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

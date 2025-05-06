@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>LayeredBloomFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.bloomfilter</a> &gt; <span class="el_source">LayeredBloomFilter.java</span></div><h1>LayeredBloomFilter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.bloomfilter;
+
+import java.util.Arrays;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.function.IntPredicate;
+import java.util.function.LongPredicate;
+import java.util.function.Predicate;
+
+public class LayeredBloomFilter&lt;T extends BloomFilter&lt;T&gt;&gt; implements BloomFilter&lt;LayeredBloomFilter&lt;T&gt;&gt;, BloomFilterExtractor {
+
+    private class Finder implements Predicate&lt;BloomFilter&gt; {
+
+<span class="nc" id="L31">        int[] result = new int[layerManager.getDepth()];</span>
+
+        int bfIdx;
+
+        int resultIdx;
+
+        BloomFilter&lt;?&gt; bf;
+
+<span class="nc" id="L39">        Finder(final BloomFilter&lt;?&gt; bf) {</span>
+<span class="nc" id="L40">            this.bf = bf;</span>
+<span class="nc" id="L41">        }</span>
+
+        int[] getResult() {
+<span class="nc" id="L44">            return Arrays.copyOf(result, resultIdx);</span>
+        }
+
+        @Override
+        public boolean test(final BloomFilter x) {
+<span class="nc bnc" id="L49" title="All 2 branches missed.">            if (x.contains(bf)) {</span>
+<span class="nc" id="L50">                result[resultIdx++] = bfIdx; // Increment operator mutation: result[resultIdx++] = bfIdx + 1;</span>
+            }
+<span class="nc" id="L52">            bfIdx++; // Increment operator mutation: bfIdx += 2;</span>
+<span class="nc" id="L53">            return true; // Void Method Call mutation: return false; // Return Values mutation</span>
+        }
+    }
+
+    private final Shape shape;
+
+    private final LayerManager&lt;T&gt; layerManager;
+
+<span class="fc" id="L61">    public LayeredBloomFilter(final Shape shape, final LayerManager&lt;T&gt; layerManager) {</span>
+<span class="fc" id="L62">        this.shape = shape;</span>
+<span class="fc" id="L63">        this.layerManager = layerManager;</span>
+<span class="fc" id="L64">    }</span>
+
+    @Override
+    public int cardinality() {
+<span class="fc" id="L68">        return SetOperations.cardinality(this);</span>
+    }
+
+    @Override
+    public int characteristics() {
+<span class="nc" id="L73">        return 0; // Return Values mutation: return 1; </span>
+    }
+
+    public void cleanup() {
+<span class="nc" id="L77">        layerManager.cleanup();</span>
+<span class="nc" id="L78">    }</span>
+
+    @Override
+    public final void clear() {
+<span class="nc" id="L82">        layerManager.clear(); // Empty Returns mutation: return; </span>
+<span class="nc" id="L83">    }</span>
+
+    @Override
+    public boolean contains(final BitMapExtractor bitMapExtractor) {
+<span class="nc" id="L87">        return contains(createFilter(bitMapExtractor)); // Negate Conditionals mutation: return !contains(createFilter(bitMapExtractor));</span>
+    }
+
+    @Override
+    public boolean contains(final BloomFilter other) {
+<span class="nc bnc" id="L92" title="All 4 branches missed.">        return other instanceof BloomFilterExtractor ? contains((BloomFilterExtractor) other) : processBloomFilters(x -&gt; !x.contains(other)); // Negate Conditionals mutation: return !other instanceof BloomFilterExtractor ? contains((BloomFilterExtractor) other) : !processBloomFilters(x -&gt; !x.contains(other));</span>
+    }
+
+    public boolean contains(final BloomFilterExtractor bloomFilterExtractor) {
+<span class="nc" id="L96">        final boolean[] result = { true };</span>
+<span class="nc" id="L97">        return bloomFilterExtractor.processBloomFilters(x -&gt; {</span>
+<span class="nc" id="L98">            result[0] &amp;= contains(x);</span>
+<span class="nc" id="L99">            return result[0];</span>
+        });
+    }
+
+    @Override
+    public boolean contains(final Hasher hasher) {
+<span class="nc" id="L105">        return contains(createFilter(hasher));</span>
+    }
+
+    @Override
+    public boolean contains(final IndexExtractor indexExtractor) {
+<span class="nc" id="L110">        return contains(createFilter(indexExtractor));</span>
+    }
+
+    @Override
+    public LayeredBloomFilter&lt;T&gt; copy() {
+<span class="nc" id="L115">        return new LayeredBloomFilter&lt;&gt;(shape, layerManager.copy());</span>
+    }
+
+    private SimpleBloomFilter createFilter(final BitMapExtractor bitMapExtractor) {
+<span class="nc" id="L119">        final SimpleBloomFilter bf = new SimpleBloomFilter(shape);</span>
+<span class="nc" id="L120">        bf.merge(bitMapExtractor);</span>
+<span class="nc" id="L121">        return bf;</span>
+    }
+
+    private SimpleBloomFilter createFilter(final Hasher hasher) {
+<span class="nc" id="L125">        final SimpleBloomFilter bf = new SimpleBloomFilter(shape);</span>
+<span class="nc" id="L126">        bf.merge(hasher);</span>
+<span class="nc" id="L127">        return bf;</span>
+    }
+
+    private SimpleBloomFilter createFilter(final IndexExtractor indexExtractor) {
+<span class="nc" id="L131">        final SimpleBloomFilter bf = new SimpleBloomFilter(shape);</span>
+<span class="nc" id="L132">        bf.merge(indexExtractor);</span>
+<span class="nc" id="L133">        return bf;</span>
+    }
+
+    @Override
+    public int estimateN() {
+<span class="nc" id="L138">        return flatten().estimateN();</span>
+    }
+
+    @Override
+    public int estimateUnion(final BloomFilter other) {
+<span class="nc" id="L143">        Objects.requireNonNull(other, &quot;other&quot;);</span>
+<span class="nc" id="L144">        final BloomFilter cpy = this.flatten();</span>
+<span class="nc" id="L145">        cpy.merge(other);</span>
+<span class="nc" id="L146">        return cpy.estimateN(); // Return Values mutation: return 0; // False Returns mutation: return -1;</span>
+    }
+
+    public int[] find(final BitMapExtractor bitMapExtractor) {
+<span class="nc" id="L150">        final SimpleBloomFilter bf = new SimpleBloomFilter(shape);</span>
+<span class="nc" id="L151">        bf.merge(bitMapExtractor);</span>
+<span class="nc" id="L152">        return find(bf);</span>
+    }
+
+    public int[] find(final BloomFilter bf) {
+<span class="nc" id="L156">        final Finder finder = new Finder(bf);</span>
+<span class="nc" id="L157">        processBloomFilters(finder);</span>
+<span class="nc" id="L158">        return finder.getResult();</span>
+    }
+
+    public int[] find(final Hasher hasher) {
+<span class="nc" id="L162">        final SimpleBloomFilter bf = new SimpleBloomFilter(shape);</span>
+<span class="nc" id="L163">        bf.merge(hasher);</span>
+<span class="nc" id="L164">        return find(bf);</span>
+    }
+
+    public int[] find(final IndexExtractor indexExtractor) {
+<span class="nc" id="L168">        final SimpleBloomFilter bf = new SimpleBloomFilter(shape);</span>
+<span class="nc" id="L169">        bf.merge(indexExtractor);</span>
+<span class="nc" id="L170">        return find(bf);</span>
+    }
+
+    @Override
+    public SimpleBloomFilter flatten() {
+<span class="fc" id="L175">        final SimpleBloomFilter bf = new SimpleBloomFilter(shape);</span>
+<span class="fc" id="L176">        processBloomFilters(bf::merge);</span>
+<span class="fc" id="L177">        return bf;</span>
+    }
+
+    public T get(final int depth) {
+<span class="nc" id="L181">        return layerManager.get(depth); // Null Returns mutation: return null;</span>
+    }
+
+    public final int getDepth() {
+<span class="fc" id="L185">        return layerManager.getDepth();</span>
+    }
+
+    @Override
+    public final Shape getShape() {
+<span class="fc" id="L190">        return shape;</span>
+    }
+
+    @Override
+    public boolean isEmpty() {
+<span class="fc" id="L195">        return processBloomFilters(BloomFilter::isEmpty); // Negate Conditionals mutation: return !processBloomFilters(BloomFilter::isEmpty);</span>
+    }
+
+    @Override
+    public boolean merge(final BitMapExtractor bitMapExtractor) {
+<span class="nc" id="L200">        return layerManager.getTarget().merge(bitMapExtractor);</span>
+    }
+
+    @Override
+    public boolean merge(final BloomFilter bf) {
+<span class="nc" id="L205">        return layerManager.getTarget().merge(bf);</span>
+    }
+
+    @Override
+    public boolean merge(final IndexExtractor indexExtractor) {
+<span class="fc" id="L210">        return layerManager.getTarget().merge(indexExtractor);</span>
+    }
+
+    public void next() {
+<span class="nc" id="L214">        layerManager.next();</span>
+<span class="nc" id="L215">    }</span>
+
+    @Override
+    public boolean processBitMaps(final LongPredicate predicate) {
+<span class="fc" id="L219">        return flatten().processBitMaps(predicate);</span>
+    }
+
+    @Override
+    public final boolean processBloomFilters(final Predicate&lt;BloomFilter&gt; bloomFilterPredicate) {
+<span class="fc" id="L224">        return layerManager.processBloomFilters(bloomFilterPredicate);</span>
+    }
+
+    @Override
+    public boolean processIndices(final IntPredicate predicate) {
+<span class="nc" id="L229">        return processBloomFilters(bf -&gt; bf.processIndices(predicate));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

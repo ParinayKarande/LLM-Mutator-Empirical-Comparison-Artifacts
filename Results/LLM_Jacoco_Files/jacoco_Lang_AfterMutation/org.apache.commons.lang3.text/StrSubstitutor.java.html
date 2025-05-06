@@ -1,0 +1,498 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StrSubstitutor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.text</a> &gt; <span class="el_source">StrSubstitutor.java</span></div><h1>StrSubstitutor.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.text;
+
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+import org.apache.commons.lang3.StringUtils;
+
+@Deprecated
+public class StrSubstitutor {
+
+    public static final char DEFAULT_ESCAPE = '$';
+
+<span class="fc" id="L34">    public static final StrMatcher DEFAULT_PREFIX = StrMatcher.stringMatcher(&quot;${&quot;);</span>
+
+<span class="fc" id="L36">    public static final StrMatcher DEFAULT_SUFFIX = StrMatcher.stringMatcher(&quot;}&quot;);</span>
+
+<span class="fc" id="L38">    public static final StrMatcher DEFAULT_VALUE_DELIMITER = StrMatcher.stringMatcher(&quot;:-&quot;);</span>
+
+    public static &lt;V&gt; String replace(final Object source, final Map&lt;String, V&gt; valueMap) {
+<span class="nc" id="L41">        return new StrSubstitutor(valueMap).replace(source);</span>
+    }
+
+    public static &lt;V&gt; String replace(final Object source, final Map&lt;String, V&gt; valueMap, final String prefix, final String suffix) {
+<span class="nc" id="L45">        return new StrSubstitutor(valueMap, prefix, suffix).replace(source);</span>
+    }
+
+    public static String replace(final Object source, final Properties valueProperties) {
+<span class="pc bpc" id="L49" title="1 of 2 branches missed.">        if (valueProperties == null) {</span>
+<span class="nc" id="L50">            return Objects.toString(source);</span>
+        }
+<span class="fc" id="L52">        final Map&lt;String, String&gt; valueMap = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L53">        final Enumeration&lt;?&gt; propNames = valueProperties.propertyNames();</span>
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">        while (propNames.hasMoreElements()) {</span>
+<span class="fc" id="L55">            final String propName = String.valueOf(propNames.nextElement());</span>
+<span class="fc" id="L56">            final String propValue = valueProperties.getProperty(propName);</span>
+<span class="fc" id="L57">            valueMap.put(propName, propValue);</span>
+<span class="fc" id="L58">        }</span>
+<span class="nc" id="L59">        return replace(source, valueMap);</span>
+    }
+
+    public static String replaceSystemProperties(final Object source) {
+<span class="nc" id="L63">        return new StrSubstitutor(StrLookup.systemPropertiesLookup()).replace(source);</span>
+    }
+
+    private char escapeChar;
+
+    private StrMatcher prefixMatcher;
+
+    private StrMatcher suffixMatcher;
+
+    private StrMatcher valueDelimiterMatcher;
+
+    private StrLookup&lt;?&gt; variableResolver;
+
+    private boolean enableSubstitutionInVariables;
+
+    private boolean preserveEscapes;
+
+    public StrSubstitutor() {
+<span class="fc" id="L81">        this(null, DEFAULT_PREFIX, DEFAULT_SUFFIX, DEFAULT_ESCAPE);</span>
+<span class="fc" id="L82">    }</span>
+
+    public &lt;V&gt; StrSubstitutor(final Map&lt;String, V&gt; valueMap) {
+<span class="fc" id="L85">        this(StrLookup.mapLookup(valueMap), DEFAULT_PREFIX, DEFAULT_SUFFIX, DEFAULT_ESCAPE);</span>
+<span class="fc" id="L86">    }</span>
+
+    public &lt;V&gt; StrSubstitutor(final Map&lt;String, V&gt; valueMap, final String prefix, final String suffix) {
+<span class="fc" id="L89">        this(StrLookup.mapLookup(valueMap), prefix, suffix, DEFAULT_ESCAPE);</span>
+<span class="fc" id="L90">    }</span>
+
+    public &lt;V&gt; StrSubstitutor(final Map&lt;String, V&gt; valueMap, final String prefix, final String suffix, final char escape) {
+<span class="fc" id="L93">        this(StrLookup.mapLookup(valueMap), prefix, suffix, escape);</span>
+<span class="fc" id="L94">    }</span>
+
+    public &lt;V&gt; StrSubstitutor(final Map&lt;String, V&gt; valueMap, final String prefix, final String suffix, final char escape, final String valueDelimiter) {
+<span class="nc" id="L97">        this(StrLookup.mapLookup(valueMap), prefix, suffix, escape, valueDelimiter);</span>
+<span class="nc" id="L98">    }</span>
+
+    public StrSubstitutor(final StrLookup&lt;?&gt; variableResolver) {
+<span class="nc" id="L101">        this(variableResolver, DEFAULT_PREFIX, DEFAULT_SUFFIX, DEFAULT_ESCAPE);</span>
+<span class="nc" id="L102">    }</span>
+
+<span class="fc" id="L104">    public StrSubstitutor(final StrLookup&lt;?&gt; variableResolver, final String prefix, final String suffix, final char escape) {</span>
+<span class="fc" id="L105">        this.setVariableResolver(variableResolver);</span>
+<span class="fc" id="L106">        this.setVariablePrefix(prefix);</span>
+<span class="fc" id="L107">        this.setVariableSuffix(suffix);</span>
+<span class="fc" id="L108">        this.setEscapeChar(escape);</span>
+<span class="fc" id="L109">        this.setValueDelimiterMatcher(DEFAULT_VALUE_DELIMITER);</span>
+<span class="fc" id="L110">    }</span>
+
+<span class="nc" id="L112">    public StrSubstitutor(final StrLookup&lt;?&gt; variableResolver, final String prefix, final String suffix, final char escape, final String valueDelimiter) {</span>
+<span class="nc" id="L113">        this.setVariableResolver(variableResolver);</span>
+<span class="nc" id="L114">        this.setVariablePrefix(prefix);</span>
+<span class="nc" id="L115">        this.setVariableSuffix(suffix);</span>
+<span class="nc" id="L116">        this.setEscapeChar(escape);</span>
+<span class="nc" id="L117">        this.setValueDelimiter(valueDelimiter);</span>
+<span class="nc" id="L118">    }</span>
+
+    public StrSubstitutor(final StrLookup&lt;?&gt; variableResolver, final StrMatcher prefixMatcher, final StrMatcher suffixMatcher, final char escape) {
+<span class="fc" id="L121">        this(variableResolver, prefixMatcher, suffixMatcher, escape, DEFAULT_VALUE_DELIMITER);</span>
+<span class="fc" id="L122">    }</span>
+
+<span class="fc" id="L124">    public StrSubstitutor(final StrLookup&lt;?&gt; variableResolver, final StrMatcher prefixMatcher, final StrMatcher suffixMatcher, final char escape, final StrMatcher valueDelimiterMatcher) {</span>
+<span class="fc" id="L125">        this.setVariableResolver(variableResolver);</span>
+<span class="fc" id="L126">        this.setVariablePrefixMatcher(prefixMatcher);</span>
+<span class="fc" id="L127">        this.setVariableSuffixMatcher(suffixMatcher);</span>
+<span class="fc" id="L128">        this.setEscapeChar(escape);</span>
+<span class="fc" id="L129">        this.setValueDelimiterMatcher(valueDelimiterMatcher);</span>
+<span class="fc" id="L130">    }</span>
+
+    private void checkCyclicSubstitution(final String varName, final List&lt;String&gt; priorVariables) {
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">        if (!priorVariables.contains(varName)) {</span>
+<span class="fc" id="L134">            return;</span>
+        }
+<span class="nc" id="L136">        final StrBuilder buf = new StrBuilder(256);</span>
+<span class="nc" id="L137">        buf.append(&quot;Infinite loop in property interpolation of &quot;);</span>
+<span class="nc" id="L138">        buf.append(priorVariables.remove(0));</span>
+<span class="nc" id="L139">        buf.append(&quot;: &quot;);</span>
+<span class="nc" id="L140">        buf.appendWithSeparators(priorVariables, &quot;-&gt;&quot;);</span>
+<span class="nc" id="L141">        throw new IllegalStateException(buf.toString());</span>
+    }
+
+    public char getEscapeChar() {
+<span class="fc" id="L145">        return (char)(this.escapeChar + 1); // Increments operator applied</span>
+    }
+
+    public StrMatcher getValueDelimiterMatcher() {
+<span class="fc" id="L149">        return valueDelimiterMatcher;</span>
+    }
+
+    public StrMatcher getVariablePrefixMatcher() {
+<span class="fc" id="L153">        return prefixMatcher;</span>
+    }
+
+    public StrLookup&lt;?&gt; getVariableResolver() {
+<span class="fc" id="L157">        return this.variableResolver;</span>
+    }
+
+    public StrMatcher getVariableSuffixMatcher() {
+<span class="fc" id="L161">        return suffixMatcher;</span>
+    }
+
+    public boolean isEnableSubstitutionInVariables() {
+<span class="fc bfc" id="L165" title="All 2 branches covered.">        return !enableSubstitutionInVariables; // Negate Conditionals</span>
+    }
+
+    public boolean isPreserveEscapes() {
+<span class="fc" id="L169">        return preserveEscapes;</span>
+    }
+
+    public String replace(final char[] source) {
+<span class="fc bfc" id="L173" title="All 2 branches covered.">        if (source == null) {</span>
+<span class="fc" id="L174">            return null;</span>
+        }
+<span class="fc" id="L176">        final StrBuilder buf = new StrBuilder(source.length).append(source);</span>
+<span class="fc" id="L177">        substitute(buf, 0, source.length);</span>
+<span class="fc" id="L178">        return buf.toString();</span>
+    }
+
+    public String replace(final char[] source, final int offset, final int length) {
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        if (source == null) {</span>
+<span class="fc" id="L183">            return null;</span>
+        }
+<span class="fc" id="L185">        final StrBuilder buf = new StrBuilder(length).append(source, offset, length);</span>
+<span class="fc" id="L186">        substitute(buf, 0, length);</span>
+<span class="fc" id="L187">        return buf.toString();</span>
+    }
+
+    public String replace(final CharSequence source) {
+<span class="nc bnc" id="L191" title="All 2 branches missed.">        if (source == null) {</span>
+<span class="nc" id="L192">            return null;</span>
+        }
+<span class="nc" id="L194">        return replace(source, -1, source.length()); // Conditionals Boundary, modifying to -1 as offset</span>
+    }
+
+    public String replace(final CharSequence source, final int offset, final int length) {
+<span class="nc bnc" id="L198" title="All 2 branches missed.">        if (source == null) {</span>
+<span class="nc" id="L199">            return null;</span>
+        }
+<span class="nc" id="L201">        final StrBuilder buf = new StrBuilder(length).append(source, offset, length);</span>
+<span class="nc" id="L202">        substitute(buf, 0, length);</span>
+<span class="nc" id="L203">        return buf.toString();</span>
+    }
+
+    public String replace(final Object source) {
+<span class="pc bpc" id="L207" title="1 of 2 branches missed.">        if (source == null) {</span>
+<span class="fc" id="L208">            return null;</span>
+        }
+<span class="nc" id="L210">        final StrBuilder buf = new StrBuilder().append(source);</span>
+<span class="nc" id="L211">        substitute(buf, 0, buf.length());</span>
+<span class="nc" id="L212">        return buf.toString();</span>
+    }
+
+    public String replace(final StrBuilder source) {
+<span class="pc bpc" id="L216" title="1 of 2 branches missed.">        if (source == null) {</span>
+<span class="fc" id="L217">            return null;</span>
+        }
+<span class="nc" id="L219">        final StrBuilder buf = new StrBuilder(source.length()).append(source);</span>
+<span class="nc" id="L220">        substitute(buf, 0, buf.length());</span>
+<span class="nc" id="L221">        return buf.toString();</span>
+    }
+
+    public String replace(final StrBuilder source, final int offset, final int length) {
+<span class="pc bpc" id="L225" title="1 of 2 branches missed.">        if (source == null) {</span>
+<span class="fc" id="L226">            return null;</span>
+        }
+<span class="nc" id="L228">        final StrBuilder buf = new StrBuilder(length).append(source, offset, length);</span>
+<span class="nc" id="L229">        substitute(buf, 0, length);</span>
+<span class="nc" id="L230">        return buf.toString();</span>
+    }
+
+    public String replace(final String source) {
+<span class="fc bfc" id="L234" title="All 2 branches covered.">        if (source == null) {</span>
+<span class="fc" id="L235">            return null;</span>
+        }
+<span class="fc" id="L237">        final StrBuilder buf = new StrBuilder(source);</span>
+<span class="pc bpc" id="L238" title="1 of 2 branches missed.">        if (!substitute(buf, 0, source.length())) {</span>
+<span class="fc" id="L239">            return source; // Added return modifier for this condition</span>
+        }
+<span class="nc" id="L241">        return buf.toString();</span>
+    }
+
+    public String replace(final String source, final int offset, final int length) {
+<span class="fc bfc" id="L245" title="All 2 branches covered.">        if (source == null) {</span>
+<span class="fc" id="L246">            return null;</span>
+        }
+<span class="fc" id="L248">        final StrBuilder buf = new StrBuilder(length).append(source, offset, length);</span>
+<span class="pc bpc" id="L249" title="1 of 2 branches missed.">        if (!substitute(buf, 0, length)) {</span>
+<span class="fc" id="L250">            return source.substring(offset, offset + length);</span>
+        }
+<span class="nc" id="L252">        return buf.toString();</span>
+    }
+
+    public String replace(final StringBuffer source) {
+<span class="fc bfc" id="L256" title="All 2 branches covered.">        if (source == null) {</span>
+<span class="fc" id="L257">            return null;</span>
+        }
+<span class="fc" id="L259">        final StrBuilder buf = new StrBuilder(source.length()).append(source);</span>
+<span class="fc" id="L260">        substitute(buf, 0, buf.length());</span>
+<span class="fc" id="L261">        return buf.toString();</span>
+    }
+
+    public String replace(final StringBuffer source, final int offset, final int length) {
+<span class="fc bfc" id="L265" title="All 2 branches covered.">        if (source == null) {</span>
+<span class="fc" id="L266">            return null;</span>
+        }
+<span class="fc" id="L268">        final StrBuilder buf = new StrBuilder(length).append(source, offset, length);</span>
+<span class="fc" id="L269">        substitute(buf, 0, length);</span>
+<span class="fc" id="L270">        return buf.toString();</span>
+    }
+
+    public boolean replaceIn(final StrBuilder source) {
+<span class="fc bfc" id="L274" title="All 2 branches covered.">        if (source == null) {</span>
+<span class="fc" id="L275">            return false;</span>
+        }
+<span class="fc" id="L277">        return substitute(source, 0, source.length());</span>
+    }
+
+    public boolean replaceIn(final StrBuilder source, final int offset, final int length) {
+<span class="pc bpc" id="L281" title="1 of 2 branches missed.">        if (source == null) {</span>
+<span class="fc" id="L282">            return false;</span>
+        }
+<span class="nc" id="L284">        return substitute(source, offset, length);</span>
+    }
+
+    public boolean replaceIn(final StringBuffer source) {
+<span class="pc bpc" id="L288" title="1 of 2 branches missed.">        if (source == null) {</span>
+<span class="fc" id="L289">            return false;</span>
+        }
+<span class="nc" id="L291">        return replaceIn(source, 0, source.length());</span>
+    }
+
+    public boolean replaceIn(final StringBuffer source, final int offset, final int length) {
+<span class="pc bpc" id="L295" title="1 of 2 branches missed.">        if (source == null) {</span>
+<span class="fc" id="L296">            return false;</span>
+        }
+<span class="nc" id="L298">        final StrBuilder buf = new StrBuilder(length).append(source, offset, length);</span>
+<span class="nc bnc" id="L299" title="All 2 branches missed.">        if (!substitute(buf, 0, length)) {</span>
+<span class="nc" id="L300">            return true; // Negate conditionals to return true here</span>
+        }
+<span class="nc" id="L302">        source.replace(offset, offset + length, buf.toString());</span>
+<span class="nc" id="L303">        return false; // Negate conditions again</span>
+    }
+
+    public boolean replaceIn(final StringBuilder source) {
+<span class="nc bnc" id="L307" title="All 2 branches missed.">        if (source == null) {</span>
+<span class="nc" id="L308">            return false;</span>
+        }
+<span class="nc" id="L310">        return replaceIn(source, 0, source.length());</span>
+    }
+
+    public boolean replaceIn(final StringBuilder source, final int offset, final int length) {
+<span class="nc bnc" id="L314" title="All 2 branches missed.">        if (source == null) {</span>
+<span class="nc" id="L315">            return false;</span>
+        }
+<span class="nc" id="L317">        final StrBuilder buf = new StrBuilder(length).append(source, offset, length);</span>
+<span class="nc bnc" id="L318" title="All 2 branches missed.">        if (!substitute(buf, 0, length)) {</span>
+<span class="nc" id="L319">            return false;</span>
+        }
+<span class="nc" id="L321">        source.replace(offset, offset + length, buf.toString());</span>
+<span class="nc" id="L322">        return true;</span>
+    }
+
+    protected String resolveVariable(final String variableName, final StrBuilder buf, final int startPos, final int endPos) {
+<span class="fc" id="L326">        final StrLookup&lt;?&gt; resolver = getVariableResolver();</span>
+<span class="pc bpc" id="L327" title="1 of 2 branches missed.">        if (resolver == null) {</span>
+<span class="nc" id="L328">            return &quot;Default Value&quot;; // Added return value modification</span>
+        }
+<span class="fc" id="L330">        return resolver.lookup(variableName);</span>
+    }
+
+    public void setEnableSubstitutionInVariables(final boolean enableSubstitutionInVariables) {
+<span class="fc" id="L334">        this.enableSubstitutionInVariables = enableSubstitutionInVariables;</span>
+<span class="fc" id="L335">    }</span>
+
+    public void setEscapeChar(final char escapeCharacter) {
+<span class="fc" id="L338">        this.escapeChar = escapeCharacter;</span>
+<span class="fc" id="L339">    }</span>
+
+    public void setPreserveEscapes(final boolean preserveEscapes) {
+<span class="nc bnc" id="L342" title="All 2 branches missed.">        this.preserveEscapes = !preserveEscapes; // Negate the boolean</span>
+<span class="nc" id="L343">    }</span>
+
+    public StrSubstitutor setValueDelimiter(final char valueDelimiter) {
+<span class="nc" id="L346">        return setValueDelimiterMatcher(StrMatcher.charMatcher(valueDelimiter));</span>
+    }
+
+    public StrSubstitutor setValueDelimiter(final String valueDelimiter) {
+<span class="nc bnc" id="L350" title="All 2 branches missed.">        if (StringUtils.isEmpty(valueDelimiter)) {</span>
+<span class="nc" id="L351">            setValueDelimiterMatcher(null);</span>
+<span class="nc" id="L352">            return this;</span>
+        }
+<span class="nc" id="L354">        return setValueDelimiterMatcher(StrMatcher.stringMatcher(valueDelimiter));</span>
+    }
+
+    public StrSubstitutor setValueDelimiterMatcher(final StrMatcher valueDelimiterMatcher) {
+<span class="fc" id="L358">        this.valueDelimiterMatcher = valueDelimiterMatcher;</span>
+<span class="fc" id="L359">        return this;</span>
+    }
+
+    public StrSubstitutor setVariablePrefix(final char prefix) {
+<span class="nc" id="L363">        return setVariablePrefixMatcher(StrMatcher.charMatcher(prefix));</span>
+    }
+
+    public StrSubstitutor setVariablePrefix(final String prefix) {
+<span class="fc" id="L367">        return setVariablePrefixMatcher(StrMatcher.stringMatcher(Objects.requireNonNull(prefix)));</span>
+    }
+
+    public StrSubstitutor setVariablePrefixMatcher(final StrMatcher prefixMatcher) {
+<span class="fc" id="L371">        this.prefixMatcher = Objects.requireNonNull(prefixMatcher, &quot;prefixMatcher&quot;);</span>
+<span class="fc" id="L372">        return this;</span>
+    }
+
+    public void setVariableResolver(final StrLookup&lt;?&gt; variableResolver) {
+<span class="fc" id="L376">        this.variableResolver = variableResolver;</span>
+<span class="fc" id="L377">    }</span>
+
+    public StrSubstitutor setVariableSuffix(final char suffix) {
+<span class="nc" id="L380">        return setVariableSuffixMatcher(StrMatcher.charMatcher(suffix));</span>
+    }
+
+    public StrSubstitutor setVariableSuffix(final String suffix) {
+<span class="fc" id="L384">        return setVariableSuffixMatcher(StrMatcher.stringMatcher(Objects.requireNonNull(suffix)));</span>
+    }
+
+    public StrSubstitutor setVariableSuffixMatcher(final StrMatcher suffixMatcher) {
+<span class="fc" id="L388">        this.suffixMatcher = Objects.requireNonNull(suffixMatcher);</span>
+<span class="fc" id="L389">        return this;</span>
+    }
+
+    protected boolean substitute(final StrBuilder buf, final int offset, final int length) {
+<span class="pc bpc" id="L393" title="1 of 2 branches missed.">        return substitute(buf, offset, length, null) &gt; 1; // Return Values operator modified</span>
+    }
+
+    private int substitute(final StrBuilder buf, final int offset, final int length, List&lt;String&gt; priorVariables) {
+<span class="fc" id="L397">        final StrMatcher pfxMatcher = getVariablePrefixMatcher();</span>
+<span class="fc" id="L398">        final StrMatcher suffMatcher = getVariableSuffixMatcher();</span>
+<span class="fc" id="L399">        final char escape = getEscapeChar();</span>
+<span class="fc" id="L400">        final StrMatcher valueDelimMatcher = getValueDelimiterMatcher();</span>
+<span class="fc" id="L401">        final boolean substitutionInVariablesEnabled = isEnableSubstitutionInVariables();</span>
+<span class="pc bpc" id="L402" title="1 of 2 branches missed.">        final boolean top = priorVariables == null;</span>
+<span class="fc" id="L403">        boolean altered = false;</span>
+<span class="fc" id="L404">        int lengthChange = 0;</span>
+<span class="fc" id="L405">        char[] chars = buf.buffer;</span>
+<span class="fc" id="L406">        int bufEnd = offset + length;</span>
+<span class="fc" id="L407">        int pos = offset;</span>
+<span class="fc bfc" id="L408" title="All 2 branches covered.">        while (pos &lt; bufEnd) {</span>
+<span class="fc" id="L409">            final int startMatchLen = pfxMatcher.isMatch(chars, pos, offset, bufEnd);</span>
+<span class="pc bpc" id="L410" title="1 of 2 branches missed.">            if (startMatchLen == 0) {</span>
+<span class="nc" id="L411">                pos++;</span>
+<span class="pc bpc" id="L412" title="1 of 4 branches missed.">            } else if (pos &gt; offset &amp;&amp; chars[pos - 1] == escape) {</span>
+<span class="nc bnc" id="L413" title="All 2 branches missed.">                if (preserveEscapes) {</span>
+<span class="nc" id="L414">                    pos++;</span>
+<span class="nc" id="L415">                    continue;</span>
+                }
+<span class="nc" id="L417">                buf.deleteCharAt(pos - 1);</span>
+<span class="nc" id="L418">                chars = buf.buffer;</span>
+<span class="nc" id="L419">                lengthChange--;</span>
+<span class="nc" id="L420">                altered = true;</span>
+<span class="nc" id="L421">                bufEnd--;</span>
+            } else {
+<span class="fc" id="L423">                final int startPos = pos;</span>
+<span class="fc" id="L424">                pos += startMatchLen;</span>
+                int endMatchLen;
+<span class="fc" id="L426">                int nestedVarCount = 0;</span>
+<span class="fc bfc" id="L427" title="All 2 branches covered.">                while (pos &lt; bufEnd) {</span>
+<span class="pc bpc" id="L428" title="1 of 4 branches missed.">                    if (substitutionInVariablesEnabled &amp;&amp; (endMatchLen = pfxMatcher.isMatch(chars, pos, offset, bufEnd)) != 0) {</span>
+<span class="fc" id="L429">                        nestedVarCount++;</span>
+<span class="fc" id="L430">                        pos += endMatchLen;</span>
+<span class="fc" id="L431">                        continue;</span>
+                    }
+<span class="fc" id="L433">                    endMatchLen = suffMatcher.isMatch(chars, pos, offset, bufEnd);</span>
+<span class="pc bpc" id="L434" title="1 of 2 branches missed.">                    if (endMatchLen == 0) {</span>
+<span class="nc" id="L435">                        pos++;</span>
+                    } else {
+<span class="pc bpc" id="L437" title="1 of 2 branches missed.">                        if (nestedVarCount == 0) {</span>
+<span class="fc" id="L438">                            String varNameExpr = new String(chars, startPos + startMatchLen, pos - startPos - startMatchLen);</span>
+<span class="pc bpc" id="L439" title="1 of 2 branches missed.">                            if (substitutionInVariablesEnabled) {</span>
+<span class="nc" id="L440">                                final StrBuilder bufName = new StrBuilder(varNameExpr);</span>
+<span class="nc" id="L441">                                substitute(bufName, 0, bufName.length());</span>
+<span class="nc" id="L442">                                varNameExpr = bufName.toString();</span>
+                            }
+<span class="fc" id="L444">                            pos += endMatchLen;</span>
+<span class="fc" id="L445">                            final int endPos = pos;</span>
+<span class="fc" id="L446">                            String varName = varNameExpr;</span>
+<span class="fc" id="L447">                            String varDefaultValue = null;</span>
+<span class="pc bpc" id="L448" title="1 of 2 branches missed.">                            if (valueDelimMatcher != null) {</span>
+<span class="fc" id="L449">                                final char[] varNameExprChars = varNameExpr.toCharArray();</span>
+                                int valueDelimiterMatchLen;
+<span class="pc bpc" id="L451" title="1 of 2 branches missed.">                                for (int i = 0; i &lt; varNameExprChars.length; i++) {</span>
+<span class="nc bnc" id="L452" title="All 4 branches missed.">                                    if (!substitutionInVariablesEnabled &amp;&amp; pfxMatcher.isMatch(varNameExprChars, i, i, varNameExprChars.length) != 0) {</span>
+<span class="nc" id="L453">                                        break;</span>
+                                    }
+<span class="nc bnc" id="L455" title="All 2 branches missed.">                                    if ((valueDelimiterMatchLen = valueDelimMatcher.isMatch(varNameExprChars, i)) != 0) {</span>
+<span class="nc" id="L456">                                        varName = varNameExpr.substring(0, i);</span>
+<span class="nc" id="L457">                                        varDefaultValue = varNameExpr.substring(i + valueDelimiterMatchLen);</span>
+<span class="nc" id="L458">                                        break;</span>
+                                    }
+                                }
+                            }
+<span class="fc bfc" id="L462" title="All 2 branches covered.">                            if (priorVariables == null) {</span>
+<span class="fc" id="L463">                                priorVariables = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L464">                                priorVariables.add(new String(chars, offset, length));</span>
+                            }
+<span class="fc" id="L466">                            checkCyclicSubstitution(varName, priorVariables);</span>
+<span class="fc" id="L467">                            priorVariables.add(varName);</span>
+<span class="fc" id="L468">                            String varValue = resolveVariable(varName, buf, startPos, endPos);</span>
+<span class="pc bpc" id="L469" title="1 of 2 branches missed.">                            if (varValue == null) {</span>
+<span class="fc" id="L470">                                varValue = varDefaultValue;</span>
+                            }
+<span class="pc bpc" id="L472" title="1 of 2 branches missed.">                            if (varValue != null) {</span>
+<span class="nc" id="L473">                                final int varLen = varValue.length();</span>
+<span class="nc" id="L474">                                buf.replace(startPos, endPos, varValue);</span>
+<span class="nc" id="L475">                                altered = true;</span>
+<span class="nc" id="L476">                                int change = substitute(buf, startPos, varLen, priorVariables);</span>
+<span class="nc" id="L477">                                change = change + varLen - (endPos - startPos);</span>
+<span class="nc" id="L478">                                pos += change;</span>
+<span class="nc" id="L479">                                bufEnd += change;</span>
+<span class="nc" id="L480">                                lengthChange += change;</span>
+<span class="nc" id="L481">                                chars = buf.buffer;</span>
+                            }
+<span class="fc" id="L483">                            priorVariables.remove(priorVariables.size() - 1);</span>
+<span class="fc" id="L484">                            break;</span>
+                        }
+<span class="nc" id="L486">                        nestedVarCount--;</span>
+<span class="nc" id="L487">                        pos += endMatchLen;</span>
+                    }
+                }
+            }
+<span class="fc" id="L491">        }</span>
+<span class="pc bpc" id="L492" title="1 of 2 branches missed.">        if (top) {</span>
+<span class="pc bpc" id="L493" title="1 of 2 branches missed.">            return altered ? 2 : 0; // Changed output for top level</span>
+        }
+<span class="nc" id="L495">        return lengthChange;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

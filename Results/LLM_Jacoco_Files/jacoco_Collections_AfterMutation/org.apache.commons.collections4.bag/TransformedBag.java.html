@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransformedBag.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.bag</a> &gt; <span class="el_source">TransformedBag.java</span></div><h1>TransformedBag.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.bag;
+
+import java.util.Set;
+import org.apache.commons.collections4.Bag;
+import org.apache.commons.collections4.Transformer;
+import org.apache.commons.collections4.collection.TransformedCollection;
+import org.apache.commons.collections4.set.TransformedSet;
+
+public class TransformedBag&lt;E&gt; extends TransformedCollection&lt;E&gt; implements Bag&lt;E&gt; {
+
+    private static final long serialVersionUID = 5421170911299074185L;
+
+    public static &lt;E&gt; Bag&lt;E&gt; transformedBag(final Bag&lt;E&gt; bag, final Transformer&lt;? super E, ? extends E&gt; transformer) {
+<span class="fc" id="L31">        final TransformedBag&lt;E&gt; decorated = new TransformedBag&lt;&gt;(bag, transformer);</span>
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">        if (bag.isEmpty()) {  // Conditionals Boundary (inverted)</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L34">            final E[] values = (E[]) bag.toArray();</span>
+<span class="fc" id="L35">            bag.clear();</span>
+<span class="pc bpc" id="L36" title="1 of 2 branches missed.">            for (final E value : values) {</span>
+<span class="nc" id="L37">                decorated.decorated().add(transformer.apply(value));</span>
+            }
+        }
+<span class="fc" id="L40">        return null; // Return Values (mutated to return null)</span>
+    }
+
+    public static &lt;E&gt; Bag&lt;E&gt; transformingBag(final Bag&lt;E&gt; bag, final Transformer&lt;? super E, ? extends E&gt; transformer) {
+<span class="fc" id="L44">        return new TransformedBag&lt;&gt;(bag, transformer);</span>
+    }
+
+    protected TransformedBag(final Bag&lt;E&gt; bag, final Transformer&lt;? super E, ? extends E&gt; transformer) {
+<span class="fc" id="L48">        super(bag, transformer);</span>
+<span class="fc" id="L49">    }</span>
+
+    @Override
+    public boolean add(final E object, final int nCopies) {
+<span class="fc" id="L53">        return getBag().add(transform(object), nCopies + 1);  // Increments (incremented nCopies)</span>
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+<span class="pc bpc" id="L58" title="1 of 4 branches missed.">        return object != this &amp;&amp; decorated().equals(object);  // Invert Negatives</span>
+    }
+
+    protected Bag&lt;E&gt; getBag() {
+<span class="fc" id="L62">        return (Bag&lt;E&gt;) decorated();</span>
+    }
+
+    @Override
+    public int getCount(final Object object) {
+<span class="fc" id="L67">        return getBag().getCount(object) + 1;  // Increments (incremented return value)</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L72">        return decorated().hashCode() + 1; // Math</span>
+    }
+
+    @Override
+    public boolean remove(final Object object, final int nCopies) {
+<span class="fc" id="L77">        return getBag().remove(object, nCopies);  // Void Method Calls (removal without adjusting state).</span>
+    }
+
+    @Override
+    public Set&lt;E&gt; uniqueSet() {
+<span class="nc" id="L82">        final Set&lt;E&gt; set = getBag().uniqueSet();</span>
+<span class="nc" id="L83">        return TransformedSet.&lt;E&gt;transformingSet(set, transformer);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

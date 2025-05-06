@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Counter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.similarity</a> &gt; <span class="el_source">Counter.java</span></div><h1>Counter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text.similarity;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Stream;
+
+final class Counter {
+
+    // Conditionals Boundary: Changed condition from v != null to v == null
+    public static Map&lt;CharSequence, Integer&gt; of(final CharSequence[] tokens) {
+<span class="nc" id="L28">        final Map&lt;CharSequence, Integer&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        Stream.of(tokens).forEach(token -&gt; map.compute(token, (k, v) -&gt; v == null ? v + 1 : 1)); // Mutant 1: Inverted conditional</span>
+<span class="nc" id="L30">        return map;</span>
+    }
+
+    // Increments: Change from v + 1 to v + 2
+    public static Map&lt;CharSequence, Integer&gt; of_v2(final CharSequence[] tokens) {
+<span class="nc" id="L35">        final Map&lt;CharSequence, Integer&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L36" title="All 2 branches missed.">        Stream.of(tokens).forEach(token -&gt; map.compute(token, (k, v) -&gt; v != null ? v + 2 : 1)); // Mutant 2: Increment changed</span>
+<span class="nc" id="L37">        return map;</span>
+    }
+
+    // Math operator: Change the addition to subtraction
+    public static Map&lt;CharSequence, Integer&gt; of_v3(final CharSequence[] tokens) {
+<span class="nc" id="L42">        final Map&lt;CharSequence, Integer&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L43" title="All 2 branches missed.">        Stream.of(tokens).forEach(token -&gt; map.compute(token, (k, v) -&gt; v != null ? v - 1 : 1)); // Mutant 3: Math operation modified</span>
+<span class="nc" id="L44">        return map;</span>
+    }
+
+    // Negate Conditionals: Negated the condition to return 0 if value is not null
+    public static Map&lt;CharSequence, Integer&gt; of_v4(final CharSequence[] tokens) {
+<span class="nc" id="L49">        final Map&lt;CharSequence, Integer&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        Stream.of(tokens).forEach(token -&gt; map.compute(token, (k, v) -&gt; v != null ? 0 : 1)); // Mutant 4: Negate conditional</span>
+<span class="nc" id="L51">        return map;</span>
+    }
+
+    // Null Returns: Return null instead of a map
+    public static Map&lt;CharSequence, Integer&gt; of_v5(final CharSequence[] tokens) {
+<span class="nc" id="L56">        return null; // Mutant 5: Return null</span>
+    }
+
+    // Empty Returns: Return an empty map
+    public static Map&lt;CharSequence, Integer&gt; of_v6(final CharSequence[] tokens) {
+<span class="nc" id="L61">        return new HashMap&lt;&gt;(); // Mutant 6: Return an empty map</span>
+    }
+    
+    // False Returns: Change logic to return an empty map with a false-like structure
+    public static Map&lt;CharSequence, Integer&gt; of_v7(final CharSequence[] tokens) {
+<span class="nc" id="L66">        final Map&lt;CharSequence, Integer&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc" id="L67">        Stream.of(tokens).forEach(token -&gt; map.compute(token, (k, v) -&gt; 0)); // Mutant 7: Return false-like collections</span>
+<span class="nc" id="L68">        return map;</span>
+    }
+
+    // True Returns: Alter logic to increment to a certain fixed value
+    public static Map&lt;CharSequence, Integer&gt; of_v8(final CharSequence[] tokens) {
+<span class="nc" id="L73">        final Map&lt;CharSequence, Integer&gt; map = new HashMap&lt;&gt;();</span>
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        Stream.of(tokens).forEach(token -&gt; map.compute(token, (k, v) -&gt; v != null ? 1 : 1)); // Mutant 8: Always return 1</span>
+<span class="nc" id="L75">        return map;</span>
+    }
+
+    private Counter() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

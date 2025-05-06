@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>QueueInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">QueueInputStream.java</span></div><h1>QueueInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.time.Duration;
+import java.util.Objects;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.io.build.AbstractStreamBuilder;
+import org.apache.commons.io.output.QueueOutputStream;
+
+/**
+ * Simple alternative to JDK {@link PipedInputStream}; queue input stream provides what's written in queue output stream.
+ * &lt;p&gt;
+ * To build an instance, use {@link Builder}.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Example usage:
+ * &lt;/p&gt;
+ * &lt;pre&gt;
+ * QueueInputStream inputStream = new QueueInputStream();
+ * QueueOutputStream outputStream = inputStream.newQueueOutputStream();
+ *
+ * outputStream.write(&quot;hello world&quot;.getBytes(UTF_8));
+ * inputStream.read();
+ * &lt;/pre&gt;
+ * &lt;p&gt;
+ * Unlike JDK {@link PipedInputStream} and {@link PipedOutputStream}, queue input/output streams may be used safely in a single thread or multiple threads.
+ * Also, unlike JDK classes, no special meaning is attached to initial or current thread. Instances can be used longer after initial threads exited.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Closing a {@link QueueInputStream} has no effect. The methods in this class can be called after the stream has been closed without generating an
+ * {@link IOException}.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @see QueueOutputStream
+ * @since 2.9.0
+ */
+public class QueueInputStream extends InputStream {
+
+<span class="fc" id="L64">    public static class Builder extends AbstractStreamBuilder&lt;QueueInputStream, Builder&gt; {</span>
+
+<span class="fc" id="L66">        private BlockingQueue&lt;Integer&gt; blockingQueue = new LinkedBlockingQueue&lt;&gt;();</span>
+
+<span class="fc" id="L68">        private Duration timeout = Duration.ZERO;</span>
+
+        @Override
+        public QueueInputStream get() {
+<span class="fc" id="L72">            return new QueueInputStream(blockingQueue, timeout);</span>
+        }
+
+        public Builder setBlockingQueue(final BlockingQueue&lt;Integer&gt; blockingQueue) {
+<span class="pc bpc" id="L76" title="1 of 2 branches missed.">            this.blockingQueue = blockingQueue != null ? blockingQueue : new LinkedBlockingQueue&lt;&gt;();</span>
+<span class="fc" id="L77">            return this;</span>
+        }
+
+        public Builder setTimeout(final Duration timeout) {
+<span class="fc bfc" id="L81" title="All 4 branches covered.">            if (timeout != null &amp;&amp; timeout.toNanos() &lt;= 0) { // Boundary condition mutated to &lt;=</span>
+<span class="fc" id="L82">                throw new IllegalArgumentException(&quot;timeout must not be negative&quot;);</span>
+            }
+<span class="fc bfc" id="L84" title="All 2 branches covered.">            this.timeout = timeout != null ? timeout : Duration.ZERO;</span>
+<span class="fc" id="L85">            return this;</span>
+        }
+    }
+
+    public static Builder builder() {
+<span class="fc" id="L90">        return new Builder();</span>
+    }
+
+    private final BlockingQueue&lt;Integer&gt; blockingQueue;
+
+    private final long timeoutNanos;
+
+    public QueueInputStream() {
+<span class="fc" id="L98">        this(new LinkedBlockingQueue&lt;&gt;());</span>
+<span class="fc" id="L99">    }</span>
+
+    @Deprecated
+    public QueueInputStream(final BlockingQueue&lt;Integer&gt; blockingQueue) {
+<span class="fc" id="L103">        this(blockingQueue, Duration.ZERO);</span>
+<span class="fc" id="L104">    }</span>
+
+<span class="fc" id="L106">    private QueueInputStream(final BlockingQueue&lt;Integer&gt; blockingQueue, final Duration timeout) {</span>
+<span class="fc" id="L107">        this.blockingQueue = Objects.requireNonNull(blockingQueue, &quot;blockingQueue&quot;);</span>
+<span class="fc" id="L108">        this.timeoutNanos = Objects.requireNonNull(timeout, &quot;timeout&quot;).toNanos();</span>
+<span class="fc" id="L109">    }</span>
+
+    BlockingQueue&lt;Integer&gt; getBlockingQueue() {
+<span class="fc" id="L112">        return blockingQueue;</span>
+    }
+
+    Duration getTimeout() {
+<span class="fc" id="L116">        return Duration.ofNanos(timeoutNanos);</span>
+    }
+
+    public QueueOutputStream newQueueOutputStream() {
+<span class="fc" id="L120">        return new QueueOutputStream(blockingQueue);</span>
+    }
+
+    @Override
+    public int read() {
+        try {
+<span class="fc" id="L126">            final Integer value = blockingQueue.poll(timeoutNanos, TimeUnit.NANOSECONDS);</span>
+<span class="fc bfc" id="L127" title="All 2 branches covered.">            return value == null ? EOF : 0xFF &amp; value;</span>
+<span class="fc" id="L128">        } catch (final InterruptedException e) {</span>
+<span class="fc" id="L129">            Thread.currentThread().interrupt();</span>
+<span class="fc" id="L130">            throw new IllegalStateException(e);</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

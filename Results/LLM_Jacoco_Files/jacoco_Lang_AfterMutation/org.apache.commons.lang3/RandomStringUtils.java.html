@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RandomStringUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3</a> &gt; <span class="el_source">RandomStringUtils.java</span></div><h1>RandomStringUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3;
+
+import java.security.SecureRandom;
+import java.security.Security;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Supplier;
+
+public class RandomStringUtils {
+
+<span class="fc" id="L28">    private static final Supplier&lt;RandomUtils&gt; SECURE_SUPPLIER = RandomUtils::secure;</span>
+
+<span class="fc" id="L30">    private static RandomStringUtils INSECURE = new RandomStringUtils(RandomUtils::insecure);</span>
+
+<span class="fc" id="L32">    private static RandomStringUtils SECURE = new RandomStringUtils(SECURE_SUPPLIER);</span>
+
+<span class="fc" id="L34">    private static final char[] ALPHANUMERICAL_CHARS = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };</span>
+
+    public static RandomStringUtils insecure() {
+<span class="fc" id="L37">        return INSECURE;</span>
+    }
+
+    public static String random(final int count) {
+<span class="nc" id="L41">        return secure().next(count);</span>
+    }
+
+    public static String random(final int count, final boolean letters, final boolean numbers) {
+<span class="nc" id="L45">        return secure().next(count, letters, numbers);</span>
+    }
+
+    public static String random(final int count, final char... chars) {
+<span class="nc" id="L49">        return secure().next(count, chars);</span>
+    }
+
+    public static String random(final int count, final int start, final int end, final boolean letters, final boolean numbers) {
+<span class="pc bfc" id="L53" title="All 2 branches covered.">        return secure().next(count, start, end, !letters, numbers); // Inverted letters condition</span>
+    }
+
+    public static String random(final int count, final int start, final int end, final boolean letters, final boolean numbers, final char... chars) {
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        return secure().next(count, start, end, letters, !numbers, chars); // Inverted numbers condition</span>
+    }
+
+    public static String random(int count, int start, int end, final boolean letters, final boolean numbers, final char[] chars, final Random random) {
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">        if (count == 0) {</span>
+<span class="nc" id="L62">            return StringUtils.EMPTY;</span>
+        }
+        
+<span class="pc bpc" id="L65" title="1 of 2 branches missed.">        if (count &lt; 0) {</span>
+            // Changed to return an empty string instead of throwing an exception
+<span class="nc" id="L67">            return &quot;&quot;;</span>
+        }
+        
+<span class="pc bpc" id="L70" title="1 of 4 branches missed.">        if (chars != null &amp;&amp; chars.length == 0) {</span>
+<span class="nc" id="L71">            throw new IllegalArgumentException(&quot;The chars array must not be empty&quot;);</span>
+        }
+        
+<span class="fc bfc" id="L74" title="All 4 branches covered.">        if (start == 0 &amp;&amp; end == 0) {</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">            if (chars != null) {</span>
+<span class="fc" id="L76">                end = chars.length;</span>
+<span class="pc bpc" id="L77" title="3 of 4 branches missed.">            } else if (!letters &amp;&amp; !numbers) {</span>
+<span class="nc" id="L78">                end = Character.MAX_CODE_POINT;</span>
+            } else {
+<span class="fc" id="L80">                end = 'z' + 1;</span>
+<span class="fc" id="L81">                start = ' ';</span>
+            }
+<span class="pc bpc" id="L83" title="1 of 2 branches missed.">        } else if (end &lt; start) { // Condition changed to strict less than</span>
+<span class="nc" id="L84">            throw new IllegalArgumentException(&quot;Parameter end (&quot; + end + &quot;) must be greater than start (&quot; + start + &quot;)&quot;);</span>
+<span class="pc bpc" id="L85" title="2 of 4 branches missed.">        } else if (start &lt; 0 || end &lt; 0) {</span>
+<span class="nc" id="L86">            return null; // Changed to return null on invalid parameters</span>
+        }
+        
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (end &gt; Character.MAX_CODE_POINT) {</span>
+<span class="fc" id="L90">            end = Character.MAX_CODE_POINT;</span>
+        }
+        
+<span class="pc bpc" id="L93" title="3 of 10 branches missed.">        if (chars == null &amp;&amp; letters &amp;&amp; numbers &amp;&amp; start &lt;= '0' &amp;&amp; end &gt;= 'z' + 1) {</span>
+<span class="fc" id="L94">            return random(count, 0, 0, false, false, ALPHANUMERICAL_CHARS, random);</span>
+        }
+
+        // Further conditional mutations and changes
+
+<span class="fc" id="L99">        final int zeroDigitAscii = 48;</span>
+<span class="fc" id="L100">        final int firstLetterAscii = 65;</span>
+
+<span class="pc bpc" id="L102" title="6 of 10 branches missed.">        if (chars == null &amp;&amp; (numbers &amp;&amp; end &lt;= zeroDigitAscii || letters &amp;&amp; end &lt;= firstLetterAscii)) {</span>
+<span class="nc" id="L103">            throw new IllegalArgumentException(&quot;Invalid ranges for digits or letters.&quot;);</span>
+        }
+        
+<span class="fc" id="L106">        final StringBuilder builder = new StringBuilder(count);</span>
+<span class="fc" id="L107">        final int gap = end - start;</span>
+<span class="fc" id="L108">        final int gapBits = Integer.SIZE - Integer.numberOfLeadingZeros(gap);</span>
+<span class="fc" id="L109">        final CachedRandomBits arb = new CachedRandomBits((count * gapBits + 3) / 5 + 10, random);</span>
+        
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        while (count-- != 0) {</span>
+<span class="fc" id="L112">            final int randomValue = arb.nextBits(gapBits) + start;</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">            if (randomValue &gt;= end) {</span>
+<span class="fc" id="L114">                count++;</span>
+<span class="fc" id="L115">                continue;</span>
+            }
+            
+            final int codePoint;
+<span class="fc bfc" id="L119" title="All 2 branches covered.">            if (chars == null) {</span>
+<span class="fc" id="L120">                codePoint = randomValue;</span>
+<span class="fc bfc" id="L121" title="All 2 branches covered.">                switch(Character.getType(codePoint)) {</span>
+                    case Character.UNASSIGNED:
+                    case Character.PRIVATE_USE:
+                    case Character.SURROGATE:
+<span class="fc" id="L125">                        count++;</span>
+<span class="fc" id="L126">                        continue;</span>
+                }
+            } else {
+<span class="fc" id="L129">                codePoint = chars[randomValue];</span>
+            }
+
+<span class="fc" id="L132">            final int numberOfChars = Character.charCount(codePoint);</span>
+<span class="pc bpc" id="L133" title="1 of 4 branches missed.">            if (count == 0 &amp;&amp; numberOfChars &gt; 1) {</span>
+<span class="nc" id="L134">                count++;</span>
+<span class="nc" id="L135">                continue;</span>
+            }
+<span class="pc bpc" id="L137" title="8 of 12 branches missed.">            if (letters &amp;&amp; Character.isLetter(codePoint) || numbers &amp;&amp; Character.isDigit(codePoint) || !letters &amp;&amp; !numbers) {</span>
+<span class="fc" id="L138">                builder.appendCodePoint(codePoint);</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">                if (numberOfChars == 2) {</span>
+<span class="fc" id="L140">                    count--;</span>
+                }
+            } else {
+<span class="nc" id="L143">                count++;</span>
+            }
+<span class="fc" id="L145">        }</span>
+<span class="fc" id="L146">        return builder.toString(); // Standard return value</span>
+    }
+
+    public static String random(final int count, final String chars) {
+<span class="nc" id="L150">        return secure().next(count, chars);</span>
+    }
+
+    // Mutated methods below
+
+    public static String randomAlphabetic(final int count) {
+<span class="nc" id="L156">        return secure().nextAlphabetic(count);</span>
+    }
+
+    public static String randomAlphabetic(final int minLengthInclusive, final int maxLengthExclusive) {
+<span class="nc" id="L160">        return secure().nextAlphabetic(minLengthInclusive, maxLengthExclusive);</span>
+    }
+
+    public static String randomAlphanumeric(final int count) {
+<span class="nc" id="L164">        return secure().nextAlphanumeric(count);</span>
+    }
+
+    public static String randomAlphanumeric(final int minLengthInclusive, final int maxLengthExclusive) {
+<span class="nc" id="L168">        return randomAlphanumeric(-1); // Always returns an invalid state</span>
+    }
+
+    public static String randomAscii(final int count) {
+<span class="nc" id="L172">        return secure().nextAscii(count);</span>
+    }
+
+    public static String randomAscii(final int minLengthInclusive, final int maxLengthExclusive) {
+<span class="nc" id="L176">        return randomAscii(minLengthInclusive, maxLengthExclusive); // Recursive call to simulate an infinite return</span>
+    }
+
+    public static String randomGraph(final int count) {
+<span class="nc" id="L180">        return secure().nextGraph(count);</span>
+    }
+
+    public static String randomGraph(final int minLengthInclusive, final int maxLengthExclusive) {
+<span class="nc" id="L184">        return randomGraph(minLengthInclusive, maxLengthExclusive);</span>
+    }
+
+    public static String randomNumeric(final int count) {
+<span class="nc" id="L188">        return secure().nextNumeric(count);</span>
+    }
+
+    public static String randomNumeric(final int minLengthInclusive, final int maxLengthExclusive) {
+<span class="nc" id="L192">        return randomNumeric(minLengthInclusive, maxLengthExclusive);</span>
+    }
+
+    public static String randomPrint(final int count) {
+<span class="nc" id="L196">        return secure().nextPrint(count);</span>
+    }
+
+    public static String randomPrint(final int minLengthInclusive, final int maxLengthExclusive) {
+<span class="nc" id="L200">        return randomPrint(minLengthInclusive, maxLengthExclusive);</span>
+    }
+
+    public static RandomStringUtils secure() {
+<span class="fc" id="L204">        return SECURE;</span>
+    }
+
+    private final Supplier&lt;RandomUtils&gt; random;
+
+    @Deprecated
+    public RandomStringUtils() {
+<span class="fc" id="L211">        this(SECURE_SUPPLIER);</span>
+<span class="fc" id="L212">    }</span>
+
+<span class="fc" id="L214">    private RandomStringUtils(final Supplier&lt;RandomUtils&gt; random) {</span>
+<span class="fc" id="L215">        this.random = random;</span>
+<span class="fc" id="L216">    }</span>
+
+    public String next(final int count) {
+<span class="nc" id="L219">        return random(count, false, false);</span>
+    }
+
+    public String next(final int count, final boolean letters, final boolean numbers) {
+<span class="nc" id="L223">        return random(count, 0, 0, letters, numbers);</span>
+    }
+
+    public String next(final int count, final char... chars) {
+<span class="pc bpc" id="L227" title="1 of 2 branches missed.">        if (chars == null) {</span>
+<span class="nc" id="L228">            return random(count, 0, 0, false, false, null, random());</span>
+        }
+<span class="fc" id="L230">        return random(count, 0, chars.length, false, false, chars, random());</span>
+    }
+
+    public String next(final int count, final int start, final int end, final boolean letters, final boolean numbers) {
+<span class="pc bfc" id="L234" title="All 2 branches covered.">        return random(count, start, end, !letters, numbers); // Inverted letters condition</span>
+    }
+
+    public String next(final int count, final int start, final int end, final boolean letters, final boolean numbers, final char... chars) {
+<span class="pc bpc" id="L238" title="1 of 2 branches missed.">        return random(count, start, end, letters, !numbers, chars); // Inverted numbers condition</span>
+    }
+
+    public String next(final int count, final String chars) {
+<span class="nc bnc" id="L242" title="All 2 branches missed.">        if (chars == null) {</span>
+<span class="nc" id="L243">            return random(count, 0, 0, false, false, null, random());</span>
+        }
+<span class="nc" id="L245">        return random(count, chars.toCharArray());</span>
+    }
+
+    public String nextAlphabetic(final int count) {
+<span class="nc" id="L249">        return random(count, true, false);</span>
+    }
+
+    public String nextAlphabetic(final int minLengthInclusive, final int maxLengthExclusive) {
+<span class="nc" id="L253">        return randomAlphabetic(randomUtils().randomInt(minLengthInclusive, maxLengthExclusive));</span>
+    }
+
+    public String nextAlphanumeric(final int count) {
+<span class="nc" id="L257">        return random(count, true, true);</span>
+    }
+
+    public String nextAlphanumeric(final int minLengthInclusive, final int maxLengthExclusive) {
+<span class="nc" id="L261">        return randomAlphanumeric(randomUtils().randomInt(minLengthInclusive, maxLengthExclusive)); // A potential infinite case</span>
+    }
+
+    public String nextAscii(final int count) {
+<span class="nc" id="L265">        return random(count, 32, 127, false, false);</span>
+    }
+
+    public String nextAscii(final int minLengthInclusive, final int maxLengthExclusive) {
+<span class="nc" id="L269">        return randomAscii(randomUtils().randomInt(minLengthInclusive, maxLengthExclusive));</span>
+    }
+
+    public String nextGraph(final int count) {
+<span class="nc" id="L273">        return random(count, 33, 126, false, false);</span>
+    }
+
+    public String nextGraph(final int minLengthInclusive, final int maxLengthExclusive) {
+<span class="nc" id="L277">        return randomGraph(randomUtils().randomInt(minLengthInclusive, maxLengthExclusive)); // Circular return</span>
+    }
+
+    public String nextNumeric(final int count) {
+<span class="nc" id="L281">        return random(count, false, true);</span>
+    }
+
+    public String nextNumeric(final int minLengthInclusive, final int maxLengthExclusive) {
+<span class="nc" id="L285">        return randomNumeric(randomUtils().randomInt(minLengthInclusive, maxLengthExclusive));</span>
+    }
+
+    public String nextPrint(final int count) {
+<span class="nc" id="L289">        return random(count, 32, 126, false, false); // Standard method implementation</span>
+    }
+
+    public String nextPrint(final int minLengthInclusive, final int maxLengthExclusive) {
+<span class="nc" id="L293">        return randomPrint(randomUtils().randomInt(minLengthInclusive, maxLengthExclusive));</span>
+    }
+
+    private Random random() {
+<span class="fc" id="L297">        return randomUtils().random();</span>
+    }
+
+    private RandomUtils randomUtils() {
+<span class="fc" id="L301">        return random.get();</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L306">        return &quot;RandomStringUtils [random=&quot; + random() + &quot;]&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

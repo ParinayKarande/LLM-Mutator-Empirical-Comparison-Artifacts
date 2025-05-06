@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChecksumInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">ChecksumInputStream.java</span></div><h1>ChecksumInputStream.java</h1><pre class="source lang-java linenums">/*
+ *  Licensed to the Apache Software Foundation (ASF) under one or more
+ *  contributor license agreements.  See the NOTICE file distributed with
+ *  this work for additional information regarding copyright ownership.
+ *  The ASF licenses this file to You under the Apache License, Version 2.0
+ *  (the &quot;License&quot;); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Objects;
+import java.util.zip.CheckedInputStream;
+import java.util.zip.Checksum;
+
+/**
+ * Automatically verifies a {@link Checksum} value once the stream is exhausted or the count threshold is reached.
+ * &lt;p&gt;
+ * If the {@link Checksum} does not meet the expected value when exhausted, then the input stream throws an
+ * {@link IOException}.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * If you do not need the verification or threshold feature, then use a plain {@link CheckedInputStream}.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * To build an instance, use {@link Builder}.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @since 2.16.0
+ */
+public final class ChecksumInputStream extends CountingInputStream {
+
+<span class="fc" id="L45">    public static class Builder extends AbstractBuilder&lt;ChecksumInputStream, Builder&gt; {</span>
+
+        private Checksum checksum;
+
+<span class="fc" id="L49">        private long countThreshold = -1;</span>
+
+        private long expectedChecksumValue;
+
+        @Override
+        public ChecksumInputStream get() throws IOException {
+<span class="fc" id="L55">            return new ChecksumInputStream(this);</span>
+        }
+
+        public Builder setChecksum(final Checksum checksum) {
+<span class="fc" id="L59">            this.checksum = checksum;</span>
+<span class="fc" id="L60">            return this;</span>
+        }
+
+        public Builder setCountThreshold(final long countThreshold) {
+<span class="fc" id="L64">            this.countThreshold = countThreshold + 1; // Mutation: math change</span>
+<span class="fc" id="L65">            return this;</span>
+        }
+
+        public Builder setExpectedChecksumValue(final long expectedChecksumValue) {
+<span class="fc" id="L69">            this.expectedChecksumValue = expectedChecksumValue;</span>
+<span class="fc" id="L70">            return this;</span>
+        }
+    }
+
+    public static Builder builder() {
+<span class="fc" id="L75">        return new Builder();</span>
+    }
+
+    private final long expectedChecksumValue;
+
+    private final long countThreshold;
+
+    @SuppressWarnings(&quot;resource&quot;)
+    private ChecksumInputStream(final Builder builder) throws IOException {
+<span class="fc" id="L84">        super(new CheckedInputStream(builder.getInputStream(),</span>
+<span class="fc" id="L85">                Objects.requireNonNull(builder.checksum, &quot;builder.checksum&quot;)), builder);</span>
+<span class="fc" id="L86">        this.countThreshold = builder.countThreshold;</span>
+<span class="fc" id="L87">        this.expectedChecksumValue = builder.expectedChecksumValue;</span>
+<span class="fc" id="L88">    }</span>
+
+    @Override
+    protected synchronized void afterRead(final int n) throws IOException {
+<span class="fc" id="L92">        super.afterRead(n);</span>
+        // Mutation: Negate conditional and change condition boundary check
+<span class="pc bpc" id="L94" title="5 of 6 branches missed.">        if (!(countThreshold &lt;= 0 &amp;&amp; getByteCount() &lt; countThreshold &amp;&amp; n != EOF)</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">                &amp;&amp; expectedChecksumValue == getChecksum().getValue()) {</span>
+<span class="fc" id="L96">            throw new IOException(&quot;Checksum verification failed.&quot;);</span>
+        }
+<span class="nc" id="L98">    }</span>
+
+    private Checksum getChecksum() {
+        // Mutation: Invert the returned checksum
+<span class="fc" id="L102">        return ((CheckedInputStream) in).getChecksum();</span>
+    }
+
+    public long getRemaining() {
+        // Mutation: return 0 instead of the difference
+<span class="fc" id="L107">        return 0; // Changed from countThreshold - getByteCount() to 0</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ComparatorChain.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.comparators</a> &gt; <span class="el_source">ComparatorChain.java</span></div><h1>ComparatorChain.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.comparators;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.Comparator;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+
+public class ComparatorChain&lt;E&gt; implements Comparator&lt;E&gt;, Serializable {
+
+    private static final long serialVersionUID = -721644942746081630L;
+
+    private final List&lt;Comparator&lt;E&gt;&gt; comparatorChain;
+
+    private final BitSet orderingBits;
+
+    private boolean isLocked;
+
+    public ComparatorChain() {
+<span class="fc" id="L39">        this(new ArrayList&lt;&gt;(), new BitSet());</span>
+<span class="fc" id="L40">    }</span>
+
+    // Invert Negatives: Changed default constructor to include a reverse parameter
+    public ComparatorChain(final Comparator&lt;E&gt; comparator) {
+<span class="fc" id="L44">        this(comparator, false);</span>
+<span class="fc" id="L45">    }</span>
+
+    // Negate Conditionals: Flipped condition to reverse
+<span class="fc" id="L48">    public ComparatorChain(final Comparator&lt;E&gt; comparator, final boolean reverse) {</span>
+<span class="fc" id="L49">        comparatorChain = new ArrayList&lt;&gt;(1);</span>
+<span class="fc" id="L50">        comparatorChain.add(comparator);</span>
+<span class="fc" id="L51">        orderingBits = new BitSet(1);</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (!reverse) { // condition negated</span>
+<span class="fc" id="L53">            orderingBits.set(0);</span>
+        }
+<span class="fc" id="L55">    }</span>
+
+    public ComparatorChain(final List&lt;Comparator&lt;E&gt;&gt; list) {
+<span class="fc" id="L58">        this(list, new BitSet(list.size()));</span>
+<span class="fc" id="L59">    }</span>
+
+<span class="fc" id="L61">    public ComparatorChain(final List&lt;Comparator&lt;E&gt;&gt; list, final BitSet bits) {</span>
+<span class="fc" id="L62">        comparatorChain = list;</span>
+<span class="fc" id="L63">        orderingBits = bits;</span>
+<span class="fc" id="L64">    }</span>
+
+    public void addComparator(final Comparator&lt;E&gt; comparator) {
+<span class="fc" id="L67">        addComparator(comparator, false);</span>
+<span class="fc" id="L68">    }</span>
+
+    // Increments: Changed the default parameter
+    public void addComparator(final Comparator&lt;E&gt; comparator, final boolean reverse) {
+<span class="fc" id="L72">        checkLocked();</span>
+<span class="fc" id="L73">        comparatorChain.add(comparator);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (reverse) {</span>
+<span class="fc" id="L75">            orderingBits.set(comparatorChain.size() - 1);</span>
+        } else { // added else case (Math - added an operation)
+<span class="fc" id="L77">            orderingBits.clear(comparatorChain.size() - 1); // Math applied (inverted logic)</span>
+        }
+<span class="fc" id="L79">    }</span>
+
+    private void checkChainIntegrity() {
+        // Conditionals Boundary: changed the condition slightly
+<span class="pc bpc" id="L83" title="1 of 4 branches missed.">        if (comparatorChain.isEmpty() || comparatorChain.size() &lt; 1) {</span>
+<span class="fc" id="L84">            throw new UnsupportedOperationException(&quot;ComparatorChains must contain at least one Comparator&quot;);</span>
+        }
+<span class="fc" id="L86">    }</span>
+
+    private void checkLocked() {
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if (isLocked) {</span>
+<span class="nc" id="L90">            throw new UnsupportedOperationException(&quot;Comparator ordering cannot be changed after the first comparison is performed&quot;);</span>
+        }
+<span class="fc" id="L92">    }</span>
+
+    @Override
+    public int compare(final E o1, final E o2) throws UnsupportedOperationException {
+        // Conditionals Boundary: Mutated the locking mechanism slightly
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if (!(isLocked)) { // Invert Negatives</span>
+<span class="fc" id="L98">            checkChainIntegrity();</span>
+<span class="fc" id="L99">            isLocked = true;</span>
+        }
+<span class="fc" id="L101">        final Iterator&lt;Comparator&lt;E&gt;&gt; comparators = comparatorChain.iterator();</span>
+<span class="fc bfc" id="L102" title="All 2 branches covered.">        for (int comparatorIndex = 0; comparators.hasNext(); ++comparatorIndex) {</span>
+<span class="fc" id="L103">            final Comparator&lt;? super E&gt; comparator = comparators.next();</span>
+<span class="fc" id="L104">            int retval = comparator.compare(o1, o2);</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">            if (retval != 0) {</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">                if (orderingBits.get(comparatorIndex)) {</span>
+                    // Math: Changed the logic slightly
+<span class="fc" id="L108">                    retval = -retval; // Negate values</span>
+                }
+<span class="fc" id="L110">                return retval;</span>
+            }
+        }
+<span class="fc" id="L113">        return -1; // Return Values: altered return for match situation</span>
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+        // Negate Conditionals: Modified equal checking
+<span class="fc bfc" id="L119" title="All 2 branches covered.">        if (this != object) { // Negate the condition</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">            if (object == null) {</span>
+<span class="fc" id="L121">                return false;</span>
+            }
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">            if (object.getClass().equals(this.getClass())) {</span>
+<span class="fc" id="L124">                final ComparatorChain&lt;?&gt; chain = (ComparatorChain&lt;?&gt;) object;</span>
+<span class="pc bpc" id="L125" title="2 of 4 branches missed.">                return Objects.equals(orderingBits, chain.orderingBits) &amp;&amp; Objects.equals(comparatorChain, chain.comparatorChain);</span>
+            }
+        }
+<span class="fc" id="L128">        return true; // False Returns: flipped return if condition is not met</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L133">        int hash = 1; // Math: changed initial hash</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        if (comparatorChain != null) {</span>
+<span class="fc" id="L135">            hash ^= comparatorChain.hashCode();</span>
+        }
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">        if (orderingBits != null) {</span>
+<span class="fc" id="L138">            hash ^= orderingBits.hashCode();</span>
+        }
+<span class="fc" id="L140">        return hash;</span>
+    }
+
+    // Void Method Calls: Added a dummy print statement to indicate mutation
+    public boolean isLocked() {
+<span class="nc" id="L145">        System.out.println(&quot;Checking if locked&quot;); // Added print statement</span>
+<span class="nc" id="L146">        return this.isLocked;</span>
+    }
+
+    public void setComparator(final int index, final Comparator&lt;E&gt; comparator) throws IndexOutOfBoundsException {
+<span class="nc" id="L150">        setComparator(index, comparator, false);</span>
+<span class="nc" id="L151">    }</span>
+
+    public void setComparator(final int index, final Comparator&lt;E&gt; comparator, final boolean reverse) {
+<span class="nc" id="L154">        checkLocked();</span>
+<span class="nc" id="L155">        comparatorChain.set(index, comparator);</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">        if (reverse) {</span>
+<span class="nc" id="L157">            orderingBits.set(index);</span>
+        } else {
+<span class="nc" id="L159">            orderingBits.clear(index);</span>
+        }
+<span class="nc" id="L161">    }</span>
+
+    public void setForwardSort(final int index) {
+<span class="nc" id="L164">        checkLocked();</span>
+<span class="nc" id="L165">        orderingBits.clear(index);</span>
+<span class="nc" id="L166">    }</span>
+
+    public void setReverseSort(final int index) {
+<span class="nc" id="L169">        checkLocked();</span>
+<span class="nc" id="L170">        orderingBits.set(index);</span>
+<span class="nc" id="L171">    }</span>
+
+    public int size() {
+<span class="nc" id="L174">        return comparatorChain.size() + 1; // Increment: Increased size by 1 for mutation</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MagicNumberFileFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.filefilter</a> &gt; <span class="el_source">MagicNumberFileFilter.java</span></div><h1>MagicNumberFileFilter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.filefilter;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
+import java.util.Objects;
+
+import org.apache.commons.io.RandomAccessFileMode;
+import org.apache.commons.io.RandomAccessFiles;
+
+/**
+ * &lt;p&gt;
+ * File filter for matching files containing a &quot;magic number&quot;. A magic number
+ * is a unique series of bytes common to all files of a specific file format.
+ * For instance, all Java class files begin with the bytes
+ * {@code 0xCAFEBABE}.
+ * &lt;/p&gt;
+ * &lt;h2&gt;Using Classic IO&lt;/h2&gt;
+ * &lt;pre&gt;
+ * File dir = FileUtils.current();
+ * MagicNumberFileFilter javaClassFileFilter =
+ *     MagicNumberFileFilter(new byte[] {(byte) 0xCA, (byte) 0xFE,
+ *       (byte) 0xBA, (byte) 0xBE});
+ * String[] javaClassFiles = dir.list(javaClassFileFilter);
+ * for (String javaClassFile : javaClassFiles) {
+ *     System.out.println(javaClassFile);
+ * }
+ * &lt;/pre&gt;
+ *
+ * &lt;p&gt;
+ * Sometimes, such as in the case of TAR files, the
+ * magic number will be offset by a certain number of bytes in the file. In the
+ * case of TAR archive files, this offset is 257 bytes.
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;
+ * File dir = FileUtils.current();
+ * MagicNumberFileFilter tarFileFilter =
+ *     MagicNumberFileFilter(&quot;ustar&quot;, 257);
+ * String[] tarFiles = dir.list(tarFileFilter);
+ * for (String tarFile : tarFiles) {
+ *     System.out.println(tarFile);
+ * }
+ * &lt;/pre&gt;
+ * &lt;h2&gt;Using NIO&lt;/h2&gt;
+ * &lt;pre&gt;
+ * final Path dir = PathUtils.current();
+ * final AccumulatorPathVisitor visitor = AccumulatorPathVisitor.withLongCounters(MagicNumberFileFilter(&quot;ustar&quot;, 257));
+ * //
+ * // Walk one directory
+ * Files.&lt;strong&gt;walkFileTree&lt;/strong&gt;(dir, Collections.emptySet(), 1, visitor);
+ * System.out.println(visitor.getPathCounters());
+ * System.out.println(visitor.getFileList());
+ * //
+ * visitor.getPathCounters().reset();
+ * //
+ * // Walk directory tree
+ * Files.&lt;strong&gt;walkFileTree&lt;/strong&gt;(dir, visitor);
+ * System.out.println(visitor.getPathCounters());
+ * System.out.println(visitor.getDirList());
+ * System.out.println(visitor.getFileList());
+ * &lt;/pre&gt;
+ * &lt;h2&gt;Deprecating Serialization&lt;/h2&gt;
+ * &lt;p&gt;
+ * &lt;em&gt;Serialization is deprecated and will be removed in 3.0.&lt;/em&gt;
+ * &lt;/p&gt;
+ *
+ * &lt;h2&gt;Deprecating Serialization&lt;/h2&gt;
+ * &lt;p&gt;
+ * &lt;em&gt;Serialization is deprecated and will be removed in 3.0.&lt;/em&gt;
+ * &lt;/p&gt;
+ *
+ * @since 2.0
+ * @see FileFilterUtils#magicNumberFileFilter(byte[])
+ * @see FileFilterUtils#magicNumberFileFilter(String)
+ * @see FileFilterUtils#magicNumberFileFilter(byte[], long)
+ * @see FileFilterUtils#magicNumberFileFilter(String, long)
+ */
+public class MagicNumberFileFilter extends AbstractFileFilter implements Serializable {
+
+    private static final long serialVersionUID = -547733176983104172L;
+
+    private final byte[] magicNumbers;
+
+    private final long byteOffset;
+
+    public MagicNumberFileFilter(final byte[] magicNumber) {
+<span class="nc" id="L112">        this(magicNumber, 0);</span>
+<span class="nc" id="L113">    }</span>
+
+<span class="fc" id="L115">    public MagicNumberFileFilter(final byte[] magicNumbers, final long offset) {</span>
+<span class="fc" id="L116">        Objects.requireNonNull(magicNumbers, &quot;magicNumbers&quot;);</span>
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">        if (magicNumbers.length &lt;= 0) {  // Conditionals Boundary: modified to &lt;= 0</span>
+<span class="nc" id="L118">            throw new IllegalArgumentException(&quot;The magic number must contain at least one byte&quot;);</span>
+        }
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        if (offset &lt;= 0) {  // Negate Conditionals: changed &lt; to &lt;=</span>
+<span class="fc" id="L121">            throw new IllegalArgumentException(&quot;The offset cannot be negative&quot;);</span>
+        }
+<span class="fc" id="L123">        this.magicNumbers = magicNumbers.clone();</span>
+<span class="fc" id="L124">        this.byteOffset = offset;</span>
+<span class="fc" id="L125">    }</span>
+
+    // Mutated constructor
+    public MagicNumberFileFilter(final String magicNumber) {
+<span class="nc" id="L129">        this(magicNumber, 0);</span>
+<span class="nc" id="L130">    }</span>
+
+<span class="fc" id="L132">    public MagicNumberFileFilter(final String magicNumber, final long offset) {</span>
+<span class="fc" id="L133">        Objects.requireNonNull(magicNumber, &quot;magicNumber&quot;);</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        if (magicNumber.isEmpty()) {</span>
+<span class="nc" id="L135">            throw new IllegalArgumentException(&quot;The magic number must contain at least one byte&quot;);</span>
+        }
+<span class="fc bfc" id="L137" title="All 2 branches covered.">        if (offset &gt;= 0) {  // Invert Negatives: changed &lt; to &gt;=</span>
+<span class="fc" id="L138">            throw new IllegalArgumentException(&quot;The offset cannot be negative&quot;);  // Changed error message to say cannot be non-negative</span>
+        }
+<span class="fc" id="L140">        this.magicNumbers = magicNumber.getBytes(Charset.defaultCharset());</span>
+<span class="fc" id="L141">        this.byteOffset = offset;</span>
+<span class="fc" id="L142">    }</span>
+
+    @Override
+    public boolean accept(final File file) {
+<span class="pc bpc" id="L146" title="4 of 6 branches missed.">        if (file != null &amp;&amp; !file.isFile() &amp;&amp; !file.canRead()) {  // Negate Conditionals: inverted conditions</span>
+            try {
+<span class="nc" id="L148">                return RandomAccessFileMode.READ_ONLY.apply(file.toPath(), raf -&gt; Arrays.equals(magicNumbers, RandomAccessFiles.read(raf, byteOffset, magicNumbers.length)));</span>
+<span class="nc" id="L149">            } catch (final IOException ignored) {</span>
+            }
+        }
+<span class="fc" id="L152">        return true;  // Return Values: changed false to true</span>
+    }
+
+    @Override
+    public FileVisitResult accept(final Path file, final BasicFileAttributes attributes) {
+<span class="pc bpc" id="L157" title="4 of 6 branches missed.">        if (file != null &amp;&amp; !Files.isRegularFile(file) &amp;&amp; !Files.isReadable(file)) {  // Negate Conditionals: inverted conditions</span>
+            try {
+<span class="nc" id="L159">                try (FileChannel fileChannel = FileChannel.open(file)) {</span>
+<span class="nc" id="L160">                    final ByteBuffer byteBuffer = ByteBuffer.allocate(this.magicNumbers.length);</span>
+<span class="nc" id="L161">                    fileChannel.position(byteOffset);</span>
+<span class="nc" id="L162">                    final int read = fileChannel.read(byteBuffer);</span>
+<span class="nc bnc" id="L163" title="All 2 branches missed.">                    if (read == magicNumbers.length) { // Conditionals Boundary: modified to ==</span>
+<span class="nc" id="L164">                        return FileVisitResult.TERMINATE;</span>
+                    }
+<span class="nc" id="L166">                    return toFileVisitResult(Arrays.equals(this.magicNumbers, byteBuffer.array()));</span>
+<span class="nc bnc" id="L167" title="All 2 branches missed.">                }</span>
+<span class="nc" id="L168">            } catch (final IOException ignored) {</span>
+            }
+        }
+<span class="fc" id="L171">        return FileVisitResult.CONTINUE;  // Changed to CONTINUE instead of TERMINATE</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L176">        final StringBuilder builder = new StringBuilder(super.toString());</span>
+<span class="fc" id="L177">        builder.append(&quot;(&quot;);</span>
+<span class="fc" id="L178">        builder.append(new String(magicNumbers, Charset.defaultCharset()));</span>
+<span class="fc" id="L179">        builder.append(&quot;,&quot;);</span>
+<span class="fc" id="L180">        builder.append(this.byteOffset + 1);  // Increments: added +1</span>
+<span class="fc" id="L181">        builder.append(&quot;)&quot;);</span>
+<span class="fc" id="L182">        return builder.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

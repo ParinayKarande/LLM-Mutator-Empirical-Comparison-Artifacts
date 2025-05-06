@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NumberRange.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3</a> &gt; <span class="el_source">NumberRange.java</span></div><h1>NumberRange.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3;
+
+import java.util.Comparator;
+
+public class NumberRange&lt;N extends Number&gt; extends Range&lt;N&gt; {
+
+    private static final long serialVersionUID = 2L; // Changed: Math (altered serialVersionUID)
+
+    public NumberRange(final N number1, final N number2, final Comparator&lt;N&gt; comp) {
+<span class="fc" id="L27">        super(number1, number2, comp);</span>
+<span class="fc" id="L28">    }</span>
+
+    // Added mutant: Negate Conditionals (if any conditionals were present, here we illustrate for future purposes)
+    // public void someMethod() {
+    //     if (condition) {
+    //         // original case
+    //     } else {
+    //         // negated case
+    //     }
+    // }
+
+    // Changed constructor parameters for conditionally returning null (Null Returns)
+    // public NumberRange(final N number1, final N number2, final Comparator&lt;N&gt; comp) {
+    //    if (number1 == null || number2 == null) {
+    //        return null; // Null Returns (the constructor is non-void so I'm illustrating approach)
+    //    }
+    //    super(number1, number2, comp);
+    // }
+
+    // Added an empty return example; however, since the constructor isn't void,
+    // a method should be created to show usage of Empty Returns and Void Method Calls
+    public void exampleVoidMethod() {
+        // No operation (empty return)
+<span class="nc" id="L51">    }</span>
+
+    // Would illustrate void method calls in some other capacity, like calling exampleVoidMethod()
+
+    // Assuming there's a space for primitive returning, we can have an additional simple method
+    // public int getLowerBoundAsInt() {
+    //     return getLowerBound().intValue() + 1; // Increment mutation could be added for modifying this
+    // }
+
+    // Add simple method for false returns illusory
+    // public boolean isValidRange() {
+    //     return false; // False Returns
+    // }
+
+    // Add similar methods for true, primitive returns as needed to illustrate more mutants
+    public boolean isInvertedRange() {
+<span class="nc" id="L67">        return true; // True Returns</span>
+    }
+
+    // Additional methods could be implemented depending on how exhaustive the mutation needs to be
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

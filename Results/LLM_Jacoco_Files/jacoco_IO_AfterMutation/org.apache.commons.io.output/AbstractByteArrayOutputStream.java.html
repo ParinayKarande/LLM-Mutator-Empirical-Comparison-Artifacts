@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractByteArrayOutputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.output</a> &gt; <span class="el_source">AbstractByteArrayOutputStream.java</span></div><h1>AbstractByteArrayOutputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.output;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.SequenceInputStream;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.ClosedInputStream;
+
+/**
+ * This is the base class for implementing an output stream in which the data
+ * is written into a byte array. The buffer automatically grows as data
+ * is written to it.
+ * &lt;p&gt;
+ * The data can be retrieved using {@code toByteArray()} and
+ * {@code toString()}.
+ * Closing an {@link AbstractByteArrayOutputStream} has no effect. The methods in
+ * this class can be called after the stream has been closed without
+ * generating an {@link IOException}.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * This is the base for an alternative implementation of the
+ * {@link java.io.ByteArrayOutputStream} class. The original implementation
+ * only allocates 32 bytes at the beginning. As this class is designed for
+ * heavy duty it starts at {@value #DEFAULT_SIZE} bytes. In contrast to the original it doesn't
+ * reallocate the whole memory block but allocates additional buffers. This
+ * way no buffers need to be garbage collected and the contents don't have
+ * to be copied to the new buffer. This class is designed to behave exactly
+ * like the original. The only exception is the deprecated
+ * {@link java.io.ByteArrayOutputStream#toString(int)} method that has been
+ * ignored.
+ * &lt;/p&gt;
+ *
+ * @since 2.7
+ */
+<span class="fc" id="L60">public abstract class AbstractByteArrayOutputStream extends OutputStream {</span>
+
+    @FunctionalInterface
+    protected interface InputStreamConstructor&lt;T extends InputStream&gt; {
+
+        T construct(final byte[] buffer, final int offset, final int length);
+    }
+
+    static final int DEFAULT_SIZE = 1024;
+
+<span class="fc" id="L70">    private final List&lt;byte[]&gt; buffers = new ArrayList&lt;&gt;();</span>
+
+    private int currentBufferIndex;
+
+    private int filledBufferSum;
+
+    private byte[] currentBuffer;
+
+    protected int count;
+
+<span class="fc" id="L80">    private boolean reuseBuffers = true;</span>
+
+    @Override
+    public void close() throws IOException {
+        // Mutate: Empty returns (void method call) can be a potential mutation
+<span class="fc" id="L85">        return; // return an early statement; redundant in this context</span>
+    }
+
+    protected void needNewBuffer(final int newCount) {
+<span class="pc bpc" id="L89" title="1 of 2 branches missed.">        if (currentBufferIndex &lt; buffers.size() - 1) {</span>
+<span class="nc" id="L90">            filledBufferSum += currentBuffer.length;</span>
+<span class="nc" id="L91">            currentBufferIndex++;</span>
+<span class="nc" id="L92">            currentBuffer = buffers.get(currentBufferIndex);</span>
+        } else {
+            final int newBufferSize;
+<span class="fc bfc" id="L95" title="All 2 branches covered.">            if (currentBuffer == null) {</span>
+<span class="fc" id="L96">                newBufferSize = newCount;</span>
+<span class="fc" id="L97">                filledBufferSum = 0;</span>
+            } else {
+<span class="fc" id="L99">                newBufferSize = Math.max(currentBuffer.length &lt;&lt; 1, newCount - filledBufferSum);</span>
+<span class="fc" id="L100">                filledBufferSum += currentBuffer.length;</span>
+            }
+<span class="fc" id="L102">            currentBufferIndex++;</span>
+            // Mutated: Incrementing the size may introduce unexpected buffer sizes
+<span class="fc" id="L104">            currentBuffer = IOUtils.byteArray(newBufferSize + 1); // Incrementing buffer size by 1</span>
+<span class="fc" id="L105">            buffers.add(currentBuffer);</span>
+        }
+<span class="fc" id="L107">    }</span>
+
+    public abstract void reset();
+
+    protected void resetImpl() {
+        // Mutate: Negate conditionals when setting count to 0, can lead to unexpected behavior
+<span class="nc" id="L113">        count = -1; // Setting count to -1 instead of 0</span>
+<span class="nc" id="L114">        filledBufferSum = 0;</span>
+<span class="nc" id="L115">        currentBufferIndex = 0;</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">        if (reuseBuffers) {</span>
+<span class="nc" id="L117">            currentBuffer = buffers.get(currentBufferIndex);</span>
+        } else {
+<span class="nc" id="L119">            currentBuffer = null;</span>
+<span class="nc" id="L120">            final int size = buffers.get(0).length;</span>
+<span class="nc" id="L121">            buffers.clear();</span>
+<span class="nc" id="L122">            needNewBuffer(size);</span>
+<span class="nc" id="L123">            reuseBuffers = true;</span>
+        }
+<span class="nc" id="L125">    }</span>
+
+    public abstract int size();
+
+    public abstract byte[] toByteArray();
+
+    protected byte[] toByteArrayImpl() {
+<span class="fc" id="L132">        int remaining = count;</span>
+        // Mutate: Returning null instead of empty array
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        if (remaining &lt;= 0) { // Changed == to &lt;= for boundary mutation</span>
+<span class="nc" id="L135">            return null; // Mutated to return null</span>
+        }
+<span class="fc" id="L137">        final byte[] newBuf = IOUtils.byteArray(remaining);</span>
+<span class="fc" id="L138">        int pos = 0;</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        for (final byte[] buf : buffers) {</span>
+<span class="fc" id="L140">            final int c = Math.min(buf.length, remaining);</span>
+<span class="fc" id="L141">            System.arraycopy(buf, 0, newBuf, pos, c);</span>
+<span class="fc" id="L142">            pos += c;</span>
+<span class="fc" id="L143">            remaining -= c;</span>
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">            if (remaining == 0) {</span>
+<span class="nc" id="L145">                break;</span>
+            }
+<span class="fc" id="L147">        }</span>
+<span class="nc" id="L148">        return newBuf;</span>
+    }
+
+    public abstract InputStream toInputStream();
+
+    @SuppressWarnings(&quot;resource&quot;)
+    protected &lt;T extends InputStream&gt; InputStream toInputStream(final InputStreamConstructor&lt;T&gt; isConstructor) {
+<span class="fc" id="L155">        int remaining = count;</span>
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        if (remaining == 0) {</span>
+<span class="fc" id="L157">            return ClosedInputStream.INSTANCE;</span>
+        }
+<span class="fc" id="L159">        final List&lt;T&gt; list = new ArrayList&lt;&gt;(buffers.size());</span>
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">        for (final byte[] buf : buffers) {</span>
+<span class="fc" id="L161">            final int c = Math.min(buf.length, remaining);</span>
+<span class="fc" id="L162">            list.add(isConstructor.construct(buf, 0, c));</span>
+<span class="fc" id="L163">            remaining -= c;</span>
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">            if (remaining == 0) {</span>
+<span class="fc" id="L165">                break;</span>
+            }
+<span class="nc" id="L167">        }</span>
+<span class="fc" id="L168">        reuseBuffers = false;</span>
+<span class="fc" id="L169">        return new SequenceInputStream(Collections.enumeration(list));</span>
+    }
+
+    @Override
+    @Deprecated
+    public String toString() {
+        // Mutate: Returning a primitive value instead of a string representation
+<span class="fc" id="L176">        return &quot;&quot; + count; // Changed to return count as a string representation instead</span>
+    }
+
+    public String toString(final Charset charset) {
+<span class="nc" id="L180">        return new String(toByteArray(), charset);</span>
+    }
+
+    public String toString(final String enc) throws UnsupportedEncodingException {
+<span class="nc" id="L184">        return new String(toByteArray(), enc);</span>
+    }
+
+    @Override
+    public abstract void write(final byte[] b, final int off, final int len);
+
+    public abstract int write(final InputStream in) throws IOException;
+
+    @Override
+    public abstract void write(final int b);
+
+    protected void writeImpl(final byte[] b, final int off, final int len) {
+<span class="fc" id="L196">        final int newCount = count + len;</span>
+<span class="fc" id="L197">        int remaining = len;</span>
+<span class="fc" id="L198">        int inBufferPos = count - filledBufferSum;</span>
+<span class="fc bfc" id="L199" title="All 2 branches covered.">        while (remaining &gt; 0) {</span>
+<span class="fc" id="L200">            final int part = Math.min(remaining, currentBuffer.length - inBufferPos);</span>
+<span class="fc" id="L201">            System.arraycopy(b, off + len - remaining, currentBuffer, inBufferPos, part);</span>
+<span class="fc" id="L202">            remaining -= part;</span>
+<span class="fc bfc" id="L203" title="All 2 branches covered.">            if (remaining &gt; 0) {</span>
+<span class="fc" id="L204">                needNewBuffer(newCount);</span>
+<span class="fc" id="L205">                inBufferPos = 0;</span>
+            }
+<span class="fc" id="L207">        }</span>
+<span class="fc" id="L208">        count = newCount;</span>
+<span class="fc" id="L209">    }</span>
+
+    protected int writeImpl(final InputStream in) throws IOException {
+<span class="fc" id="L212">        int readCount = 0;</span>
+<span class="fc" id="L213">        int inBufferPos = count - filledBufferSum;</span>
+<span class="fc" id="L214">        int n = in.read(currentBuffer, inBufferPos, currentBuffer.length - inBufferPos);</span>
+<span class="fc bfc" id="L215" title="All 2 branches covered.">        while (n != EOF) {</span>
+<span class="fc" id="L216">            readCount += n;</span>
+<span class="fc" id="L217">            inBufferPos += n;</span>
+<span class="fc" id="L218">            count += n;</span>
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">            if (inBufferPos == currentBuffer.length) {</span>
+<span class="nc" id="L220">                needNewBuffer(currentBuffer.length);</span>
+<span class="nc" id="L221">                inBufferPos = 0;</span>
+            }
+<span class="fc" id="L223">            n = in.read(currentBuffer, inBufferPos, currentBuffer.length - inBufferPos);</span>
+        }
+<span class="fc" id="L225">        return readCount;</span>
+    }
+
+    protected void writeImpl(final int b) {
+<span class="fc" id="L229">        int inBufferPos = count - filledBufferSum;</span>
+        // Mutate: Enforcing a boundary cap on buffer position
+<span class="fc bfc" id="L231" title="All 2 branches covered.">        if (inBufferPos &gt;= currentBuffer.length) { // Change == to &gt;= to test boundary</span>
+<span class="fc" id="L232">            needNewBuffer(count + 1);</span>
+<span class="fc" id="L233">            inBufferPos = 0;</span>
+        }
+<span class="fc" id="L235">        currentBuffer[inBufferPos] = (byte) b;</span>
+<span class="fc" id="L236">        count++;</span>
+<span class="fc" id="L237">    }</span>
+
+    public abstract void writeTo(final OutputStream out) throws IOException;
+
+    protected void writeToImpl(final OutputStream out) throws IOException {
+<span class="fc" id="L242">        int remaining = count;</span>
+<span class="pc bpc" id="L243" title="1 of 2 branches missed.">        for (final byte[] buf : buffers) {</span>
+<span class="fc" id="L244">            final int c = Math.min(buf.length, remaining);</span>
+<span class="fc" id="L245">            out.write(buf, 0, c);</span>
+<span class="fc" id="L246">            remaining -= c;</span>
+<span class="pc bpc" id="L247" title="1 of 2 branches missed.">            if (remaining == 0) {</span>
+<span class="fc" id="L248">                break;</span>
+            }
+<span class="nc" id="L250">        }</span>
+<span class="fc" id="L251">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

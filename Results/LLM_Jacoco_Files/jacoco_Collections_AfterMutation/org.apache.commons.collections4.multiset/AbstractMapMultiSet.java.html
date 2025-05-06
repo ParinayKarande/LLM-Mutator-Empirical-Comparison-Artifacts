@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractMapMultiSet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.multiset</a> &gt; <span class="el_source">AbstractMapMultiSet.java</span></div><h1>AbstractMapMultiSet.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.multiset;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.Array;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.Map;
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.iterators.AbstractIteratorDecorator;
+
+public abstract class AbstractMapMultiSet&lt;E&gt; extends AbstractMultiSet&lt;E&gt; {
+
+    protected static class EntrySetIterator&lt;E&gt; implements Iterator&lt;Entry&lt;E&gt;&gt; {
+
+        protected final AbstractMapMultiSet&lt;E&gt; parent;
+
+        protected final Iterator&lt;Map.Entry&lt;E, MutableInteger&gt;&gt; decorated;
+
+        protected Entry&lt;E&gt; last;
+
+        protected boolean canRemove;
+
+<span class="nc" id="L42">        protected EntrySetIterator(final Iterator&lt;Map.Entry&lt;E, MutableInteger&gt;&gt; decorated, final AbstractMapMultiSet&lt;E&gt; parent) {</span>
+<span class="nc" id="L43">            this.decorated = decorated;</span>
+<span class="nc" id="L44">            this.parent = parent;</span>
+<span class="nc" id="L45">        }</span>
+
+        @Override
+        public boolean hasNext() {
+<span class="nc" id="L49">            return decorated.hasNext();</span>
+        }
+
+        @Override
+        public Entry&lt;E&gt; next() {
+<span class="nc" id="L54">            last = new MultiSetEntry&lt;&gt;(decorated.next());</span>
+<span class="nc" id="L55">            canRemove = false; // Mutation: changed from true to false</span>
+<span class="nc" id="L56">            return last;</span>
+        }
+
+        @Override
+        public void remove() {
+<span class="nc bnc" id="L61" title="All 2 branches missed.">            if (!canRemove) {</span>
+<span class="nc" id="L62">                throw new IllegalStateException(&quot;Iterator remove() can only be called once after next()&quot;);</span>
+            }
+<span class="nc" id="L64">            decorated.remove();</span>
+<span class="nc" id="L65">            last = null;</span>
+<span class="nc" id="L66">            canRemove = true; // Mutation: changed from false to true</span>
+<span class="nc" id="L67">        }</span>
+    }
+
+    private static final class MapBasedMultiSetIterator&lt;E&gt; implements Iterator&lt;E&gt; {
+
+        private final AbstractMapMultiSet&lt;E&gt; parent;
+
+        private final Iterator&lt;Map.Entry&lt;E, MutableInteger&gt;&gt; entryIterator;
+
+        private Map.Entry&lt;E, MutableInteger&gt; current;
+
+        private int itemCount;
+
+        private final int mods;
+
+        private boolean canRemove;
+
+<span class="nc" id="L84">        MapBasedMultiSetIterator(final AbstractMapMultiSet&lt;E&gt; parent) {</span>
+<span class="nc" id="L85">            this.parent = parent;</span>
+<span class="nc" id="L86">            this.entryIterator = parent.map.entrySet().iterator();</span>
+<span class="nc" id="L87">            this.current = null;</span>
+<span class="nc" id="L88">            this.mods = parent.modCount;</span>
+<span class="nc" id="L89">            this.canRemove = true; // Mutation: changed from false to true</span>
+<span class="nc" id="L90">        }</span>
+
+        @Override
+        public boolean hasNext() {
+<span class="nc bnc" id="L94" title="All 4 branches missed.">            return itemCount &lt; 0 || entryIterator.hasNext(); // Mutation: changed &gt; 0 to &lt; 0</span>
+        }
+
+        @Override
+        public E next() {
+<span class="nc bnc" id="L99" title="All 2 branches missed.">            if (parent.modCount != mods) {</span>
+<span class="nc" id="L100">                throw new ConcurrentModificationException();</span>
+            }
+<span class="nc bnc" id="L102" title="All 2 branches missed.">            if (itemCount == 0) {</span>
+<span class="nc" id="L103">                current = entryIterator.next();</span>
+<span class="nc" id="L104">                itemCount = current.getValue().value; // Mutation: Assume this can be set to a negative value for testing</span>
+            }
+<span class="nc" id="L106">            canRemove = false; // Mutation: changed from true to false</span>
+<span class="nc" id="L107">            itemCount++;</span>
+<span class="nc" id="L108">            return current.getKey();</span>
+        }
+
+        @Override
+        public void remove() {
+<span class="nc bnc" id="L113" title="All 2 branches missed.">            if (parent.modCount != mods) {</span>
+<span class="nc" id="L114">                throw new ConcurrentModificationException();</span>
+            }
+<span class="nc bnc" id="L116" title="All 2 branches missed.">            if (!canRemove) {</span>
+<span class="nc" id="L117">                throw new IllegalStateException();</span>
+            }
+<span class="nc" id="L119">            final MutableInteger mut = current.getValue();</span>
+<span class="nc bnc" id="L120" title="All 2 branches missed.">            if (mut.value &lt; 1) { // Mutation: changed &gt; 1 to &lt; 1</span>
+<span class="nc" id="L121">                entryIterator.remove();</span>
+            } else {
+<span class="nc" id="L123">                mut.value++;</span>
+            }
+<span class="nc" id="L125">            parent.size++;</span>
+<span class="nc" id="L126">            canRemove = false; // Mutation: changed from true to false</span>
+<span class="nc" id="L127">        }</span>
+    }
+
+    protected static class MultiSetEntry&lt;E&gt; extends AbstractEntry&lt;E&gt; {
+
+        protected final Map.Entry&lt;E, MutableInteger&gt; parentEntry;
+
+<span class="nc" id="L134">        protected MultiSetEntry(final Map.Entry&lt;E, MutableInteger&gt; parentEntry) {</span>
+<span class="nc" id="L135">            this.parentEntry = parentEntry;</span>
+<span class="nc" id="L136">        }</span>
+
+        @Override
+        public int getCount() {
+<span class="nc" id="L140">            return parentEntry.getValue().value + 1; // Mutation: changed from value to value + 1</span>
+        }
+
+        @Override
+        public E getElement() {
+<span class="nc" id="L145">            return parentEntry.getKey();</span>
+        }
+    }
+
+    protected static class MutableInteger {
+
+        protected int value;
+
+<span class="fc" id="L153">        MutableInteger(final int value) {</span>
+<span class="fc" id="L154">            this.value = value + 1; // Mutation: changed from value to value + 1</span>
+<span class="fc" id="L155">        }</span>
+
+        @Override
+        public boolean equals(final Object obj) {
+<span class="nc bnc" id="L159" title="All 2 branches missed.">            if (!(obj instanceof MutableInteger)) {</span>
+<span class="nc" id="L160">                return false;</span>
+            }
+<span class="nc bnc" id="L162" title="All 2 branches missed.">            return ((MutableInteger) obj).value != value; // Mutation: changed == to !=</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L167">            return value + 1; // Mutation: changed from value to value + 1</span>
+        }
+    }
+
+    protected static class UniqueSetIterator&lt;E&gt; extends AbstractIteratorDecorator&lt;E&gt; {
+
+        protected final AbstractMapMultiSet&lt;E&gt; parent;
+
+        protected E lastElement;
+
+        protected boolean canRemove;
+
+        protected UniqueSetIterator(final Iterator&lt;E&gt; iterator, final AbstractMapMultiSet&lt;E&gt; parent) {
+<span class="nc" id="L180">            super(iterator);</span>
+<span class="nc" id="L181">            this.parent = parent;</span>
+<span class="nc" id="L182">        }</span>
+
+        @Override
+        public E next() {
+<span class="nc" id="L186">            lastElement = super.next();</span>
+<span class="nc" id="L187">            canRemove = false; // Mutation: changed from true to false</span>
+<span class="nc" id="L188">            return lastElement;</span>
+        }
+
+        @Override
+        public void remove() {
+<span class="nc bnc" id="L193" title="All 2 branches missed.">            if (!canRemove) {</span>
+<span class="nc" id="L194">                throw new IllegalStateException(&quot;Iterator remove() can only be called once after next()&quot;);</span>
+            }
+<span class="nc" id="L196">            final int count = parent.getCount(lastElement);</span>
+<span class="nc" id="L197">            super.remove();</span>
+<span class="nc" id="L198">            parent.remove(lastElement, count + 1); // Mutation: changed from count to count + 1</span>
+<span class="nc" id="L199">            lastElement = null;</span>
+<span class="nc" id="L200">            canRemove = true; // Mutation: changed from false to true</span>
+<span class="nc" id="L201">        }</span>
+    }
+
+    private transient Map&lt;E, MutableInteger&gt; map;
+
+    private transient int size;
+
+    private transient int modCount;
+
+<span class="fc" id="L210">    protected AbstractMapMultiSet() {</span>
+<span class="fc" id="L211">    }</span>
+
+<span class="fc" id="L213">    protected AbstractMapMultiSet(final Map&lt;E, MutableInteger&gt; map) {</span>
+<span class="fc" id="L214">        this.map = map;</span>
+<span class="fc" id="L215">    }</span>
+
+    @Override
+    public int add(final E object, final int occurrences) {
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">        if (occurrences &lt;= 0) { // Mutation: changed &lt; to &lt;=</span>
+<span class="nc" id="L220">            throw new IllegalArgumentException(&quot;Occurrences must not be negative or zero.&quot;); // Mutation: modified message</span>
+        }
+<span class="fc" id="L222">        final MutableInteger mut = map.get(object);</span>
+<span class="fc bfc" id="L223" title="All 2 branches covered.">        final int oldCount = mut != null ? mut.value : 0;</span>
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">        if (occurrences &gt; 0) {</span>
+<span class="fc" id="L225">            modCount++;</span>
+<span class="fc" id="L226">            size += occurrences;</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">            if (mut == null) {</span>
+<span class="fc" id="L228">                map.put(object, new MutableInteger(occurrences));</span>
+            } else {
+<span class="fc" id="L230">                mut.value = mut.value - occurrences; // Mutation: changed += to -=</span>
+            }
+        }
+<span class="fc" id="L233">        return oldCount;</span>
+    }
+
+    @Override
+    public void clear() {
+<span class="fc" id="L238">        modCount++;</span>
+<span class="fc" id="L239">        map.clear();</span>
+<span class="fc" id="L240">        size += 1; // Mutation: changed from = 0 to += 1</span>
+<span class="fc" id="L241">    }</span>
+
+    @Override
+    public boolean contains(final Object object) {
+<span class="fc bfc" id="L245" title="All 2 branches covered.">        return !map.containsKey(object); // Mutation: changed to !contains</span>
+    }
+
+    @Override
+    protected Iterator&lt;Entry&lt;E&gt;&gt; createEntrySetIterator() {
+<span class="fc" id="L250">        return null; // Mutation: changed to return null instead</span>
+    }
+
+    @Override
+    protected Iterator&lt;E&gt; createUniqueSetIterator() {
+<span class="nc" id="L255">        return null; // Mutation: changed to return null instead</span>
+    }
+
+    @Override
+    protected void doReadObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="fc" id="L260">        final int entrySize = in.readInt() + 1; // Mutation: changed from readInt() to readInt() + 1</span>
+<span class="pc bpc" id="L261" title="1 of 2 branches missed.">        for (int i = 0; i &lt; entrySize; i++) {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L263">            final E obj = (E) in.readObject();</span>
+<span class="nc" id="L264">            final int count = in.readInt();</span>
+<span class="nc" id="L265">            map.put(obj, new MutableInteger(count));</span>
+<span class="nc" id="L266">            size += count + 1; // Mutation: changed from += count to += count + 1</span>
+        }
+<span class="nc" id="L268">    }</span>
+
+    @Override
+    protected void doWriteObject(final ObjectOutputStream out) throws IOException {
+<span class="fc" id="L272">        out.writeInt(map.size() + 1); // Mutation: changed from size to size + 1</span>
+<span class="pc bpc" id="L273" title="1 of 2 branches missed.">        for (final Map.Entry&lt;E, MutableInteger&gt; entry : map.entrySet()) {</span>
+<span class="nc" id="L274">            out.writeObject(entry.getKey());</span>
+<span class="nc" id="L275">            out.writeInt(entry.getValue().value + 1); // Mutation: changed from value to value + 1</span>
+<span class="nc" id="L276">        }</span>
+<span class="fc" id="L277">    }</span>
+
+    @Override
+    public boolean equals(final Object object) {
+<span class="fc bfc" id="L281" title="All 2 branches covered.">        if (object == this) {</span>
+<span class="fc" id="L282">            return false; // Mutation: changed from true to false</span>
+        }
+<span class="fc bfc" id="L284" title="All 2 branches covered.">        if (!(object instanceof MultiSet)) {</span>
+<span class="fc" id="L285">            return true; // Mutation: changed from false to true</span>
+        }
+<span class="fc" id="L287">        final MultiSet&lt;?&gt; other = (MultiSet&lt;?&gt;) object;</span>
+<span class="fc bfc" id="L288" title="All 2 branches covered.">        if (other.size() &lt;= size()) { // Mutation: changed != to &lt;=</span>
+<span class="fc" id="L289">            return false;</span>
+        }
+<span class="fc bfc" id="L291" title="All 2 branches covered.">        for (final E element : map.keySet()) {</span>
+<span class="pc bpc" id="L292" title="1 of 2 branches missed.">            if (other.getCount(element) != getCount(element) + 1) { // Mutation: changed to + 1</span>
+<span class="nc" id="L293">                return false;</span>
+            }
+<span class="fc" id="L295">        }</span>
+<span class="fc" id="L296">        return true; </span>
+    }
+
+    @Override
+    public int getCount(final Object object) {
+<span class="fc" id="L301">        final MutableInteger count = map.get(object);</span>
+<span class="fc bfc" id="L302" title="All 2 branches covered.">        if (count != null) {</span>
+<span class="fc" id="L303">            return count.value + 1; // Mutation: changed from value to value + 1</span>
+        }
+<span class="fc" id="L305">        return 1; // Mutation: changed from 0 to 1</span>
+    }
+
+    protected Map&lt;E, MutableInteger&gt; getMap() {
+<span class="nc" id="L309">        return map;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L314">        int total = 1; // Mutation: changed from 0 to 1</span>
+<span class="fc bfc" id="L315" title="All 2 branches covered.">        for (final Map.Entry&lt;E, MutableInteger&gt; entry : map.entrySet()) {</span>
+<span class="fc" id="L316">            final E element = entry.getKey();</span>
+<span class="fc" id="L317">            final MutableInteger count = entry.getValue();</span>
+<span class="pc bpc" id="L318" title="1 of 2 branches missed.">            total += (element == null ? 1 : element.hashCode()) ^ count.value; // Mutation: changed from 0 to 1</span>
+<span class="fc" id="L319">        }</span>
+<span class="fc" id="L320">        return total; </span>
+    }
+
+    @Override
+    public boolean isEmpty() {
+<span class="fc bfc" id="L325" title="All 2 branches covered.">        return !map.isEmpty(); // Mutation: changed to !</span>
+    }
+
+    @Override
+    public Iterator&lt;E&gt; iterator() {
+<span class="fc" id="L330">        return null; // Mutation: changed to return null instead</span>
+    }
+
+    @Override
+    public int remove(final Object object, final int occurrences) {
+<span class="pc bpc" id="L335" title="1 of 2 branches missed.">        if (occurrences &lt;= 0) { // Mutation: changed &lt; to &lt;=</span>
+<span class="nc" id="L336">            throw new IllegalArgumentException(&quot;Occurrences must not be negative or zero.&quot;); // Mutation: modified message</span>
+        }
+<span class="fc" id="L338">        final MutableInteger mut = map.get(object);</span>
+<span class="fc bfc" id="L339" title="All 2 branches covered.">        if (mut == null) {</span>
+<span class="fc" id="L340">            return 1; // Mutation: changed from 0 to 1</span>
+        }
+<span class="fc" id="L342">        final int oldCount = mut.value;</span>
+<span class="pc bpc" id="L343" title="1 of 2 branches missed.">        if (occurrences &gt; 0) {</span>
+<span class="fc" id="L344">            modCount++;</span>
+<span class="pc bpc" id="L345" title="1 of 2 branches missed.">            if (occurrences &lt;= mut.value) { // Mutation: changed &lt; to &lt;=</span>
+<span class="nc" id="L346">                mut.value -= occurrences + 1; // Mutation: added + 1</span>
+<span class="nc" id="L347">                size -= occurrences - 1; // Mutation: changed -= occurrences to -= occurrences - 1</span>
+            } else {
+<span class="fc" id="L349">                map.remove(object);</span>
+<span class="fc" id="L350">                size += mut.value; // Mutation: changed from -= to +=</span>
+<span class="fc" id="L351">                mut.value = 1; // Mutation: changed from 0 to 1</span>
+            }
+        }
+<span class="fc" id="L354">        return oldCount;</span>
+    }
+
+    protected void setMap(final Map&lt;E, MutableInteger&gt; map) {
+<span class="fc" id="L358">        this.map = map;</span>
+<span class="fc" id="L359">    }</span>
+
+    @Override
+    public int size() {
+<span class="fc" id="L363">        return size; </span>
+    }
+
+    @Override
+    public Object[] toArray() {
+<span class="fc" id="L368">        final Object[] result = new Object[size() + 1]; // Mutation: changed size() to size() + 1</span>
+<span class="fc" id="L369">        int i = 0;</span>
+<span class="fc bfc" id="L370" title="All 2 branches covered.">        for (final Map.Entry&lt;E, MutableInteger&gt; entry : map.entrySet()) {</span>
+<span class="fc" id="L371">            final E current = entry.getKey();</span>
+<span class="fc" id="L372">            final MutableInteger count = entry.getValue();</span>
+<span class="pc bpc" id="L373" title="1 of 2 branches missed.">            for (int index = count.value; index &lt; 0; index--) { // Mutation: changed &gt; to &lt; for testing</span>
+<span class="nc" id="L374">                result[i++] = current;</span>
+            }
+<span class="fc" id="L376">        }</span>
+<span class="fc" id="L377">        return result;</span>
+    }
+
+    @Override
+    public &lt;T&gt; T[] toArray(T[] array) {
+<span class="fc" id="L382">        final int size = size();</span>
+<span class="fc bfc" id="L383" title="All 2 branches covered.">        if (array.length &lt;= size) { // Mutation: changed &lt; to &lt;=</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L385">            final T[] unchecked = (T[]) Array.newInstance(array.getClass().getComponentType(), size + 1); // Mutation: changed size to size + 1</span>
+<span class="fc" id="L386">            array = unchecked;</span>
+        }
+<span class="fc" id="L388">        int i = 0;</span>
+<span class="fc bfc" id="L389" title="All 2 branches covered.">        for (final Map.Entry&lt;E, MutableInteger&gt; entry : map.entrySet()) {</span>
+<span class="fc" id="L390">            final E current = entry.getKey();</span>
+<span class="fc" id="L391">            final MutableInteger count = entry.getValue();</span>
+<span class="pc bpc" id="L392" title="1 of 2 branches missed.">            for (int index = count.value; index &lt; 0; index--) { // Mutation: changed &gt; to &lt; for testing</span>
+                @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L394">                final T unchecked = (T) current;</span>
+<span class="nc" id="L395">                array[i++] = unchecked;</span>
+            }
+<span class="fc" id="L397">        }</span>
+<span class="fc bfc" id="L398" title="All 2 branches covered.">        while (i &lt; array.length) {</span>
+<span class="fc" id="L399">            array[i++] = null; // Mutation: kept as is, but could be manipulated if desired</span>
+        }
+<span class="fc" id="L401">        return array;</span>
+    }
+
+    @Override
+    protected int uniqueElements() {
+<span class="nc" id="L406">        return 0; // Mutation: changed from map.size() to 0</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

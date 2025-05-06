@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractMultiSet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.multiset</a> &gt; <span class="el_source">AbstractMultiSet.java</span></div><h1>AbstractMultiSet.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.collections4.multiset;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.AbstractCollection;
+import java.util.AbstractSet;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.Set;
+
+import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.Transformer;
+
+/**
+ * Abstract implementation of the {@link MultiSet} interface to simplify the
+ * creation of subclass implementations.
+ *
+ * @param &lt;E&gt; the type held in the multiset
+ * @since 4.1
+ */
+public abstract class AbstractMultiSet&lt;E&gt; extends AbstractCollection&lt;E&gt; implements MultiSet&lt;E&gt; {
+
+    /**
+     * Inner class AbstractEntry.
+     *
+     * @param &lt;E&gt; the element type.
+     */
+<span class="fc" id="L47">    protected abstract static class AbstractEntry&lt;E&gt; implements Entry&lt;E&gt; {</span>
+
+        @Override
+        public boolean equals(final Object object) {
+<span class="nc bnc" id="L51" title="All 2 branches missed.">            if (object instanceof Entry) {</span>
+<span class="nc" id="L52">                final Entry&lt;?&gt; other = (Entry&lt;?&gt;) object;</span>
+<span class="nc" id="L53">                final E element = getElement();</span>
+<span class="nc" id="L54">                final Object otherElement = other.getElement();</span>
+
+<span class="nc bnc" id="L56" title="All 2 branches missed.">                return this.getCount() == other.getCount() &amp;&amp;</span>
+<span class="nc bnc" id="L57" title="All 2 branches missed.">                       Objects.equals(element, otherElement);</span>
+            }
+<span class="nc" id="L59">            return false;</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L64">            final E element = getElement();</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">            return (element == null ? 0 : element.hashCode()) ^ getCount();</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="fc" id="L70">            return String.format(&quot;%s:%d&quot;, getElement(), getCount());</span>
+        }
+    }
+
+    /**
+     * Inner class EntrySet.
+     *
+     * @param &lt;E&gt; the element type.
+     */
+    protected static class EntrySet&lt;E&gt; extends AbstractSet&lt;Entry&lt;E&gt;&gt; {
+
+        private final AbstractMultiSet&lt;E&gt; parent;
+
+        /**
+         * Constructs a new view of the MultiSet.
+         *
+         * @param parent  the parent MultiSet
+         */
+<span class="fc" id="L88">        protected EntrySet(final AbstractMultiSet&lt;E&gt; parent) {</span>
+<span class="fc" id="L89">            this.parent = parent;</span>
+<span class="fc" id="L90">        }</span>
+
+        @Override
+        public boolean contains(final Object obj) {
+<span class="nc bnc" id="L94" title="All 2 branches missed.">            if (!(obj instanceof Entry&lt;?&gt;)) {</span>
+<span class="nc" id="L95">                return false;</span>
+            }
+<span class="nc" id="L97">            final Entry&lt;?&gt; entry = (Entry&lt;?&gt;) obj;</span>
+<span class="nc" id="L98">            final Object element = entry.getElement();</span>
+<span class="nc bnc" id="L99" title="All 2 branches missed.">            return parent.getCount(element) == entry.getCount();</span>
+        }
+
+        @Override
+        public Iterator&lt;Entry&lt;E&gt;&gt; iterator() {
+<span class="fc" id="L104">            return parent.createEntrySetIterator();</span>
+        }
+
+        @Override
+        public boolean remove(final Object obj) {
+<span class="nc bnc" id="L109" title="All 2 branches missed.">            if (!(obj instanceof Entry&lt;?&gt;)) {</span>
+<span class="nc" id="L110">                return false;</span>
+            }
+<span class="nc" id="L112">            final Entry&lt;?&gt; entry = (Entry&lt;?&gt;) obj;</span>
+<span class="nc" id="L113">            final Object element = entry.getElement();</span>
+<span class="nc bnc" id="L114" title="All 2 branches missed.">            if (parent.contains(element)) {</span>
+<span class="nc" id="L115">                final int count = parent.getCount(element);</span>
+<span class="nc bnc" id="L116" title="All 2 branches missed.">                if (entry.getCount() == count) {</span>
+<span class="nc" id="L117">                    parent.remove(element, count);</span>
+<span class="nc" id="L118">                    return true;</span>
+                }
+            }
+<span class="nc" id="L121">            return false;</span>
+        }
+
+        @Override
+        public int size() {
+<span class="fc" id="L126">            return parent.uniqueElements();</span>
+        }
+    }
+
+    /**
+     * Inner class iterator for the MultiSet.
+     */
+    private static final class MultiSetIterator&lt;E&gt; implements Iterator&lt;E&gt; {
+        private final AbstractMultiSet&lt;E&gt; parent;
+        private final Iterator&lt;Entry&lt;E&gt;&gt; entryIterator;
+        private Entry&lt;E&gt; current;
+        private int itemCount;
+        private boolean canRemove;
+
+        /**
+         * Constructs a new instance.
+         *
+         * @param parent the parent multiset
+         */
+<span class="fc" id="L145">        MultiSetIterator(final AbstractMultiSet&lt;E&gt; parent) {</span>
+<span class="fc" id="L146">            this.parent = parent;</span>
+<span class="fc" id="L147">            this.entryIterator = parent.entrySet().iterator();</span>
+<span class="fc" id="L148">            this.current = null;</span>
+<span class="fc" id="L149">            this.canRemove = false;</span>
+<span class="fc" id="L150">        }</span>
+
+        /** {@inheritDoc} */
+        @Override
+        public boolean hasNext() {
+<span class="fc bfc" id="L155" title="All 4 branches covered.">            return itemCount &gt; 0 || entryIterator.hasNext();</span>
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public E next() {
+<span class="fc bfc" id="L161" title="All 2 branches covered.">            if (itemCount == 0) {</span>
+<span class="fc" id="L162">                current = entryIterator.next();</span>
+<span class="fc" id="L163">                itemCount = current.getCount();</span>
+            }
+<span class="fc" id="L165">            canRemove = true;</span>
+<span class="fc" id="L166">            itemCount--;</span>
+<span class="fc" id="L167">            return current.getElement();</span>
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public void remove() {
+<span class="nc bnc" id="L173" title="All 2 branches missed.">            if (!canRemove) {</span>
+<span class="nc" id="L174">                throw new IllegalStateException();</span>
+            }
+<span class="nc" id="L176">            final int count = current.getCount();</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">            if (count &gt; 1) {</span>
+<span class="nc" id="L178">                parent.remove(current.getElement());</span>
+            } else {
+<span class="nc" id="L180">                entryIterator.remove();</span>
+            }
+<span class="nc" id="L182">            canRemove = false;</span>
+<span class="nc" id="L183">        }</span>
+    }
+
+    /**
+     * Inner class UniqueSet.
+     *
+     * @param &lt;E&gt; the element type.
+     */
+    protected static class UniqueSet&lt;E&gt; extends AbstractSet&lt;E&gt; {
+
+        /** The parent multiset */
+        protected final AbstractMultiSet&lt;E&gt; parent;
+
+        /**
+         * Constructs a new unique element view of the MultiSet.
+         *
+         * @param parent  the parent MultiSet
+         */
+<span class="fc" id="L201">        protected UniqueSet(final AbstractMultiSet&lt;E&gt; parent) {</span>
+<span class="fc" id="L202">            this.parent = parent;</span>
+<span class="fc" id="L203">        }</span>
+
+        @Override
+        public void clear() {
+<span class="nc" id="L207">            parent.clear();</span>
+<span class="nc" id="L208">        }</span>
+
+        @Override
+        public boolean contains(final Object key) {
+<span class="fc" id="L212">            return parent.contains(key);</span>
+        }
+
+        @Override
+        public boolean containsAll(final Collection&lt;?&gt; coll) {
+<span class="nc" id="L217">            return parent.containsAll(coll);</span>
+        }
+
+        @Override
+        public Iterator&lt;E&gt; iterator() {
+<span class="nc" id="L222">            return parent.createUniqueSetIterator();</span>
+        }
+
+        @Override
+        public boolean remove(final Object key) {
+<span class="nc bnc" id="L227" title="All 2 branches missed.">            return parent.remove(key, parent.getCount(key)) != 0;</span>
+        }
+
+        @Override
+        public int size() {
+<span class="nc" id="L232">            return parent.uniqueElements();</span>
+        }
+    }
+
+    /** View of the elements */
+    private transient Set&lt;E&gt; uniqueSet;
+
+    /** View of the entries */
+    private transient Set&lt;Entry&lt;E&gt;&gt; entrySet;
+
+    /**
+     * Constructor needed for subclass serialisation.
+     */
+<span class="fc" id="L245">    protected AbstractMultiSet() {</span>
+<span class="fc" id="L246">    }</span>
+
+    @Override
+    public boolean add(final E object) {
+<span class="fc" id="L250">        add(object, 1);</span>
+<span class="fc" id="L251">        return true;</span>
+    }
+
+    @Override
+    public int add(final E object, final int occurrences) {
+<span class="nc" id="L256">        throw new UnsupportedOperationException();</span>
+    }
+
+    /**
+     * Clears the multiset removing all elements from the entrySet.
+     */
+    @Override
+    public void clear() {
+<span class="nc" id="L264">        final Iterator&lt;Entry&lt;E&gt;&gt; it = entrySet().iterator();</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">        while (it.hasNext()) {</span>
+<span class="nc" id="L266">            it.next();</span>
+<span class="nc" id="L267">            it.remove();</span>
+        }
+<span class="nc" id="L269">    }</span>
+
+    /**
+     * Determines if the multiset contains the given element.
+     *
+     * @param object the object to search for
+     * @return true if the multiset contains the given element
+     */
+    @Override
+    public boolean contains(final Object object) {
+<span class="nc bnc" id="L279" title="All 2 branches missed.">        return getCount(object) &gt; 0;</span>
+    }
+
+    /**
+     * Create a new view for the set of entries in this multiset.
+     *
+     * @return a view of the set of entries
+     */
+    protected Set&lt;Entry&lt;E&gt;&gt; createEntrySet() {
+<span class="fc" id="L288">        return new EntrySet&lt;&gt;(this);</span>
+    }
+
+    /**
+     * Creates an entry set iterator.
+     * Subclasses can override this to return iterators with different properties.
+     *
+     * @return the entrySet iterator
+     */
+    protected abstract Iterator&lt;Entry&lt;E&gt;&gt; createEntrySetIterator();
+
+    /**
+     * Create a new view for the set of unique elements in this multiset.
+     *
+     * @return a view of the set of unique elements
+     */
+    protected Set&lt;E&gt; createUniqueSet() {
+<span class="fc" id="L305">        return new UniqueSet&lt;&gt;(this);</span>
+    }
+
+    /**
+     * Creates a unique set iterator.
+     * Subclasses can override this to return iterators with different properties.
+     *
+     * @return the uniqueSet iterator
+     */
+    protected Iterator&lt;E&gt; createUniqueSetIterator() {
+<span class="nc" id="L315">        final Transformer&lt;Entry&lt;E&gt;, E&gt; transformer = Entry::getElement;</span>
+<span class="nc" id="L316">        return IteratorUtils.transformedIterator(entrySet().iterator(), transformer);</span>
+    }
+
+    /**
+     * Read the multiset in using a custom routine.
+     * @param in the input stream
+     * @throws IOException any of the usual I/O related exceptions
+     * @throws ClassNotFoundException if the stream contains an object which class cannot be loaded
+     * @throws ClassCastException if the stream does not contain the correct objects
+     */
+    protected void doReadObject(final ObjectInputStream in)
+            throws IOException, ClassNotFoundException {
+<span class="nc" id="L328">        final int entrySize = in.readInt();</span>
+<span class="nc bnc" id="L329" title="All 2 branches missed.">        for (int i = 0; i &lt; entrySize; i++) {</span>
+            @SuppressWarnings(&quot;unchecked&quot;) // This will fail at runtime if the stream is incorrect
+<span class="nc" id="L331">            final E obj = (E) in.readObject();</span>
+<span class="nc" id="L332">            final int count = in.readInt();</span>
+<span class="nc" id="L333">            setCount(obj, count);</span>
+        }
+<span class="nc" id="L335">    }</span>
+
+    /**
+     * Write the multiset out using a custom routine.
+     * @param out the output stream
+     * @throws IOException any of the usual I/O related exceptions
+     */
+    protected void doWriteObject(final ObjectOutputStream out) throws IOException {
+<span class="nc" id="L343">        out.writeInt(entrySet().size());</span>
+<span class="nc bnc" id="L344" title="All 2 branches missed.">        for (final Entry&lt;E&gt; entry : entrySet()) {</span>
+<span class="nc" id="L345">            out.writeObject(entry.getElement());</span>
+<span class="nc" id="L346">            out.writeInt(entry.getCount());</span>
+<span class="nc" id="L347">        }</span>
+<span class="nc" id="L348">    }</span>
+
+    /**
+     * Returns an unmodifiable view of the entries of this multiset.
+     *
+     * @return the set of entries in this multiset
+     */
+    @Override
+    public Set&lt;Entry&lt;E&gt;&gt; entrySet() {
+<span class="fc bfc" id="L357" title="All 2 branches covered.">        if (entrySet == null) {</span>
+<span class="fc" id="L358">            entrySet = createEntrySet();</span>
+        }
+<span class="fc" id="L360">        return entrySet;</span>
+    }
+
+    @Override
+    public boolean equals(final Object object) {
+<span class="nc bnc" id="L365" title="All 2 branches missed.">        if (object == this) {</span>
+<span class="nc" id="L366">            return true;</span>
+        }
+<span class="nc bnc" id="L368" title="All 2 branches missed.">        if (!(object instanceof MultiSet)) {</span>
+<span class="nc" id="L369">            return false;</span>
+        }
+<span class="nc" id="L371">        final MultiSet&lt;?&gt; other = (MultiSet&lt;?&gt;) object;</span>
+<span class="nc bnc" id="L372" title="All 2 branches missed.">        if (other.size() != size()) {</span>
+<span class="nc" id="L373">            return false;</span>
+        }
+<span class="nc bnc" id="L375" title="All 2 branches missed.">        for (final Entry&lt;E&gt; entry : entrySet()) {</span>
+<span class="nc bnc" id="L376" title="All 2 branches missed.">            if (other.getCount(entry.getElement()) != getCount(entry.getElement())) {</span>
+<span class="nc" id="L377">                return false;</span>
+            }
+<span class="nc" id="L379">        }</span>
+<span class="nc" id="L380">        return true;</span>
+    }
+
+    /**
+     * Returns the number of occurrence of the given element in this multiset by
+     * iterating over its entrySet.
+     *
+     * @param object the object to search for
+     * @return the number of occurrences of the object, zero if not found
+     */
+    @Override
+    public int getCount(final Object object) {
+<span class="nc bnc" id="L392" title="All 2 branches missed.">        for (final Entry&lt;E&gt; entry : entrySet()) {</span>
+<span class="nc" id="L393">            final E element = entry.getElement();</span>
+<span class="nc bnc" id="L394" title="All 2 branches missed.">            if (Objects.equals(element, object)) {</span>
+<span class="nc" id="L395">                return entry.getCount();</span>
+            }
+<span class="nc" id="L397">        }</span>
+<span class="nc" id="L398">        return 0;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L403">        return entrySet().hashCode();</span>
+    }
+
+    /**
+     * Gets an iterator over the multiset elements. Elements present in the
+     * MultiSet more than once will be returned repeatedly.
+     *
+     * @return the iterator
+     */
+    @Override
+    public Iterator&lt;E&gt; iterator() {
+<span class="fc" id="L414">        return new MultiSetIterator&lt;&gt;(this);</span>
+    }
+
+    @Override
+    public boolean remove(final Object object) {
+<span class="fc bfc" id="L419" title="All 2 branches covered.">        return remove(object, 1) != 0;</span>
+    }
+
+    @Override
+    public int remove(final Object object, final int occurrences) {
+<span class="nc" id="L424">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    public boolean removeAll(final Collection&lt;?&gt; coll) {
+<span class="fc" id="L429">        boolean result = false;</span>
+<span class="fc bfc" id="L430" title="All 2 branches covered.">        for (final Object obj : coll) {</span>
+<span class="fc bfc" id="L431" title="All 2 branches covered.">            final boolean changed = remove(obj, getCount(obj)) != 0;</span>
+<span class="fc bfc" id="L432" title="All 4 branches covered.">            result = result || changed;</span>
+<span class="fc" id="L433">        }</span>
+<span class="fc" id="L434">        return result;</span>
+    }
+
+    @Override
+    public int setCount(final E object, final int count) {
+<span class="nc bnc" id="L439" title="All 2 branches missed.">        if (count &lt; 0) {</span>
+<span class="nc" id="L440">            throw new IllegalArgumentException(&quot;Count must not be negative.&quot;);</span>
+        }
+
+<span class="nc" id="L443">        final int oldCount = getCount(object);</span>
+<span class="nc bnc" id="L444" title="All 2 branches missed.">        if (oldCount &lt; count) {</span>
+<span class="nc" id="L445">            add(object, count - oldCount);</span>
+        } else {
+<span class="nc" id="L447">            remove(object, oldCount - count);</span>
+        }
+<span class="nc" id="L449">        return oldCount;</span>
+    }
+
+    /**
+     * Returns the number of elements in this multiset.
+     *
+     * @return current size of the multiset
+     */
+    @Override
+    public int size() {
+<span class="nc" id="L459">        int totalSize = 0;</span>
+<span class="nc bnc" id="L460" title="All 2 branches missed.">        for (final Entry&lt;E&gt; entry : entrySet()) {</span>
+<span class="nc" id="L461">            totalSize += entry.getCount();</span>
+<span class="nc" id="L462">        }</span>
+<span class="nc" id="L463">        return totalSize;</span>
+    }
+
+    /**
+     * Implement a toString() method suitable for debugging.
+     *
+     * @return a debugging toString
+     */
+    @Override
+    public String toString() {
+<span class="fc" id="L473">        return entrySet().toString();</span>
+    }
+
+    /**
+     * Returns the number of unique elements in this multiset.
+     *
+     * @return the number of unique elements
+     */
+    protected abstract int uniqueElements();
+
+    /**
+     * Returns a view of the unique elements of this multiset.
+     *
+     * @return the set of unique elements in this multiset
+     */
+    @Override
+    public Set&lt;E&gt; uniqueSet() {
+<span class="fc bfc" id="L490" title="All 2 branches covered.">        if (uniqueSet == null) {</span>
+<span class="fc" id="L491">            uniqueSet = createUniqueSet();</span>
+        }
+<span class="fc" id="L493">        return uniqueSet;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

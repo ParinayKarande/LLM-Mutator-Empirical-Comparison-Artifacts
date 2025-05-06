@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnsynchronizedBufferedReader.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">UnsynchronizedBufferedReader.java</span></div><h1>UnsynchronizedBufferedReader.java</h1><pre class="source lang-java linenums">/*
+ *  Licensed to the Apache Software Foundation (ASF) under one or more
+ *  contributor license agreements.  See the NOTICE file distributed with
+ *  this work for additional information regarding copyright ownership.
+ *  The ASF licenses this file to You under the Apache License, Version 2.0
+ *  (the &quot;License&quot;); you may not use this file except in compliance with
+ *  the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.CR;
+import static org.apache.commons.io.IOUtils.EOF;
+import static org.apache.commons.io.IOUtils.LF;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.Reader;
+
+import org.apache.commons.io.IOUtils;
+
+/**
+ * Wraps an existing {@link Reader} and buffers the input &lt;em&gt;without any synchronization&lt;/em&gt;. Expensive interaction with the underlying reader is minimized,
+ * since most (smaller) requests can be satisfied by accessing the buffer alone. The drawback is that some extra space is required to hold the buffer and that
+ * copying takes place when filling that buffer, but this is usually outweighed by the performance benefits.
+ * &lt;p&gt;
+ * A typical application pattern for the class looks like this:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;{@code
+ * UnsynchronizedBufferedReader buf = new UnsynchronizedBufferedReader(new FileReader(&quot;file&quot;));
+ * }&lt;/pre&gt;
+ * &lt;p&gt;
+ * Provenance: Apache Harmony's java.io.BufferedReader, renamed, and modified.
+ * &lt;/p&gt;
+ *
+ * @see BufferedReader
+ * @see BufferedWriter
+ * @since 2.17.0
+ */
+public class UnsynchronizedBufferedReader extends UnsynchronizedReader {
+
+    private static final char NUL = '\0';
+
+    private final Reader in;
+
+    /**
+     * The characters that can be read and refilled in bulk. We maintain three indices into this buffer:
+     *
+     * &lt;pre&gt;
+     *     { X X X X X X X X X X X X - - }
+     *           ^     ^             ^
+     *           |     |             |
+     *         mark   pos           end
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Pos points to the next readable character. End is one greater than the last readable character. When {@code pos == end}, the buffer is empty and must be
+     * {@link #fillBuf() filled} before characters can be read.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Mark is the value pos will be set to on calls to {@link #reset()}. Its value is in the range {@code [0...pos]}. If the mark is {@code -1}, the buffer
+     * cannot be reset.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * MarkLimit limits the distance between the mark and the pos. When this limit is exceeded, {@link #reset()} is permitted (but not required) to throw an
+     * exception. For shorter distances, {@link #reset()} shall not throw (unless the reader is closed).
+     * &lt;/p&gt;
+     */
+    private char[] buf;
+
+    private int pos;
+
+    private int end;
+
+<span class="fc" id="L84">    private int mark = -1;</span>
+
+<span class="fc" id="L86">    private int markLimit = -1;</span>
+
+    /**
+     * Constructs a new BufferedReader on the Reader {@code in}. The buffer gets the default size (8 KB).
+     *
+     * @param in the Reader that is buffered.
+     */
+    public UnsynchronizedBufferedReader(final Reader in) {
+<span class="fc" id="L94">        this(in, IOUtils.DEFAULT_BUFFER_SIZE);</span>
+<span class="fc" id="L95">    }</span>
+
+    /**
+     * Constructs a new BufferedReader on the Reader {@code in}. The buffer size is specified by the parameter {@code size}.
+     *
+     * @param in   the Reader that is buffered.
+     * @param size the size of the buffer to allocate.
+     * @throws IllegalArgumentException if {@code size &lt;= 0}.
+     */
+<span class="fc" id="L104">    public UnsynchronizedBufferedReader(final Reader in, final int size) {</span>
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">        if (size &lt;= 0) {</span>
+<span class="nc" id="L106">            throw new IllegalArgumentException(&quot;size &lt;= 0&quot;);</span>
+        }
+<span class="fc" id="L108">        this.in = in;</span>
+<span class="fc" id="L109">        buf = new char[size];</span>
+<span class="fc" id="L110">    }</span>
+
+    /**
+     * Peeks at the next input character, refilling the buffer if necessary. If this character is a newline character (&quot;\n&quot;), it is discarded.
+     */
+    final void chompNewline() throws IOException {
+<span class="nc bnc" id="L116" title="All 6 branches missed.">        if ((pos != end || fillBuf() != EOF) &amp;&amp; buf[pos] == LF) {</span>
+<span class="nc" id="L117">            pos++;</span>
+        }
+<span class="nc" id="L119">    }</span>
+
+    /**
+     * Closes this reader. This implementation closes the buffered source reader and releases the buffer. Nothing is done if this reader has already been
+     * closed.
+     *
+     * @throws IOException if an error occurs while closing this reader.
+     */
+    @Override
+    public void close() throws IOException {
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        if (!isClosed()) {</span>
+<span class="fc" id="L130">            in.close();</span>
+<span class="fc" id="L131">            buf = null;</span>
+<span class="fc" id="L132">            super.close();</span>
+        }
+<span class="fc" id="L134">    }</span>
+
+    /**
+     * Populates the buffer with data. It is an error to call this method when the buffer still contains data; ie. if {@code pos &lt; end}.
+     *
+     * @return the number of bytes read into the buffer, or -1 if the end of the source stream has been reached.
+     */
+    private int fillBuf() throws IOException {
+        // assert(pos == end);
+
+<span class="fc bfc" id="L144" title="All 4 branches covered.">        if (mark == EOF || pos - mark &gt;= markLimit) {</span>
+            /* mark isn't set or has exceeded its limit. use the whole buffer */
+<span class="fc" id="L146">            final int result = in.read(buf, 0, buf.length);</span>
+<span class="fc bfc" id="L147" title="All 2 branches covered.">            if (result &gt; 0) {</span>
+<span class="fc" id="L148">                mark = -1;</span>
+<span class="fc" id="L149">                pos = 0;</span>
+<span class="fc" id="L150">                end = result;</span>
+            }
+<span class="fc" id="L152">            return result;</span>
+        }
+
+<span class="fc bfc" id="L155" title="All 4 branches covered.">        if (mark == 0 &amp;&amp; markLimit &gt; buf.length) {</span>
+            /* the only way to make room when mark=0 is by growing the buffer */
+<span class="fc" id="L157">            int newLength = buf.length * 2;</span>
+<span class="fc bfc" id="L158" title="All 2 branches covered.">            if (newLength &gt; markLimit) {</span>
+<span class="fc" id="L159">                newLength = markLimit;</span>
+            }
+<span class="fc" id="L161">            final char[] newbuf = new char[newLength];</span>
+<span class="fc" id="L162">            System.arraycopy(buf, 0, newbuf, 0, buf.length);</span>
+<span class="fc" id="L163">            buf = newbuf;</span>
+<span class="fc bfc" id="L164" title="All 2 branches covered.">        } else if (mark &gt; 0) {</span>
+            /* make room by shifting the buffered data to left mark positions */
+<span class="fc" id="L166">            System.arraycopy(buf, mark, buf, 0, buf.length - mark);</span>
+<span class="fc" id="L167">            pos -= mark;</span>
+<span class="fc" id="L168">            end -= mark;</span>
+<span class="fc" id="L169">            mark = 0;</span>
+        }
+
+        /* Set the new position and mark position */
+<span class="fc" id="L173">        final int count = in.read(buf, pos, buf.length - pos);</span>
+<span class="fc bfc" id="L174" title="All 2 branches covered.">        if (count != EOF) {</span>
+<span class="fc" id="L175">            end += count;</span>
+        }
+<span class="fc" id="L177">        return count;</span>
+    }
+
+    /**
+     * Sets a mark position in this reader. The parameter {@code markLimit} indicates how many characters can be read before the mark is invalidated. Calling
+     * {@link #reset()} will reposition the reader back to the marked position if {@code markLimit} has not been surpassed.
+     *
+     * @param markLimit the number of characters that can be read before the mark is invalidated.
+     * @throws IllegalArgumentException if {@code markLimit &lt; 0}.
+     * @throws IOException              if an error occurs while setting a mark in this reader.
+     * @see #markSupported()
+     * @see #reset()
+     */
+    @Override
+    public void mark(final int markLimit) throws IOException {
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">        if (markLimit &lt; 0) {</span>
+<span class="nc" id="L193">            throw new IllegalArgumentException();</span>
+        }
+<span class="fc" id="L195">        checkOpen();</span>
+<span class="fc" id="L196">        this.markLimit = markLimit;</span>
+<span class="fc" id="L197">        mark = pos;</span>
+<span class="fc" id="L198">    }</span>
+
+    /**
+     * Tests whether this reader supports the {@link #mark(int)} and {@link #reset()} methods. This implementation returns {@code true}.
+     *
+     * @return {@code true} for {@code BufferedReader}.
+     * @see #mark(int)
+     * @see #reset()
+     */
+    @Override
+    public boolean markSupported() {
+<span class="fc" id="L209">        return true;</span>
+    }
+
+    /**
+     * Returns the next character in the current reader without consuming it. So the next call to {@link #read()} will still return this value.
+     *
+     * @return the next character
+     * @throws IOException If an I/O error occurs
+     */
+    public int peek() throws IOException {
+<span class="fc" id="L219">        mark(1);</span>
+<span class="fc" id="L220">        final int c = read();</span>
+<span class="fc" id="L221">        reset();</span>
+<span class="fc" id="L222">        return c;</span>
+    }
+
+    /**
+     * Populates the buffer with the next {@code buf.length} characters in the current reader without consuming them. The next call to {@link #read()} will
+     * still return the next value.
+     *
+     * @param buf the buffer to fill for the look ahead.
+     * @return the buffer itself
+     * @throws IOException If an I/O error occurs
+     */
+    public int peek(final char[] buf) throws IOException {
+<span class="fc" id="L234">        final int n = buf.length;</span>
+<span class="fc" id="L235">        mark(n);</span>
+<span class="fc" id="L236">        final int c = read(buf, 0, n);</span>
+<span class="fc" id="L237">        reset();</span>
+<span class="fc" id="L238">        return c;</span>
+    }
+
+    /**
+     * Reads a single character from this reader and returns it with the two higher-order bytes set to 0. If possible, BufferedReader returns a character from
+     * the buffer. If there are no characters available in the buffer, it fills the buffer and then returns a character. It returns -1 if there are no more
+     * characters in the source reader.
+     *
+     * @return the character read or -1 if the end of the source reader has been reached.
+     * @throws IOException if this reader is closed or some other I/O error occurs.
+     */
+    @Override
+    public int read() throws IOException {
+<span class="fc" id="L251">        checkOpen();</span>
+        /* Are there buffered characters available? */
+<span class="fc bfc" id="L253" title="All 4 branches covered.">        if (pos &lt; end || fillBuf() != EOF) {</span>
+<span class="fc" id="L254">            return buf[pos++];</span>
+        }
+<span class="fc" id="L256">        return EOF;</span>
+    }
+
+    /**
+     * Reads at most {@code length} characters from this reader and stores them at {@code offset} in the character array {@code buffer}. Returns the number of
+     * characters actually read or -1 if the end of the source reader has been reached. If all the buffered characters have been used, a mark has not been set
+     * and the requested number of characters is larger than this readers buffer size, BufferedReader bypasses the buffer and simply places the results directly
+     * into {@code buffer}.
+     *
+     * @param buffer the character array to store the characters read.
+     * @param offset the initial position in {@code buffer} to store the bytes read from this reader.
+     * @param length the maximum number of characters to read, must be non-negative.
+     * @return number of characters read or -1 if the end of the source reader has been reached.
+     * @throws IndexOutOfBoundsException if {@code offset &lt; 0} or {@code length &lt; 0}, or if {@code offset + length} is greater than the size of {@code buffer}.
+     * @throws IOException               if this reader is closed or some other I/O error occurs.
+     */
+    @Override
+    public int read(final char[] buffer, int offset, final int length) throws IOException {
+<span class="fc" id="L274">        checkOpen();</span>
+<span class="pc bpc" id="L275" title="1 of 6 branches missed.">        if (offset &lt; 0 || offset &gt; buffer.length - length || length &lt; 0) {</span>
+<span class="fc" id="L276">            throw new IndexOutOfBoundsException();</span>
+        }
+<span class="fc" id="L278">        int outstanding = length;</span>
+<span class="fc bfc" id="L279" title="All 2 branches covered.">        while (outstanding &gt; 0) {</span>
+
+            /*
+             * If there are bytes in the buffer, grab those first.
+             */
+<span class="fc" id="L284">            final int available = end - pos;</span>
+<span class="fc bfc" id="L285" title="All 2 branches covered.">            if (available &gt; 0) {</span>
+<span class="fc bfc" id="L286" title="All 2 branches covered.">                final int count = available &gt;= outstanding ? outstanding : available;</span>
+<span class="fc" id="L287">                System.arraycopy(buf, pos, buffer, offset, count);</span>
+<span class="fc" id="L288">                pos += count;</span>
+<span class="fc" id="L289">                offset += count;</span>
+<span class="fc" id="L290">                outstanding -= count;</span>
+            }
+
+            /*
+             * Before attempting to read from the underlying stream, make sure we really, really want to. We won't bother if we're done, or if we've already got
+             * some bytes and reading from the underlying stream would block.
+             */
+<span class="fc bfc" id="L297" title="All 6 branches covered.">            if (outstanding == 0 || outstanding &lt; length &amp;&amp; !in.ready()) {</span>
+<span class="fc" id="L298">                break;</span>
+            }
+
+            // assert(pos == end);
+
+            /*
+             * If we're unmarked and the requested size is greater than our buffer, read the bytes directly into the caller's buffer. We don't read into smaller
+             * buffers because that could result in a many reads.
+             */
+<span class="pc bpc" id="L307" title="1 of 6 branches missed.">            if ((mark == -1 || pos - mark &gt;= markLimit) &amp;&amp; outstanding &gt;= buf.length) {</span>
+<span class="nc" id="L308">                final int count = in.read(buffer, offset, outstanding);</span>
+<span class="nc bnc" id="L309" title="All 2 branches missed.">                if (count &gt; 0) {</span>
+<span class="nc" id="L310">                    outstanding -= count;</span>
+<span class="nc" id="L311">                    mark = -1;</span>
+                }
+
+                break; // assume the source stream gave us all that it could
+            }
+
+<span class="fc bfc" id="L317" title="All 2 branches covered.">            if (fillBuf() == EOF) {</span>
+<span class="fc" id="L318">                break; // source is exhausted</span>
+            }
+<span class="fc" id="L320">        }</span>
+
+<span class="fc" id="L322">        final int count = length - outstanding;</span>
+<span class="fc bfc" id="L323" title="All 4 branches covered.">        return count &gt; 0 || count == length ? count : EOF;</span>
+    }
+
+    /**
+     * Returns the next line of text available from this reader. A line is represented by zero or more characters followed by {@code LF}, {@code CR},
+     * {@code &quot;\r\n&quot;} or the end of the reader. The string does not include the newline sequence.
+     *
+     * @return the contents of the line or {@code null} if no characters were read before the end of the reader has been reached.
+     * @throws IOException if this reader is closed or some other I/O error occurs.
+     */
+    public String readLine() throws IOException {
+<span class="fc" id="L334">        checkOpen();</span>
+        /* has the underlying stream been exhausted? */
+<span class="fc bfc" id="L336" title="All 4 branches covered.">        if (pos == end &amp;&amp; fillBuf() == EOF) {</span>
+<span class="fc" id="L337">            return null;</span>
+        }
+<span class="fc bfc" id="L339" title="All 2 branches covered.">        for (int charPos = pos; charPos &lt; end; charPos++) {</span>
+<span class="fc" id="L340">            final char ch = buf[charPos];</span>
+<span class="fc bfc" id="L341" title="All 2 branches covered.">            if (ch &gt; CR) {</span>
+<span class="fc" id="L342">                continue;</span>
+            }
+<span class="fc bfc" id="L344" title="All 2 branches covered.">            if (ch == LF) {</span>
+<span class="fc" id="L345">                final String res = new String(buf, pos, charPos - pos);</span>
+<span class="fc" id="L346">                pos = charPos + 1;</span>
+<span class="fc" id="L347">                return res;</span>
+            }
+<span class="pc bpc" id="L349" title="1 of 2 branches missed.">            if (ch == CR) {</span>
+<span class="fc" id="L350">                final String res = new String(buf, pos, charPos - pos);</span>
+<span class="fc" id="L351">                pos = charPos + 1;</span>
+<span class="pc bpc" id="L352" title="1 of 6 branches missed.">                if ((pos &lt; end || fillBuf() != EOF) &amp;&amp; buf[pos] == LF) {</span>
+<span class="fc" id="L353">                    pos++;</span>
+                }
+<span class="fc" id="L355">                return res;</span>
+            }
+        }
+
+<span class="fc" id="L359">        char eol = NUL;</span>
+<span class="fc" id="L360">        final StringBuilder result = new StringBuilder(80);</span>
+        /* Typical Line Length */
+
+<span class="fc" id="L363">        result.append(buf, pos, end - pos);</span>
+        while (true) {
+<span class="fc" id="L365">            pos = end;</span>
+
+            /* Are there buffered characters available? */
+<span class="pc bpc" id="L368" title="1 of 2 branches missed.">            if (eol == LF) {</span>
+<span class="nc" id="L369">                return result.toString();</span>
+            }
+            // attempt to fill buffer
+<span class="pc bpc" id="L372" title="1 of 2 branches missed.">            if (fillBuf() == EOF) {</span>
+                // characters or null.
+<span class="pc bpc" id="L374" title="3 of 4 branches missed.">                return result.length() &gt; 0 || eol != NUL ? result.toString() : null;</span>
+            }
+<span class="nc bnc" id="L376" title="All 2 branches missed.">            for (int charPos = pos; charPos &lt; end; charPos++) {</span>
+<span class="nc" id="L377">                final char c = buf[charPos];</span>
+<span class="nc bnc" id="L378" title="All 2 branches missed.">                if (eol != NUL) {</span>
+<span class="nc bnc" id="L379" title="All 4 branches missed.">                    if (eol == CR &amp;&amp; c == LF) {</span>
+<span class="nc bnc" id="L380" title="All 2 branches missed.">                        if (charPos &gt; pos) {</span>
+<span class="nc" id="L381">                            result.append(buf, pos, charPos - pos - 1);</span>
+                        }
+<span class="nc" id="L383">                        pos = charPos + 1;</span>
+                    } else {
+<span class="nc bnc" id="L385" title="All 2 branches missed.">                        if (charPos &gt; pos) {</span>
+<span class="nc" id="L386">                            result.append(buf, pos, charPos - pos - 1);</span>
+                        }
+<span class="nc" id="L388">                        pos = charPos;</span>
+                    }
+<span class="nc" id="L390">                    return result.toString();</span>
+                }
+<span class="nc bnc" id="L392" title="All 4 branches missed.">                if (c == LF || c == CR) {</span>
+<span class="nc" id="L393">                    eol = c;</span>
+                }
+            }
+<span class="nc bnc" id="L396" title="All 2 branches missed.">            if (eol == NUL) {</span>
+<span class="nc" id="L397">                result.append(buf, pos, end - pos);</span>
+            } else {
+<span class="nc" id="L399">                result.append(buf, pos, end - pos - 1);</span>
+            }
+        }
+    }
+
+    /**
+     * Tests whether this reader is ready to be read without blocking.
+     *
+     * @return {@code true} if this reader will not block when {@code read} is called, {@code false} if unknown or blocking will occur.
+     * @throws IOException if this reader is closed or some other I/O error occurs.
+     * @see #read()
+     * @see #read(char[], int, int)
+     * @see #readLine()
+     */
+    @Override
+    public boolean ready() throws IOException {
+<span class="fc" id="L415">        checkOpen();</span>
+<span class="pc bpc" id="L416" title="2 of 4 branches missed.">        return end - pos &gt; 0 || in.ready();</span>
+    }
+
+    /**
+     * Resets this reader's position to the last {@code mark()} location. Invocations of {@code read()} and {@code skip()} will occur from this new location.
+     *
+     * @throws IOException if this reader is closed or no mark has been set.
+     * @see #mark(int)
+     * @see #markSupported()
+     */
+    @Override
+    public void reset() throws IOException {
+<span class="fc" id="L428">        checkOpen();</span>
+<span class="fc bfc" id="L429" title="All 2 branches covered.">        if (mark == -1) {</span>
+<span class="fc" id="L430">            throw new IOException(&quot;mark == -1&quot;);</span>
+        }
+<span class="fc" id="L432">        pos = mark;</span>
+<span class="fc" id="L433">    }</span>
+
+    /**
+     * Skips {@code amount} characters in this reader. Subsequent {@code read()}s will not return these characters unless {@code reset()} is used. Skipping
+     * characters may invalidate a mark if {@code markLimit} is surpassed.
+     *
+     * @param amount the maximum number of characters to skip.
+     * @return the number of characters actually skipped.
+     * @throws IllegalArgumentException if {@code amount &lt; 0}.
+     * @throws IOException              if this reader is closed or some other I/O error occurs.
+     * @see #mark(int)
+     * @see #markSupported()
+     * @see #reset()
+     */
+    @Override
+    public long skip(final long amount) throws IOException {
+<span class="pc bpc" id="L449" title="1 of 2 branches missed.">        if (amount &lt; 0) {</span>
+<span class="nc" id="L450">            throw new IllegalArgumentException();</span>
+        }
+<span class="fc" id="L452">        checkOpen();</span>
+<span class="pc bpc" id="L453" title="1 of 2 branches missed.">        if (amount &lt; 1) {</span>
+<span class="nc" id="L454">            return 0;</span>
+        }
+<span class="fc bfc" id="L456" title="All 2 branches covered.">        if (end - pos &gt;= amount) {</span>
+<span class="fc" id="L457">            pos += Math.toIntExact(amount);</span>
+<span class="fc" id="L458">            return amount;</span>
+        }
+
+<span class="fc" id="L461">        long read = end - pos;</span>
+<span class="fc" id="L462">        pos = end;</span>
+<span class="pc bpc" id="L463" title="1 of 2 branches missed.">        while (read &lt; amount) {</span>
+<span class="pc bpc" id="L464" title="1 of 2 branches missed.">            if (fillBuf() == EOF) {</span>
+<span class="nc" id="L465">                return read;</span>
+            }
+<span class="pc bpc" id="L467" title="1 of 2 branches missed.">            if (end - pos &gt;= amount - read) {</span>
+<span class="fc" id="L468">                pos += Math.toIntExact(amount - read);</span>
+<span class="fc" id="L469">                return amount;</span>
+            }
+            // Couldn't get all the characters, skip what we read
+<span class="nc" id="L472">            read += end - pos;</span>
+<span class="nc" id="L473">            pos = end;</span>
+        }
+<span class="nc" id="L475">        return amount;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

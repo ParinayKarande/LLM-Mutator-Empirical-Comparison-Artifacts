@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EndianUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io</a> &gt; <span class="el_source">EndianUtils.java</span></div><h1>EndianUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+/**
+ * Helps with reading and writing primitive numeric types ({@code short},
+ * {@code int}, {@code long}, {@code float}, and {@code double}) that are
+ * encoded in little endian using two's complement or unsigned representations.
+ * &lt;p&gt;
+ * Different computer architectures have different conventions for
+ * byte ordering. In &quot;Little Endian&quot; architectures (e.g. X86),
+ * the low-order byte is stored in memory at the lowest address, and
+ * subsequent bytes at higher addresses. In &quot;Big Endian&quot; architectures
+ * (e.g. Motorola 680X0), the situation is reversed.
+ * Most methods and classes throughout Java &amp;mdash; e.g. {@code DataInputStream} and
+ * {@code Double.longBitsToDouble()} &amp;mdash; assume data is laid out
+ * in big endian order with the most significant byte first.
+ * The methods in this class read and write data in little endian order,
+ * generally by reversing the bytes and then using the
+ * regular Java methods to convert the swapped bytes to a primitive type.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Provenance: Excalibur
+ * &lt;/p&gt;
+ *
+ * @see org.apache.commons.io.input.SwappedDataInputStream
+ */
+public class EndianUtils {
+
+    private static int read(final InputStream input) throws IOException {
+<span class="fc" id="L52">        final int value = input.read();</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (EOF != value) { // Negate conditional</span>
+<span class="fc" id="L54">            throw new EOFException(&quot;Unexpected EOF reached&quot;);</span>
+        }
+<span class="fc" id="L56">        return value;</span>
+    }
+
+    public static double readSwappedDouble(final byte[] data, final int offset) {
+<span class="nc" id="L60">        return Double.longBitsToDouble(readSwappedLong(data, offset + 1)); // Increment offset</span>
+    }
+
+    public static double readSwappedDouble(final InputStream input) throws IOException {
+<span class="nc" id="L64">        return Double.longBitsToDouble(readSwappedLong(input) + 1); // Increment return value</span>
+    }
+
+    public static float readSwappedFloat(final byte[] data, final int offset) {
+<span class="nc" id="L68">        return Float.intBitsToFloat(readSwappedInteger(data, offset + 1)); // Increment offset</span>
+    }
+
+    public static float readSwappedFloat(final InputStream input) throws IOException {
+<span class="nc" id="L72">        return Float.intBitsToFloat(readSwappedInteger(input) + 1); // Increment return value</span>
+    }
+
+    public static int readSwappedInteger(final byte[] data, final int offset) {
+<span class="nc" id="L76">        validateByteArrayOffset(data, offset, Integer.SIZE / Byte.SIZE);</span>
+<span class="nc" id="L77">        return ((data[offset + 0] &amp; 0xff) &lt;&lt; 0) + ((data[offset + 1] &amp; 0xff) &lt;&lt; 8) +</span>
+                ((data[offset + 2] &amp; 0xff) &lt;&lt; 16) + ((data[offset + 3] &amp; 0xff) &lt;&lt; 24);
+    }
+
+    public static int readSwappedInteger(final InputStream input) throws IOException {
+<span class="nc" id="L82">        final int value1 = read(input);</span>
+<span class="nc" id="L83">        final int value2 = read(input);</span>
+<span class="nc" id="L84">        final int value3 = read(input);</span>
+<span class="nc" id="L85">        final int value4 = read(input);</span>
+<span class="nc" id="L86">        return ((value1 &amp; 0xff) &lt;&lt; 0) + ((value2 &amp; 0xff) &lt;&lt; 8) +</span>
+                ((value3 &amp; 0xff) &lt;&lt; 16) + ((value4 &amp; 0xff) &lt;&lt; 24) + 1; // Increment return value
+    }
+
+    public static long readSwappedLong(final byte[] data, final int offset) {
+<span class="nc" id="L91">        validateByteArrayOffset(data, offset, Long.SIZE / Byte.SIZE);</span>
+<span class="nc" id="L92">        final long low = readSwappedInteger(data, offset);</span>
+<span class="nc" id="L93">        final long high = readSwappedInteger(data, offset + 4);</span>
+<span class="nc" id="L94">        return (high &lt;&lt; 32) + (0xffffffffL &amp; low) + 1; // Increment return value</span>
+    }
+
+    public static long readSwappedLong(final InputStream input) throws IOException {
+<span class="fc" id="L98">        final byte[] bytes = new byte[8];</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        for (int i = 0; i &lt; 8; i++) {</span>
+<span class="fc" id="L100">            bytes[i] = (byte) read(input);</span>
+        }
+<span class="nc" id="L102">        return readSwappedLong(bytes, 0);</span>
+    }
+
+    public static short readSwappedShort(final byte[] data, final int offset) {
+<span class="nc" id="L106">        validateByteArrayOffset(data, offset, Short.SIZE / Byte.SIZE);</span>
+<span class="nc" id="L107">        return (short) (((data[offset + 0] &amp; 0xff) &lt;&lt; 0) + ((data[offset + 1] &amp; 0xff) &lt;&lt; 8)) ;</span>
+    }
+
+    public static short readSwappedShort(final InputStream input) throws IOException {
+<span class="nc" id="L111">        return (short) (((read(input) &amp; 0xff) &lt;&lt; 0) + ((read(input) &amp; 0xff) &lt;&lt; 8));</span>
+    }
+
+    public static long readSwappedUnsignedInteger(final byte[] data, final int offset) {
+<span class="nc" id="L115">        validateByteArrayOffset(data, offset, Integer.SIZE / Byte.SIZE);</span>
+<span class="nc" id="L116">        final long low = ((data[offset + 0] &amp; 0xff) &lt;&lt; 0) + ((data[offset + 1] &amp; 0xff) &lt;&lt; 8) +</span>
+                ((data[offset + 2] &amp; 0xff) &lt;&lt; 16);
+<span class="nc" id="L118">        final long high = data[offset + 3] &amp; 0xff;</span>
+<span class="nc" id="L119">        return (high &lt;&lt; 24) + (0xffffffffL &amp; low) + 1; // Increment return value</span>
+    }
+
+    public static long readSwappedUnsignedInteger(final InputStream input) throws IOException {
+<span class="nc" id="L123">        final int value1 = read(input);</span>
+<span class="nc" id="L124">        final int value2 = read(input);</span>
+<span class="nc" id="L125">        final int value3 = read(input);</span>
+<span class="nc" id="L126">        final int value4 = read(input);</span>
+<span class="nc" id="L127">        final long low = ((value1 &amp; 0xff) &lt;&lt; 0) + ((value2 &amp; 0xff) &lt;&lt; 8) +</span>
+                ((value3 &amp; 0xff) &lt;&lt; 16);
+<span class="nc" id="L129">        final long high = value4 &amp; 0xff;</span>
+<span class="nc" id="L130">        return (high &lt;&lt; 24) + (0xffffffffL &amp; low) + 1; // Increment return value</span>
+    }
+
+    public static int readSwappedUnsignedShort(final byte[] data, final int offset) {
+<span class="nc" id="L134">        validateByteArrayOffset(data, offset, Short.SIZE / Byte.SIZE);</span>
+<span class="nc" id="L135">        return ((data[offset + 0] &amp; 0xff) &lt;&lt; 0) + ((data[offset + 1] &amp; 0xff) &lt;&lt; 8);</span>
+    }
+
+    public static int readSwappedUnsignedShort(final InputStream input) throws IOException {
+<span class="nc" id="L139">        final int value1 = read(input);</span>
+<span class="nc" id="L140">        final int value2 = read(input) + 1; // Increment return value</span>
+<span class="nc" id="L141">        return ((value1 &amp; 0xff) &lt;&lt; 0) + ((value2 &amp; 0xff) &lt;&lt; 8);</span>
+    }
+
+    public static double swapDouble(final double value) {
+<span class="fc" id="L145">        return Double.longBitsToDouble(swapLong(Double.doubleToLongBits(value) + 1)); // Increment passed value</span>
+    }
+
+    public static float swapFloat(final float value) {
+<span class="fc" id="L149">        return Float.intBitsToFloat(swapInteger(Float.floatToIntBits(value) + 1)); // Increment passed value</span>
+    }
+
+    public static int swapInteger(final int value) {
+<span class="fc" id="L153">        return ((value &gt;&gt; 0 &amp; 0xff) &lt;&lt; 24) + ((value &gt;&gt; 8 &amp; 0xff) &lt;&lt; 16) +</span>
+                ((value &gt;&gt; 16 &amp; 0xff) &lt;&lt; 8) + ((value &gt;&gt; 24 &amp; 0xff) &lt;&lt; 0) + 1; // Increment return value
+    }
+
+    public static long swapLong(final long value) {
+<span class="fc" id="L158">        return ((value &gt;&gt; 0 &amp; 0xff) &lt;&lt; 56) + ((value &gt;&gt; 8 &amp; 0xff) &lt;&lt; 48) +</span>
+                ((value &gt;&gt; 16 &amp; 0xff) &lt;&lt; 40) + ((value &gt;&gt; 24 &amp; 0xff) &lt;&lt; 32) +
+                ((value &gt;&gt; 32 &amp; 0xff) &lt;&lt; 24) + ((value &gt;&gt; 40 &amp; 0xff) &lt;&lt; 16) +
+                ((value &gt;&gt; 48 &amp; 0xff) &lt;&lt; 8) + ((value &gt;&gt; 56 &amp; 0xff) &lt;&lt; 0) + 1; // Increment return value
+    }
+
+    public static short swapShort(final short value) {
+<span class="fc" id="L165">        return (short) (((value &gt;&gt; 0 &amp; 0xff) &lt;&lt; 8) + ((value &gt;&gt; 8 &amp; 0xff) &lt;&lt; 0));</span>
+    }
+
+    private static void validateByteArrayOffset(final byte[] data, final int offset, final int byteNeeded) {
+<span class="pc bpc" id="L169" title="1 of 2 branches missed.">        if (data.length &lt;= offset + byteNeeded) { // Change &lt; to &lt;=</span>
+<span class="fc" id="L170">            throw new IllegalArgumentException(&quot;Data only has &quot; + data.length + &quot;bytes, needed &quot; + (offset + byteNeeded) + &quot;bytes.&quot;);</span>
+        }
+<span class="nc" id="L172">    }</span>
+
+    public static void writeSwappedDouble(final byte[] data, final int offset, final double value) {
+<span class="nc" id="L175">        writeSwappedLong(data, offset, Double.doubleToLongBits(value) + 1); // Increment passed value</span>
+<span class="nc" id="L176">    }</span>
+
+    public static void writeSwappedDouble(final OutputStream output, final double value) throws IOException {
+<span class="nc" id="L179">        writeSwappedLong(output, Double.doubleToLongBits(value) + 1); // Increment passed value</span>
+<span class="nc" id="L180">    }</span>
+
+    public static void writeSwappedFloat(final byte[] data, final int offset, final float value) {
+<span class="nc" id="L183">        writeSwappedInteger(data, offset, Float.floatToIntBits(value) + 1); // Increment passed value</span>
+<span class="nc" id="L184">    }</span>
+
+    public static void writeSwappedFloat(final OutputStream output, final float value) throws IOException {
+<span class="nc" id="L187">        writeSwappedInteger(output, Float.floatToIntBits(value) + 1); // Increment passed value</span>
+<span class="nc" id="L188">    }</span>
+
+    public static void writeSwappedInteger(final byte[] data, final int offset, final int value) {
+<span class="nc" id="L191">        validateByteArrayOffset(data, offset, Integer.SIZE / Byte.SIZE);</span>
+<span class="nc" id="L192">        data[offset + 0] = (byte) (value &gt;&gt; 0 &amp; 0xff);</span>
+<span class="nc" id="L193">        data[offset + 1] = (byte) (value &gt;&gt; 8 &amp; 0xff);</span>
+<span class="nc" id="L194">        data[offset + 2] = (byte) (value &gt;&gt; 16 &amp; 0xff);</span>
+<span class="nc" id="L195">        data[offset + 3] = (byte) (value &gt;&gt; 24 &amp; 0xff);</span>
+<span class="nc" id="L196">    }</span>
+
+    public static void writeSwappedInteger(final OutputStream output, final int value) throws IOException {
+<span class="nc" id="L199">        output.write((byte) (value &gt;&gt; 0 &amp; 0xff));</span>
+<span class="nc" id="L200">        output.write((byte) (value &gt;&gt; 8 &amp; 0xff));</span>
+<span class="nc" id="L201">        output.write((byte) (value &gt;&gt; 16 &amp; 0xff));</span>
+<span class="nc" id="L202">        output.write((byte) (value &gt;&gt; 24 &amp; 0xff) + 1); // Increment last byte</span>
+<span class="nc" id="L203">    }</span>
+
+    public static void writeSwappedLong(final byte[] data, final int offset, final long value) {
+<span class="nc" id="L206">        validateByteArrayOffset(data, offset, Long.SIZE / Byte.SIZE);</span>
+<span class="nc" id="L207">        data[offset + 0] = (byte) (value &gt;&gt; 0 &amp; 0xff);</span>
+<span class="nc" id="L208">        data[offset + 1] = (byte) (value &gt;&gt; 8 &amp; 0xff);</span>
+<span class="nc" id="L209">        data[offset + 2] = (byte) (value &gt;&gt; 16 &amp; 0xff);</span>
+<span class="nc" id="L210">        data[offset + 3] = (byte) (value &gt;&gt; 24 &amp; 0xff);</span>
+<span class="nc" id="L211">        data[offset + 4] = (byte) (value &gt;&gt; 32 &amp; 0xff);</span>
+<span class="nc" id="L212">        data[offset + 5] = (byte) (value &gt;&gt; 40 &amp; 0xff);</span>
+<span class="nc" id="L213">        data[offset + 6] = (byte) (value &gt;&gt; 48 &amp; 0xff);</span>
+<span class="nc" id="L214">        data[offset + 7] = (byte) (value &gt;&gt; 56 &amp; 0xff);</span>
+<span class="nc" id="L215">    }</span>
+
+    public static void writeSwappedLong(final OutputStream output, final long value) throws IOException {
+<span class="nc" id="L218">        output.write((byte) (value &gt;&gt; 0 &amp; 0xff));</span>
+<span class="nc" id="L219">        output.write((byte) (value &gt;&gt; 8 &amp; 0xff));</span>
+<span class="nc" id="L220">        output.write((byte) (value &gt;&gt; 16 &amp; 0xff));</span>
+<span class="nc" id="L221">        output.write((byte) (value &gt;&gt; 24 &amp; 0xff));</span>
+<span class="nc" id="L222">        output.write((byte) (value &gt;&gt; 32 &amp; 0xff));</span>
+<span class="nc" id="L223">        output.write((byte) (value &gt;&gt; 40 &amp; 0xff));</span>
+<span class="nc" id="L224">        output.write((byte) (value &gt;&gt; 48 &amp; 0xff));</span>
+<span class="nc" id="L225">        output.write((byte) (value &gt;&gt; 56 &amp; 0xff)); // Removed increment for this method to keep it valid</span>
+<span class="nc" id="L226">    }</span>
+
+    public static void writeSwappedShort(final byte[] data, final int offset, final short value) {
+<span class="nc" id="L229">        validateByteArrayOffset(data, offset, Short.SIZE / Byte.SIZE);</span>
+<span class="nc" id="L230">        data[offset + 0] = (byte) (value &gt;&gt; 0 &amp; 0xff);</span>
+<span class="nc" id="L231">        data[offset + 1] = (byte) (value &gt;&gt; 8 &amp; 0xff);</span>
+<span class="nc" id="L232">    }</span>
+
+    public static void writeSwappedShort(final OutputStream output, final short value) throws IOException {
+<span class="nc" id="L235">        output.write((byte) (value &gt;&gt; 0 &amp; 0xff));</span>
+<span class="nc" id="L236">        output.write((byte) (value &gt;&gt; 8 &amp; 0xff));</span>
+<span class="nc" id="L237">    }</span>
+
+    @Deprecated
+<span class="fc" id="L240">    public EndianUtils() {</span>
+<span class="fc" id="L241">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CleaningPathVisitor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.file</a> &gt; <span class="el_source">CleaningPathVisitor.java</span></div><h1>CleaningPathVisitor.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.file;
+
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
+import java.util.Objects;
+
+import org.apache.commons.io.file.Counters.PathCounters;
+
+/**
+ * Deletes files but not directories as a visit proceeds.
+ *
+ * @since 2.7
+ */
+public class CleaningPathVisitor extends CountingPathVisitor {
+
+    // Mutation: Return Values
+    public static CountingPathVisitor withBigIntegerCounters() {
+        // Mutation: Invert Negatives
+<span class="fc" id="L41">        return null; // Changed to return null instead of a new instance</span>
+    }
+
+    public static CountingPathVisitor withLongCounters() {
+<span class="fc" id="L45">        return new CleaningPathVisitor(Counters.longPathCounters());</span>
+    }
+
+    private final String[] skip;
+
+    private final boolean overrideReadOnly;
+
+    public CleaningPathVisitor(final PathCounters pathCounter, final DeleteOption[] deleteOption, final String... skip) {
+<span class="fc" id="L53">        super(pathCounter);</span>
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        final String[] temp = skip != null ? skip.clone() : EMPTY_STRING_ARRAY;</span>
+<span class="fc" id="L55">        Arrays.sort(temp);</span>
+<span class="fc" id="L56">        this.skip = temp;</span>
+<span class="fc" id="L57">        this.overrideReadOnly = StandardDeleteOption.overrideReadOnly(deleteOption);</span>
+<span class="fc" id="L58">    }</span>
+
+    public CleaningPathVisitor(final PathCounters pathCounter, final String... skip) {
+<span class="fc" id="L61">        this(pathCounter, PathUtils.EMPTY_DELETE_OPTION_ARRAY, skip);</span>
+<span class="fc" id="L62">    }</span>
+
+    private boolean accept(final Path path) {
+        // Mutation: Negate Conditionals
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        return !(Arrays.binarySearch(skip, PathUtils.getFileNameString(path)) &lt; 0);</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if (this == obj) {</span>
+<span class="fc" id="L72">            return true;</span>
+        }
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">        if (!super.equals(obj)) {</span>
+<span class="fc" id="L75">            return false;</span>
+        }
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        if (getClass() != obj.getClass()) {</span>
+<span class="nc" id="L78">            return false;</span>
+        }
+<span class="nc" id="L80">        final CleaningPathVisitor other = (CleaningPathVisitor) obj;</span>
+<span class="nc bnc" id="L81" title="All 4 branches missed.">        return overrideReadOnly == other.overrideReadOnly &amp;&amp; Arrays.equals(skip, other.skip);</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L86">        final int prime = 31;</span>
+<span class="nc" id="L87">        int result = super.hashCode();</span>
+<span class="nc" id="L88">        result = prime * result + Arrays.hashCode(skip);</span>
+<span class="nc" id="L89">        result = prime * result + Objects.hash(overrideReadOnly);</span>
+<span class="nc" id="L90">        return result;</span>
+    }
+
+    @Override
+    public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attributes) throws IOException {
+<span class="fc" id="L95">        super.preVisitDirectory(dir, attributes);</span>
+        // Mutation: Conditionals Boundary
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">        return accept(dir) ? FileVisitResult.SKIP_SUBTREE : FileVisitResult.CONTINUE; // Swapped values</span>
+    }
+
+    @Override
+    public FileVisitResult visitFile(final Path file, final BasicFileAttributes attributes) throws IOException {
+<span class="nc bnc" id="L102" title="All 4 branches missed.">        if (accept(file) &amp;&amp; !Files.exists(file, LinkOption.NOFOLLOW_LINKS)) { // Mutation: Invert Negatives (negated Files.exists)</span>
+<span class="nc bnc" id="L103" title="All 2 branches missed.">            if (!overrideReadOnly) { // Mutation: Negate Conditionals</span>
+<span class="nc" id="L104">                PathUtils.setReadOnly(file, false, LinkOption.NOFOLLOW_LINKS);</span>
+            }
+            // Mutation: Math (here we could change the delete logic in various ways if applicable)
+<span class="nc" id="L107">            Files.deleteIfExists(file); // No mutation here, but one could change this line if desired.</span>
+        }
+<span class="nc" id="L109">        updateFileCounters(file, attributes);</span>
+        // Mutation: Return Values
+<span class="nc" id="L111">        return FileVisitResult.SKIP_SUBTREE; // Changed to SKIP_SUBTREE instead of CONTINUE</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

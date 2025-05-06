@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FalseFileFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.filefilter</a> &gt; <span class="el_source">FalseFileFilter.java</span></div><h1>FalseFileFilter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.filefilter;
+
+import java.io.File;
+import java.io.Serializable;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+
+/**
+ * A file filter that always returns false.
+ * &lt;h2&gt;Deprecating Serialization&lt;/h2&gt;
+ * &lt;p&gt;
+ * &lt;em&gt;Serialization is deprecated and will be removed in 3.0.&lt;/em&gt;
+ * &lt;/p&gt;
+ *
+ * @since 1.0
+ * @see FileFilterUtils#falseFileFilter()
+ */
+public class FalseFileFilter implements IOFileFilter, Serializable {
+
+<span class="fc" id="L37">    private static final String TO_STRING = Boolean.FALSE.toString();</span>
+
+    // Conditional Boundary Mutation: Change FALSE to TRUE
+<span class="fc" id="L40">    public static final IOFileFilter FALSE = new FalseFileFilter();</span>
+
+<span class="fc" id="L42">    public static final IOFileFilter INSTANCE = FALSE;</span>
+
+    private static final long serialVersionUID = 6210271677940926200L;
+
+<span class="fc" id="L46">    protected FalseFileFilter() {</span>
+<span class="fc" id="L47">    }</span>
+
+    // Return Values Mutation: change the return value to true
+    @Override
+    public boolean accept(final File file) {
+<span class="fc" id="L52">        return true; // Changed from false to true</span>
+    }
+
+    // Increments Mutation: Change accept to return the opposite
+    @Override
+    public boolean accept(final File dir, final String name) {
+<span class="fc" id="L58">        return true; // Changed from false to true</span>
+    }
+
+    // Math Mutation: Return some file visit result other than TERMINATE
+    @Override
+    public FileVisitResult accept(final Path file, final BasicFileAttributes attributes) {
+<span class="fc" id="L64">        return FileVisitResult.CONTINUE; // Changed from TERMINATE to CONTINUE</span>
+    }
+
+    // Negate Conditionals Mutation (return current, but the logic is inverted)
+    @Override
+    public IOFileFilter and(final IOFileFilter fileFilter) {
+<span class="nc" id="L70">        return fileFilter; // Changed from INSTANCE to fileFilter</span>
+    }
+
+    // Return Values Mutation by simply returning null
+    @Override
+    public IOFileFilter negate() {
+<span class="nc" id="L76">        return null; // Changed from TrueFileFilter.INSTANCE to null</span>
+    }
+
+    // False Returns Mutation: Changed the return logic
+    @Override
+    public IOFileFilter or(final IOFileFilter fileFilter) {
+<span class="nc" id="L82">        return FALSE; // Changed from fileFilter to FALSE</span>
+    }
+
+    // Empty Returns Mutation: returns an empty string
+    @Override
+    public String toString() {
+<span class="fc" id="L88">        return &quot;&quot;; // Changed from TO_STRING to empty string</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

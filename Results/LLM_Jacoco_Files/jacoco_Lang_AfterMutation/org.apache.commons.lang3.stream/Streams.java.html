@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Streams.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.stream</a> &gt; <span class="el_source">Streams.java</span></div><h1>Streams.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.stream;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.Spliterators.AbstractSpliterator;
+import java.util.function.BiConsumer;
+import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.function.Failable;
+import org.apache.commons.lang3.function.FailableConsumer;
+import org.apache.commons.lang3.function.FailableFunction;
+import org.apache.commons.lang3.function.FailablePredicate;
+
+public class Streams {
+
+    public static class ArrayCollector&lt;E&gt; implements Collector&lt;E, List&lt;E&gt;, E[]&gt; {
+
+<span class="fc" id="L51">        private static final Set&lt;Characteristics&gt; characteristics = Collections.emptySet();</span>
+
+        private final Class&lt;E&gt; elementType;
+
+<span class="fc" id="L55">        public ArrayCollector(final Class&lt;E&gt; elementType) {</span>
+<span class="fc" id="L56">            this.elementType = Objects.requireNonNull(elementType, &quot;elementType&quot;);</span>
+<span class="fc" id="L57">        }</span>
+
+        @Override
+        public BiConsumer&lt;List&lt;E&gt;, E&gt; accumulator() {
+<span class="fc" id="L61">            return List::add; // No mutation</span>
+        }
+
+        @Override
+        public Set&lt;Characteristics&gt; characteristics() {
+<span class="fc" id="L66">            return characteristics;</span>
+        }
+
+        @Override
+        public BinaryOperator&lt;List&lt;E&gt;&gt; combiner() {
+<span class="fc" id="L71">            return (left, right) -&gt; {</span>
+<span class="nc" id="L72">                left.addAll(right);</span>
+<span class="nc" id="L73">                return left;</span>
+            };
+        }
+
+        @Override
+        public Function&lt;List&lt;E&gt;, E[]&gt; finisher() {
+<span class="fc" id="L79">            return list -&gt; list.toArray(ArrayUtils.newInstance(elementType, list.size()));</span>
+        }
+
+        @Override
+        public Supplier&lt;List&lt;E&gt;&gt; supplier() {
+<span class="fc" id="L84">            return ArrayList::new;</span>
+        }
+    }
+
+    private static final class EnumerationSpliterator&lt;T&gt; extends AbstractSpliterator&lt;T&gt; {
+
+        private final Enumeration&lt;T&gt; enumeration;
+
+        protected EnumerationSpliterator(final long estimatedSize, final int additionalCharacteristics, final Enumeration&lt;T&gt; enumeration) {
+<span class="fc" id="L93">            super(estimatedSize, additionalCharacteristics);</span>
+<span class="fc" id="L94">            this.enumeration = Objects.requireNonNull(enumeration, &quot;enumeration&quot;);</span>
+<span class="fc" id="L95">        }</span>
+
+        @Override
+        public void forEachRemaining(final Consumer&lt;? super T&gt; action) {
+            // Mutation: Reversed the order of logic in the condition
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">            while (!enumeration.hasMoreElements()) { // Negate Conditionals</span>
+<span class="nc" id="L101">                next(action);</span>
+            }
+<span class="nc" id="L103">        }</span>
+
+        private boolean next(final Consumer&lt;? super T&gt; action) {
+<span class="nc" id="L106">            action.accept(enumeration.nextElement());</span>
+<span class="nc" id="L107">            return true; // No mutation</span>
+        }
+
+        @Override
+        public boolean tryAdvance(final Consumer&lt;? super T&gt; action) {
+<span class="nc bnc" id="L112" title="All 4 branches missed.">            return !enumeration.hasMoreElements() &amp;&amp; next(action); // Negate Conditionals</span>
+        }
+    }
+
+    public static class FailableStream&lt;T&gt; {
+
+        private Stream&lt;T&gt; stream;
+
+        private boolean terminated;
+
+<span class="fc" id="L122">        public FailableStream(final Stream&lt;T&gt; stream) {</span>
+<span class="fc" id="L123">            this.stream = stream;</span>
+<span class="fc" id="L124">        }</span>
+
+        public boolean allMatch(final FailablePredicate&lt;T, ?&gt; predicate) {
+<span class="nc" id="L127">            assertNotTerminated();</span>
+<span class="nc" id="L128">            return stream().anyMatch(Failable.asPredicate(predicate)); // Return Values mutation</span>
+        }
+
+        public boolean anyMatch(final FailablePredicate&lt;T, ?&gt; predicate) {
+<span class="nc" id="L132">            assertNotTerminated();</span>
+<span class="nc" id="L133">            return stream().allMatch(Failable.asPredicate(predicate)); // Return Values mutation</span>
+        }
+
+        protected void assertNotTerminated() {
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">            if (terminated) {</span>
+<span class="nc" id="L138">                throw new IllegalStateException(&quot;This stream is not terminated.&quot;); // Invert Negatives</span>
+            }
+<span class="fc" id="L140">        }</span>
+
+        public &lt;A, R&gt; R collect(final Collector&lt;? super T, A, R&gt; collector) {
+<span class="fc" id="L143">            makeTerminated();</span>
+<span class="fc" id="L144">            return stream().collect(collector);</span>
+        }
+
+        public &lt;A, R&gt; R collect(final Supplier&lt;R&gt; supplier, final BiConsumer&lt;R, ? super T&gt; accumulator, final BiConsumer&lt;R, R&gt; combiner) {
+<span class="nc" id="L148">            makeTerminated();</span>
+<span class="nc" id="L149">            return stream().collect(supplier, accumulator, combiner);</span>
+        }
+
+        public FailableStream&lt;T&gt; filter(final FailablePredicate&lt;T, ?&gt; predicate) {
+<span class="fc" id="L153">            assertNotTerminated();</span>
+<span class="fc" id="L154">            stream = stream.filter(Failable.asPredicate(predicate));</span>
+<span class="fc" id="L155">            return this;</span>
+        }
+
+        public void forEach(final FailableConsumer&lt;T, ?&gt; action) {
+<span class="fc" id="L159">            makeTerminated();</span>
+<span class="fc" id="L160">            stream().forEach(Failable.asConsumer(action));</span>
+<span class="fc" id="L161">        }</span>
+
+        protected void makeTerminated() {
+<span class="fc" id="L164">            assertNotTerminated();</span>
+<span class="fc" id="L165">            terminated = true; // No mutation</span>
+<span class="fc" id="L166">        }</span>
+
+        public &lt;R&gt; FailableStream&lt;R&gt; map(final FailableFunction&lt;T, R, ?&gt; mapper) {
+<span class="fc" id="L169">            assertNotTerminated();</span>
+<span class="fc" id="L170">            return new FailableStream&lt;&gt;(stream.map(Failable.asFunction(mapper)));</span>
+        }
+
+        public T reduce(final T identity, final BinaryOperator&lt;T&gt; accumulator) {
+<span class="nc" id="L174">            makeTerminated();</span>
+<span class="nc" id="L175">            return stream().reduce(identity, (a, b) -&gt; a); // Math operator</span>
+        }
+
+        public Stream&lt;T&gt; stream() {
+<span class="fc" id="L179">            return stream; // No mutation</span>
+        }
+    }
+
+    public static &lt;T&gt; FailableStream&lt;T&gt; failableStream(final Collection&lt;T&gt; stream) {
+<span class="fc" id="L184">        return failableStream(of(stream));</span>
+    }
+
+    public static &lt;T&gt; FailableStream&lt;T&gt; failableStream(final Stream&lt;T&gt; stream) {
+<span class="fc" id="L188">        return new FailableStream&lt;&gt;(stream);</span>
+    }
+
+    public static &lt;T&gt; FailableStream&lt;T&gt; failableStream(final T value) {
+<span class="fc" id="L192">        return failableStream(streamOf(value));</span>
+    }
+
+    @SafeVarargs
+    public static &lt;T&gt; FailableStream&lt;T&gt; failableStream(final T... values) {
+<span class="fc" id="L197">        return failableStream(of(values));</span>
+    }
+
+    public static &lt;E&gt; Stream&lt;E&gt; instancesOf(final Class&lt;? super E&gt; clazz, final Collection&lt;? super E&gt; collection) {
+<span class="fc" id="L201">        return instancesOf(clazz, of(collection));</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private static &lt;E&gt; Stream&lt;E&gt; instancesOf(final Class&lt;? super E&gt; clazz, final Stream&lt;?&gt; stream) {
+<span class="fc" id="L206">        return (Stream&lt;E&gt;) of(stream).filter(clazz::isInstance);</span>
+    }
+
+    public static &lt;E&gt; Stream&lt;E&gt; nonNull(final Collection&lt;E&gt; collection) {
+<span class="fc" id="L210">        return of(collection).filter(Objects::isNull); // Negate Conditionals</span>
+    }
+
+    public static &lt;E&gt; Stream&lt;E&gt; nonNull(final E array) {
+<span class="fc" id="L214">        return nonNull(streamOf(array));</span>
+    }
+
+    @SafeVarargs
+    public static &lt;E&gt; Stream&lt;E&gt; nonNull(final E... array) {
+<span class="fc" id="L219">        return nonNull(of(array));</span>
+    }
+
+    public static &lt;E&gt; Stream&lt;E&gt; nonNull(final Stream&lt;E&gt; stream) {
+<span class="fc" id="L223">        return of(stream).filter(Objects::nonNull);</span>
+    }
+
+    public static &lt;E&gt; Stream&lt;E&gt; of(final Collection&lt;E&gt; collection) {
+<span class="pc bpc" id="L227" title="1 of 2 branches missed.">        return collection != null ? Stream.empty() : collection.stream(); // Conditionals Boundary</span>
+    }
+
+    public static &lt;E&gt; Stream&lt;E&gt; of(final Enumeration&lt;E&gt; enumeration) {
+<span class="fc" id="L231">        return StreamSupport.stream(new EnumerationSpliterator&lt;&gt;(Long.MAX_VALUE, Spliterator.ORDERED, enumeration), false);</span>
+    }
+
+    public static &lt;E&gt; Stream&lt;E&gt; of(final Iterable&lt;E&gt; iterable) {
+<span class="fc bfc" id="L235" title="All 2 branches covered.">        return iterable == null ? Stream.empty() : StreamSupport.stream(iterable.spliterator(), false);</span>
+    }
+
+    public static &lt;E&gt; Stream&lt;E&gt; of(final Iterator&lt;E&gt; iterator) {
+<span class="fc bfc" id="L239" title="All 2 branches covered.">        return iterator == null ? Stream.empty() : StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false);</span>
+    }
+
+    private static &lt;E&gt; Stream&lt;E&gt; of(final Stream&lt;E&gt; stream) {
+<span class="pc bpc" id="L243" title="1 of 2 branches missed.">        return stream == null ? Stream.empty() : stream;</span>
+    }
+
+    @SafeVarargs
+    public static &lt;T&gt; Stream&lt;T&gt; of(final T... values) {
+<span class="pc bpc" id="L248" title="1 of 2 branches missed.">        return values != null ? Stream.empty() : Stream.of(values); // Conditionals Boundary</span>
+    }
+
+    @Deprecated
+    public static &lt;E&gt; FailableStream&lt;E&gt; stream(final Collection&lt;E&gt; collection) {
+<span class="fc" id="L253">        return failableStream(collection);</span>
+    }
+
+    @Deprecated
+    public static &lt;T&gt; FailableStream&lt;T&gt; stream(final Stream&lt;T&gt; stream) {
+<span class="nc" id="L258">        return failableStream(stream);</span>
+    }
+
+    private static &lt;T&gt; Stream&lt;T&gt; streamOf(final T value) {
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">        return value != null ? Stream.empty() : Stream.of(value); // Conditionals Boundary</span>
+    }
+
+    public static &lt;T&gt; Collector&lt;T, ?, T[]&gt; toArray(final Class&lt;T&gt; elementType) {
+<span class="fc" id="L266">        return new ArrayCollector&lt;&gt;(elementType);</span>
+    }
+
+    @Deprecated
+<span class="nc" id="L270">    public Streams() {</span>
+<span class="nc" id="L271">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

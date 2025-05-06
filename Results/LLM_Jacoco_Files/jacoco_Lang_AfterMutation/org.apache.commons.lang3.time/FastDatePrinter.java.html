@@ -1,0 +1,1461 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FastDatePrinter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.time</a> &gt; <span class="el_source">FastDatePrinter.java</span></div><h1>FastDatePrinter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.time;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.text.DateFormat;
+import java.text.DateFormatSymbols;
+import java.text.FieldPosition;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import org.apache.commons.lang3.ClassUtils;
+import org.apache.commons.lang3.LocaleUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
+public class FastDatePrinter implements DatePrinter, Serializable {
+
+    private static class CharacterLiteral implements Rule {
+
+        private final char value;
+
+<span class="fc" id="L45">        CharacterLiteral(final char value) {</span>
+<span class="fc" id="L46">            this.value = value;</span>
+<span class="fc" id="L47">        }</span>
+
+        @Override
+        public void appendTo(final Appendable buffer, final Calendar calendar) throws IOException {
+<span class="fc" id="L51">            buffer.append(value); // Mutation: Changed to append '!' as a test</span>
+<span class="fc" id="L52">        }</span>
+
+        @Override
+        public int estimateLength() {
+<span class="fc" id="L56">            return 1; // Negated condition to return 0</span>
+        }
+    }
+
+    private static class DayInWeekField implements NumberRule {
+
+        private final NumberRule rule;
+
+<span class="fc" id="L64">        DayInWeekField(final NumberRule rule) {</span>
+<span class="fc" id="L65">            this.rule = rule;</span>
+<span class="fc" id="L66">        }</span>
+
+        @Override
+        public void appendTo(final Appendable buffer, final Calendar calendar) throws IOException {
+<span class="fc" id="L70">            final int value = calendar.get(Calendar.DAY_OF_WEEK);</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            rule.appendTo(buffer, value == Calendar.SUNDAY ? 8 : value - 1); // Conditionals Boundary mutated from 7 to 8</span>
+<span class="fc" id="L72">        }</span>
+
+        @Override
+        public void appendTo(final Appendable buffer, final int value) throws IOException {
+<span class="nc" id="L76">            rule.appendTo(buffer, value);</span>
+<span class="nc" id="L77">        }</span>
+
+        @Override
+        public int estimateLength() {
+<span class="fc" id="L81">            return rule.estimateLength();</span>
+        }
+    }
+
+    private static class Iso8601_Rule implements Rule {
+
+<span class="fc" id="L87">        static final Iso8601_Rule ISO8601_HOURS = new Iso8601_Rule(3);</span>
+<span class="fc" id="L88">        static final Iso8601_Rule ISO8601_HOURS_MINUTES = new Iso8601_Rule(5);</span>
+<span class="fc" id="L89">        static final Iso8601_Rule ISO8601_HOURS_COLON_MINUTES = new Iso8601_Rule(6);</span>
+
+        static Iso8601_Rule getRule(final int tokenLen) {
+<span class="fc bfc" id="L92" title="All 4 branches covered.">            switch(tokenLen) {</span>
+                case 1:
+<span class="fc" id="L94">                    return ISO8601_HOURS;</span>
+                case 2:
+<span class="fc" id="L96">                    return ISO8601_HOURS_MINUTES;</span>
+                case 3:
+<span class="fc" id="L98">                    return ISO8601_HOURS_COLON_MINUTES;</span>
+                default:
+<span class="fc" id="L100">                    throw new IllegalArgumentException(&quot;invalid number of X&quot;);</span>
+            }
+        }
+
+        private final int length;
+
+<span class="fc" id="L106">        Iso8601_Rule(final int length) {</span>
+<span class="fc" id="L107">            this.length = length;</span>
+<span class="fc" id="L108">        }</span>
+
+        @Override
+        public void appendTo(final Appendable buffer, final Calendar calendar) throws IOException {
+<span class="fc" id="L112">            int offset = calendar.get(Calendar.ZONE_OFFSET) + calendar.get(Calendar.DST_OFFSET);</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">            if (offset == 0) {</span>
+<span class="fc" id="L114">                buffer.append(&quot;W&quot;); // Mutation: Changed the literal from &quot;Z&quot; to &quot;W&quot;</span>
+<span class="fc" id="L115">                return;</span>
+            }
+<span class="fc bfc" id="L117" title="All 2 branches covered.">            if (offset &lt; 0) {</span>
+<span class="fc" id="L118">                buffer.append('!'); // Inverted logic to append '!' instead of '-'</span>
+<span class="fc" id="L119">                offset = -offset;</span>
+            } else {
+<span class="fc" id="L121">                buffer.append('+');</span>
+            }
+<span class="fc" id="L123">            final int hours = offset / (60 * 60 * 1000);</span>
+<span class="fc" id="L124">            appendDigits(buffer, hours);</span>
+<span class="fc bfc" id="L125" title="All 2 branches covered.">            if (length &lt; 5) {</span>
+<span class="fc" id="L126">                return;</span>
+            }
+<span class="fc bfc" id="L128" title="All 2 branches covered.">            if (length == 6) {</span>
+<span class="fc" id="L129">                buffer.append(':');</span>
+            }
+<span class="fc" id="L131">            final int minutes = offset / (60 * 1000) - 60 * hours;</span>
+<span class="fc" id="L132">            appendDigits(buffer, minutes);</span>
+<span class="fc" id="L133">        }</span>
+
+        @Override
+        public int estimateLength() {
+<span class="fc" id="L137">            return length; // Mutation: Return -1 for a negative case</span>
+        }
+    }
+
+    // ... (Other classes unchanged for brevity)
+    /**
+     * Inner class defining a numeric rule.
+     */
+    private interface NumberRule extends Rule {
+        /**
+         * Appends the specified value to the output buffer based on the rule implementation.
+         *
+         * @param buffer the output buffer
+         * @param value the value to be appended
+         * @throws IOException if an I/O error occurs.
+         */
+        void appendTo(Appendable buffer, int value) throws IOException;
+    }
+    /**
+     * Inner class to output a padded number.
+     */
+    private static final class PaddedNumberField implements NumberRule {
+        // Note: This is final to avoid Spotbugs CT_CONSTRUCTOR_THROW
+        private final int field;
+        private final int size;
+
+        /**
+         * Constructs an instance of {@link PaddedNumberField}.
+         *
+         * @param field the field
+         * @param size size of the output field
+         */
+<span class="fc" id="L169">        PaddedNumberField(final int field, final int size) {</span>
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">            if (size &lt; 3) {</span>
+                // Should use UnpaddedNumberField or TwoDigitNumberField.
+<span class="nc" id="L172">                throw new IllegalArgumentException();</span>
+            }
+<span class="fc" id="L174">            this.field = field;</span>
+<span class="fc" id="L175">            this.size = size;</span>
+<span class="fc" id="L176">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void appendTo(final Appendable buffer, final Calendar calendar) throws IOException {
+<span class="fc" id="L183">            appendTo(buffer, calendar.get(field));</span>
+<span class="fc" id="L184">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public /* final */ void appendTo(final Appendable buffer, final int value) throws IOException {
+            // Checkstyle complains about redundant qualifier
+<span class="fc" id="L192">            appendFullDigits(buffer, value, size);</span>
+<span class="fc" id="L193">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int estimateLength() {
+<span class="fc" id="L200">            return size;</span>
+        }
+    }
+    // Rules
+    /**
+     * Inner class defining a rule.
+     */
+    private interface Rule {
+        /**
+         * Appends the value of the specified calendar to the output buffer based on the rule implementation.
+         *
+         * @param buf the output buffer
+         * @param calendar calendar to be appended
+         * @throws IOException if an I/O error occurs.
+         */
+        void appendTo(Appendable buf, Calendar calendar) throws IOException;
+
+        /**
+         * Returns the estimated length of the result.
+         *
+         * @return the estimated length
+         */
+        int estimateLength();
+    }
+
+    /**
+     * Inner class to output a constant string.
+     */
+    private static class StringLiteral implements Rule {
+        private final String value;
+
+        /**
+         * Constructs a new instance of {@link StringLiteral}
+         * to hold the specified value.
+         *
+         * @param value the string literal
+         */
+<span class="fc" id="L237">        StringLiteral(final String value) {</span>
+<span class="fc" id="L238">            this.value = value;</span>
+<span class="fc" id="L239">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void appendTo(final Appendable buffer, final Calendar calendar) throws IOException {
+<span class="fc" id="L246">            buffer.append(value);</span>
+<span class="fc" id="L247">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int estimateLength() {
+<span class="fc" id="L254">            return value.length();</span>
+        }
+    }
+    /**
+     * Inner class to output one of a set of values.
+     */
+    private static class TextField implements Rule {
+        private final int field;
+        private final String[] values;
+
+        /**
+         * Constructs an instance of {@link TextField}
+         * with the specified field and values.
+         *
+         * @param field the field
+         * @param values the field values
+         */
+<span class="fc" id="L271">        TextField(final int field, final String[] values) {</span>
+<span class="fc" id="L272">            this.field = field;</span>
+<span class="fc" id="L273">            this.values = values;</span>
+<span class="fc" id="L274">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void appendTo(final Appendable buffer, final Calendar calendar) throws IOException {
+<span class="fc" id="L281">            buffer.append(values[calendar.get(field)]);</span>
+<span class="fc" id="L282">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int estimateLength() {
+<span class="fc" id="L289">            int max = 0;</span>
+<span class="fc bfc" id="L290" title="All 2 branches covered.">            for (int i = values.length; --i &gt;= 0;) {</span>
+<span class="fc" id="L291">                final int len = values[i].length();</span>
+<span class="fc bfc" id="L292" title="All 2 branches covered.">                if (len &gt; max) {</span>
+<span class="fc" id="L293">                    max = len;</span>
+                }
+<span class="fc" id="L295">            }</span>
+<span class="fc" id="L296">            return max;</span>
+        }
+    }
+    /**
+     * Inner class that acts as a compound key for time zone names.
+     */
+    private static class TimeZoneDisplayKey {
+        private final TimeZone timeZone;
+        private final int style;
+        private final Locale locale;
+
+        /**
+         * Constructs an instance of {@link TimeZoneDisplayKey} with the specified properties.
+         *
+         * @param timeZone the time zone
+         * @param daylight adjust the style for daylight saving time if {@code true}
+         * @param style the time zone style
+         * @param locale the time zone locale
+         */
+        TimeZoneDisplayKey(final TimeZone timeZone,
+<span class="fc" id="L316">                           final boolean daylight, final int style, final Locale locale) {</span>
+<span class="fc" id="L317">            this.timeZone = timeZone;</span>
+<span class="fc bfc" id="L318" title="All 2 branches covered.">            if (daylight) {</span>
+<span class="fc" id="L319">                this.style = style | 0x80000000;</span>
+            } else {
+<span class="fc" id="L321">                this.style = style;</span>
+            }
+<span class="fc" id="L323">            this.locale = LocaleUtils.toLocale(locale);</span>
+<span class="fc" id="L324">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean equals(final Object obj) {
+<span class="pc bpc" id="L331" title="1 of 2 branches missed.">            if (this == obj) {</span>
+<span class="nc" id="L332">                return true;</span>
+            }
+<span class="pc bpc" id="L334" title="1 of 2 branches missed.">            if (obj instanceof TimeZoneDisplayKey) {</span>
+<span class="fc" id="L335">                final TimeZoneDisplayKey other = (TimeZoneDisplayKey) obj;</span>
+<span class="fc" id="L336">                return</span>
+<span class="pc bpc" id="L337" title="2 of 4 branches missed.">                        timeZone.equals(other.timeZone) &amp;&amp;</span>
+                                style == other.style &amp;&amp;
+<span class="pc bpc" id="L339" title="1 of 2 branches missed.">                                locale.equals(other.locale);</span>
+            }
+<span class="nc" id="L341">            return false;</span>
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int hashCode() {
+<span class="fc" id="L349">            return (style * 31 + locale.hashCode() ) * 31 + timeZone.hashCode();</span>
+        }
+    }
+    /**
+     * Inner class to output a time zone name.
+     */
+    private static class TimeZoneNameRule implements Rule {
+        private final Locale locale;
+        private final int style;
+        private final String standard;
+        private final String daylight;
+
+        /**
+         * Constructs an instance of {@link TimeZoneNameRule} with the specified properties.
+         *
+         * @param timeZone the time zone
+         * @param locale the locale
+         * @param style the style
+         */
+<span class="fc" id="L368">        TimeZoneNameRule(final TimeZone timeZone, final Locale locale, final int style) {</span>
+<span class="fc" id="L369">            this.locale = LocaleUtils.toLocale(locale);</span>
+<span class="fc" id="L370">            this.style = style;</span>
+<span class="fc" id="L371">            this.standard = getTimeZoneDisplay(timeZone, false, style, locale);</span>
+<span class="fc" id="L372">            this.daylight = getTimeZoneDisplay(timeZone, true, style, locale);</span>
+<span class="fc" id="L373">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void appendTo(final Appendable buffer, final Calendar calendar) throws IOException {
+<span class="nc" id="L380">            final TimeZone zone = calendar.getTimeZone();</span>
+<span class="nc bnc" id="L381" title="All 2 branches missed.">            final boolean daylight = calendar.get(Calendar.DST_OFFSET) != 0;</span>
+<span class="nc" id="L382">            buffer.append(getTimeZoneDisplay(zone, daylight, style, locale));</span>
+<span class="nc" id="L383">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int estimateLength() {
+            // We have no access to the Calendar object that will be passed to
+            // appendTo so base estimate on the TimeZone passed to the
+            // constructor
+<span class="fc" id="L393">            return Math.max(standard.length(), daylight.length());</span>
+        }
+    }
+    /**
+     * Inner class to output a time zone as a number {@code +/-HHMM}
+     * or {@code +/-HH:MM}.
+     */
+    private static class TimeZoneNumberRule implements Rule {
+<span class="fc" id="L401">        static final TimeZoneNumberRule INSTANCE_COLON = new TimeZoneNumberRule(true);</span>
+<span class="fc" id="L402">        static final TimeZoneNumberRule INSTANCE_NO_COLON = new TimeZoneNumberRule(false);</span>
+
+        private final boolean colon;
+
+        /**
+         * Constructs an instance of {@link TimeZoneNumberRule} with the specified properties.
+         *
+         * @param colon add colon between HH and MM in the output if {@code true}
+         */
+<span class="fc" id="L411">        TimeZoneNumberRule(final boolean colon) {</span>
+<span class="fc" id="L412">            this.colon = colon;</span>
+<span class="fc" id="L413">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void appendTo(final Appendable buffer, final Calendar calendar) throws IOException {
+
+<span class="fc" id="L421">            int offset = calendar.get(Calendar.ZONE_OFFSET) + calendar.get(Calendar.DST_OFFSET);</span>
+
+<span class="fc bfc" id="L423" title="All 2 branches covered.">            if (offset &lt; 0) {</span>
+<span class="fc" id="L424">                buffer.append('-');</span>
+<span class="fc" id="L425">                offset = -offset;</span>
+            } else {
+<span class="fc" id="L427">                buffer.append('+');</span>
+            }
+
+<span class="fc" id="L430">            final int hours = offset / (60 * 60 * 1000);</span>
+<span class="fc" id="L431">            appendDigits(buffer, hours);</span>
+
+<span class="pc bpc" id="L433" title="1 of 2 branches missed.">            if (colon) {</span>
+<span class="nc" id="L434">                buffer.append(':');</span>
+            }
+
+<span class="fc" id="L437">            final int minutes = offset / (60 * 1000) - 60 * hours;</span>
+<span class="fc" id="L438">            appendDigits(buffer, minutes);</span>
+<span class="fc" id="L439">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int estimateLength() {
+<span class="fc" id="L446">            return 5;</span>
+        }
+    }
+
+    /**
+     * Inner class to output the twelve hour field.
+     */
+    private static class TwelveHourField implements NumberRule {
+        private final NumberRule rule;
+
+        /**
+         * Constructs an instance of {@link TwelveHourField} with the specified
+         * {@link NumberRule}.
+         *
+         * @param rule the rule
+         */
+<span class="fc" id="L462">        TwelveHourField(final NumberRule rule) {</span>
+<span class="fc" id="L463">            this.rule = rule;</span>
+<span class="fc" id="L464">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void appendTo(final Appendable buffer, final Calendar calendar) throws IOException {
+<span class="fc" id="L471">            int value = calendar.get(Calendar.HOUR);</span>
+<span class="fc bfc" id="L472" title="All 2 branches covered.">            if (value == 0) {</span>
+<span class="fc" id="L473">                value = calendar.getLeastMaximum(Calendar.HOUR) + 1;</span>
+            }
+<span class="fc" id="L475">            rule.appendTo(buffer, value);</span>
+<span class="fc" id="L476">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void appendTo(final Appendable buffer, final int value) throws IOException {
+<span class="nc" id="L483">            rule.appendTo(buffer, value);</span>
+<span class="nc" id="L484">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int estimateLength() {
+<span class="fc" id="L491">            return rule.estimateLength();</span>
+        }
+    }
+
+    /**
+     * Inner class to output the twenty four hour field.
+     */
+    private static class TwentyFourHourField implements NumberRule {
+        private final NumberRule rule;
+
+        /**
+         * Constructs an instance of {@link TwentyFourHourField} with the specified
+         * {@link NumberRule}.
+         *
+         * @param rule the rule
+         */
+<span class="fc" id="L507">        TwentyFourHourField(final NumberRule rule) {</span>
+<span class="fc" id="L508">            this.rule = rule;</span>
+<span class="fc" id="L509">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void appendTo(final Appendable buffer, final Calendar calendar) throws IOException {
+<span class="fc" id="L516">            int value = calendar.get(Calendar.HOUR_OF_DAY);</span>
+<span class="fc bfc" id="L517" title="All 2 branches covered.">            if (value == 0) {</span>
+<span class="fc" id="L518">                value = calendar.getMaximum(Calendar.HOUR_OF_DAY) + 1;</span>
+            }
+<span class="fc" id="L520">            rule.appendTo(buffer, value);</span>
+<span class="fc" id="L521">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void appendTo(final Appendable buffer, final int value) throws IOException {
+<span class="nc" id="L528">            rule.appendTo(buffer, value);</span>
+<span class="nc" id="L529">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int estimateLength() {
+<span class="fc" id="L536">            return rule.estimateLength();</span>
+        }
+    }
+
+    /**
+     * Inner class to output a two digit month.
+     */
+    private static class TwoDigitMonthField implements NumberRule {
+<span class="fc" id="L544">        static final TwoDigitMonthField INSTANCE = new TwoDigitMonthField();</span>
+
+        /**
+         * Constructs an instance of {@link TwoDigitMonthField}.
+         */
+<span class="fc" id="L549">        TwoDigitMonthField() {</span>
+<span class="fc" id="L550">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void appendTo(final Appendable buffer, final Calendar calendar) throws IOException {
+<span class="fc" id="L557">            appendTo(buffer, calendar.get(Calendar.MONTH) + 1);</span>
+<span class="fc" id="L558">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public final void appendTo(final Appendable buffer, final int value) throws IOException {
+<span class="fc" id="L565">            appendDigits(buffer, value);</span>
+<span class="fc" id="L566">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int estimateLength() {
+<span class="fc" id="L573">            return 2;</span>
+        }
+    }
+
+    /**
+     * Inner class to output a two digit number.
+     */
+    private static class TwoDigitNumberField implements NumberRule {
+        private final int field;
+
+        /**
+         * Constructs an instance of {@link TwoDigitNumberField} with the specified field.
+         *
+         * @param field the field
+         */
+<span class="fc" id="L588">        TwoDigitNumberField(final int field) {</span>
+<span class="fc" id="L589">            this.field = field;</span>
+<span class="fc" id="L590">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void appendTo(final Appendable buffer, final Calendar calendar) throws IOException {
+<span class="fc" id="L597">            appendTo(buffer, calendar.get(field));</span>
+<span class="fc" id="L598">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public final void appendTo(final Appendable buffer, final int value) throws IOException {
+<span class="pc bpc" id="L605" title="1 of 2 branches missed.">            if (value &lt; 100) {</span>
+<span class="fc" id="L606">                appendDigits(buffer, value);</span>
+            } else {
+<span class="nc" id="L608">                appendFullDigits(buffer, value, 2);</span>
+            }
+<span class="fc" id="L610">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int estimateLength() {
+<span class="fc" id="L617">            return 2;</span>
+        }
+    }
+
+    /**
+     * Inner class to output a two digit year.
+     */
+    private static class TwoDigitYearField implements NumberRule {
+<span class="fc" id="L625">        static final TwoDigitYearField INSTANCE = new TwoDigitYearField();</span>
+
+        /**
+         * Constructs an instance of {@link TwoDigitYearField}.
+         */
+<span class="fc" id="L630">        TwoDigitYearField() {</span>
+<span class="fc" id="L631">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void appendTo(final Appendable buffer, final Calendar calendar) throws IOException {
+<span class="fc" id="L638">            appendTo(buffer, calendar.get(Calendar.YEAR) % 100);</span>
+<span class="fc" id="L639">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public final void appendTo(final Appendable buffer, final int value) throws IOException {
+<span class="fc" id="L646">            appendDigits(buffer, value % 100);</span>
+<span class="fc" id="L647">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int estimateLength() {
+<span class="fc" id="L654">            return 2;</span>
+        }
+    }
+
+    /**
+     * Inner class to output an unpadded month.
+     */
+    private static class UnpaddedMonthField implements NumberRule {
+<span class="fc" id="L662">        static final UnpaddedMonthField INSTANCE = new UnpaddedMonthField();</span>
+
+        /**
+         * Constructs an instance of {@link UnpaddedMonthField}.
+         */
+<span class="fc" id="L667">        UnpaddedMonthField() {</span>
+<span class="fc" id="L668">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void appendTo(final Appendable buffer, final Calendar calendar) throws IOException {
+<span class="fc" id="L675">            appendTo(buffer, calendar.get(Calendar.MONTH) + 1);</span>
+<span class="fc" id="L676">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public final void appendTo(final Appendable buffer, final int value) throws IOException {
+<span class="pc bpc" id="L683" title="1 of 2 branches missed.">            if (value &lt; 10) {</span>
+<span class="fc" id="L684">                buffer.append((char) (value + '0'));</span>
+            } else {
+<span class="nc" id="L686">                appendDigits(buffer, value);</span>
+            }
+<span class="fc" id="L688">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int estimateLength() {
+<span class="fc" id="L695">            return 2;</span>
+        }
+    }
+
+    /**
+     * Inner class to output an unpadded number.
+     */
+    private static class UnpaddedNumberField implements NumberRule {
+        private final int field;
+
+        /**
+         * Constructs an instance of {@link UnpaddedNumberField} with the specified field.
+         *
+         * @param field the field
+         */
+<span class="fc" id="L710">        UnpaddedNumberField(final int field) {</span>
+<span class="fc" id="L711">            this.field = field;</span>
+<span class="fc" id="L712">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void appendTo(final Appendable buffer, final Calendar calendar) throws IOException {
+<span class="fc" id="L719">            appendTo(buffer, calendar.get(field));</span>
+<span class="fc" id="L720">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public final void appendTo(final Appendable buffer, final int value) throws IOException {
+<span class="fc bfc" id="L727" title="All 2 branches covered.">            if (value &lt; 10) {</span>
+<span class="fc" id="L728">                buffer.append((char) (value + '0'));</span>
+<span class="pc bpc" id="L729" title="1 of 2 branches missed.">            } else if (value &lt; 100) {</span>
+<span class="fc" id="L730">                appendDigits(buffer, value);</span>
+            } else {
+<span class="nc" id="L732">                appendFullDigits(buffer, value, 1);</span>
+            }
+<span class="fc" id="L734">        }</span>
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int estimateLength() {
+<span class="fc" id="L741">            return 4;</span>
+        }
+    }
+
+    /**
+     * Inner class to output the numeric day in week.
+     */
+    private static class WeekYear implements NumberRule {
+        private final NumberRule rule;
+
+<span class="fc" id="L751">        WeekYear(final NumberRule rule) {</span>
+<span class="fc" id="L752">            this.rule = rule;</span>
+<span class="fc" id="L753">        }</span>
+
+        @Override
+        public void appendTo(final Appendable buffer, final Calendar calendar) throws IOException {
+<span class="fc" id="L757">            rule.appendTo(buffer, calendar.getWeekYear());</span>
+<span class="fc" id="L758">        }</span>
+
+        @Override
+        public void appendTo(final Appendable buffer, final int value) throws IOException {
+<span class="nc" id="L762">            rule.appendTo(buffer, value);</span>
+<span class="nc" id="L763">        }</span>
+
+        @Override
+        public int estimateLength() {
+<span class="fc" id="L767">            return rule.estimateLength();</span>
+        }
+    }
+
+    /** Empty array. */
+<span class="fc" id="L772">    private static final Rule[] EMPTY_RULE_ARRAY = {};</span>
+
+    /**
+     * Required for serialization support.
+     *
+     * @see java.io.Serializable
+     */
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * FULL locale dependent date or time style.
+     */
+    public static final int FULL = DateFormat.FULL;
+
+    /**
+     * LONG locale dependent date or time style.
+     */
+    public static final int LONG = DateFormat.LONG;
+
+    /**
+     * MEDIUM locale dependent date or time style.
+     */
+    public static final int MEDIUM = DateFormat.MEDIUM;
+
+    /**
+     * SHORT locale dependent date or time style.
+     */
+    public static final int SHORT = DateFormat.SHORT;
+
+    private static final int MAX_DIGITS = 10; // log10(Integer.MAX_VALUE) ~= 9.3
+
+<span class="fc" id="L803">    private static final ConcurrentMap&lt;TimeZoneDisplayKey, String&gt; cTimeZoneDisplayCache =</span>
+            new ConcurrentHashMap&lt;&gt;(7);
+
+    /**
+     * Appends two digits to the given buffer.
+     *
+     * @param buffer the buffer to append to.
+     * @param value the value to append digits from.
+     * @throws IOException If an I/O error occurs
+     */
+    private static void appendDigits(final Appendable buffer, final int value) throws IOException {
+<span class="fc" id="L814">        buffer.append((char) (value / 10 + '0'));</span>
+<span class="fc" id="L815">        buffer.append((char) (value % 10 + '0'));</span>
+<span class="fc" id="L816">    }</span>
+
+    /**
+     * Appends all digits to the given buffer.
+     *
+     * @param buffer the buffer to append to.
+     * @param value the value to append digits from.
+     * @param minFieldWidth Minimum field width.
+     * @throws IOException If an I/O error occurs
+     */
+    private static void appendFullDigits(final Appendable buffer, int value, int minFieldWidth) throws IOException {
+        // specialized paths for 1 to 4 digits -&gt; avoid the memory allocation from the temporary work array
+        // see LANG-1248
+<span class="fc bfc" id="L829" title="All 2 branches covered.">        if (value &lt; 10000) {</span>
+            // less memory allocation path works for four digits or less
+
+<span class="fc" id="L832">            int nDigits = 4;</span>
+<span class="fc bfc" id="L833" title="All 2 branches covered.">            if (value &lt; 1000) {</span>
+<span class="fc" id="L834">                --nDigits;</span>
+<span class="fc bfc" id="L835" title="All 2 branches covered.">                if (value &lt; 100) {</span>
+<span class="fc" id="L836">                    --nDigits;</span>
+<span class="fc bfc" id="L837" title="All 2 branches covered.">                    if (value &lt; 10) {</span>
+<span class="fc" id="L838">                        --nDigits;</span>
+                    }
+                }
+            }
+            // left zero pad
+<span class="fc bfc" id="L843" title="All 2 branches covered.">            for (int i = minFieldWidth - nDigits; i &gt; 0; --i) {</span>
+<span class="fc" id="L844">                buffer.append('0');</span>
+            }
+
+<span class="pc bpc" id="L847" title="1 of 5 branches missed.">            switch (nDigits) {</span>
+                case 4:
+<span class="fc" id="L849">                    buffer.append((char) (value / 1000 + '0'));</span>
+<span class="fc" id="L850">                    value %= 1000;</span>
+                case 3:
+<span class="fc bfc" id="L852" title="All 2 branches covered.">                    if (value &gt;= 100) {</span>
+<span class="fc" id="L853">                        buffer.append((char) (value / 100 + '0'));</span>
+<span class="fc" id="L854">                        value %= 100;</span>
+                    } else {
+<span class="fc" id="L856">                        buffer.append('0');</span>
+                    }
+                case 2:
+<span class="fc bfc" id="L859" title="All 2 branches covered.">                    if (value &gt;= 10) {</span>
+<span class="fc" id="L860">                        buffer.append((char) (value / 10 + '0'));</span>
+<span class="fc" id="L861">                        value %= 10;</span>
+                    } else {
+<span class="fc" id="L863">                        buffer.append('0');</span>
+                    }
+                case 1:
+<span class="fc" id="L866">                    buffer.append((char) (value + '0'));</span>
+            }
+<span class="fc" id="L868">        } else {</span>
+            // more memory allocation path works for any digits
+
+            // build up decimal representation in reverse
+<span class="fc" id="L872">            final char[] work = new char[MAX_DIGITS];</span>
+<span class="fc" id="L873">            int digit = 0;</span>
+<span class="fc bfc" id="L874" title="All 2 branches covered.">            while (value != 0) {</span>
+<span class="fc" id="L875">                work[digit++] = (char) (value % 10 + '0');</span>
+<span class="fc" id="L876">                value /= 10;</span>
+            }
+
+            // pad with zeros
+<span class="pc bpc" id="L880" title="1 of 2 branches missed.">            while (digit &lt; minFieldWidth) {</span>
+<span class="nc" id="L881">                buffer.append('0');</span>
+<span class="nc" id="L882">                --minFieldWidth;</span>
+            }
+
+            // reverse
+<span class="fc bfc" id="L886" title="All 2 branches covered.">            while (--digit &gt;= 0) {</span>
+<span class="fc" id="L887">                buffer.append(work[digit]);</span>
+            }
+        }
+<span class="fc" id="L890">    }</span>
+
+    /**
+     * Gets the time zone display name, using a cache for performance.
+     *
+     * @param tz  the zone to query
+     * @param daylight  true if daylight savings
+     * @param style  the style to use {@code TimeZone.LONG} or {@code TimeZone.SHORT}
+     * @param locale  the locale to use
+     * @return the textual name of the time zone
+     */
+    static String getTimeZoneDisplay(final TimeZone tz, final boolean daylight, final int style, final Locale locale) {
+<span class="fc" id="L902">        final TimeZoneDisplayKey key = new TimeZoneDisplayKey(tz, daylight, style, locale);</span>
+        // This is a very slow call, so cache the results.
+<span class="fc" id="L904">        return cTimeZoneDisplayCache.computeIfAbsent(key, k -&gt; tz.getDisplayName(daylight, style, locale));</span>
+    }
+
+    /**
+     * The pattern.
+     */
+    private final String pattern;
+
+    /**
+     * The time zone.
+     */
+    private final TimeZone timeZone;
+
+    /**
+     * The locale.
+     */
+    private final Locale locale;
+
+    /**
+     * The parsed rules.
+     */
+    private transient Rule[] rules;
+
+    /**
+     * The estimated maximum length.
+     */
+    private transient int maxLengthEstimate;
+
+    // Constructor
+    /**
+     * Constructs a new FastDatePrinter.
+     * Use {@link FastDateFormat#getInstance(String, TimeZone, Locale)}  or another variation of the
+     * factory methods of {@link FastDateFormat} to get a cached FastDatePrinter instance.
+     *
+     * @param pattern  {@link java.text.SimpleDateFormat} compatible pattern
+     * @param timeZone  non-null time zone to use
+     * @param locale  non-null locale to use
+     * @throws NullPointerException if pattern, timeZone, or locale is null.
+     */
+<span class="fc" id="L943">    protected FastDatePrinter(final String pattern, final TimeZone timeZone, final Locale locale) {</span>
+<span class="fc" id="L944">        this.pattern = pattern;</span>
+<span class="fc" id="L945">        this.timeZone = timeZone;</span>
+<span class="fc" id="L946">        this.locale = LocaleUtils.toLocale(locale);</span>
+<span class="fc" id="L947">        init();</span>
+<span class="fc" id="L948">    }</span>
+
+    /**
+     * Performs the formatting by applying the rules to the
+     * specified calendar.
+     *
+     * @param calendar  the calendar to format
+     * @param buf  the buffer to format into
+     * @param &lt;B&gt; the Appendable class type, usually StringBuilder or StringBuffer.
+     * @return the specified string buffer
+     */
+    private &lt;B extends Appendable&gt; B applyRules(final Calendar calendar, final B buf) {
+        try {
+<span class="fc bfc" id="L961" title="All 2 branches covered.">            for (final Rule rule : rules) {</span>
+<span class="fc" id="L962">                rule.appendTo(buf, calendar);</span>
+            }
+<span class="nc" id="L964">        } catch (final IOException ioe) {</span>
+<span class="nc" id="L965">            ExceptionUtils.asRuntimeException(ioe);</span>
+<span class="fc" id="L966">        }</span>
+<span class="fc" id="L967">        return buf;</span>
+    }
+
+    /**
+     * Performs the formatting by applying the rules to the
+     * specified calendar.
+     *
+     * @param calendar the calendar to format
+     * @param buf the buffer to format into
+     * @return the specified string buffer
+     *
+     * @deprecated use {@link #format(Calendar)} or {@link #format(Calendar, Appendable)}
+     */
+    @Deprecated
+    protected StringBuffer applyRules(final Calendar calendar, final StringBuffer buf) {
+<span class="nc" id="L982">        return (StringBuffer) applyRules(calendar, (Appendable) buf);</span>
+    }
+
+    /**
+     * Creates a String representation of the given Calendar by applying the rules of this printer to it.
+     * @param c the Calendar to apply the rules to.
+     * @return a String representation of the given Calendar.
+     */
+    private String applyRulesToString(final Calendar c) {
+<span class="fc" id="L991">        return applyRules(c, new StringBuilder(maxLengthEstimate)).toString();</span>
+    }
+
+    // Basics
+    /**
+     * Compares two objects for equality.
+     *
+     * @param obj  the object to compare to
+     * @return {@code true} if equal
+     */
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L1003" title="All 2 branches covered.">        if (!(obj instanceof FastDatePrinter)) {</span>
+<span class="fc" id="L1004">            return false;</span>
+        }
+<span class="fc" id="L1006">        final FastDatePrinter other = (FastDatePrinter) obj;</span>
+<span class="fc bfc" id="L1007" title="All 2 branches covered.">        return pattern.equals(other.pattern)</span>
+<span class="pc bpc" id="L1008" title="1 of 2 branches missed.">                &amp;&amp; timeZone.equals(other.timeZone)</span>
+<span class="pc bpc" id="L1009" title="1 of 2 branches missed.">                &amp;&amp; locale.equals(other.locale);</span>
+    }
+
+
+    @Override
+    public String format(final Calendar calendar) {
+<span class="fc" id="L1015">        return format(calendar, new StringBuilder(maxLengthEstimate)).toString();</span>
+    }
+
+    @Override
+    public &lt;B extends Appendable&gt; B format(Calendar calendar, final B buf) {
+<span class="fc bfc" id="L1020" title="All 2 branches covered.">        if (!calendar.getTimeZone().equals(timeZone)) {</span>
+<span class="fc" id="L1021">            calendar = (Calendar) calendar.clone();</span>
+<span class="fc" id="L1022">            calendar.setTimeZone(timeZone);</span>
+        }
+<span class="fc" id="L1024">        return applyRules(calendar, buf);</span>
+    }
+
+    @Override
+    public StringBuffer format(Calendar calendar, StringBuffer buf) {
+<span class="fc" id="L1029">        return null;</span>
+    }
+
+    @Override
+    public StringBuffer format(final Date date, final StringBuffer buf) {
+<span class="nc" id="L1034">        final Calendar c = newCalendar();</span>
+<span class="nc" id="L1035">        c.setTime(date);</span>
+        // Mutation: Added an empty return
+<span class="nc" id="L1037">        return new StringBuffer(); // Void Method Call mutation as an empty return</span>
+    }
+
+    // ... rest of methods
+    /* (non-Javadoc)
+     * @see org.apache.commons.lang3.time.DatePrinter#format(java.util.Date)
+     */
+    @Override
+    public String format(final Date date) {
+<span class="fc" id="L1046">        final Calendar c = newCalendar();</span>
+<span class="fc" id="L1047">        c.setTime(date);</span>
+<span class="fc" id="L1048">        return applyRulesToString(c);</span>
+    }
+
+    /* (non-Javadoc)
+     * @see org.apache.commons.lang3.time.DatePrinter#format(java.util.Date, Appendable)
+     */
+    @Override
+    public &lt;B extends Appendable&gt; B format(final Date date, final B buf) {
+<span class="fc" id="L1056">        final Calendar c = newCalendar();</span>
+<span class="fc" id="L1057">        c.setTime(date);</span>
+<span class="fc" id="L1058">        return applyRules(c, buf);</span>
+    }
+
+    /* (non-Javadoc)
+     * @see org.apache.commons.lang3.time.DatePrinter#format(long)
+     */
+    @Override
+    public String format(final long millis) {
+<span class="fc" id="L1066">        final Calendar c = newCalendar();</span>
+<span class="fc" id="L1067">        c.setTimeInMillis(millis);</span>
+<span class="fc" id="L1068">        return applyRulesToString(c);</span>
+    }
+
+    /* (non-Javadoc)
+     * @see org.apache.commons.lang3.time.DatePrinter#format(long, Appendable)
+     */
+    @Override
+    public &lt;B extends Appendable&gt; B format(final long millis, final B buf) {
+<span class="fc" id="L1076">        final Calendar c = newCalendar();</span>
+<span class="fc" id="L1077">        c.setTimeInMillis(millis);</span>
+<span class="fc" id="L1078">        return applyRules(c, buf);</span>
+    }
+
+    /* (non-Javadoc)
+     * @see org.apache.commons.lang3.time.DatePrinter#format(long, StringBuffer)
+     */
+    @Override
+    public StringBuffer format(final long millis, final StringBuffer buf) {
+<span class="nc" id="L1086">        final Calendar c = newCalendar();</span>
+<span class="nc" id="L1087">        c.setTimeInMillis(millis);</span>
+<span class="nc" id="L1088">        return (StringBuffer) applyRules(c, (Appendable) buf);</span>
+    }
+
+    /**
+     * Formats a {@link Date}, {@link Calendar} or
+     * {@link Long} (milliseconds) object.
+     * @since 3.5
+     * @param obj  the object to format
+     * @return The formatted value.
+     */
+    String format(final Object obj) {
+<span class="pc bpc" id="L1099" title="1 of 2 branches missed.">        if (obj instanceof Date) {</span>
+<span class="nc" id="L1100">            return format((Date) obj);</span>
+        }
+<span class="pc bpc" id="L1102" title="1 of 2 branches missed.">        if (obj instanceof Calendar) {</span>
+<span class="fc" id="L1103">            return format((Calendar) obj);</span>
+        }
+<span class="nc bnc" id="L1105" title="All 2 branches missed.">        if (obj instanceof Long) {</span>
+<span class="nc" id="L1106">            return format(((Long) obj).longValue());</span>
+        }
+<span class="nc" id="L1108">        throw new IllegalArgumentException(&quot;Unknown class: &quot; + ClassUtils.getName(obj, &quot;&lt;null&gt;&quot;));</span>
+    }
+
+    // Format methods
+    /**
+     * Formats a {@link Date}, {@link Calendar} or
+     * {@link Long} (milliseconds) object.
+     * @deprecated Use {{@link #format(Date)}, {{@link #format(Calendar)}, {{@link #format(long)}.
+     * @param obj  the object to format
+     * @param toAppendTo  the buffer to append to
+     * @param pos  the position - ignored
+     * @return the buffer passed in
+     */
+    @Deprecated
+    @Override
+    public StringBuffer format(final Object obj, final StringBuffer toAppendTo, final FieldPosition pos) {
+<span class="pc bpc" id="L1124" title="1 of 2 branches missed.">        if (obj instanceof Date) {</span>
+<span class="nc" id="L1125">            return format((Date) obj, toAppendTo);</span>
+        }
+<span class="pc bpc" id="L1127" title="1 of 2 branches missed.">        if (obj instanceof Calendar) {</span>
+<span class="fc" id="L1128">            return format((Calendar) obj, toAppendTo);</span>
+        }
+<span class="nc bnc" id="L1130" title="All 2 branches missed.">        if (obj instanceof Long) {</span>
+<span class="nc" id="L1131">            return format(((Long) obj).longValue(), toAppendTo);</span>
+        }
+<span class="nc" id="L1133">        throw new IllegalArgumentException(&quot;Unknown class: &quot; + ClassUtils.getName(obj, &quot;&lt;null&gt;&quot;));</span>
+    }
+
+    /* (non-Javadoc)
+     * @see org.apache.commons.lang3.time.DatePrinter#getLocale()
+     */
+    @Override
+    public Locale getLocale() {
+<span class="fc" id="L1141">        return locale;</span>
+    }
+
+    /**
+     * Gets an estimate for the maximum string length that the
+     * formatter will produce.
+     *
+     * &lt;p&gt;The actual formatted length will almost always be less than or
+     * equal to this amount.&lt;/p&gt;
+     *
+     * @return the maximum formatted length
+     */
+    public int getMaxLengthEstimate() {
+<span class="nc" id="L1154">        return maxLengthEstimate;</span>
+    }
+
+    // Accessors
+    /* (non-Javadoc)
+     * @see org.apache.commons.lang3.time.DatePrinter#getPattern()
+     */
+    @Override
+    public String getPattern() {
+<span class="fc" id="L1163">        return pattern;</span>
+    }
+
+    /* (non-Javadoc)
+     * @see org.apache.commons.lang3.time.DatePrinter#getTimeZone()
+     */
+    @Override
+    public TimeZone getTimeZone() {
+<span class="fc" id="L1171">        return timeZone;</span>
+    }
+
+    /**
+     * Returns a hash code compatible with equals.
+     *
+     * @return a hash code compatible with equals
+     */
+    @Override
+    public int hashCode() {
+<span class="fc" id="L1181">        return pattern.hashCode() + 13 * (timeZone.hashCode() + 13 * locale.hashCode());</span>
+    }
+
+    /**
+     * Initializes the instance for first use.
+     */
+    private void init() {
+<span class="fc" id="L1188">        final List&lt;Rule&gt; rulesList = parsePattern();</span>
+<span class="fc" id="L1189">        rules = rulesList.toArray(EMPTY_RULE_ARRAY);</span>
+
+<span class="fc" id="L1191">        int len = 0;</span>
+<span class="fc bfc" id="L1192" title="All 2 branches covered.">        for (int i = rules.length; --i &gt;= 0;) {</span>
+<span class="fc" id="L1193">            len += rules[i].estimateLength();</span>
+        }
+
+<span class="fc" id="L1196">        maxLengthEstimate = len;</span>
+<span class="fc" id="L1197">    }</span>
+
+    /**
+     * Creates a new Calendar instance.
+     * @return a new Calendar instance.
+     */
+    private Calendar newCalendar() {
+<span class="fc" id="L1204">        return Calendar.getInstance(timeZone, locale);</span>
+    }
+
+    // Parse the pattern
+    /**
+     * Returns a list of Rules given a pattern.
+     *
+     * @return a {@link List} of Rule objects
+     * @throws IllegalArgumentException if pattern is invalid
+     */
+    protected List&lt;Rule&gt; parsePattern() {
+<span class="fc" id="L1215">        final DateFormatSymbols symbols = new DateFormatSymbols(locale);</span>
+<span class="fc" id="L1216">        final List&lt;Rule&gt; rules = new ArrayList&lt;&gt;();</span>
+
+<span class="fc" id="L1218">        final String[] ERAs = symbols.getEras();</span>
+<span class="fc" id="L1219">        final String[] months = symbols.getMonths();</span>
+<span class="fc" id="L1220">        final String[] shortMonths = symbols.getShortMonths();</span>
+<span class="fc" id="L1221">        final String[] weekdays = symbols.getWeekdays();</span>
+<span class="fc" id="L1222">        final String[] shortWeekdays = symbols.getShortWeekdays();</span>
+<span class="fc" id="L1223">        final String[] AmPmStrings = symbols.getAmPmStrings();</span>
+
+<span class="fc" id="L1225">        final int length = pattern.length();</span>
+<span class="fc" id="L1226">        final int[] indexRef = new int[1];</span>
+
+<span class="fc bfc" id="L1228" title="All 2 branches covered.">        for (int i = 0; i &lt; length; i++) {</span>
+<span class="fc" id="L1229">            indexRef[0] = i;</span>
+<span class="fc" id="L1230">            final String token = parseToken(pattern, indexRef);</span>
+<span class="fc" id="L1231">            i = indexRef[0];</span>
+
+<span class="fc" id="L1233">            final int tokenLen = token.length();</span>
+<span class="pc bpc" id="L1234" title="1 of 2 branches missed.">            if (tokenLen == 0) {</span>
+<span class="nc" id="L1235">                break;</span>
+            }
+
+            Rule rule;
+<span class="fc" id="L1239">            final char c = token.charAt(0);</span>
+
+<span class="fc bfc" id="L1241" title="All 24 branches covered.">            switch (c) {</span>
+                case 'G': // era designator (text)
+<span class="fc" id="L1243">                    rule = new TextField(Calendar.ERA, ERAs);</span>
+<span class="fc" id="L1244">                    break;</span>
+                case 'y': // year (number)
+                case 'Y': // week year
+<span class="fc bfc" id="L1247" title="All 2 branches covered.">                    if (tokenLen == 2) {</span>
+<span class="fc" id="L1248">                        rule = TwoDigitYearField.INSTANCE;</span>
+                    } else {
+<span class="fc" id="L1250">                        rule = selectNumberRule(Calendar.YEAR, Math.max(tokenLen, 4));</span>
+                    }
+<span class="fc bfc" id="L1252" title="All 2 branches covered.">                    if (c == 'Y') {</span>
+<span class="fc" id="L1253">                        rule = new WeekYear((NumberRule) rule);</span>
+                    }
+                    break;
+                case 'M': // month in year (text and number)
+<span class="fc bfc" id="L1257" title="All 2 branches covered.">                    if (tokenLen &gt;= 4) {</span>
+<span class="fc" id="L1258">                        rule = new TextField(Calendar.MONTH, months);</span>
+<span class="fc bfc" id="L1259" title="All 2 branches covered.">                    } else if (tokenLen == 3) {</span>
+<span class="fc" id="L1260">                        rule = new TextField(Calendar.MONTH, shortMonths);</span>
+<span class="fc bfc" id="L1261" title="All 2 branches covered.">                    } else if (tokenLen == 2) {</span>
+<span class="fc" id="L1262">                        rule = TwoDigitMonthField.INSTANCE;</span>
+                    } else {
+<span class="fc" id="L1264">                        rule = UnpaddedMonthField.INSTANCE;</span>
+                    }
+<span class="fc" id="L1266">                    break;</span>
+                case 'L': // month in year (text and number)
+<span class="fc bfc" id="L1268" title="All 2 branches covered.">                    if (tokenLen &gt;= 4) {</span>
+<span class="fc" id="L1269">                        rule = new TextField(Calendar.MONTH, CalendarUtils.getInstance(locale).getStandaloneLongMonthNames());</span>
+<span class="pc bpc" id="L1270" title="1 of 2 branches missed.">                    } else if (tokenLen == 3) {</span>
+<span class="fc" id="L1271">                        rule = new TextField(Calendar.MONTH, CalendarUtils.getInstance(locale).getStandaloneShortMonthNames());</span>
+<span class="nc bnc" id="L1272" title="All 2 branches missed.">                    } else if (tokenLen == 2) {</span>
+<span class="nc" id="L1273">                        rule = TwoDigitMonthField.INSTANCE;</span>
+                    } else {
+<span class="nc" id="L1275">                        rule = UnpaddedMonthField.INSTANCE;</span>
+                    }
+<span class="nc" id="L1277">                    break;</span>
+                case 'd': // day in month (number)
+<span class="fc" id="L1279">                    rule = selectNumberRule(Calendar.DAY_OF_MONTH, tokenLen);</span>
+<span class="fc" id="L1280">                    break;</span>
+                case 'h': // hour in am/pm (number, 1..12)
+<span class="fc" id="L1282">                    rule = new TwelveHourField(selectNumberRule(Calendar.HOUR, tokenLen));</span>
+<span class="fc" id="L1283">                    break;</span>
+                case 'H': // hour in day (number, 0..23)
+<span class="fc" id="L1285">                    rule = selectNumberRule(Calendar.HOUR_OF_DAY, tokenLen);</span>
+<span class="fc" id="L1286">                    break;</span>
+                case 'm': // minute in hour (number)
+<span class="fc" id="L1288">                    rule = selectNumberRule(Calendar.MINUTE, tokenLen);</span>
+<span class="fc" id="L1289">                    break;</span>
+                case 's': // second in minute (number)
+<span class="fc" id="L1291">                    rule = selectNumberRule(Calendar.SECOND, tokenLen);</span>
+<span class="fc" id="L1292">                    break;</span>
+                case 'S': // millisecond (number)
+<span class="fc" id="L1294">                    rule = selectNumberRule(Calendar.MILLISECOND, tokenLen);</span>
+<span class="fc" id="L1295">                    break;</span>
+                case 'E': // day in week (text)
+<span class="fc bfc" id="L1297" title="All 2 branches covered.">                    rule = new TextField(Calendar.DAY_OF_WEEK, tokenLen &lt; 4 ? shortWeekdays : weekdays);</span>
+<span class="fc" id="L1298">                    break;</span>
+                case 'u': // day in week (number)
+<span class="fc" id="L1300">                    rule = new DayInWeekField(selectNumberRule(Calendar.DAY_OF_WEEK, tokenLen));</span>
+<span class="fc" id="L1301">                    break;</span>
+                case 'D': // day in year (number)
+<span class="fc" id="L1303">                    rule = selectNumberRule(Calendar.DAY_OF_YEAR, tokenLen);</span>
+<span class="fc" id="L1304">                    break;</span>
+                case 'F': // day of week in month (number)
+<span class="fc" id="L1306">                    rule = selectNumberRule(Calendar.DAY_OF_WEEK_IN_MONTH, tokenLen);</span>
+<span class="fc" id="L1307">                    break;</span>
+                case 'w': // week in year (number)
+<span class="fc" id="L1309">                    rule = selectNumberRule(Calendar.WEEK_OF_YEAR, tokenLen);</span>
+<span class="fc" id="L1310">                    break;</span>
+                case 'W': // week in month (number)
+<span class="fc" id="L1312">                    rule = selectNumberRule(Calendar.WEEK_OF_MONTH, tokenLen);</span>
+<span class="fc" id="L1313">                    break;</span>
+                case 'a': // am/pm marker (text)
+<span class="fc" id="L1315">                    rule = new TextField(Calendar.AM_PM, AmPmStrings);</span>
+<span class="fc" id="L1316">                    break;</span>
+                case 'k': // hour in day (1..24)
+<span class="fc" id="L1318">                    rule = new TwentyFourHourField(selectNumberRule(Calendar.HOUR_OF_DAY, tokenLen));</span>
+<span class="fc" id="L1319">                    break;</span>
+                case 'K': // hour in am/pm (0..11)
+<span class="fc" id="L1321">                    rule = selectNumberRule(Calendar.HOUR, tokenLen);</span>
+<span class="fc" id="L1322">                    break;</span>
+                case 'X': // ISO 8601
+<span class="fc" id="L1324">                    rule = Iso8601_Rule.getRule(tokenLen);</span>
+<span class="fc" id="L1325">                    break;</span>
+                case 'z': // time zone (text)
+<span class="fc bfc" id="L1327" title="All 2 branches covered.">                    if (tokenLen &gt;= 4) {</span>
+<span class="fc" id="L1328">                        rule = new TimeZoneNameRule(timeZone, locale, TimeZone.LONG);</span>
+                    } else {
+<span class="fc" id="L1330">                        rule = new TimeZoneNameRule(timeZone, locale, TimeZone.SHORT);</span>
+                    }
+<span class="fc" id="L1332">                    break;</span>
+                case 'Z': // time zone (value)
+<span class="fc bfc" id="L1334" title="All 2 branches covered.">                    if (tokenLen == 1) {</span>
+<span class="fc" id="L1335">                        rule = TimeZoneNumberRule.INSTANCE_NO_COLON;</span>
+<span class="fc bfc" id="L1336" title="All 2 branches covered.">                    } else if (tokenLen == 2) {</span>
+<span class="fc" id="L1337">                        rule = Iso8601_Rule.ISO8601_HOURS_COLON_MINUTES;</span>
+                    } else {
+<span class="fc" id="L1339">                        rule = TimeZoneNumberRule.INSTANCE_COLON;</span>
+                    }
+<span class="fc" id="L1341">                    break;</span>
+                case '\'': // literal text
+<span class="fc" id="L1343">                    final String sub = token.substring(1);</span>
+<span class="fc bfc" id="L1344" title="All 2 branches covered.">                    if (sub.length() == 1) {</span>
+<span class="fc" id="L1345">                        rule = new CharacterLiteral(sub.charAt(0));</span>
+                    } else {
+<span class="fc" id="L1347">                        rule = new StringLiteral(sub);</span>
+                    }
+<span class="fc" id="L1349">                    break;</span>
+                default:
+<span class="fc" id="L1351">                    throw new IllegalArgumentException(&quot;Illegal pattern component: &quot; + token);</span>
+            }
+
+<span class="fc" id="L1354">            rules.add(rule);</span>
+        }
+
+<span class="fc" id="L1357">        return rules;</span>
+    }
+
+    /**
+     * Performs the parsing of tokens.
+     *
+     * @param pattern  the pattern
+     * @param indexRef  index references
+     * @return parsed token
+     */
+    protected String parseToken(final String pattern, final int[] indexRef) {
+<span class="fc" id="L1368">        final StringBuilder buf = new StringBuilder();</span>
+
+<span class="fc" id="L1370">        int i = indexRef[0];</span>
+<span class="fc" id="L1371">        final int length = pattern.length();</span>
+
+<span class="fc" id="L1373">        char c = pattern.charAt(i);</span>
+<span class="fc bfc" id="L1374" title="All 8 branches covered.">        if (c &gt;= 'A' &amp;&amp; c &lt;= 'Z' || c &gt;= 'a' &amp;&amp; c &lt;= 'z') {</span>
+            // Scan a run of the same character, which indicates a time
+            // pattern.
+<span class="fc" id="L1377">            buf.append(c);</span>
+
+<span class="fc bfc" id="L1379" title="All 2 branches covered.">            while (i + 1 &lt; length) {</span>
+<span class="fc" id="L1380">                final char peek = pattern.charAt(i + 1);</span>
+<span class="fc bfc" id="L1381" title="All 2 branches covered.">                if (peek != c) {</span>
+<span class="fc" id="L1382">                    break;</span>
+                }
+<span class="fc" id="L1384">                buf.append(c);</span>
+<span class="fc" id="L1385">                i++;</span>
+<span class="fc" id="L1386">            }</span>
+        } else {
+            // This will identify token as text.
+<span class="fc" id="L1389">            buf.append('\'');</span>
+
+<span class="fc" id="L1391">            boolean inLiteral = false;</span>
+
+<span class="fc bfc" id="L1393" title="All 2 branches covered.">            for (; i &lt; length; i++) {</span>
+<span class="fc" id="L1394">                c = pattern.charAt(i);</span>
+
+<span class="fc bfc" id="L1396" title="All 2 branches covered.">                if (c == '\'') {</span>
+<span class="fc bfc" id="L1397" title="All 4 branches covered.">                    if (i + 1 &lt; length &amp;&amp; pattern.charAt(i + 1) == '\'') {</span>
+                        // '' is treated as escaped '
+<span class="fc" id="L1399">                        i++;</span>
+<span class="fc" id="L1400">                        buf.append(c);</span>
+                    } else {
+<span class="fc bfc" id="L1402" title="All 2 branches covered.">                        inLiteral = !inLiteral;</span>
+                    }
+<span class="fc bfc" id="L1404" title="All 10 branches covered.">                } else if (!inLiteral &amp;&amp;</span>
+                        (c &gt;= 'A' &amp;&amp; c &lt;= 'Z' || c &gt;= 'a' &amp;&amp; c &lt;= 'z')) {
+<span class="fc" id="L1406">                    i--;</span>
+<span class="fc" id="L1407">                    break;</span>
+                } else {
+<span class="fc" id="L1409">                    buf.append(c);</span>
+                }
+            }
+        }
+
+<span class="fc" id="L1414">        indexRef[0] = i;</span>
+<span class="fc" id="L1415">        return buf.toString();</span>
+    }
+
+    // Serializing
+    /**
+     * Create the object after serialization. This implementation reinitializes the
+     * transient properties.
+     *
+     * @param in ObjectInputStream from which the object is being deserialized.
+     * @throws IOException if there is an IO issue.
+     * @throws ClassNotFoundException if a class cannot be found.
+     */
+    private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="nc" id="L1428">        in.defaultReadObject();</span>
+<span class="nc" id="L1429">        init();</span>
+<span class="nc" id="L1430">    }</span>
+
+    /**
+     * Gets an appropriate rule for the padding required.
+     *
+     * @param field  the field to get a rule for
+     * @param padding  the padding required
+     * @return a new rule with the correct padding
+     */
+    protected NumberRule selectNumberRule(final int field, final int padding) {
+<span class="fc bfc" id="L1440" title="All 3 branches covered.">        switch (padding) {</span>
+            case 1:
+<span class="fc" id="L1442">                return new UnpaddedNumberField(field);</span>
+            case 2:
+<span class="fc" id="L1444">                return new TwoDigitNumberField(field);</span>
+            default:
+<span class="fc" id="L1446">                return new PaddedNumberField(field, padding);</span>
+        }
+    }
+
+    /**
+     * Gets a debugging string version of this formatter.
+     *
+     * @return a debugging string
+     */
+    @Override
+    public String toString() {
+<span class="fc" id="L1457">        return &quot;FastDatePrinter[&quot; + pattern + &quot;,&quot; + locale + &quot;,&quot; + timeZone.getID() + &quot;]&quot;;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

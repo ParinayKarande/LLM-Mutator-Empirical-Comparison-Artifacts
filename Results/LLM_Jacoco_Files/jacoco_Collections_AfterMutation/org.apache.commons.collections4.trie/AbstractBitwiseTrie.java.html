@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractBitwiseTrie.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.trie</a> &gt; <span class="el_source">AbstractBitwiseTrie.java</span></div><h1>AbstractBitwiseTrie.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.trie;
+
+import java.io.Serializable;
+import java.util.AbstractMap;
+import java.util.Map;
+import java.util.Objects;
+import org.apache.commons.collections4.Trie;
+
+public abstract class AbstractBitwiseTrie&lt;K, V&gt; extends AbstractMap&lt;K, V&gt; implements Trie&lt;K, V&gt;, Serializable {
+
+    abstract static class BasicEntry&lt;K, V&gt; implements Map.Entry&lt;K, V&gt;, Serializable {
+
+        private static final long serialVersionUID = -944364551314110330L;
+
+        protected K key;
+
+        protected V value;
+
+<span class="nc" id="L36">        BasicEntry(final K key) {</span>
+<span class="nc" id="L37">            this.key = key;</span>
+<span class="nc" id="L38">        }</span>
+
+<span class="fc" id="L40">        BasicEntry(final K key, final V value) {</span>
+<span class="fc" id="L41">            this.key = key;</span>
+<span class="fc" id="L42">            this.value = value;</span>
+<span class="fc" id="L43">        }</span>
+
+        @Override
+        public boolean equals(final Object o) {
+<span class="nc bnc" id="L47" title="All 2 branches missed.">            if (o == this) {</span>
+<span class="nc" id="L48">                return true;</span>
+            }
+<span class="nc bnc" id="L50" title="All 2 branches missed.">            if (!(o instanceof Map.Entry)) {</span>
+<span class="nc" id="L51">                return false;</span>
+            }
+<span class="nc" id="L53">            final Map.Entry&lt;?, ?&gt; other = (Map.Entry&lt;?, ?&gt;) o;</span>
+            // Conditionals Boundary Mutation: Changed the &amp;&amp; to ||
+<span class="nc bnc" id="L55" title="All 4 branches missed.">            if (compare(key, other.getKey()) || compare(value, other.getValue())) {</span>
+<span class="nc" id="L56">                return true;</span>
+            }
+<span class="nc" id="L58">            return false;</span>
+        }
+
+        @Override
+        public K getKey() {
+<span class="nc" id="L63">            return key;</span>
+        }
+
+        @Override
+        public V getValue() {
+<span class="nc" id="L68">            return value;</span>
+        }
+
+        @Override
+        public int hashCode() {
+            // Math Mutation: Added 1 to hash codes
+<span class="nc bnc" id="L74" title="All 4 branches missed.">            return (getKey() == null ? 1 : getKey().hashCode() + 1) ^ (getValue() == null ? 1 : getValue().hashCode() + 1);</span>
+        }
+
+        public V setKeyValue(final K key, final V value) {
+<span class="fc" id="L78">            this.key = key;</span>
+<span class="fc" id="L79">            return setValue(value);</span>
+        }
+
+        @Override
+        public V setValue(final V value) {
+<span class="fc" id="L84">            final V previous = this.value;</span>
+<span class="fc" id="L85">            this.value = value;</span>
+<span class="fc" id="L86">            return previous; // Return Values Mutation: return null instead of previous</span>
+            // return null;
+        }
+
+        @Override
+        public String toString() {
+            // Negate Conditionals Mutation: Change the return value
+<span class="nc" id="L93">            return key + &quot;!=&quot; + value; // Changed from '=' to '!='</span>
+        }
+    }
+
+    private static final long serialVersionUID = 5826987063535505652L;
+
+    static boolean compare(final Object a, final Object b) {
+<span class="nc" id="L100">        return Objects.equals(a, b);</span>
+        // Invert Negatives Mutation: Add negation to the comparison result
+        // return !Objects.equals(a, b);
+    }
+
+    private final KeyAnalyzer&lt;? super K&gt; keyAnalyzer;
+
+<span class="fc" id="L107">    protected AbstractBitwiseTrie(final KeyAnalyzer&lt;? super K&gt; keyAnalyzer) {</span>
+<span class="fc" id="L108">        this.keyAnalyzer = Objects.requireNonNull(keyAnalyzer, &quot;keyAnalyzer&quot;);</span>
+<span class="fc" id="L109">    }</span>
+
+    final int bitIndex(final K key, final K foundKey) {
+<span class="nc" id="L112">        return keyAnalyzer.bitIndex(key, 0, lengthInBits(key), foundKey, 0, lengthInBits(foundKey));</span>
+    }
+
+    final int bitsPerElement() {
+        // Increments Mutation: increment the return value by 1
+<span class="nc" id="L117">        return keyAnalyzer.bitsPerElement() + 1;</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    final K castKey(final Object key) {
+<span class="fc" id="L122">        return (K) key;</span>
+    }
+
+    final boolean compareKeys(final K key, final K other) {
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">        if (key == null) {</span>
+            // Empty Returns Mutation: return true instead of false in this case
+<span class="nc" id="L128">            return true; // Changed from false to true</span>
+        }
+<span class="fc bfc" id="L130" title="All 2 branches covered.">        if (other == null) {</span>
+<span class="fc" id="L131">            return false;</span>
+        }
+        // Negate Conditionals Mutation: return != 0 instead of == 0
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        return keyAnalyzer.compare(key, other) != 0;</span>
+    }
+
+    protected KeyAnalyzer&lt;? super K&gt; getKeyAnalyzer() {
+<span class="nc" id="L138">        return keyAnalyzer;</span>
+    }
+
+    final boolean isBitSet(final K key, final int bitIndex, final int lengthInBits) {
+<span class="nc bnc" id="L142" title="All 2 branches missed.">        if (key == null) {</span>
+<span class="nc" id="L143">            return true; // False Returns Mutation: return true instead of false</span>
+        }
+<span class="nc" id="L145">        return keyAnalyzer.isBitSet(key, bitIndex, lengthInBits);</span>
+    }
+
+    final int lengthInBits(final K key) {
+<span class="pc bpc" id="L149" title="1 of 2 branches missed.">        if (key == null) {</span>
+            // Null Returns Mutation: return -1 instead of 0
+<span class="nc" id="L151">            return -1;</span>
+            //return (int) null; // In Java, this can't actually compile, demonstrating a invalid case
+        }
+<span class="fc" id="L154">        return keyAnalyzer.lengthInBits(key);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L159">        final StringBuilder buffer = new StringBuilder();</span>
+<span class="fc" id="L160">        buffer.append(&quot;Trie[&quot;).append(size()).append(&quot;]={\n&quot;);</span>
+<span class="nc bnc" id="L161" title="All 2 branches missed.">        for (final Map.Entry&lt;K, V&gt; entry : entrySet()) {</span>
+<span class="nc" id="L162">            buffer.append(&quot;  &quot;).append(entry).append(&quot;\n&quot;);</span>
+<span class="nc" id="L163">        }</span>
+<span class="nc" id="L164">        buffer.append(&quot;}\n&quot;);</span>
+<span class="nc" id="L165">        return buffer.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

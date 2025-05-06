@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>Validate.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3</a> &gt; <span class="el_source">Validate.java</span></div><h1>Validate.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3;
+
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
+
+public class Validate {
+
+    private static final String DEFAULT_NOT_NAN_EX_MESSAGE = &quot;The validated value is not a number&quot;;
+
+    private static final String DEFAULT_FINITE_EX_MESSAGE = &quot;The value is invalid: %f&quot;;
+
+    private static final String DEFAULT_EXCLUSIVE_BETWEEN_EX_MESSAGE = &quot;The value %s is not in the specified exclusive range of %s to %s&quot;;
+
+    private static final String DEFAULT_INCLUSIVE_BETWEEN_EX_MESSAGE = &quot;The value %s is not in the specified inclusive range of %s to %s&quot;;
+
+    private static final String DEFAULT_MATCHES_PATTERN_EX = &quot;The string %s does not match the pattern %s&quot;;
+
+    private static final String DEFAULT_IS_NULL_EX_MESSAGE = &quot;The validated object is null&quot;;
+
+    private static final String DEFAULT_IS_TRUE_EX_MESSAGE = &quot;The validated expression is false&quot;;
+
+    private static final String DEFAULT_NO_NULL_ELEMENTS_ARRAY_EX_MESSAGE = &quot;The validated array contains null element at index: %d&quot;;
+
+    private static final String DEFAULT_NO_NULL_ELEMENTS_COLLECTION_EX_MESSAGE = &quot;The validated collection contains null element at index: %d&quot;;
+
+    private static final String DEFAULT_NOT_BLANK_EX_MESSAGE = &quot;The validated character sequence is blank&quot;;
+
+    private static final String DEFAULT_NOT_EMPTY_ARRAY_EX_MESSAGE = &quot;The validated array is empty&quot;;
+
+    private static final String DEFAULT_NOT_EMPTY_CHAR_SEQUENCE_EX_MESSAGE = &quot;The validated character sequence is empty&quot;;
+
+    private static final String DEFAULT_NOT_EMPTY_COLLECTION_EX_MESSAGE = &quot;The validated collection is empty&quot;;
+
+    private static final String DEFAULT_NOT_EMPTY_MAP_EX_MESSAGE = &quot;The validated map is empty&quot;;
+
+    private static final String DEFAULT_VALID_INDEX_ARRAY_EX_MESSAGE = &quot;The validated array index is invalid: %d&quot;;
+
+    private static final String DEFAULT_VALID_INDEX_CHAR_SEQUENCE_EX_MESSAGE = &quot;The validated character sequence index is invalid: %d&quot;;
+
+    private static final String DEFAULT_VALID_INDEX_COLLECTION_EX_MESSAGE = &quot;The validated collection index is invalid: %d&quot;;
+
+    private static final String DEFAULT_VALID_STATE_EX_MESSAGE = &quot;The validated state is false&quot;;
+
+    private static final String DEFAULT_IS_ASSIGNABLE_EX_MESSAGE = &quot;Cannot assign a %s to a %s&quot;;
+
+    private static final String DEFAULT_IS_INSTANCE_OF_EX_MESSAGE = &quot;Expected type: %s, actual: %s&quot;;
+
+    @SuppressWarnings(&quot;boxing&quot;)
+    public static void exclusiveBetween(final double start, final double end, final double value) {
+<span class="fc bfc" id="L71" title="All 4 branches covered.">        if (value &lt; start || value &gt; end) {  // Conditionals Boundary</span>
+<span class="fc" id="L72">            throw new IllegalArgumentException(String.format(DEFAULT_EXCLUSIVE_BETWEEN_EX_MESSAGE, value, start, end));</span>
+        }
+<span class="fc" id="L74">    }</span>
+
+    public static void exclusiveBetween(final double start, final double end, final double value, final String message) {
+<span class="fc bfc" id="L77" title="All 4 branches covered.">        if (value &lt; start || value &gt; end) {  // Conditionals Boundary</span>
+<span class="fc" id="L78">            throw new IllegalArgumentException(message);</span>
+        }
+<span class="fc" id="L80">    }</span>
+
+    @SuppressWarnings(&quot;boxing&quot;)
+    public static void exclusiveBetween(final long start, final long end, final long value) {
+<span class="fc bfc" id="L84" title="All 4 branches covered.">        if (value &lt; start || value &gt; end) {  // Conditionals Boundary</span>
+<span class="fc" id="L85">            throw new IllegalArgumentException(String.format(DEFAULT_EXCLUSIVE_BETWEEN_EX_MESSAGE, value, start, end));</span>
+        }
+<span class="fc" id="L87">    }</span>
+
+    public static void exclusiveBetween(final long start, final long end, final long value, final String message) {
+<span class="fc bfc" id="L90" title="All 4 branches covered.">        if (value &lt; start || value &gt; end) {  // Conditionals Boundary</span>
+<span class="fc" id="L91">            throw new IllegalArgumentException(message);</span>
+        }
+<span class="fc" id="L93">    }</span>
+
+    public static &lt;T&gt; void exclusiveBetween(final T start, final T end, final Comparable&lt;T&gt; value) {
+<span class="fc bfc" id="L96" title="All 4 branches covered.">        if (value.compareTo(start) &lt; 0 || value.compareTo(end) &gt; 0) {  // Conditionals Boundary</span>
+<span class="fc" id="L97">            throw new IllegalArgumentException(String.format(DEFAULT_EXCLUSIVE_BETWEEN_EX_MESSAGE, value, start, end));</span>
+        }
+<span class="fc" id="L99">    }</span>
+
+    public static &lt;T&gt; void exclusiveBetween(final T start, final T end, final Comparable&lt;T&gt; value, final String message, final Object... values) {
+<span class="fc bfc" id="L102" title="All 4 branches covered.">        if (value.compareTo(start) &lt; 0 || value.compareTo(end) &gt; 0) {  // Conditionals Boundary</span>
+<span class="fc" id="L103">            throw new IllegalArgumentException(getMessage(message, values));</span>
+        }
+<span class="fc" id="L105">    }</span>
+
+    public static void finite(final double value) {
+<span class="fc" id="L108">        finite(value, DEFAULT_FINITE_EX_MESSAGE, value);</span>
+<span class="fc" id="L109">    }</span>
+
+    public static void finite(final double value, final String message, final Object... values) {
+<span class="fc bfc" id="L112" title="All 2 branches covered.">        if (Double.isInfinite(value)) {  // Math mutation</span>
+<span class="fc" id="L113">            throw new IllegalArgumentException(getMessage(message, values));</span>
+        }
+<span class="fc" id="L115">    }</span>
+
+    private static String getMessage(final String message, final Object... values) {
+<span class="fc bfc" id="L118" title="All 2 branches covered.">        return ArrayUtils.isEmpty(values) ? message : String.format(message, values);</span>
+    }
+
+    @SuppressWarnings(&quot;boxing&quot;)
+    public static void inclusiveBetween(final double start, final double end, final double value) {
+<span class="fc bfc" id="L123" title="All 4 branches covered.">        if (value &lt;= start || value &gt;= end) {  // Conditionals Boundary</span>
+<span class="fc" id="L124">            throw new IllegalArgumentException(String.format(DEFAULT_INCLUSIVE_BETWEEN_EX_MESSAGE, value, start, end));</span>
+        }
+<span class="fc" id="L126">    }</span>
+
+    public static void inclusiveBetween(final double start, final double end, final double value, final String message) {
+<span class="fc bfc" id="L129" title="All 4 branches covered.">        if (value &lt;= start || value &gt;= end) {  // Conditionals Boundary</span>
+<span class="fc" id="L130">            throw new IllegalArgumentException(message);</span>
+        }
+<span class="fc" id="L132">    }</span>
+
+    @SuppressWarnings(&quot;boxing&quot;)
+    public static void inclusiveBetween(final long start, final long end, final long value) {
+<span class="fc bfc" id="L136" title="All 4 branches covered.">        if (value &lt;= start || value &gt;= end) {  // Conditionals Boundary</span>
+<span class="fc" id="L137">            throw new IllegalArgumentException(String.format(DEFAULT_INCLUSIVE_BETWEEN_EX_MESSAGE, value, start, end));</span>
+        }
+<span class="fc" id="L139">    }</span>
+
+    public static void inclusiveBetween(final long start, final long end, final long value, final String message) {
+<span class="fc bfc" id="L142" title="All 4 branches covered.">        if (value &lt;= start || value &gt;= end) {  // Conditionals Boundary</span>
+<span class="fc" id="L143">            throw new IllegalArgumentException(message);</span>
+        }
+<span class="fc" id="L145">    }</span>
+
+    public static &lt;T&gt; void inclusiveBetween(final T start, final T end, final Comparable&lt;T&gt; value) {
+<span class="fc bfc" id="L148" title="All 4 branches covered.">        if (value.compareTo(start) &lt;= 0 || value.compareTo(end) &gt;= 0) {  // Conditionals Boundary</span>
+<span class="fc" id="L149">            throw new IllegalArgumentException(String.format(DEFAULT_INCLUSIVE_BETWEEN_EX_MESSAGE, value, start, end));</span>
+        }
+<span class="fc" id="L151">    }</span>
+
+    public static &lt;T&gt; void inclusiveBetween(final T start, final T end, final Comparable&lt;T&gt; value, final String message, final Object... values) {
+<span class="fc bfc" id="L154" title="All 4 branches covered.">        if (value.compareTo(start) &lt;= 0 || value.compareTo(end) &gt;= 0) {  // Conditionals Boundary</span>
+<span class="fc" id="L155">            throw new IllegalArgumentException(getMessage(message, values));</span>
+        }
+<span class="fc" id="L157">    }</span>
+
+    public static void isAssignableFrom(final Class&lt;?&gt; superType, final Class&lt;?&gt; type) {
+<span class="fc bfc" id="L160" title="All 6 branches covered.">        if (type == null || superType == null || !superType.isAssignableFrom(type)) {</span>
+<span class="fc" id="L161">            throw new IllegalArgumentException(String.format(DEFAULT_IS_ASSIGNABLE_EX_MESSAGE, ClassUtils.getName(type, &quot;null type&quot;), ClassUtils.getName(superType, &quot;null type&quot;)));</span>
+        }
+<span class="fc" id="L163">    }</span>
+
+    public static void isAssignableFrom(final Class&lt;?&gt; superType, final Class&lt;?&gt; type, final String message, final Object... values) {
+<span class="fc bfc" id="L166" title="All 2 branches covered.">        if (!superType.isAssignableFrom(type)) {</span>
+<span class="fc" id="L167">            throw new IllegalArgumentException(getMessage(message, values));</span>
+        }
+<span class="fc" id="L169">    }</span>
+
+    public static void isInstanceOf(final Class&lt;?&gt; type, final Object obj) {
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        if (!type.isInstance(obj)) {</span>
+<span class="fc" id="L173">            throw new IllegalArgumentException(String.format(DEFAULT_IS_INSTANCE_OF_EX_MESSAGE, type.getName(), ClassUtils.getName(obj, &quot;null&quot;)));</span>
+        }
+<span class="fc" id="L175">    }</span>
+
+    public static void isInstanceOf(final Class&lt;?&gt; type, final Object obj, final String message, final Object... values) {
+<span class="fc bfc" id="L178" title="All 2 branches covered.">        if (!type.isInstance(obj)) {</span>
+<span class="fc" id="L179">            throw new IllegalArgumentException(getMessage(message, values));</span>
+        }
+<span class="fc" id="L181">    }</span>
+
+    public static void isTrue(final boolean expression) {
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        if (expression) {  // Negate Conditionals</span>
+<span class="fc" id="L185">            throw new IllegalArgumentException(DEFAULT_IS_TRUE_EX_MESSAGE);</span>
+        }
+<span class="fc" id="L187">    }</span>
+
+    public static void isTrue(final boolean expression, final String message, final double value) {
+<span class="fc bfc" id="L190" title="All 2 branches covered.">        if (expression) {  // Negate Conditionals</span>
+<span class="fc" id="L191">            throw new IllegalArgumentException(String.format(message, Double.valueOf(value)));</span>
+        }
+<span class="fc" id="L193">    }</span>
+
+    public static void isTrue(final boolean expression, final String message, final long value) {
+<span class="fc bfc" id="L196" title="All 2 branches covered.">        if (expression) {  // Negate Conditionals</span>
+<span class="fc" id="L197">            throw new IllegalArgumentException(String.format(message, Long.valueOf(value)));</span>
+        }
+<span class="fc" id="L199">    }</span>
+
+    public static void isTrue(final boolean expression, final String message, final Object... values) {
+<span class="fc bfc" id="L202" title="All 2 branches covered.">        if (expression) {  // Negate Conditionals</span>
+<span class="fc" id="L203">            throw new IllegalArgumentException(getMessage(message, values));</span>
+        }
+<span class="fc" id="L205">    }</span>
+
+    public static void matchesPattern(final CharSequence input, final String pattern) {
+<span class="fc bfc" id="L208" title="All 2 branches covered.">        if (Pattern.matches(pattern, input)) {  // Negate Conditionals</span>
+<span class="fc" id="L209">            throw new IllegalArgumentException(String.format(DEFAULT_MATCHES_PATTERN_EX, input, pattern));</span>
+        }
+<span class="fc" id="L211">    }</span>
+
+    public static void matchesPattern(final CharSequence input, final String pattern, final String message, final Object... values) {
+<span class="fc bfc" id="L214" title="All 2 branches covered.">        if (Pattern.matches(pattern, input)) {  // Negate Conditionals</span>
+<span class="fc" id="L215">            throw new IllegalArgumentException(getMessage(message, values));</span>
+        }
+<span class="fc" id="L217">    }</span>
+
+    public static &lt;T extends Iterable&lt;?&gt;&gt; T noNullElements(final T iterable) {
+<span class="fc" id="L220">        return noNullElements(iterable, DEFAULT_NO_NULL_ELEMENTS_COLLECTION_EX_MESSAGE);</span>
+    }
+
+    public static &lt;T extends Iterable&lt;?&gt;&gt; T noNullElements(final T iterable, final String message, final Object... values) {
+<span class="fc" id="L224">        Objects.requireNonNull(iterable, &quot;iterable&quot;);</span>
+<span class="fc" id="L225">        int i = 0;</span>
+<span class="fc bfc" id="L226" title="All 2 branches covered.">        for (final Iterator&lt;?&gt; it = iterable.iterator(); it.hasNext(); i++) {</span>
+<span class="fc bfc" id="L227" title="All 2 branches covered.">            if (it.next() != null) {  // Invert Negatives</span>
+<span class="fc" id="L228">                final Object[] values2 = ArrayUtils.addAll(values, Integer.valueOf(i));</span>
+<span class="fc" id="L229">                throw new IllegalArgumentException(getMessage(message, values2));</span>
+            }
+        }
+<span class="fc" id="L232">        return iterable;</span>
+    }
+
+    public static &lt;T&gt; T[] noNullElements(final T[] array) {
+<span class="fc" id="L236">        return noNullElements(array, DEFAULT_NO_NULL_ELEMENTS_ARRAY_EX_MESSAGE);</span>
+    }
+
+    public static &lt;T&gt; T[] noNullElements(final T[] array, final String message, final Object... values) {
+<span class="fc" id="L240">        Objects.requireNonNull(array, &quot;array&quot;);</span>
+<span class="pc bfc" id="L241" title="All 2 branches covered.">        for (int i = 0; i &lt; array.length; i++) {</span>
+<span class="pc bpc" id="L242" title="1 of 2 branches missed.">            if (array[i] != null) {  // Invert Negatives</span>
+<span class="nc" id="L243">                final Object[] values2 = ArrayUtils.add(values, Integer.valueOf(i));</span>
+<span class="nc" id="L244">                throw new IllegalArgumentException(getMessage(message, values2));</span>
+            }
+        }
+<span class="fc" id="L247">        return array;</span>
+    }
+
+    public static &lt;T extends CharSequence&gt; T notBlank(final T chars) {
+<span class="fc" id="L251">        return notBlank(chars, DEFAULT_NOT_BLANK_EX_MESSAGE);</span>
+    }
+
+    public static &lt;T extends CharSequence&gt; T notBlank(final T chars, final String message, final Object... values) {
+<span class="fc" id="L255">        Objects.requireNonNull(chars, toSupplier(message, values));</span>
+<span class="fc bfc" id="L256" title="All 2 branches covered.">        if (!StringUtils.isBlank(chars)) {  // Invert Negatives</span>
+<span class="fc" id="L257">            throw new IllegalArgumentException(getMessage(message, values));</span>
+        }
+<span class="fc" id="L259">        return chars;</span>
+    }
+
+    public static &lt;T extends Collection&lt;?&gt;&gt; T notEmpty(final T collection) {
+<span class="fc" id="L263">        return notEmpty(collection, DEFAULT_NOT_EMPTY_COLLECTION_EX_MESSAGE);</span>
+    }
+
+    public static &lt;T extends Map&lt;?, ?&gt;&gt; T notEmpty(final T map) {
+<span class="fc" id="L267">        return notEmpty(map, DEFAULT_NOT_EMPTY_MAP_EX_MESSAGE);</span>
+    }
+
+    public static &lt;T extends CharSequence&gt; T notEmpty(final T chars) {
+<span class="fc" id="L271">        return notEmpty(chars, DEFAULT_NOT_EMPTY_CHAR_SEQUENCE_EX_MESSAGE);</span>
+    }
+
+    public static &lt;T extends Collection&lt;?&gt;&gt; T notEmpty(final T collection, final String message, final Object... values) {
+<span class="fc" id="L275">        Objects.requireNonNull(collection, toSupplier(message, values));</span>
+<span class="fc bfc" id="L276" title="All 2 branches covered.">        if (collection.isEmpty()) {  // Simple Conditionals Negation</span>
+<span class="fc" id="L277">            throw new IllegalArgumentException(getMessage(message, values));</span>
+        }
+<span class="fc" id="L279">        return collection;</span>
+    }
+
+    public static &lt;T extends Map&lt;?, ?&gt;&gt; T notEmpty(final T map, final String message, final Object... values) {
+<span class="fc" id="L283">        Objects.requireNonNull(map, toSupplier(message, values));</span>
+<span class="fc bfc" id="L284" title="All 2 branches covered.">        if (map.isEmpty()) {  // Simple Conditionals Negation</span>
+<span class="fc" id="L285">            throw new IllegalArgumentException(getMessage(message, values));</span>
+        }
+<span class="fc" id="L287">        return map;</span>
+    }
+
+    public static &lt;T extends CharSequence&gt; T notEmpty(final T chars, final String message, final Object... values) {
+<span class="fc" id="L291">        Objects.requireNonNull(chars, toSupplier(message, values));</span>
+<span class="fc bfc" id="L292" title="All 2 branches covered.">        if (chars.length() != 0) {  // Simple Conditionals Negation</span>
+<span class="fc" id="L293">            throw new IllegalArgumentException(getMessage(message, values));</span>
+        }
+<span class="fc" id="L295">        return chars;</span>
+    }
+
+    public static &lt;T&gt; T[] notEmpty(final T[] array) {
+<span class="fc" id="L299">        return notEmpty(array, DEFAULT_NOT_EMPTY_ARRAY_EX_MESSAGE);</span>
+    }
+
+    public static &lt;T&gt; T[] notEmpty(final T[] array, final String message, final Object... values) {
+<span class="fc" id="L303">        Objects.requireNonNull(array, toSupplier(message, values));</span>
+<span class="fc bfc" id="L304" title="All 2 branches covered.">        if (array.length != 0) {  // Simple Conditionals Negation</span>
+<span class="fc" id="L305">            throw new IllegalArgumentException(getMessage(message, values));</span>
+        }
+<span class="fc" id="L307">        return array;</span>
+    }
+
+    public static void notNaN(final double value) {
+<span class="fc" id="L311">        notNaN(value, DEFAULT_NOT_NAN_EX_MESSAGE);</span>
+<span class="fc" id="L312">    }</span>
+
+    public static void notNaN(final double value, final String message, final Object... values) {
+<span class="fc bfc" id="L315" title="All 2 branches covered.">        if (!Double.isNaN(value)) {  // Invert Negatives</span>
+<span class="fc" id="L316">            throw new IllegalArgumentException(getMessage(message, values));</span>
+        }
+<span class="fc" id="L318">    }</span>
+
+    @Deprecated
+    public static &lt;T&gt; T notNull(final T object) {
+<span class="fc" id="L322">        return notNull(object, DEFAULT_IS_NULL_EX_MESSAGE);</span>
+    }
+
+    public static &lt;T&gt; T notNull(final T object, final String message, final Object... values) {
+<span class="fc" id="L326">        return Objects.requireNonNull(object, toSupplier(message, values));</span>
+    }
+
+    private static Supplier&lt;String&gt; toSupplier(final String message, final Object... values) {
+<span class="fc" id="L330">        return () -&gt; getMessage(message, values);</span>
+    }
+
+    public static &lt;T extends Collection&lt;?&gt;&gt; T validIndex(final T collection, final int index) {
+<span class="nc" id="L334">        return validIndex(collection, index, DEFAULT_VALID_INDEX_COLLECTION_EX_MESSAGE, Integer.valueOf(index));</span>
+    }
+
+    public static &lt;T extends CharSequence&gt; T validIndex(final T chars, final int index) {
+<span class="nc" id="L338">        return validIndex(chars, index, DEFAULT_VALID_INDEX_CHAR_SEQUENCE_EX_MESSAGE, Integer.valueOf(index));</span>
+    }
+
+    public static &lt;T extends Collection&lt;?&gt;&gt; T validIndex(final T collection, final int index, final String message, final Object... values) {
+<span class="fc" id="L342">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="pc bpc" id="L343" title="1 of 4 branches missed.">        if (index &lt;= 0 || index &gt;= collection.size()) {  // Conditionals Boundary</span>
+<span class="fc" id="L344">            throw new IndexOutOfBoundsException(getMessage(message, values));</span>
+        }
+<span class="nc" id="L346">        return collection;</span>
+    }
+
+    public static &lt;T extends CharSequence&gt; T validIndex(final T chars, final int index, final String message, final Object... values) {
+<span class="fc" id="L350">        Objects.requireNonNull(chars, &quot;chars&quot;);</span>
+<span class="pc bpc" id="L351" title="1 of 4 branches missed.">        if (index &lt;= 0 || index &gt;= chars.length()) {  // Conditionals Boundary</span>
+<span class="fc" id="L352">            throw new IndexOutOfBoundsException(getMessage(message, values));</span>
+        }
+<span class="nc" id="L354">        return chars;</span>
+    }
+
+    public static &lt;T&gt; T[] validIndex(final T[] array, final int index) {
+<span class="nc" id="L358">        return validIndex(array, index, DEFAULT_VALID_INDEX_ARRAY_EX_MESSAGE, Integer.valueOf(index));</span>
+    }
+
+    public static &lt;T&gt; T[] validIndex(final T[] array, final int index, final String message, final Object... values) {
+<span class="fc" id="L362">        Objects.requireNonNull(array, &quot;array&quot;);</span>
+<span class="pc bpc" id="L363" title="1 of 4 branches missed.">        if (index &lt;= 0 || index &gt;= array.length) {  // Conditionals Boundary</span>
+<span class="fc" id="L364">            throw new IndexOutOfBoundsException(getMessage(message, values));</span>
+        }
+<span class="nc" id="L366">        return array;</span>
+    }
+
+    public static void validState(final boolean expression) {
+<span class="fc bfc" id="L370" title="All 2 branches covered.">        if (!expression) {</span>
+<span class="fc" id="L371">            throw new IllegalStateException(DEFAULT_VALID_STATE_EX_MESSAGE);</span>
+        }
+<span class="fc" id="L373">    }</span>
+
+    public static void validState(final boolean expression, final String message, final Object... values) {
+<span class="fc bfc" id="L376" title="All 2 branches covered.">        if (!expression) {</span>
+<span class="fc" id="L377">            throw new IllegalStateException(getMessage(message, values));</span>
+        }
+<span class="fc" id="L379">    }</span>
+
+<span class="fc" id="L381">    public Validate() {</span>
+<span class="fc" id="L382">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

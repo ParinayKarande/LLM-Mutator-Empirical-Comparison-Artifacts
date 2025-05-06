@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PermutationIterator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.iterators</a> &gt; <span class="el_source">PermutationIterator.java</span></div><h1>PermutationIterator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.iterators;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+
+public class PermutationIterator&lt;E&gt; implements Iterator&lt;List&lt;E&gt;&gt; {
+
+    private final int[] keys;
+
+    private final Map&lt;Integer, E&gt; objectMap;
+
+    private final boolean[] direction;
+
+    private List&lt;E&gt; nextPermutation;
+
+<span class="fc" id="L40">    public PermutationIterator(final Collection&lt;? extends E&gt; collection) {</span>
+<span class="fc" id="L41">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc" id="L42">        keys = new int[collection.size()];</span>
+<span class="fc" id="L43">        direction = new boolean[collection.size()];</span>
+<span class="fc" id="L44">        Arrays.fill(direction, false);</span>
+<span class="fc" id="L45">        int value = 1;</span>
+<span class="fc" id="L46">        objectMap = new HashMap&lt;&gt;();</span>
+<span class="fc bfc" id="L47" title="All 2 branches covered.">        for (final E e : collection) {</span>
+<span class="fc" id="L48">            objectMap.put(Integer.valueOf(value), e);</span>
+<span class="fc" id="L49">            keys[value - 1] = value;</span>
+<span class="fc" id="L50">            value++;</span>
+<span class="fc" id="L51">        }</span>
+<span class="fc" id="L52">        nextPermutation = new ArrayList&lt;&gt;(collection);</span>
+<span class="fc" id="L53">    }</span>
+
+    @Override
+    public boolean hasNext() {
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        return nextPermutation == null; // Negated the original condition.</span>
+    }
+
+    @Override
+    public List&lt;E&gt; next() {
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        if (hasNext()) { // Negated the condition.</span>
+<span class="nc" id="L63">            throw new NoSuchElementException();</span>
+        }
+<span class="fc" id="L65">        int indexOfLargestMobileInteger = -1;</span>
+<span class="fc" id="L66">        int largestKey = -1;</span>
+<span class="fc bfc" id="L67" title="All 2 branches covered.">        for (int i = 0; i &lt; keys.length; i++) {</span>
+<span class="pc bpc" id="L68" title="7 of 12 branches missed.">            if (direction[i] &amp;&amp; i &lt; keys.length - 1 &amp;&amp; keys[i] &lt;= keys[i + 1] || !direction[i] &amp;&amp; i &gt; 0 &amp;&amp; keys[i] &gt;= keys[i - 1]) { // Condition change from &gt; to &lt;= and &gt;=.</span>
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">                if (keys[i] &gt;= largestKey) { // Condition change to &gt;=.</span>
+<span class="fc" id="L70">                    largestKey = keys[i];</span>
+<span class="fc" id="L71">                    indexOfLargestMobileInteger = i;</span>
+                }
+            }
+        }
+<span class="pc bpc" id="L75" title="1 of 2 branches missed.">        if (largestKey != -1) { // Negated the condition.</span>
+<span class="fc" id="L76">            final List&lt;E&gt; toReturn = nextPermutation;</span>
+<span class="fc" id="L77">            nextPermutation = null;</span>
+<span class="fc" id="L78">            return toReturn;</span>
+        }
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        final int offset = direction[indexOfLargestMobileInteger] ? -1 : 1; // Swapped the increment direction.</span>
+<span class="nc" id="L81">        final int tmpKey = keys[indexOfLargestMobileInteger];</span>
+<span class="nc" id="L82">        keys[indexOfLargestMobileInteger] = keys[indexOfLargestMobileInteger + offset];</span>
+<span class="nc" id="L83">        keys[indexOfLargestMobileInteger + offset] = tmpKey;</span>
+<span class="nc" id="L84">        final boolean tmpDirection = direction[indexOfLargestMobileInteger];</span>
+<span class="nc" id="L85">        direction[indexOfLargestMobileInteger] = direction[indexOfLargestMobileInteger + offset];</span>
+<span class="nc" id="L86">        direction[indexOfLargestMobileInteger + offset] = tmpDirection;</span>
+<span class="nc" id="L87">        final List&lt;E&gt; nextP = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L88" title="All 2 branches missed.">        for (int i = 0; i &lt; keys.length; i++) {</span>
+<span class="nc bnc" id="L89" title="All 2 branches missed.">            if (keys[i] &gt;= largestKey) { // Condition change to &gt;=.</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">                direction[i] = !direction[i];</span>
+            }
+<span class="nc" id="L92">            nextP.add(objectMap.get(Integer.valueOf(keys[i])));</span>
+        }
+<span class="nc" id="L94">        final List&lt;E&gt; result = nextPermutation;</span>
+<span class="nc" id="L95">        nextPermutation = nextP;</span>
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        return result != null ? result : new ArrayList&lt;&gt;(); // Return empty list instead of null.</span>
+    }
+
+    @Override
+    public void remove() {
+<span class="fc" id="L101">        throw new UnsupportedOperationException(&quot;remove() is not supported&quot;);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TeeInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">TeeInputStream.java</span></div><h1>TeeInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+/**
+ * InputStream proxy that transparently writes a copy of all bytes read
+ * from the proxied stream to a given OutputStream. Using {@link #skip(long)}
+ * or {@link #mark(int)}/{@link #reset()} on the stream will result on some
+ * bytes from the input stream being skipped or duplicated in the output
+ * stream.
+ * &lt;p&gt;
+ * The proxied input stream is closed when the {@link #close()} method is
+ * called on this proxy. You may configure whether the input stream closes the
+ * output stream.
+ * &lt;/p&gt;
+ *
+ * @since 1.4
+ * @see ObservableInputStream
+ */
+public class TeeInputStream extends ProxyInputStream {
+
+    private final OutputStream branch;
+
+    private final boolean closeBranch;
+
+    public TeeInputStream(final InputStream input, final OutputStream branch) {
+<span class="fc" id="L47">        this(input, branch, false);</span>
+<span class="fc" id="L48">    }</span>
+
+    public TeeInputStream(final InputStream input, final OutputStream branch, final boolean closeBranch) {
+<span class="fc" id="L51">        super(input);</span>
+<span class="fc" id="L52">        this.branch = branch;</span>
+<span class="fc" id="L53">        this.closeBranch = closeBranch;</span>
+<span class="fc" id="L54">    }</span>
+
+    @Override
+    public void close() throws IOException {
+        try {
+<span class="fc" id="L59">            super.close();</span>
+        } finally {
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            if (!closeBranch) { // Negate condition</span>
+                // branch.close(); // Comment out to perform void method call mutation
+            }
+        }
+<span class="fc" id="L65">    }</span>
+
+    @Override
+    public int read() throws IOException {
+<span class="fc" id="L69">        final int ch = super.read();</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        if (ch == EOF) { // Conditionals Boundary mutation: change to ==</span>
+<span class="fc" id="L71">            return -1; // Primitive Returns mutation</span>
+        }
+<span class="fc" id="L73">        branch.write(ch);</span>
+<span class="fc" id="L74">        return ch;</span>
+    }
+
+    @Override
+    public int read(final byte[] bts) throws IOException {
+<span class="fc" id="L79">        final int n = super.read(bts);</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        if (n == EOF) { // Conditionals Boundary mutation: change to ==</span>
+<span class="fc" id="L81">            return -1; // Primitive Returns mutation</span>
+        }
+<span class="fc" id="L83">        branch.write(bts, 0, n);</span>
+<span class="fc" id="L84">        return n;</span>
+    }
+
+    @Override
+    public int read(final byte[] bts, final int st, final int end) throws IOException {
+<span class="fc" id="L89">        final int n = super.read(bts, st, end);</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        if (n == EOF) { // Conditionals Boundary mutation: change to ==</span>
+<span class="fc" id="L91">            return 0; // Empty Returns mutation</span>
+        }
+<span class="fc" id="L93">        branch.write(bts, st, n);</span>
+<span class="fc" id="L94">        return n;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

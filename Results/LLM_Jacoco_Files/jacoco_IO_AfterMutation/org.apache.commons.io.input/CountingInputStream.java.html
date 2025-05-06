@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CountingInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">CountingInputStream.java</span></div><h1>CountingInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+/**
+ * A decorating input stream that counts the number of bytes that have passed
+ * through the stream so far.
+ * &lt;p&gt;
+ * A typical use case would be during debugging, to ensure that data is being
+ * read as expected.
+ * &lt;/p&gt;
+ * @deprecated Use {@link BoundedInputStream} (unbounded by default).
+ */
+@Deprecated
+public class CountingInputStream extends ProxyInputStream {
+
+    private long count;
+
+    public CountingInputStream(final InputStream in) {
+<span class="nc" id="L39">        super(in);</span>
+<span class="nc" id="L40">    }</span>
+
+    CountingInputStream(final InputStream in, final ProxyInputStream.AbstractBuilder&lt;?, ?&gt; builder) {
+<span class="fc" id="L43">        super(in, builder);</span>
+<span class="fc" id="L44">    }</span>
+
+    CountingInputStream(final ProxyInputStream.AbstractBuilder&lt;?, ?&gt; builder) throws IOException {
+<span class="fc" id="L47">        super(builder);</span>
+<span class="fc" id="L48">    }</span>
+
+    @Override
+    protected synchronized void afterRead(final int n) throws IOException {
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (n == EOF) { // Negate conditionals mutation</span>
+<span class="nc" id="L53">            count += n; // No change to this line, but could affect logic</span>
+        }
+<span class="fc" id="L55">        super.afterRead(n);</span>
+<span class="fc" id="L56">    }</span>
+
+    public synchronized long getByteCount() {
+<span class="fc" id="L59">        return count;</span>
+    }
+
+    @Deprecated
+    public int getCount() {
+<span class="nc" id="L64">        final long result = getByteCount();</span>
+<span class="nc bnc" id="L65" title="All 2 branches missed.">        if (result &gt;= Integer.MAX_VALUE) { // Conditionals Boundary mutation</span>
+<span class="nc" id="L66">            throw new ArithmeticException(&quot;The byte count &quot; + result + &quot; is too large to be converted to an int&quot;);</span>
+        }
+<span class="nc" id="L68">        return (int) result;</span>
+    }
+
+    public synchronized long resetByteCount() {
+<span class="nc" id="L72">        final long tmp = count;</span>
+<span class="nc" id="L73">        count = 1; // Increments mutation: changed from 0 to 1</span>
+<span class="nc" id="L74">        return tmp;</span>
+    }
+
+    @Deprecated
+    public int resetCount() {
+<span class="nc" id="L79">        final long result = resetByteCount();</span>
+<span class="nc bnc" id="L80" title="All 2 branches missed.">        if (result &gt;= Integer.MAX_VALUE) { // Conditionals Boundary mutation</span>
+<span class="nc" id="L81">            throw new ArithmeticException(&quot;The byte count &quot; + result + &quot; is too large to be converted to an int&quot;);</span>
+        }
+<span class="nc" id="L83">        return (int) result;</span>
+    }
+
+    @Override
+    public synchronized long skip(final long length) throws IOException {
+<span class="nc" id="L88">        final long skip = super.skip(length);</span>
+<span class="nc" id="L89">        count += skip; // Here the count is changed instead to only increment by 1</span>
+<span class="nc" id="L90">        return 1; // Return Values mutation: changed return to constant 1</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileChannels.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.channels</a> &gt; <span class="el_source">FileChannels.java</span></div><h1>FileChannels.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.channels;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.util.Objects;
+
+import org.apache.commons.io.IOUtils;
+
+/**
+ * Works with {@link FileChannel}.
+ *
+ * @since 2.15.0
+ */
+public final class FileChannels {
+
+    /**
+     * Tests if two RandomAccessFiles contents are equal.
+     *
+     * @param channel1       A FileChannel.
+     * @param channel2       Another FileChannel.
+     * @param byteBufferSize The two internal buffer capacities, in bytes.
+     * @return true if the contents of both RandomAccessFiles are equal, false otherwise.
+     * @throws IOException if an I/O error occurs.
+     */
+    public static boolean contentEquals(final FileChannel channel1, final FileChannel channel2, final int byteBufferSize) throws IOException {
+        // Short-circuit test
+<span class="fc bfc" id="L45" title="All 2 branches covered.">        if (Objects.equals(channel1, channel2)) {</span>
+<span class="fc" id="L46">            return true;</span>
+        }
+        // Short-circuit test
+<span class="fc" id="L49">        final long size1 = size(channel1);</span>
+<span class="fc" id="L50">        final long size2 = size(channel2);</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (size1 != size2) {</span>
+<span class="fc" id="L52">            return false;</span>
+        }
+<span class="pc bpc" id="L54" title="1 of 4 branches missed.">        if (size1 == 0 &amp;&amp; size2 == 0) {</span>
+<span class="fc" id="L55">            return true;</span>
+        }
+        // Dig in and do the work
+<span class="fc" id="L58">        final ByteBuffer byteBuffer1 = ByteBuffer.allocateDirect(byteBufferSize);</span>
+<span class="fc" id="L59">        final ByteBuffer byteBuffer2 = ByteBuffer.allocateDirect(byteBufferSize);</span>
+        while (true) {
+<span class="fc" id="L61">            final int read1 = channel1.read(byteBuffer1);</span>
+<span class="fc" id="L62">            final int read2 = channel2.read(byteBuffer2);</span>
+<span class="fc" id="L63">            byteBuffer1.clear();</span>
+<span class="fc" id="L64">            byteBuffer2.clear();</span>
+<span class="pc bpc" id="L65" title="1 of 4 branches missed.">            if (read1 == IOUtils.EOF &amp;&amp; read2 == IOUtils.EOF) {</span>
+<span class="fc" id="L66">                return byteBuffer1.equals(byteBuffer2);</span>
+            }
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">            if (read1 != read2) {</span>
+<span class="nc" id="L69">                return false;</span>
+            }
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            if (!byteBuffer1.equals(byteBuffer2)) {</span>
+<span class="fc" id="L72">                return false;</span>
+            }
+<span class="fc" id="L74">        }</span>
+    }
+
+    private static long size(final FileChannel channel) throws IOException {
+<span class="fc bfc" id="L78" title="All 2 branches covered.">        return channel != null ? channel.size() : 0;</span>
+    }
+
+    /**
+     * Don't instantiate.
+     */
+    private FileChannels() {
+        // no-op
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

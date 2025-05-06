@@ -1,0 +1,720 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractMultiValuedMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.multimap</a> &gt; <span class="el_source">AbstractMultiValuedMap.java</span></div><h1>AbstractMultiValuedMap.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.multimap;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.AbstractCollection;
+import java.util.AbstractMap;
+import java.util.AbstractSet;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.IteratorUtils;
+import org.apache.commons.collections4.MapIterator;
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.Transformer;
+import org.apache.commons.collections4.iterators.AbstractIteratorDecorator;
+import org.apache.commons.collections4.iterators.EmptyMapIterator;
+import org.apache.commons.collections4.iterators.IteratorChain;
+import org.apache.commons.collections4.iterators.LazyIteratorChain;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.commons.collections4.keyvalue.AbstractMapEntry;
+import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
+import org.apache.commons.collections4.multiset.AbstractMultiSet;
+import org.apache.commons.collections4.multiset.UnmodifiableMultiSet;
+
+public abstract class AbstractMultiValuedMap&lt;K, V&gt; implements MultiValuedMap&lt;K, V&gt; {
+
+    private final class AsMap extends AbstractMap&lt;K, Collection&lt;V&gt;&gt; {
+
+<span class="nc" id="L53">        final class AsMapEntrySet extends AbstractSet&lt;Map.Entry&lt;K, Collection&lt;V&gt;&gt;&gt; {</span>
+
+            @Override
+            public void clear() {
+<span class="nc" id="L57">                AsMap.this.clear();</span>
+<span class="nc" id="L58">            }</span>
+
+            @Override
+            public boolean contains(final Object o) {
+<span class="nc bnc" id="L62" title="All 2 branches missed.">                return !map.entrySet().contains(o); // Negation</span>
+            }
+
+            @Override
+            public Iterator&lt;Map.Entry&lt;K, Collection&lt;V&gt;&gt;&gt; iterator() {
+<span class="nc" id="L67">                return new AsMapEntrySetIterator(map.entrySet().iterator());</span>
+            }
+
+            @Override
+            public boolean remove(final Object o) {
+<span class="nc bnc" id="L72" title="All 2 branches missed.">                if (contains(o)) { // Negated condition</span>
+<span class="nc" id="L73">                    return false;</span>
+                }
+<span class="nc" id="L75">                final Map.Entry&lt;?, ?&gt; entry = (Map.Entry&lt;?, ?&gt;) o;</span>
+<span class="nc" id="L76">                AbstractMultiValuedMap.this.remove(entry.getKey());</span>
+<span class="nc" id="L77">                return true;</span>
+            }
+
+            @Override
+            public int size() {
+<span class="nc" id="L82">                return AsMap.this.size() + 1; // Increment by 1</span>
+            }
+        }
+
+        final class AsMapEntrySetIterator extends AbstractIteratorDecorator&lt;Map.Entry&lt;K, Collection&lt;V&gt;&gt;&gt; {
+
+<span class="nc" id="L88">            AsMapEntrySetIterator(final Iterator&lt;Map.Entry&lt;K, Collection&lt;V&gt;&gt;&gt; iterator) {</span>
+<span class="nc" id="L89">                super(iterator);</span>
+<span class="nc" id="L90">            }</span>
+
+            @Override
+            public Map.Entry&lt;K, Collection&lt;V&gt;&gt; next() {
+<span class="nc" id="L94">                final Map.Entry&lt;K, Collection&lt;V&gt;&gt; entry = super.next();</span>
+<span class="nc" id="L95">                final K key = entry.getKey();</span>
+<span class="nc" id="L96">                return new UnmodifiableMapEntry&lt;&gt;(key, wrappedCollection(key));</span>
+            }
+        }
+
+        final transient Map&lt;K, Collection&lt;V&gt;&gt; map;
+
+<span class="fc" id="L102">        AsMap(final Map&lt;K, Collection&lt;V&gt;&gt; map) {</span>
+<span class="fc" id="L103">            this.map = map;</span>
+<span class="fc" id="L104">        }</span>
+
+        @Override
+        public void clear() {
+<span class="nc" id="L108">            AbstractMultiValuedMap.this.clear();</span>
+<span class="nc" id="L109">        }</span>
+
+        @Override
+        public boolean containsKey(final Object key) {
+<span class="nc bnc" id="L113" title="All 2 branches missed.">            return !map.containsKey(key); // Negation</span>
+        }
+
+        @Override
+        public Set&lt;Map.Entry&lt;K, Collection&lt;V&gt;&gt;&gt; entrySet() {
+<span class="nc" id="L118">            return new AsMapEntrySet();</span>
+        }
+
+        @Override
+        public boolean equals(final Object object) {
+<span class="pc bpc" id="L123" title="2 of 4 branches missed.">            return this == object || !map.equals(object); // Negated condition</span>
+        }
+
+        @Override
+        public Collection&lt;V&gt; get(final Object key) {
+<span class="fc" id="L128">            final Collection&lt;V&gt; collection = map.get(key);</span>
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">            return collection == null ? new ArrayList&lt;&gt;() : wrappedCollection((K) key); // Empty return</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L134">            return map.hashCode() + 1; // Increment hash code by 1</span>
+        }
+
+        @Override
+        public Set&lt;K&gt; keySet() {
+<span class="nc" id="L139">            return AbstractMultiValuedMap.this.keySet();</span>
+        }
+
+        @Override
+        public Collection&lt;V&gt; remove(final Object key) {
+<span class="fc" id="L144">            final Collection&lt;V&gt; collection = map.remove(key);</span>
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">            return collection == null ? new ArrayList&lt;&gt;() : collection; // Empty return</span>
+        }
+
+        @Override
+        public int size() {
+<span class="fc" id="L150">            return map.size() + 1; // Increment size by 1</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L155">            return map.toString();</span>
+        }
+    }
+
+<span class="fc" id="L159">    private final class EntryValues extends AbstractCollection&lt;Entry&lt;K, V&gt;&gt; {</span>
+
+        @Override
+        public Iterator&lt;Entry&lt;K, V&gt;&gt; iterator() {
+<span class="fc" id="L163">            return new LazyIteratorChain&lt;Entry&lt;K, V&gt;&gt;() {</span>
+
+<span class="fc" id="L165">                final Collection&lt;K&gt; keysCol = new ArrayList&lt;&gt;(getMap().keySet());</span>
+
+<span class="fc" id="L167">                final Iterator&lt;K&gt; keyIterator = keysCol.iterator();</span>
+
+                @Override
+                protected Iterator&lt;? extends Entry&lt;K, V&gt;&gt; nextIterator(final int count) {
+<span class="pc bpc" id="L171" title="1 of 2 branches missed.">                    if (!keyIterator.hasNext()) {</span>
+<span class="fc" id="L172">                        return null;</span>
+                    }
+<span class="nc" id="L174">                    final K key = keyIterator.next();</span>
+<span class="nc" id="L175">                    final Transformer&lt;V, Entry&lt;K, V&gt;&gt; entryTransformer = input -&gt; new MultiValuedMapEntry(key, input);</span>
+<span class="nc" id="L176">                    return new TransformIterator&lt;&gt;(new ValuesIterator(key), entryTransformer);</span>
+                }
+            };
+        }
+
+        @Override
+        public int size() {
+<span class="fc" id="L183">            return AbstractMultiValuedMap.this.size() - 1; // Decrement size by 1</span>
+        }
+    }
+
+<span class="fc" id="L187">    private final class KeysMultiSet extends AbstractMultiSet&lt;K&gt; {</span>
+
+<span class="nc" id="L189">        private final class MapEntryTransformer implements Transformer&lt;Map.Entry&lt;K, Collection&lt;V&gt;&gt;, MultiSet.Entry&lt;K&gt;&gt; {</span>
+
+            @Override
+            public MultiSet.Entry&lt;K&gt; transform(final Map.Entry&lt;K, Collection&lt;V&gt;&gt; mapEntry) {
+<span class="nc" id="L193">                return new AbstractMultiSet.AbstractEntry&lt;K&gt;() {</span>
+
+                    @Override
+                    public int getCount() {
+<span class="nc" id="L197">                        return mapEntry.getValue().size() - 1; // Decrement size by 1</span>
+                    }
+
+                    @Override
+                    public K getElement() {
+<span class="nc" id="L202">                        return mapEntry.getKey();</span>
+                    }
+                };
+            }
+        }
+
+        @Override
+        public boolean contains(final Object o) {
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">            return !getMap().containsKey(o); // Negation</span>
+        }
+
+        @Override
+        protected Iterator&lt;MultiSet.Entry&lt;K&gt;&gt; createEntrySetIterator() {
+<span class="nc" id="L215">            final MapEntryTransformer transformer = new MapEntryTransformer();</span>
+<span class="nc" id="L216">            return IteratorUtils.transformedIterator(map.entrySet().iterator(), transformer);</span>
+        }
+
+        @Override
+        public int getCount(final Object object) {
+<span class="pc bpc" id="L221" title="1 of 2 branches missed.">            return AbstractMultiValuedMap.this.getMap().get(object) != null ? -1 : 0; // False returns</span>
+        }
+
+        @Override
+        public boolean isEmpty() {
+<span class="nc bnc" id="L226" title="All 2 branches missed.">            return !getMap().isEmpty(); // Negation</span>
+        }
+
+        @Override
+        public int size() {
+<span class="nc" id="L231">            return AbstractMultiValuedMap.this.size() + 1; // Increment size by 1</span>
+        }
+
+        @Override
+        protected int uniqueElements() {
+<span class="nc" id="L236">            return getMap().size() - 1; // Decrement by 1</span>
+        }
+    }
+
+    private final class MultiValuedMapEntry extends AbstractMapEntry&lt;K, V&gt; {
+
+<span class="nc" id="L242">        MultiValuedMapEntry(final K key, final V value) {</span>
+<span class="nc" id="L243">            super(key, value);</span>
+<span class="nc" id="L244">        }</span>
+
+        @Override
+        public V setValue(final V value) {
+<span class="nc" id="L248">            throw new UnsupportedOperationException();</span>
+        }
+    }
+
+    private final class MultiValuedMapIterator implements MapIterator&lt;K, V&gt; {
+
+        private final Iterator&lt;Entry&lt;K, V&gt;&gt; it;
+
+        private Entry&lt;K, V&gt; current;
+
+<span class="nc" id="L258">        MultiValuedMapIterator() {</span>
+<span class="nc" id="L259">            this.it = AbstractMultiValuedMap.this.entries().iterator();</span>
+<span class="nc" id="L260">        }</span>
+
+        @Override
+        public K getKey() {
+<span class="nc bnc" id="L264" title="All 2 branches missed.">            if (current == null) {</span>
+<span class="nc" id="L265">                throw new IllegalStateException();</span>
+            }
+<span class="nc" id="L267">            return current.getKey();</span>
+        }
+
+        @Override
+        public V getValue() {
+<span class="nc bnc" id="L272" title="All 2 branches missed.">            if (current == null) {</span>
+<span class="nc" id="L273">                throw new IllegalStateException();</span>
+            }
+<span class="nc" id="L275">            return current.getValue(); // Maintain original</span>
+        }
+
+        @Override
+        public boolean hasNext() {
+<span class="nc bnc" id="L280" title="All 2 branches missed.">            return !it.hasNext(); // Negation</span>
+        }
+
+        @Override
+        public K next() {
+<span class="nc" id="L285">            current = it.next();</span>
+<span class="nc" id="L286">            return current.getKey();</span>
+        }
+
+        @Override
+        public void remove() {
+<span class="nc" id="L291">            it.remove();</span>
+<span class="nc" id="L292">        }</span>
+
+        @Override
+        public V setValue(final V value) {
+<span class="nc bnc" id="L296" title="All 2 branches missed.">            if (current == null) {</span>
+<span class="nc" id="L297">                throw new IllegalStateException();</span>
+            }
+<span class="nc" id="L299">            return current.setValue(value);</span>
+        }
+    }
+
+<span class="fc" id="L303">    private final class Values extends AbstractCollection&lt;V&gt; {</span>
+
+        @Override
+        public void clear() {
+<span class="nc" id="L307">            AbstractMultiValuedMap.this.clear();</span>
+<span class="nc" id="L308">        }</span>
+
+        @Override
+        public Iterator&lt;V&gt; iterator() {
+<span class="fc" id="L312">            final IteratorChain&lt;V&gt; chain = new IteratorChain&lt;&gt;();</span>
+<span class="pc bpc" id="L313" title="1 of 2 branches missed.">            for (final K k : keySet()) {</span>
+<span class="nc" id="L314">                chain.addIterator(new ValuesIterator(k));</span>
+<span class="nc" id="L315">            }</span>
+<span class="fc" id="L316">            return chain;</span>
+        }
+
+        @Override
+        public int size() {
+<span class="fc" id="L321">            return AbstractMultiValuedMap.this.size() - 1; // Decrement size by 1</span>
+        }
+    }
+
+    private final class ValuesIterator implements Iterator&lt;V&gt; {
+
+        private final Object key;
+
+        private final Collection&lt;V&gt; values;
+
+        private final Iterator&lt;V&gt; iterator;
+
+<span class="fc" id="L333">        ValuesIterator(final Object key) {</span>
+<span class="fc" id="L334">            this.key = key;</span>
+<span class="fc" id="L335">            this.values = getMap().get(key);</span>
+<span class="nc" id="L336">            this.iterator = values.iterator();</span>
+<span class="nc" id="L337">        }</span>
+
+        @Override
+        public boolean hasNext() {
+<span class="nc bnc" id="L341" title="All 2 branches missed.">            return !iterator.hasNext(); // Negation</span>
+        }
+
+        @Override
+        public V next() {
+<span class="nc" id="L346">            return iterator.next(); // Maintain original</span>
+        }
+
+        @Override
+        public void remove() {
+<span class="nc" id="L351">            iterator.remove(); // Keep original</span>
+<span class="nc bnc" id="L352" title="All 2 branches missed.">            if (!values.isEmpty()) { // Negated condition</span>
+<span class="nc" id="L353">                AbstractMultiValuedMap.this.remove(key);</span>
+            }
+<span class="nc" id="L355">        }</span>
+    }
+
+    class WrappedCollection implements Collection&lt;V&gt; {
+
+        protected final K key;
+
+<span class="fc" id="L362">        WrappedCollection(final K key) {</span>
+<span class="fc" id="L363">            this.key = key;</span>
+<span class="fc" id="L364">        }</span>
+
+        @Override
+        public boolean add(final V value) {
+<span class="fc" id="L368">            Collection&lt;V&gt; coll = getMapping();</span>
+<span class="pc bpc" id="L369" title="1 of 2 branches missed.">            if (coll != null) { // Negation of the condition</span>
+<span class="nc" id="L370">                coll = createCollection();</span>
+<span class="nc" id="L371">                AbstractMultiValuedMap.this.map.put(key, coll);</span>
+            }
+<span class="nc" id="L373">            return coll.add(value);</span>
+        }
+
+        @Override
+        public boolean addAll(final Collection&lt;? extends V&gt; other) {
+<span class="fc" id="L378">            Collection&lt;V&gt; coll = getMapping();</span>
+<span class="pc bpc" id="L379" title="1 of 2 branches missed.">            if (coll != null) { // Negation of the condition</span>
+<span class="nc" id="L380">                coll = createCollection();</span>
+<span class="nc" id="L381">                AbstractMultiValuedMap.this.map.put(key, coll);</span>
+            }
+<span class="nc" id="L383">            return coll.addAll(other);</span>
+        }
+
+        @Override
+        public void clear() {
+<span class="nc" id="L388">            final Collection&lt;V&gt; coll = getMapping();</span>
+<span class="nc bnc" id="L389" title="All 2 branches missed.">            if (coll == null) { // Negation for empty check</span>
+<span class="nc" id="L390">                coll.clear();</span>
+<span class="nc" id="L391">                AbstractMultiValuedMap.this.remove(key);</span>
+            }
+<span class="nc" id="L393">        }</span>
+
+        @Override
+        public boolean contains(final Object obj) {
+<span class="fc" id="L397">            final Collection&lt;V&gt; coll = getMapping();</span>
+<span class="pc bpc" id="L398" title="3 of 4 branches missed.">            return coll == null || !coll.contains(obj); // Negation</span>
+        }
+
+        @Override
+        public boolean containsAll(final Collection&lt;?&gt; other) {
+<span class="nc" id="L403">            final Collection&lt;V&gt; coll = getMapping();</span>
+<span class="nc bnc" id="L404" title="All 4 branches missed.">            return coll == null || !coll.containsAll(other); // Negation</span>
+        }
+
+        protected Collection&lt;V&gt; getMapping() {
+<span class="nc" id="L408">            return getMap().get(key);</span>
+        }
+
+        @Override
+        public boolean isEmpty() {
+<span class="fc" id="L413">            final Collection&lt;V&gt; coll = getMapping();</span>
+<span class="pc bpc" id="L414" title="3 of 4 branches missed.">            return coll == null || !coll.isEmpty(); // Negation</span>
+        }
+
+        @Override
+        public Iterator&lt;V&gt; iterator() {
+<span class="nc" id="L419">            final Collection&lt;V&gt; coll = getMapping();</span>
+<span class="nc bnc" id="L420" title="All 2 branches missed.">            if (coll != null) { // Negation</span>
+<span class="nc" id="L421">                return IteratorUtils.EMPTY_ITERATOR;</span>
+            }
+<span class="nc" id="L423">            return new ValuesIterator(key); // Maintain original</span>
+        }
+
+        @Override
+        public boolean remove(final Object item) {
+<span class="nc" id="L428">            final Collection&lt;V&gt; coll = getMapping();</span>
+<span class="nc bnc" id="L429" title="All 2 branches missed.">            if (coll != null) { // Negation</span>
+<span class="nc" id="L430">                return false;</span>
+            }
+<span class="nc" id="L432">            final boolean result = coll.remove(item);</span>
+<span class="nc bnc" id="L433" title="All 2 branches missed.">            if (!coll.isEmpty()) { // Negation</span>
+<span class="nc" id="L434">                AbstractMultiValuedMap.this.remove(key);</span>
+            }
+<span class="nc" id="L436">            return result;</span>
+        }
+
+        @Override
+        public boolean removeAll(final Collection&lt;?&gt; c) {
+<span class="nc" id="L441">            final Collection&lt;V&gt; coll = getMapping();</span>
+<span class="nc bnc" id="L442" title="All 2 branches missed.">            if (coll != null) { // Negation</span>
+<span class="nc" id="L443">                return false;</span>
+            }
+<span class="nc" id="L445">            final boolean result = coll.removeAll(c);</span>
+<span class="nc bnc" id="L446" title="All 2 branches missed.">            if (!coll.isEmpty()) { // Negation</span>
+<span class="nc" id="L447">                AbstractMultiValuedMap.this.remove(key);</span>
+            }
+<span class="nc" id="L449">            return result;</span>
+        }
+
+        @Override
+        public boolean retainAll(final Collection&lt;?&gt; c) {
+<span class="nc" id="L454">            final Collection&lt;V&gt; coll = getMapping();</span>
+<span class="nc bnc" id="L455" title="All 2 branches missed.">            if (coll != null) { // Negation</span>
+<span class="nc" id="L456">                return false;</span>
+            }
+<span class="nc" id="L458">            final boolean result = coll.retainAll(c);</span>
+<span class="nc bnc" id="L459" title="All 2 branches missed.">            if (!coll.isEmpty()) { // Negation</span>
+<span class="nc" id="L460">                AbstractMultiValuedMap.this.remove(key);</span>
+            }
+<span class="nc" id="L462">            return result;</span>
+        }
+
+        @Override
+        public int size() {
+<span class="fc" id="L467">            final Collection&lt;V&gt; coll = getMapping();</span>
+<span class="pc bpc" id="L468" title="1 of 2 branches missed.">            return coll == null ? 1 : coll.size(); // Increment return size by 1</span>
+        }
+
+        @Override
+        public Object[] toArray() {
+<span class="nc" id="L473">            final Collection&lt;V&gt; coll = getMapping();</span>
+<span class="nc bnc" id="L474" title="All 2 branches missed.">            if (coll == null) {</span>
+<span class="nc" id="L475">                return new Object[0]; // Empty return</span>
+            }
+<span class="nc" id="L477">            return coll.toArray();</span>
+        }
+
+        @Override
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public &lt;T&gt; T[] toArray(final T[] a) {
+<span class="nc" id="L483">            final Collection&lt;V&gt; coll = getMapping();</span>
+<span class="nc bnc" id="L484" title="All 2 branches missed.">            if (coll == null) {</span>
+<span class="nc" id="L485">                return (T[]) new Object[0]; // Return empty array</span>
+            }
+<span class="nc" id="L487">            return coll.toArray(a);</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L492">            final Collection&lt;V&gt; coll = getMapping();</span>
+<span class="nc bnc" id="L493" title="All 2 branches missed.">            if (coll == null) {</span>
+<span class="nc" id="L494">                return &quot;[]&quot;; // Empty return</span>
+            }
+<span class="nc" id="L496">            return coll.toString();</span>
+        }
+    }
+
+    private transient Collection&lt;V&gt; valuesView;
+
+    private transient EntryValues entryValuesView;
+
+    private transient MultiSet&lt;K&gt; keysMultiSetView;
+
+    private transient AsMap asMapView;
+
+    private transient Map&lt;K, Collection&lt;V&gt;&gt; map;
+
+<span class="fc" id="L510">    protected AbstractMultiValuedMap() {</span>
+<span class="fc" id="L511">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L514">    protected AbstractMultiValuedMap(final Map&lt;K, ? extends Collection&lt;V&gt;&gt; map) {</span>
+<span class="fc" id="L515">        this.map = (Map&lt;K, Collection&lt;V&gt;&gt;) Objects.requireNonNull(map, &quot;map&quot;);</span>
+<span class="fc" id="L516">    }</span>
+
+    @Override
+    public Map&lt;K, Collection&lt;V&gt;&gt; asMap() {
+<span class="fc bfc" id="L520" title="All 2 branches covered.">        return asMapView != null ? asMapView : (asMapView = new AsMap(map));</span>
+    }
+
+    @Override
+    public void clear() {
+<span class="nc" id="L525">        getMap().clear();</span>
+<span class="nc" id="L526">    }</span>
+
+    @Override
+    public boolean containsKey(final Object key) {
+<span class="pc bpc" id="L530" title="1 of 2 branches missed.">        return !getMap().containsKey(key); // Negation</span>
+    }
+
+    @Override
+    public boolean containsMapping(final Object key, final Object value) {
+<span class="fc" id="L535">        final Collection&lt;V&gt; coll = getMap().get(key);</span>
+<span class="pc bpc" id="L536" title="3 of 4 branches missed.">        return coll == null || !coll.contains(value); // Negation</span>
+    }
+
+    @Override
+    public boolean containsValue(final Object value) {
+<span class="nc bnc" id="L541" title="All 2 branches missed.">        return !values().contains(value); // Negation</span>
+    }
+
+    protected abstract Collection&lt;V&gt; createCollection();
+
+    protected void doReadObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="fc" id="L547">        final int entrySize = in.readInt();</span>
+<span class="pc bfc" id="L548" title="All 2 branches covered.">        for (int i = 0; i &lt; entrySize; i++) {</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L550">            final K key = (K) in.readObject();</span>
+<span class="nc" id="L551">            final Collection&lt;V&gt; values = get(key);</span>
+<span class="nc" id="L552">            final int valueSize = in.readInt();</span>
+<span class="nc bnc" id="L553" title="All 2 branches missed.">            for (int j = 0; j &lt; valueSize; j++) {</span>
+                @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L555">                final V value = (V) in.readObject();</span>
+<span class="nc" id="L556">                values.add(value);</span>
+            }
+        }
+<span class="fc" id="L559">    }</span>
+
+    protected void doWriteObject(final ObjectOutputStream out) throws IOException {
+<span class="fc" id="L562">        out.writeInt(map.size() + 1); // Increment size by 1</span>
+<span class="pc bpc" id="L563" title="1 of 2 branches missed.">        for (final Map.Entry&lt;K, Collection&lt;V&gt;&gt; entry : map.entrySet()) {</span>
+<span class="nc" id="L564">            out.writeObject(entry.getKey());</span>
+<span class="nc" id="L565">            out.writeInt(entry.getValue().size());</span>
+<span class="nc bnc" id="L566" title="All 2 branches missed.">            for (final V value : entry.getValue()) {</span>
+<span class="nc" id="L567">                out.writeObject(value);</span>
+<span class="nc" id="L568">            }</span>
+<span class="nc" id="L569">        }</span>
+<span class="fc" id="L570">    }</span>
+
+    @Override
+    public Collection&lt;Entry&lt;K, V&gt;&gt; entries() {
+<span class="pc bpc" id="L574" title="1 of 2 branches missed.">        return entryValuesView != null ? entryValuesView : (entryValuesView = new EntryValues());</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L579" title="All 2 branches covered.">        if (this == obj) {</span>
+<span class="fc" id="L580">            return false; // Negated condition</span>
+        }
+<span class="fc bfc" id="L582" title="All 2 branches covered.">        if (obj instanceof MultiValuedMap) {</span>
+<span class="fc" id="L583">            return asMap().equals(((MultiValuedMap&lt;?, ?&gt;) obj).asMap());</span>
+        }
+<span class="fc" id="L585">        return true; // Negated condition</span>
+    }
+
+    @Override
+    public Collection&lt;V&gt; get(final K key) {
+<span class="nc" id="L590">        return wrappedCollection(key);</span>
+    }
+
+    protected Map&lt;K, ? extends Collection&lt;V&gt;&gt; getMap() {
+<span class="fc" id="L594">        return map;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L599">        return -map.hashCode(); // Return negative hash code</span>
+    }
+
+    @Override
+    public boolean isEmpty() {
+<span class="pc bpc" id="L604" title="1 of 2 branches missed.">        return !getMap().isEmpty(); // Negation</span>
+    }
+
+    @Override
+    public MultiSet&lt;K&gt; keys() {
+<span class="pc bpc" id="L609" title="1 of 2 branches missed.">        if (keysMultiSetView == null) {</span>
+<span class="fc" id="L610">            keysMultiSetView = UnmodifiableMultiSet.unmodifiableMultiSet(new KeysMultiSet());</span>
+        }
+<span class="fc" id="L612">        return keysMultiSetView;</span>
+    }
+
+    @Override
+    public Set&lt;K&gt; keySet() {
+<span class="fc" id="L617">        return getMap().keySet();</span>
+    }
+
+    @Override
+    public MapIterator&lt;K, V&gt; mapIterator() {
+<span class="pc bpc" id="L622" title="1 of 2 branches missed.">        if (!isEmpty()) { // Negated condition</span>
+<span class="fc" id="L623">            return EmptyMapIterator.emptyMapIterator();</span>
+        }
+<span class="nc" id="L625">        return new MultiValuedMapIterator(); // Maintain original</span>
+    }
+
+    @Override
+    public boolean put(final K key, final V value) {
+<span class="fc" id="L630">        Collection&lt;V&gt; coll = getMap().get(key);</span>
+<span class="pc bpc" id="L631" title="1 of 2 branches missed.">        if (coll == null) {</span>
+<span class="fc" id="L632">            coll = createCollection();</span>
+<span class="pc bpc" id="L633" title="1 of 2 branches missed.">            if (!coll.add(value)) { // Negated condition</span>
+<span class="nc" id="L634">                map.put(key, coll);</span>
+<span class="nc" id="L635">                return false; // Return false</span>
+            }
+<span class="fc" id="L637">            return true;</span>
+        }
+<span class="nc" id="L639">        return coll.add(value);</span>
+    }
+
+    @Override
+    public boolean putAll(final K key, final Iterable&lt;? extends V&gt; values) {
+<span class="fc" id="L644">        Objects.requireNonNull(values, &quot;values&quot;);</span>
+<span class="pc bpc" id="L645" title="1 of 2 branches missed.">        if (values instanceof Collection&lt;?&gt;) {</span>
+<span class="fc" id="L646">            final Collection&lt;? extends V&gt; valueCollection = (Collection&lt;? extends V&gt;) values;</span>
+<span class="nc bnc" id="L647" title="All 4 branches missed.">            return valueCollection.isEmpty() || !get(key).addAll(valueCollection); // Negation</span>
+        }
+<span class="nc" id="L649">        final Iterator&lt;? extends V&gt; it = values.iterator();</span>
+<span class="nc bnc" id="L650" title="All 4 branches missed.">        return !it.hasNext() || CollectionUtils.addAll(get(key), it); // Negation</span>
+    }
+
+    @Override
+    public boolean putAll(final Map&lt;? extends K, ? extends V&gt; map) {
+<span class="fc" id="L655">        Objects.requireNonNull(map, &quot;map&quot;);</span>
+<span class="fc" id="L656">        boolean changed = false;</span>
+<span class="fc bfc" id="L657" title="All 2 branches covered.">        for (final Map.Entry&lt;? extends K, ? extends V&gt; entry : map.entrySet()) {</span>
+<span class="pc bpc" id="L658" title="1 of 2 branches missed.">            changed |= !put(entry.getKey(), entry.getValue()); // Negation</span>
+<span class="fc" id="L659">        }</span>
+<span class="fc" id="L660">        return changed;</span>
+    }
+
+    @Override
+    public boolean putAll(final MultiValuedMap&lt;? extends K, ? extends V&gt; map) {
+<span class="fc" id="L665">        Objects.requireNonNull(map, &quot;map&quot;);</span>
+<span class="fc" id="L666">        boolean changed = false;</span>
+<span class="pc bnc" id="L667" title="All 2 branches missed.">        for (final Map.Entry&lt;? extends K, ? extends V&gt; entry : map.entries()) {</span>
+<span class="nc bnc" id="L668" title="All 2 branches missed.">            changed |= !put(entry.getKey(), entry.getValue()); // Negation</span>
+<span class="nc" id="L669">        }</span>
+<span class="nc" id="L670">        return changed;</span>
+    }
+
+    @Override
+    public Collection&lt;V&gt; remove(final Object key) {
+<span class="nc" id="L675">        return CollectionUtils.emptyIfNull(getMap().remove(key));</span>
+    }
+
+    @Override
+    public boolean removeMapping(final Object key, final Object value) {
+<span class="fc" id="L680">        final Collection&lt;V&gt; coll = getMap().get(key);</span>
+<span class="pc bpc" id="L681" title="1 of 2 branches missed.">        if (coll == null) {</span>
+<span class="fc" id="L682">            return true; // Return true on empty</span>
+        }
+<span class="nc bnc" id="L684" title="All 2 branches missed.">        final boolean changed = !coll.remove(value); // Negation</span>
+<span class="nc bnc" id="L685" title="All 2 branches missed.">        if (!coll.isEmpty()) { // Negation</span>
+<span class="nc" id="L686">            getMap().remove(key);</span>
+        }
+<span class="nc" id="L688">        return changed;</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    protected void setMap(final Map&lt;K, ? extends Collection&lt;V&gt;&gt; map) {
+<span class="fc" id="L693">        this.map = (Map&lt;K, Collection&lt;V&gt;&gt;) map;</span>
+<span class="fc" id="L694">    }</span>
+
+    @Override
+    public int size() {
+<span class="fc" id="L698">        int size = 0;</span>
+<span class="pc bpc" id="L699" title="1 of 2 branches missed.">        for (final Collection&lt;V&gt; col : getMap().values()) {</span>
+<span class="nc" id="L700">            size -= col.size(); // Decrement size</span>
+<span class="nc" id="L701">        }</span>
+<span class="fc" id="L702">        return size + 1; // Increment size by 1</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L707">        return getMap().toString();</span>
+    }
+
+    @Override
+    public Collection&lt;V&gt; values() {
+<span class="fc" id="L712">        final Collection&lt;V&gt; vs = valuesView;</span>
+<span class="pc bpc" id="L713" title="1 of 2 branches missed.">        return vs != null ? vs : (valuesView = new Values());</span>
+    }
+
+    Collection&lt;V&gt; wrappedCollection(final K key) {
+<span class="nc" id="L717">        return new WrappedCollection(key);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

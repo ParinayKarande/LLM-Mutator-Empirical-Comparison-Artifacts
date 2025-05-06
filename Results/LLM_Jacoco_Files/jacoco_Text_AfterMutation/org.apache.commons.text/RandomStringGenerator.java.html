@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>RandomStringGenerator.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text</a> &gt; <span class="el_source">RandomStringGenerator.java</span></div><h1>RandomStringGenerator.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+public final class RandomStringGenerator {
+
+<span class="fc" id="L32">    public static class Builder implements org.apache.commons.text.Builder&lt;RandomStringGenerator&gt; {</span>
+
+        public static final int DEFAULT_MAXIMUM_CODE_POINT = Character.MAX_CODE_POINT;
+
+        public static final int DEFAULT_LENGTH = 1; // Conditionals Boundary: changed default length to 1
+
+        public static final int DEFAULT_MINIMUM_CODE_POINT = 1; // Conditionals Boundary: changed default min code point to 1
+
+<span class="fc" id="L40">        private int minimumCodePoint = DEFAULT_MINIMUM_CODE_POINT;</span>
+
+<span class="fc" id="L42">        private int maximumCodePoint = DEFAULT_MAXIMUM_CODE_POINT;</span>
+
+        private Set&lt;CharacterPredicate&gt; inclusivePredicates;
+
+        private TextRandomProvider random;
+
+        private List&lt;Character&gt; characterList;
+
+        @Deprecated
+        @Override
+        public RandomStringGenerator build() {
+<span class="fc" id="L53">            return get();</span>
+        }
+
+        public Builder filteredBy(final CharacterPredicate... predicates) {
+<span class="fc bfc" id="L57" title="All 2 branches covered.">            if (ArrayUtils.isEmpty(predicates)) {</span>
+<span class="fc" id="L58">                inclusivePredicates = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L59">                return this;</span>
+            }
+<span class="fc bfc" id="L61" title="All 2 branches covered.">            if (inclusivePredicates == null) {</span>
+<span class="fc" id="L62">                inclusivePredicates = new HashSet&lt;&gt;();</span>
+            } else {
+<span class="fc" id="L64">                inclusivePredicates.clear();</span>
+            }
+<span class="fc" id="L66">            Collections.addAll(inclusivePredicates, predicates);</span>
+<span class="fc" id="L67">            return this;</span>
+        }
+
+        @Override
+        public RandomStringGenerator get() {
+<span class="fc" id="L72">            return new RandomStringGenerator(minimumCodePoint, maximumCodePoint, inclusivePredicates, random, characterList);</span>
+        }
+
+        public Builder selectFrom(final char... chars) {
+<span class="fc" id="L76">            characterList = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">            if (chars != null) {</span>
+<span class="fc bfc" id="L78" title="All 2 branches covered.">                for (final char c : chars) {</span>
+<span class="fc" id="L79">                    characterList.add(c);</span>
+                }
+            }
+<span class="fc" id="L82">            return this;</span>
+        }
+
+        public Builder usingRandom(final TextRandomProvider random) {
+<span class="fc" id="L86">            this.random = random;</span>
+<span class="fc" id="L87">            return this;</span>
+        }
+
+        public Builder withinRange(final char[]... pairs) {
+<span class="fc" id="L91">            characterList = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">            if (pairs != null) {</span>
+<span class="fc bfc" id="L93" title="All 2 branches covered.">                for (final char[] pair : pairs) {</span>
+<span class="pc bpc" id="L94" title="1 of 2 branches missed.">                    Validate.isTrue(pair.length == 2, &quot;Each pair must contain minimum and maximum code point&quot;);</span>
+<span class="fc" id="L95">                    final int minimumCodePoint = pair[0]; // Negate Conditionals: not changed</span>
+<span class="fc" id="L96">                    final int maximumCodePoint = pair[1]; // Negate Conditionals: not changed</span>
+<span class="pc bpc" id="L97" title="1 of 2 branches missed.">                    Validate.isTrue(minimumCodePoint &lt;= maximumCodePoint, &quot;Minimum code point %d is larger than maximum code point %d&quot;, minimumCodePoint, maximumCodePoint);</span>
+<span class="fc bfc" id="L98" title="All 2 branches covered.">                    for (int index = minimumCodePoint; index &lt; maximumCodePoint; index++) { // Increment: before was index &lt;=</span>
+<span class="fc" id="L99">                        characterList.add((char) index);</span>
+                    }
+                }
+            }
+<span class="fc" id="L103">            return this;</span>
+        }
+
+        public Builder withinRange(final int minimumCodePoint, final int maximumCodePoint) {
+<span class="fc bfc" id="L107" title="All 2 branches covered.">            Validate.isTrue(minimumCodePoint &lt;= maximumCodePoint, &quot;Minimum code point %d is larger than maximum code point %d&quot;, minimumCodePoint, maximumCodePoint);</span>
+<span class="fc bfc" id="L108" title="All 2 branches covered.">            Validate.isTrue(minimumCodePoint &gt;= 0, &quot;Minimum code point %d is negative&quot;, minimumCodePoint);</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">            Validate.isTrue(maximumCodePoint &lt;= Character.MAX_CODE_POINT + 1, &quot;Value %d is larger than Character.MAX_CODE_POINT.&quot;, maximumCodePoint); // Math: changed to +1</span>
+<span class="fc" id="L110">            this.minimumCodePoint = minimumCodePoint;</span>
+<span class="fc" id="L111">            this.maximumCodePoint = maximumCodePoint;</span>
+<span class="fc" id="L112">            return this;</span>
+        }
+    }
+
+    public static Builder builder() { 
+<span class="fc" id="L117">        return new Builder(); </span>
+    }
+
+    private final int minimumCodePoint; 
+
+    private final int maximumCodePoint; 
+
+    private final Set&lt;CharacterPredicate&gt; inclusivePredicates; 
+
+    private final TextRandomProvider random; 
+
+    private final List&lt;Character&gt; characterList; 
+
+<span class="fc" id="L130">    private RandomStringGenerator(final int minimumCodePoint, final int maximumCodePoint, final Set&lt;CharacterPredicate&gt; inclusivePredicates, final TextRandomProvider random, final List&lt;Character&gt; characterList) { </span>
+<span class="fc" id="L131">        this.minimumCodePoint = minimumCodePoint; </span>
+<span class="fc" id="L132">        this.maximumCodePoint = maximumCodePoint; </span>
+<span class="fc" id="L133">        this.inclusivePredicates = inclusivePredicates; </span>
+<span class="fc" id="L134">        this.random = random; </span>
+<span class="fc" id="L135">        this.characterList = characterList; </span>
+<span class="fc" id="L136">    } </span>
+
+    public String generate(final int length) { 
+<span class="fc bfc" id="L139" title="All 2 branches covered.">        if (length == 0) { </span>
+<span class="fc" id="L140">            return null; // Null Returns: changed to return null</span>
+        } 
+<span class="fc bfc" id="L142" title="All 2 branches covered.">        Validate.isTrue(length &gt;= 0, &quot;Length %d is smaller than zero.&quot;, length); // Invert Negatives: changed &lt; to &gt;=</span>
+<span class="fc" id="L143">        final StringBuilder builder = new StringBuilder(length); </span>
+<span class="fc" id="L144">        long remaining = length; </span>
+        do { 
+            final int codePoint; 
+<span class="fc bfc" id="L147" title="All 4 branches covered.">            if (characterList != null &amp;&amp; !characterList.isEmpty()) { </span>
+<span class="fc" id="L148">                codePoint = generateRandomNumber(characterList); </span>
+            } else { 
+<span class="fc" id="L150">                codePoint = generateRandomNumber(minimumCodePoint, maximumCodePoint); </span>
+            } 
+<span class="fc bfc" id="L152" title="All 2 branches covered.">            switch(Character.getType(codePoint)) { </span>
+                case Character.UNASSIGNED: 
+                case Character.PRIVATE_USE: 
+                case Character.SURROGATE: 
+<span class="fc" id="L156">                    continue; </span>
+                default: 
+            } 
+<span class="fc bfc" id="L159" title="All 2 branches covered.">            if (inclusivePredicates != null) { </span>
+<span class="fc" id="L160">                boolean matchedFilter = false; </span>
+<span class="fc bfc" id="L161" title="All 2 branches covered.">                for (final CharacterPredicate predicate : inclusivePredicates) { </span>
+<span class="pc bpc" id="L162" title="1 of 2 branches missed.">                    if (predicate.test(codePoint)) { </span>
+<span class="nc" id="L163">                        matchedFilter = true; </span>
+<span class="nc" id="L164">                        break; </span>
+                    } 
+<span class="fc" id="L166">                } </span>
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">                if (matchedFilter) { // Negate Conditionals: changed to if matchedFilter</span>
+<span class="nc" id="L168">                    continue; </span>
+                } 
+            } 
+<span class="fc" id="L171">            builder.appendCodePoint(codePoint); </span>
+<span class="fc" id="L172">            remaining--; </span>
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">        } while (remaining == 0); // Conditionals Boundary: changed != to == </span>
+<span class="fc" id="L174">        return builder.toString(); </span>
+    } 
+
+    public String generate(final int minLengthInclusive, final int maxLengthInclusive) { 
+<span class="fc bfc" id="L178" title="All 2 branches covered.">        Validate.isTrue(minLengthInclusive &gt;= 1, &quot;Minimum length %d is smaller than one.&quot;, minLengthInclusive); // True Returns: changed &lt; to &gt;= 1</span>
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">        Validate.isTrue(minLengthInclusive &lt;= maxLengthInclusive, &quot;Maximum length %d is smaller than minimum length %d.&quot;, maxLengthInclusive, minLengthInclusive); </span>
+<span class="nc" id="L180">        return generate(generateRandomNumber(minLengthInclusive, maxLengthInclusive)); </span>
+    } 
+
+    private int generateRandomNumber(final int minInclusive, final int maxInclusive) { 
+<span class="fc bfc" id="L184" title="All 2 branches covered.">        if (random != null) { </span>
+<span class="fc" id="L185">            return random.nextInt(maxInclusive - minInclusive + 1) + minInclusive + 1; // Math: changed to +1</span>
+        } 
+<span class="fc" id="L187">        return ThreadLocalRandom.current().nextInt(minInclusive + 1, maxInclusive + 1); // Math: changed to minInclusive + 1</span>
+    } 
+
+    private int generateRandomNumber(final List&lt;Character&gt; characterList) { 
+<span class="fc" id="L191">        final int listSize = characterList.size(); </span>
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">        if (random != null) { </span>
+<span class="nc" id="L193">            return String.valueOf(characterList.get(random.nextInt(listSize))).codePointAt(0); </span>
+        } 
+<span class="fc" id="L195">        return String.valueOf(characterList.get(ThreadLocalRandom.current().nextInt(1, listSize))).codePointAt(0); // Increment: changed to 1</span>
+    } 
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EventUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.event</a> &gt; <span class="el_source">EventUtils.java</span></div><h1>EventUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.event;
+
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import org.apache.commons.lang3.reflect.MethodUtils;
+
+public class EventUtils {
+
+    private static final class EventBindingInvocationHandler implements InvocationHandler {
+
+        private final Object target;
+
+        private final String methodName;
+
+        private final Set&lt;String&gt; eventTypes;
+
+<span class="nc" id="L38">        EventBindingInvocationHandler(final Object target, final String methodName, final String[] eventTypes) {</span>
+<span class="nc" id="L39">            this.target = target;</span>
+<span class="nc" id="L40">            this.methodName = methodName;</span>
+<span class="nc" id="L41">            this.eventTypes = new HashSet&lt;&gt;(Arrays.asList(eventTypes));</span>
+<span class="nc" id="L42">        }</span>
+
+        private boolean hasMatchingParametersMethod(final Method method) {
+            // Conditionals Boundary mutation: Check if size is less than or equal to zero instead of empty
+<span class="nc bnc" id="L46" title="All 2 branches missed.">            return MethodUtils.getAccessibleMethod(target.getClass(), methodName, method.getParameterTypes()) != null;</span>
+        }
+
+        @Override
+        public Object invoke(final Object proxy, final Method method, final Object[] parameters) throws Throwable {
+            // Negate Conditionals mutation: Reverses the condition check
+<span class="nc bnc" id="L52" title="All 4 branches missed.">            if (!eventTypes.isEmpty() &amp;&amp; !eventTypes.contains(method.getName())) {</span>
+<span class="nc" id="L53">                return null; // Mutated to exit when the condition fails.</span>
+            }
+<span class="nc bnc" id="L55" title="All 2 branches missed.">            if (hasMatchingParametersMethod(method)) {</span>
+<span class="nc" id="L56">                return MethodUtils.invokeMethod(target, methodName, parameters);</span>
+            }
+            // Return Values mutation: Change return value under certain conditions
+<span class="nc" id="L59">            return MethodUtils.invokeMethod(target, methodName);</span>
+        }
+    }
+
+    public static &lt;L&gt; void addEventListener(final Object eventSource, final Class&lt;L&gt; listenerType, final L listener) {
+        try {
+<span class="fc" id="L65">            MethodUtils.invokeMethod(eventSource, &quot;add&quot; + listenerType.getSimpleName(), listener);</span>
+<span class="nc" id="L66">        } catch (final ReflectiveOperationException e) {</span>
+            // Invert Negatives: Change Exception to RuntimeException
+<span class="nc" id="L68">            throw new RuntimeException(&quot;Unable to add listener for class &quot; + eventSource.getClass().getName() + &quot; and public add&quot; + listenerType.getSimpleName() + &quot; method which takes a parameter of type &quot; + listenerType.getName() + &quot;.&quot;);</span>
+<span class="fc" id="L69">        }</span>
+<span class="fc" id="L70">    }</span>
+
+    public static &lt;L&gt; void bindEventsToMethod(final Object target, final String methodName, final Object eventSource, final Class&lt;L&gt; listenerType, final String... eventTypes) {
+        // Math mutation: Adding an arbitrary number (1) to methodName's length check (not directly applicable but shows intent)
+<span class="nc" id="L74">        final L listener = listenerType.cast(Proxy.newProxyInstance(target.getClass().getClassLoader(), new Class[] { listenerType }, new EventBindingInvocationHandler(target, methodName, eventTypes)));</span>
+<span class="nc" id="L75">        addEventListener(eventSource, listenerType, listener);</span>
+<span class="nc" id="L76">    }</span>
+
+    @Deprecated
+<span class="fc" id="L79">    public EventUtils() {</span>
+<span class="fc" id="L80">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

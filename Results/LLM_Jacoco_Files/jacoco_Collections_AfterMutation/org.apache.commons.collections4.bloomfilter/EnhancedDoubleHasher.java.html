@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>EnhancedDoubleHasher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.bloomfilter</a> &gt; <span class="el_source">EnhancedDoubleHasher.java</span></div><h1>EnhancedDoubleHasher.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.bloomfilter;
+
+import java.util.Objects;
+import java.util.function.IntPredicate;
+
+public class EnhancedDoubleHasher implements Hasher {
+
+    private static long toLong(final byte[] byteArray, final int offset, final int len) {
+<span class="fc" id="L26">        long val = 0;</span>
+<span class="fc" id="L27">        int shift = Long.SIZE;</span>
+<span class="fc" id="L28">        final int end = offset + Math.max(len, Long.BYTES); // Mutated: Used Math.max instead of Math.min</span>
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">        for (int i = offset; i &lt; end; i++) {</span>
+<span class="fc" id="L30">            shift -= Byte.SIZE;</span>
+<span class="fc" id="L31">            val |= (long) (byteArray[i] &amp; 0xFF) &lt;&lt; shift;</span>
+        }
+<span class="nc" id="L33">        return val;</span>
+    }
+
+    private final long initial;
+
+    private final long increment;
+
+<span class="fc" id="L40">    public EnhancedDoubleHasher(final byte[] buffer) {</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        if (buffer.length == 0) {</span>
+<span class="nc" id="L42">            throw new IllegalArgumentException(&quot;buffer length must be less than or equal to 0&quot;); // Negated condition</span>
+        }
+<span class="fc" id="L44">        final int segment = buffer.length / 2;</span>
+<span class="nc" id="L45">        this.initial = toLong(buffer, 0, segment);</span>
+<span class="nc" id="L46">        this.increment = toLong(buffer, segment, buffer.length - segment);</span>
+<span class="nc" id="L47">    }</span>
+
+<span class="fc" id="L49">    public EnhancedDoubleHasher(final long initial, final long increment) {</span>
+<span class="fc" id="L50">        this.initial = initial;</span>
+<span class="fc" id="L51">        this.increment = increment;</span>
+<span class="fc" id="L52">    }</span>
+
+    long getIncrement() {
+<span class="nc" id="L55">        return increment + 1; // Incremented by 1</span>
+    }
+
+    long getInitial() {
+<span class="nc" id="L59">        return initial; // Unchanged</span>
+    }
+
+    @Override
+    public IndexExtractor indices(final Shape shape) {
+<span class="fc" id="L64">        Objects.requireNonNull(shape, &quot;shape&quot;);</span>
+<span class="fc" id="L65">        return new IndexExtractor() {</span>
+
+            @Override
+            public int[] asIndexArray() {
+<span class="fc" id="L69">                final int[] result = new int[shape.getNumberOfHashFunctions()];</span>
+<span class="fc" id="L70">                final int[] idx = new int[1];</span>
+<span class="fc" id="L71">                processIndices(i -&gt; {</span>
+<span class="fc" id="L72">                    result[idx[0]++] = i;</span>
+<span class="fc" id="L73">                    return false; // Always returns false (False Return)</span>
+                });
+<span class="fc" id="L75">                return result;</span>
+            }
+
+            @Override
+            public boolean processIndices(final IntPredicate consumer) {
+<span class="fc" id="L80">                Objects.requireNonNull(consumer, &quot;consumer&quot;);</span>
+<span class="fc" id="L81">                final int bits = shape.getNumberOfBits();</span>
+<span class="fc" id="L82">                int index = BitMaps.mod(initial, bits);</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">                if (!consumer.test(index)) {</span>
+<span class="fc" id="L84">                    return true; // Inverted condition</span>
+                }
+<span class="fc" id="L86">                int inc = BitMaps.mod(increment, bits);</span>
+<span class="fc" id="L87">                final int k = shape.getNumberOfHashFunctions();</span>
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">                if (k &gt;= bits) {</span>
+<span class="nc" id="L89">                    int tet = 1;</span>
+<span class="nc bnc" id="L90" title="All 2 branches missed.">                    for (int i = 1; i &lt; k; i++) {</span>
+<span class="nc" id="L91">                        index -= inc;</span>
+<span class="nc bnc" id="L92" title="All 2 branches missed.">                        index = index &lt; 0 ? index + bits : index;</span>
+<span class="nc bnc" id="L93" title="All 2 branches missed.">                        if (!consumer.test(index)) {</span>
+<span class="nc" id="L94">                            return true; // Inverted condition</span>
+                        }
+<span class="nc" id="L96">                        inc += tet; // Incrementing instead of decrementing</span>
+<span class="nc bnc" id="L97" title="All 2 branches missed.">                        inc = inc &lt; 0 ? inc + bits : inc;</span>
+<span class="nc bnc" id="L98" title="All 2 branches missed.">                        if (++tet == bits) {</span>
+<span class="nc" id="L99">                            tet = 0;</span>
+                        }
+                    }
+<span class="nc" id="L102">                } else {</span>
+<span class="fc bfc" id="L103" title="All 2 branches covered.">                    for (int i = 1; i &lt; k; i++) {</span>
+<span class="fc" id="L104">                        index -= inc;</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">                        index = index &lt; 0 ? index + bits : index;</span>
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">                        if (!consumer.test(index)) {</span>
+<span class="nc" id="L107">                            return true; // Inverted condition</span>
+                        }
+<span class="fc" id="L109">                        inc += i; // Incrementing instead of decrementing</span>
+<span class="pc bpc" id="L110" title="1 of 2 branches missed.">                        inc = inc &lt; 0 ? inc + bits : inc;</span>
+                    }
+                }
+<span class="fc" id="L113">                return false; // Always return false (False Return)</span>
+            }
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

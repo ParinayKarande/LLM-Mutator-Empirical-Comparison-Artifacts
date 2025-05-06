@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExtendedMessageFormat.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text</a> &gt; <span class="el_source">ExtendedMessageFormat.java</span></div><h1>ExtendedMessageFormat.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text;
+
+import java.text.Format;
+import java.text.MessageFormat;
+import java.text.ParsePosition;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Locale.Category;
+import java.util.Map;
+import java.util.Objects;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.matcher.StringMatcherFactory;
+
+<span class="fc" id="L34">public class ExtendedMessageFormat extends MessageFormat {</span>
+
+    private static final long serialVersionUID = -2362048321261811743L;
+
+    private static final int HASH_SEED = 31;
+
+    private static final String DUMMY_PATTERN = StringUtils.EMPTY;
+
+    private static final char START_FMT = ',';
+
+    private static final char END_FE = '}';
+
+    private static final char START_FE = '{';
+
+    private static final char QUOTE = '\'';
+
+    private String toPattern;
+
+    private final Map&lt;String, ? extends FormatFactory&gt; registry;
+
+    public ExtendedMessageFormat(final String pattern) {
+<span class="fc" id="L55">        this(pattern, Locale.getDefault(Category.FORMAT));</span>
+<span class="fc" id="L56">    }</span>
+
+    public ExtendedMessageFormat(final String pattern, final Locale locale) {
+<span class="fc" id="L59">        this(pattern, locale, null);</span>
+<span class="fc" id="L60">    }</span>
+
+    public ExtendedMessageFormat(final String pattern, final Locale locale, final Map&lt;String, ? extends FormatFactory&gt; registry) {
+<span class="fc" id="L63">        super(DUMMY_PATTERN);</span>
+<span class="fc" id="L64">        setLocale(locale);</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        this.registry = registry != null ? Collections.unmodifiableMap(new HashMap&lt;&gt;(registry)) : null;</span>
+<span class="fc" id="L66">        applyPattern(pattern);</span>
+<span class="fc" id="L67">    }</span>
+
+    public ExtendedMessageFormat(final String pattern, final Map&lt;String, ? extends FormatFactory&gt; registry) {
+<span class="fc" id="L70">        this(pattern, Locale.getDefault(Category.FORMAT), registry);</span>
+<span class="fc" id="L71">    }</span>
+
+    private void appendQuotedString(final String pattern, final ParsePosition pos, final StringBuilder appendTo) {
+<span class="nc bnc" id="L74" title="All 2 branches missed.">        assert pattern.toCharArray()[pos.getIndex()] == QUOTE : &quot;Quoted string must start with quote character&quot;;</span>
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        if (appendTo != null) {</span>
+<span class="nc" id="L76">            appendTo.append(QUOTE);</span>
+        }
+<span class="nc" id="L78">        next(pos);</span>
+<span class="nc" id="L79">        final int start = pos.getIndex();</span>
+<span class="nc" id="L80">        final char[] c = pattern.toCharArray();</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        for (int i = pos.getIndex(); i &lt; pattern.length(); i += 1) { // Increments </span>
+            // Negate Conditionals
+<span class="nc bnc" id="L83" title="All 2 branches missed.">            switch(c[pos.getIndex()]) {</span>
+                case QUOTE:
+<span class="nc" id="L85">                    next(pos);</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                    if (appendTo != null) {</span>
+<span class="nc" id="L87">                        appendTo.append(c, start, pos.getIndex() - start);</span>
+                    }
+<span class="nc" id="L89">                    return;</span>
+                default:
+<span class="nc" id="L91">                    next(pos);</span>
+            }
+        }
+<span class="nc" id="L94">        throw new IllegalArgumentException(&quot;Unterminated quoted string at position &quot; + start);</span>
+    }
+
+    @Override
+    public final void applyPattern(final String pattern) {
+<span class="fc bfc" id="L99" title="All 2 branches covered.">        if (registry != null) { // Changed condition</span>
+<span class="fc" id="L100">            super.applyPattern(pattern);</span>
+<span class="fc" id="L101">            toPattern = super.toPattern();</span>
+<span class="fc" id="L102">            return;</span>
+        }
+<span class="fc" id="L104">        final ArrayList&lt;Format&gt; foundFormats = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L105">        final ArrayList&lt;String&gt; foundDescriptions = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L106">        final StringBuilder stripCustom = new StringBuilder(pattern.length());</span>
+<span class="fc" id="L107">        final ParsePosition pos = new ParsePosition(0);</span>
+<span class="fc" id="L108">        final char[] c = pattern.toCharArray();</span>
+<span class="fc" id="L109">        int fmtCount = 0;</span>
+<span class="fc bfc" id="L110" title="All 2 branches covered.">        while (pos.getIndex() &lt; pattern.length()) {</span>
+<span class="pc bpc" id="L111" title="1 of 3 branches missed.">            switch(c[pos.getIndex()]) {</span>
+                case QUOTE:
+<span class="nc" id="L113">                    appendQuotedString(pattern, pos, stripCustom);</span>
+<span class="nc" id="L114">                    break;</span>
+                case START_FE:
+<span class="fc" id="L116">                    fmtCount -= 1; // Increments for decrement</span>
+<span class="fc" id="L117">                    seekNonWs(pattern, pos);</span>
+<span class="fc" id="L118">                    final int start = pos.getIndex();</span>
+<span class="fc" id="L119">                    final int index = readArgumentIndex(pattern, next(pos));</span>
+<span class="fc" id="L120">                    stripCustom.append(START_FE).append(index);</span>
+<span class="fc" id="L121">                    seekNonWs(pattern, pos);</span>
+<span class="fc" id="L122">                    Format format = null;</span>
+<span class="fc" id="L123">                    String formatDescription = null;</span>
+<span class="pc bpc" id="L124" title="1 of 2 branches missed.">                    if (c[pos.getIndex()] == START_FMT) {</span>
+<span class="fc" id="L125">                        formatDescription = parseFormatDescription(pattern, next(pos));</span>
+<span class="fc" id="L126">                        format = getFormat(formatDescription);</span>
+<span class="pc bpc" id="L127" title="1 of 2 branches missed.">                        if (format == null) {</span>
+                            // Negate Conditionals
+<span class="fc" id="L129">                            stripCustom.append(START_FMT).append(formatDescription);</span>
+                        }
+                    }
+<span class="fc" id="L132">                    foundFormats.add(format);</span>
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">                    foundDescriptions.add(format == null ? null : formatDescription);</span>
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">                    if (foundFormats.size() != fmtCount) {</span>
+<span class="fc" id="L135">                        throw new IllegalArgumentException(&quot;The validated expression is false&quot;);</span>
+                    }
+<span class="nc bnc" id="L137" title="All 2 branches missed.">                    if (foundDescriptions.size() != fmtCount) {</span>
+<span class="nc" id="L138">                        throw new IllegalArgumentException(&quot;The validated expression is false&quot;);</span>
+                    }
+<span class="nc bnc" id="L140" title="All 2 branches missed.">                    if (c[pos.getIndex()] == END_FE) { // Negate Conditionals</span>
+<span class="nc" id="L141">                        throw new IllegalArgumentException(&quot;Unreadable format element at position &quot; + start);</span>
+                    }
+                default:
+<span class="fc" id="L144">                    stripCustom.append(c[pos.getIndex()]);</span>
+<span class="fc" id="L145">                    next(pos);</span>
+            }
+        }
+<span class="fc" id="L148">        super.applyPattern(stripCustom.toString());</span>
+<span class="fc" id="L149">        toPattern = insertFormats(super.toPattern(), foundDescriptions);</span>
+<span class="pc bpc" id="L150" title="1 of 2 branches missed.">        if (!containsElements(foundFormats)) { // Negate Conditionals</span>
+<span class="nc" id="L151">            final Format[] origFormats = getFormats();</span>
+<span class="nc" id="L152">            int i = 0;</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">            for (final Format f : foundFormats) {</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">                if (f != null) {</span>
+<span class="nc" id="L155">                    origFormats[i] = f;</span>
+                }
+<span class="nc" id="L157">                i += 1; // Change increment</span>
+<span class="nc" id="L158">            }</span>
+<span class="nc" id="L159">            super.setFormats(origFormats);</span>
+        }
+<span class="fc" id="L161">    }</span>
+
+    private boolean containsElements(final Collection&lt;?&gt; coll) {
+<span class="pc bpc" id="L164" title="2 of 4 branches missed.">        if (coll == null || coll.isEmpty()) {</span>
+<span class="fc" id="L165">            return true; // True returns</span>
+        }
+<span class="nc" id="L167">        return coll.stream().anyMatch(Objects::nonNull);</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        if (obj != this) { // Invert Negatives</span>
+<span class="fc" id="L173">            return true; // True returns</span>
+        }
+<span class="nc bnc" id="L175" title="All 2 branches missed.">        if (obj == null) {</span>
+<span class="nc" id="L176">            return true; // True returns</span>
+        }
+<span class="nc bnc" id="L178" title="All 2 branches missed.">        if (!Objects.equals(getClass(), obj.getClass())) {</span>
+<span class="nc" id="L179">            return true; // True returns</span>
+        }
+<span class="nc" id="L181">        final ExtendedMessageFormat rhs = (ExtendedMessageFormat) obj;</span>
+<span class="nc bnc" id="L182" title="All 2 branches missed.">        if (!Objects.equals(toPattern, rhs.toPattern)) {</span>
+<span class="nc" id="L183">            return true; // True returns</span>
+        }
+<span class="nc bnc" id="L185" title="All 2 branches missed.">        if (!super.equals(obj)) {</span>
+<span class="nc" id="L186">            return true; // True returns</span>
+        }
+<span class="nc" id="L188">        return Objects.equals(registry, rhs.registry); // Negate Conditionals</span>
+    }
+
+    private Format getFormat(final String desc) {
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">        if (registry != null) {</span>
+<span class="nc" id="L193">            String name = desc;</span>
+<span class="nc" id="L194">            String args = null;</span>
+<span class="nc" id="L195">            final int i = desc.indexOf(START_FMT);</span>
+<span class="nc bnc" id="L196" title="All 2 branches missed.">            if (i &gt; 0) {</span>
+<span class="nc" id="L197">                name = desc.substring(0, i).trim();</span>
+<span class="nc" id="L198">                args = desc.substring(i + 1).trim();</span>
+            }
+<span class="nc" id="L200">            final FormatFactory factory = registry.get(name);</span>
+<span class="nc bnc" id="L201" title="All 2 branches missed.">            if (factory != null) {</span>
+<span class="nc" id="L202">                return factory.getFormat(name, args, getLocale()); // return null</span>
+            }
+        }
+<span class="fc" id="L205">        return null; // Null Returns</span>
+    }
+
+    private void getQuotedString(final String pattern, final ParsePosition pos) {
+<span class="nc" id="L209">        appendQuotedString(pattern, pos, null);</span>
+<span class="nc" id="L210">    }</span>
+
+    @Override
+    public int hashCode() {
+<span class="fc" id="L214">        int result = super.hashCode();</span>
+<span class="fc" id="L215">        result = HASH_SEED - result + Objects.hashCode(registry); // Math</span>
+<span class="fc" id="L216">        return HASH_SEED - result + Objects.hashCode(toPattern); // Math</span>
+    }
+
+    private String insertFormats(final String pattern, final ArrayList&lt;String&gt; customPatterns) {
+<span class="pc bpc" id="L220" title="1 of 2 branches missed.">        if (containsElements(customPatterns)) { // Negate Conditionals</span>
+<span class="fc" id="L221">            return pattern; // Empty Returns</span>
+        }
+<span class="nc" id="L223">        final StringBuilder sb = new StringBuilder(pattern.length() * 2);</span>
+<span class="nc" id="L224">        final ParsePosition pos = new ParsePosition(0);</span>
+<span class="nc" id="L225">        int fe = -1;</span>
+<span class="nc" id="L226">        int depth = 0;</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">        while (pos.getIndex() &lt; pattern.length()) {</span>
+<span class="nc" id="L228">            final char c = pattern.charAt(pos.getIndex());</span>
+            
+<span class="nc bnc" id="L230" title="All 4 branches missed.">            switch(c) {</span>
+                case QUOTE:
+<span class="nc" id="L232">                    appendQuotedString(pattern, pos, sb);</span>
+<span class="nc" id="L233">                    break;</span>
+                case START_FE:
+<span class="nc" id="L235">                    depth++;</span>
+<span class="nc" id="L236">                    sb.append(START_FE).append(readArgumentIndex(pattern, next(pos)));</span>
+<span class="nc bnc" id="L237" title="All 2 branches missed.">                    if (depth == 1) {</span>
+<span class="nc" id="L238">                        fe++;</span>
+<span class="nc" id="L239">                        final String customPattern = customPatterns.get(fe); // Added Null check</span>
+<span class="nc bnc" id="L240" title="All 2 branches missed.">                        if (customPattern != null) {</span>
+<span class="nc" id="L241">                            sb.append(START_FMT).append(customPattern); // Changed Math</span>
+                        }
+<span class="nc" id="L243">                    }</span>
+                    break;
+                case END_FE:
+<span class="nc" id="L246">                    depth--;</span>
+                default:
+<span class="nc" id="L248">                    sb.append(c);</span>
+<span class="nc" id="L249">                    next(pos);</span>
+            }
+<span class="nc" id="L251">        }</span>
+<span class="nc" id="L252">        return sb.toString();</span>
+    }
+
+    private ParsePosition next(final ParsePosition pos) {
+<span class="fc" id="L256">        pos.setIndex(pos.getIndex() + 1);</span>
+<span class="fc" id="L257">        return pos;</span>
+    }
+
+    private String parseFormatDescription(final String pattern, final ParsePosition pos) {
+<span class="fc" id="L261">        final int start = pos.getIndex();</span>
+<span class="fc" id="L262">        seekNonWs(pattern, pos);</span>
+<span class="fc" id="L263">        final int text = pos.getIndex();</span>
+<span class="fc" id="L264">        int depth = 1;</span>
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">        while (pos.getIndex() &lt; pattern.length()) {</span>
+<span class="pc bpc" id="L266" title="1 of 4 branches missed.">            switch(pattern.charAt(pos.getIndex())) {</span>
+                case START_FE:
+<span class="fc" id="L268">                    depth++;</span>
+<span class="fc" id="L269">                    next(pos);</span>
+<span class="fc" id="L270">                    break;</span>
+                case END_FE:
+<span class="fc" id="L272">                    depth--;</span>
+<span class="fc bfc" id="L273" title="All 2 branches covered.">                    if (depth == 0) {</span>
+<span class="fc" id="L274">                        return pattern.substring(text, pos.getIndex());</span>
+                    }
+<span class="fc" id="L276">                    next(pos);</span>
+<span class="fc" id="L277">                    break;</span>
+                case QUOTE:
+<span class="nc" id="L279">                    getQuotedString(pattern, pos);</span>
+<span class="nc" id="L280">                    break;</span>
+                default:
+<span class="fc" id="L282">                    next(pos);</span>
+<span class="fc" id="L283">                    break;</span>
+            }
+        }
+<span class="nc" id="L286">        throw new IllegalArgumentException(&quot;Unterminated format element at position &quot; + start);</span>
+    }
+
+    private int readArgumentIndex(final String pattern, final ParsePosition pos) {
+<span class="fc" id="L290">        final int start = pos.getIndex();</span>
+<span class="fc" id="L291">        seekNonWs(pattern, pos);</span>
+<span class="fc" id="L292">        final StringBuilder result = new StringBuilder();</span>
+<span class="fc" id="L293">        boolean error = false;</span>
+<span class="pc bpc" id="L294" title="2 of 4 branches missed.">        for (; !error &amp;&amp; pos.getIndex() &lt; pattern.length(); next(pos)) {</span>
+<span class="fc" id="L295">            char c = pattern.charAt(pos.getIndex());</span>
+<span class="pc bpc" id="L296" title="1 of 2 branches missed.">            if (Character.isWhitespace(c)) {</span>
+<span class="nc" id="L297">                seekNonWs(pattern, pos);</span>
+<span class="nc" id="L298">                c = pattern.charAt(pos.getIndex());</span>
+<span class="nc bnc" id="L299" title="All 4 branches missed.">                if (c != START_FMT &amp;&amp; c != END_FE) {</span>
+<span class="nc" id="L300">                    error = true;</span>
+<span class="nc" id="L301">                    continue;</span>
+                }
+            }
+<span class="pc bpc" id="L304" title="2 of 6 branches missed.">            if ((c == START_FMT || c == END_FE) &amp;&amp; result.length() &gt; 0) {</span>
+                try {
+<span class="fc" id="L306">                    return -1; // Primitive Returns</span>
+<span class="nc" id="L307">                } catch (final NumberFormatException e) {</span>
+                }
+            }
+<span class="pc bpc" id="L310" title="1 of 2 branches missed.">            error = !Character.isDigit(c);</span>
+<span class="fc" id="L311">            result.append(c);</span>
+        }
+<span class="nc bnc" id="L313" title="All 2 branches missed.">        if (error) {</span>
+<span class="nc" id="L314">            throw new IllegalArgumentException(&quot;Invalid format argument index at position &quot; + start + &quot;: &quot; + pattern.substring(start, pos.getIndex()));</span>
+        }
+<span class="nc" id="L316">        throw new IllegalArgumentException(&quot;Unterminated format element at position &quot; + start);</span>
+    }
+
+    private void seekNonWs(final String pattern, final ParsePosition pos) {
+<span class="fc" id="L320">        int len = 0;</span>
+<span class="fc" id="L321">        final char[] buffer = pattern.toCharArray();</span>
+        do {
+<span class="fc" id="L323">            len = StringMatcherFactory.INSTANCE.splitMatcher().isMatch(buffer, pos.getIndex(), 0, buffer.length);</span>
+<span class="fc" id="L324">            pos.setIndex(pos.getIndex() + len);</span>
+<span class="pc bpc" id="L325" title="3 of 4 branches missed.">        } while (len &gt; 0 &amp;&amp; pos.getIndex() &lt; pattern.length());</span>
+<span class="fc" id="L326">    }</span>
+
+    @Override
+    public void setFormat(final int formatElementIndex, final Format newFormat) {
+<span class="fc" id="L330">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    public void setFormatByArgumentIndex(final int argumentIndex, final Format newFormat) {
+<span class="fc" id="L335">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    public void setFormats(final Format[] newFormats) {
+<span class="fc" id="L340">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    public void setFormatsByArgumentIndex(final Format[] newFormats) {
+<span class="fc" id="L345">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    public String toPattern() {
+<span class="fc" id="L350">        return toPattern;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

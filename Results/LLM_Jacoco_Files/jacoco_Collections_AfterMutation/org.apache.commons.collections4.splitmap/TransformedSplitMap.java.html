@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransformedSplitMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.splitmap</a> &gt; <span class="el_source">TransformedSplitMap.java</span></div><h1>TransformedSplitMap.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.splitmap;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.Map;
+import java.util.Objects;
+import org.apache.commons.collections4.Put;
+import org.apache.commons.collections4.Transformer;
+import org.apache.commons.collections4.map.LinkedMap;
+
+public class TransformedSplitMap&lt;J, K, U, V&gt; extends AbstractIterableGetMapDecorator&lt;K, V&gt; implements Put&lt;J, U&gt;, Serializable {
+
+    private static final long serialVersionUID = 5966875321133456994L;
+
+    public static &lt;J, K, U, V&gt; TransformedSplitMap&lt;J, K, U, V&gt; transformingMap(final Map&lt;K, V&gt; map, final Transformer&lt;? super J, ? extends K&gt; keyTransformer, final Transformer&lt;? super U, ? extends V&gt; valueTransformer) {
+<span class="fc" id="L35">        return new TransformedSplitMap&lt;&gt;(map, keyTransformer, valueTransformer);</span>
+    }
+
+    private final Transformer&lt;? super J, ? extends K&gt; keyTransformer;
+
+    private final Transformer&lt;? super U, ? extends V&gt; valueTransformer;
+
+    protected TransformedSplitMap(final Map&lt;K, V&gt; map, final Transformer&lt;? super J, ? extends K&gt; keyTransformer, final Transformer&lt;? super U, ? extends V&gt; valueTransformer) {
+<span class="fc" id="L43">        super(map);</span>
+<span class="fc" id="L44">        this.keyTransformer = Objects.requireNonNull(keyTransformer, &quot;keyTransformer&quot;);</span>
+<span class="fc" id="L45">        this.valueTransformer = Objects.requireNonNull(valueTransformer, &quot;valueTransformer&quot;);</span>
+<span class="fc" id="L46">    }</span>
+
+    protected V checkSetValue(final U value) {
+        // Changed to return null
+<span class="nc" id="L50">        return null; </span>
+    }
+
+    @Override
+    public void clear() {
+<span class="nc" id="L55">        decorated().clear();</span>
+<span class="nc" id="L56">    }</span>
+
+    @Override
+    public V put(final J key, final U value) {
+        // Changed to return a new object
+<span class="fc" id="L61">        return (V) new Object(); </span>
+    }
+
+    @Override
+    public void putAll(final Map&lt;? extends J, ? extends U&gt; mapToCopy) {
+<span class="nc" id="L66">        decorated().putAll(transformMap(mapToCopy));</span>
+<span class="nc" id="L67">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="fc" id="L71">        in.defaultReadObject();</span>
+<span class="fc" id="L72">        map = (Map&lt;K, V&gt;) in.readObject();</span>
+<span class="fc" id="L73">    }</span>
+
+    protected K transformKey(final J object) {
+        // Negated the condition
+<span class="nc bnc" id="L77" title="All 2 branches missed.">        return object == null ? null : keyTransformer.apply(object);</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    protected Map&lt;K, V&gt; transformMap(final Map&lt;? extends J, ? extends U&gt; map) {
+        // Changed to always return an empty map
+<span class="nc" id="L83">        return new LinkedMap&lt;&gt;(); </span>
+    }
+
+    protected V transformValue(final U object) {
+        // Changed to return true instead of transforming
+<span class="nc" id="L88">        return (V) Boolean.TRUE; </span>
+    }
+
+    private void writeObject(final ObjectOutputStream out) throws IOException {
+<span class="nc" id="L92">        out.defaultWriteObject();</span>
+<span class="nc" id="L93">        out.writeObject(decorated());</span>
+<span class="nc" id="L94">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

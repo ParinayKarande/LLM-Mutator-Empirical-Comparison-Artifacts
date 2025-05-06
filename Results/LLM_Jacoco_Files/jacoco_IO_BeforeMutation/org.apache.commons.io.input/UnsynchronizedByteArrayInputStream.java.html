@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UnsynchronizedByteArrayInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">UnsynchronizedByteArrayInputStream.java</span></div><h1>UnsynchronizedByteArrayInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Objects;
+
+import org.apache.commons.io.build.AbstractOrigin;
+import org.apache.commons.io.build.AbstractStreamBuilder;
+
+/**
+ * This is an alternative to {@link ByteArrayInputStream} which removes the synchronization overhead for non-concurrent access; as such this class is
+ * not thread-safe.
+ * &lt;p&gt;
+ * To build an instance, use {@link Builder}.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @see ByteArrayInputStream
+ * @since 2.7
+ */
+//@NotThreadSafe
+public class UnsynchronizedByteArrayInputStream extends InputStream {
+
+    // @formatter:off
+    /**
+     * Builds a new {@link UnsynchronizedByteArrayInputStream}.
+     *
+     * &lt;p&gt;
+     * Using a Byte Array:
+     * &lt;/p&gt;
+     * &lt;pre&gt;{@code
+     * UnsynchronizedByteArrayInputStream s = UnsynchronizedByteArrayInputStream.builder()
+     *   .setByteArray(byteArray)
+     *   .setOffset(0)
+     *   .setLength(byteArray.length)
+     *   .get();
+     * }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Using File IO:
+     * &lt;/p&gt;
+     * &lt;pre&gt;{@code
+     * UnsynchronizedByteArrayInputStream s = UnsynchronizedByteArrayInputStream.builder()
+     *   .setFile(file)
+     *   .setOffset(0)
+     *   .setLength(byteArray.length)
+     *   .get();
+     * }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Using NIO Path:
+     * &lt;/p&gt;
+     * &lt;pre&gt;{@code
+     * UnsynchronizedByteArrayInputStream s = UnsynchronizedByteArrayInputStream.builder()
+     *   .setPath(path)
+     *   .setOffset(0)
+     *   .setLength(byteArray.length)
+     *   .get();
+     * }
+     * &lt;/pre&gt;
+     *
+     * @see #get()
+     */
+    // @formatter:on
+<span class="fc" id="L82">    public static class Builder extends AbstractStreamBuilder&lt;UnsynchronizedByteArrayInputStream, Builder&gt; {</span>
+
+        private int offset;
+        private int length;
+
+        /**
+         * Builds a new {@link UnsynchronizedByteArrayInputStream}.
+         * &lt;p&gt;
+         * You must set input that supports {@code byte[]} on this builder, otherwise, this method throws an exception.
+         * &lt;/p&gt;
+         * &lt;p&gt;
+         * This builder use the following aspects:
+         * &lt;/p&gt;
+         * &lt;ul&gt;
+         * &lt;li&gt;{@code byte[]}&lt;/li&gt;
+         * &lt;li&gt;offset&lt;/li&gt;
+         * &lt;li&gt;length&lt;/li&gt;
+         * &lt;/ul&gt;
+         *
+         * @return a new instance.
+         * @throws UnsupportedOperationException if the origin cannot provide a byte[].
+         * @throws IllegalStateException         if the {@code origin} is {@code null}.
+         * @see AbstractOrigin#getByteArray()
+         */
+        @Override
+        public UnsynchronizedByteArrayInputStream get() throws IOException {
+<span class="fc" id="L108">            return new UnsynchronizedByteArrayInputStream(checkOrigin().getByteArray(), offset, length);</span>
+        }
+
+        @Override
+        public Builder setByteArray(final byte[] origin) {
+<span class="fc" id="L113">            length = Objects.requireNonNull(origin, &quot;origin&quot;).length;</span>
+<span class="fc" id="L114">            return super.setByteArray(origin);</span>
+        }
+
+        /**
+         * Sets the length.
+         *
+         * @param length Must be greater or equal to 0.
+         * @return {@code this} instance.
+         */
+        public Builder setLength(final int length) {
+<span class="fc bfc" id="L124" title="All 2 branches covered.">            if (length &lt; 0) {</span>
+<span class="fc" id="L125">                throw new IllegalArgumentException(&quot;length cannot be negative&quot;);</span>
+            }
+<span class="fc" id="L127">            this.length = length;</span>
+<span class="fc" id="L128">            return this;</span>
+        }
+
+        /**
+         * Sets the offset.
+         *
+         * @param offset Must be greater or equal to 0.
+         * @return {@code this} instance.
+         */
+        public Builder setOffset(final int offset) {
+<span class="fc bfc" id="L138" title="All 2 branches covered.">            if (offset &lt; 0) {</span>
+<span class="fc" id="L139">                throw new IllegalArgumentException(&quot;offset cannot be negative&quot;);</span>
+            }
+<span class="fc" id="L141">            this.offset = offset;</span>
+<span class="fc" id="L142">            return this;</span>
+        }
+
+    }
+
+    /**
+     * The end of stream marker.
+     */
+    public static final int END_OF_STREAM = -1;
+
+    /**
+     * Constructs a new {@link Builder}.
+     *
+     * @return a new {@link Builder}.
+     */
+    public static Builder builder() {
+<span class="fc" id="L158">        return new Builder();</span>
+    }
+
+    private static int minPosLen(final byte[] data, final int defaultValue) {
+<span class="fc" id="L162">        requireNonNegative(defaultValue, &quot;defaultValue&quot;);</span>
+<span class="fc bfc" id="L163" title="All 2 branches covered.">        return Math.min(defaultValue, data.length &gt; 0 ? data.length : defaultValue);</span>
+    }
+
+    private static int requireNonNegative(final int value, final String name) {
+<span class="pc bpc" id="L167" title="1 of 2 branches missed.">        if (value &lt; 0) {</span>
+<span class="nc" id="L168">            throw new IllegalArgumentException(name + &quot; cannot be negative&quot;);</span>
+        }
+<span class="fc" id="L170">        return value;</span>
+    }
+
+    /**
+     * The underlying data buffer.
+     */
+    private final byte[] data;
+
+    /**
+     * End Of Data.
+     *
+     * Similar to data.length, which is the last readable offset + 1.
+     */
+    private final int eod;
+
+    /**
+     * Current offset in the data buffer.
+     */
+    private int offset;
+
+    /**
+     * The current mark (if any).
+     */
+    private int markedOffset;
+
+    /**
+     * Constructs a new byte array input stream.
+     *
+     * @param data the buffer
+     * @deprecated Use {@link #builder()}, {@link Builder}, and {@link Builder#get()}.
+     */
+    @Deprecated
+    public UnsynchronizedByteArrayInputStream(final byte[] data) {
+<span class="nc" id="L203">        this(data, data.length, 0, 0);</span>
+<span class="nc" id="L204">    }</span>
+
+    /**
+     * Constructs a new byte array input stream.
+     *
+     * @param data   the buffer
+     * @param offset the offset into the buffer
+     *
+     * @throws IllegalArgumentException if the offset is less than zero
+     * @deprecated Use {@link #builder()}, {@link Builder}, and {@link Builder#get()}.
+     */
+    @Deprecated
+    public UnsynchronizedByteArrayInputStream(final byte[] data, final int offset) {
+<span class="nc" id="L217">        this(data, data.length, Math.min(requireNonNegative(offset, &quot;offset&quot;), minPosLen(data, offset)), minPosLen(data, offset));</span>
+<span class="nc" id="L218">    }</span>
+
+    /**
+     * Constructs a new byte array input stream.
+     *
+     * @param data   the buffer
+     * @param offset the offset into the buffer
+     * @param length the length of the buffer
+     *
+     * @throws IllegalArgumentException if the offset or length less than zero
+     * @deprecated Use {@link #builder()}, {@link Builder}, and {@link Builder#get()}.
+     */
+    @Deprecated
+<span class="fc" id="L231">    public UnsynchronizedByteArrayInputStream(final byte[] data, final int offset, final int length) {</span>
+<span class="fc" id="L232">        requireNonNegative(offset, &quot;offset&quot;);</span>
+<span class="fc" id="L233">        requireNonNegative(length, &quot;length&quot;);</span>
+<span class="fc" id="L234">        this.data = Objects.requireNonNull(data, &quot;data&quot;);</span>
+<span class="fc" id="L235">        this.eod = Math.min(minPosLen(data, offset) + length, data.length);</span>
+<span class="fc" id="L236">        this.offset = minPosLen(data, offset);</span>
+<span class="fc" id="L237">        this.markedOffset = minPosLen(data, offset);</span>
+<span class="fc" id="L238">    }</span>
+
+<span class="nc" id="L240">    private UnsynchronizedByteArrayInputStream(final byte[] data, final int eod, final int offset, final int markedOffset) {</span>
+<span class="nc" id="L241">        this.data = Objects.requireNonNull(data, &quot;data&quot;);</span>
+<span class="nc" id="L242">        this.eod = eod;</span>
+<span class="nc" id="L243">        this.offset = offset;</span>
+<span class="nc" id="L244">        this.markedOffset = markedOffset;</span>
+<span class="nc" id="L245">    }</span>
+
+    @Override
+    public int available() {
+<span class="fc bfc" id="L249" title="All 2 branches covered.">        return offset &lt; eod ? eod - offset : 0;</span>
+    }
+
+    @SuppressWarnings(&quot;sync-override&quot;)
+    @Override
+    public void mark(final int readLimit) {
+<span class="fc" id="L255">        this.markedOffset = this.offset;</span>
+<span class="fc" id="L256">    }</span>
+
+    @Override
+    public boolean markSupported() {
+<span class="fc" id="L260">        return true;</span>
+    }
+
+    @Override
+    public int read() {
+<span class="fc bfc" id="L265" title="All 2 branches covered.">        return offset &lt; eod ? data[offset++] &amp; 0xff : END_OF_STREAM;</span>
+    }
+
+    @Override
+    public int read(final byte[] dest) {
+<span class="fc" id="L270">        Objects.requireNonNull(dest, &quot;dest&quot;);</span>
+<span class="fc" id="L271">        return read(dest, 0, dest.length);</span>
+    }
+
+    @Override
+    public int read(final byte[] dest, final int off, final int len) {
+<span class="fc" id="L276">        Objects.requireNonNull(dest, &quot;dest&quot;);</span>
+<span class="fc bfc" id="L277" title="All 6 branches covered.">        if (off &lt; 0 || len &lt; 0 || off + len &gt; dest.length) {</span>
+<span class="fc" id="L278">            throw new IndexOutOfBoundsException();</span>
+        }
+
+<span class="fc bfc" id="L281" title="All 2 branches covered.">        if (offset &gt;= eod) {</span>
+<span class="fc" id="L282">            return END_OF_STREAM;</span>
+        }
+
+<span class="fc" id="L285">        int actualLen = eod - offset;</span>
+<span class="fc bfc" id="L286" title="All 2 branches covered.">        if (len &lt; actualLen) {</span>
+<span class="fc" id="L287">            actualLen = len;</span>
+        }
+<span class="fc bfc" id="L289" title="All 2 branches covered.">        if (actualLen &lt;= 0) {</span>
+<span class="fc" id="L290">            return 0;</span>
+        }
+<span class="fc" id="L292">        System.arraycopy(data, offset, dest, off, actualLen);</span>
+<span class="fc" id="L293">        offset += actualLen;</span>
+<span class="fc" id="L294">        return actualLen;</span>
+    }
+
+    @SuppressWarnings(&quot;sync-override&quot;)
+    @Override
+    public void reset() {
+<span class="fc" id="L300">        this.offset = this.markedOffset;</span>
+<span class="fc" id="L301">    }</span>
+
+    @Override
+    public long skip(final long n) {
+<span class="fc bfc" id="L305" title="All 2 branches covered.">        if (n &lt; 0) {</span>
+<span class="fc" id="L306">            throw new IllegalArgumentException(&quot;Skipping backward is not supported&quot;);</span>
+        }
+
+<span class="fc" id="L309">        long actualSkip = eod - offset;</span>
+<span class="fc bfc" id="L310" title="All 2 branches covered.">        if (n &lt; actualSkip) {</span>
+<span class="fc" id="L311">            actualSkip = n;</span>
+        }
+
+<span class="fc" id="L314">        offset = Math.addExact(offset, Math.toIntExact(n));</span>
+<span class="fc" id="L315">        return actualSkip;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

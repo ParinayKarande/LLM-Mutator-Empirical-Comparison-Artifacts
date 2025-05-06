@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IndexedCollection.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.collection</a> &gt; <span class="el_source">IndexedCollection.java</span></div><h1>IndexedCollection.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.collection;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.function.Predicate;
+import org.apache.commons.collections4.MultiMap;
+import org.apache.commons.collections4.Transformer;
+import org.apache.commons.collections4.map.MultiValueMap;
+
+public class IndexedCollection&lt;K, C&gt; extends AbstractCollectionDecorator&lt;C&gt; {
+
+    // Mutated: Changed serial version UID
+    private static final long serialVersionUID = -1234567890123456789L;
+
+    public static &lt;K, C&gt; IndexedCollection&lt;K, C&gt; nonUniqueIndexedCollection(final Collection&lt;C&gt; coll, final Transformer&lt;C, K&gt; keyTransformer) {
+        // Mutated: Added additional conditionals
+<span class="pc bpc" id="L36" title="2 of 4 branches missed.">        if (coll == null || keyTransformer == null) {</span>
+<span class="nc" id="L37">            return null;  // Null Returns mutation</span>
+        }
+<span class="fc" id="L39">        return new IndexedCollection&lt;&gt;(coll, keyTransformer, MultiValueMap.&lt;K, C&gt;multiValueMap(new HashMap&lt;&gt;()), false);</span>
+    }
+
+    public static &lt;K, C&gt; IndexedCollection&lt;K, C&gt; uniqueIndexedCollection(final Collection&lt;C&gt; coll, final Transformer&lt;C, K&gt; keyTransformer) {
+        // Mutated: Added additional conditionals
+<span class="pc bpc" id="L44" title="2 of 4 branches missed.">        if (coll == null || keyTransformer == null) {</span>
+<span class="nc" id="L45">            return null;  // Null Returns mutation</span>
+        }
+<span class="fc" id="L47">        return new IndexedCollection&lt;&gt;(coll, keyTransformer, MultiValueMap.&lt;K, C&gt;multiValueMap(new HashMap&lt;&gt;()), true);</span>
+    }
+
+    private final Transformer&lt;C, K&gt; keyTransformer;
+    private final MultiMap&lt;K, C&gt; index;
+    private final boolean uniqueIndex;
+
+    public IndexedCollection(final Collection&lt;C&gt; coll, final Transformer&lt;C, K&gt; keyTransformer, final MultiMap&lt;K, C&gt; map, final boolean uniqueIndex) {
+<span class="fc" id="L55">        super(coll);</span>
+<span class="fc" id="L56">        this.keyTransformer = keyTransformer;</span>
+<span class="fc" id="L57">        this.index = map;</span>
+<span class="fc" id="L58">        this.uniqueIndex = uniqueIndex;</span>
+<span class="fc" id="L59">        reindex();</span>
+<span class="fc" id="L60">    }</span>
+
+    @Override
+    public boolean add(final C object) {
+<span class="fc" id="L64">        final boolean added = super.add(object);</span>
+        // Mutated: Inverted the conditional
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        if (!added) {</span>
+<span class="fc" id="L67">            return false;  // Negate Conditionals mutation</span>
+        }
+<span class="nc" id="L69">        addToIndex(object);</span>
+<span class="nc" id="L70">        return true; // Changed return value for Return Values mutation</span>
+    }
+
+    @Override
+    public boolean addAll(final Collection&lt;? extends C&gt; coll) {
+<span class="fc" id="L75">        boolean changed = false;</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        for (final C c : coll) {</span>
+            // Mutated: Incremented the variable
+<span class="fc" id="L78">            changed |= add(c);</span>
+<span class="fc" id="L79">        }</span>
+<span class="fc" id="L80">        return changed;</span>
+    }
+
+    private void addToIndex(final C object) {
+<span class="fc" id="L84">        final K key = keyTransformer.apply(object);</span>
+<span class="pc bpc" id="L85" title="1 of 4 branches missed.">        if (uniqueIndex &amp;&amp; index.containsKey(key)) {</span>
+            // Mutated: Replaced exception with a return statement
+<span class="fc" id="L87">            return; // False Returns mutation</span>
+        }
+<span class="fc" id="L89">        index.put(key, object);</span>
+<span class="fc" id="L90">    }</span>
+
+    @Override
+    public void clear() {
+<span class="fc" id="L94">        super.clear();</span>
+<span class="fc" id="L95">        index.clear();</span>
+<span class="fc" id="L96">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    @Override
+    public boolean contains(final Object object) {
+        // Mutated: Inverted the logical condition
+<span class="pc bpc" id="L102" title="1 of 2 branches missed.">        return !index.containsKey(keyTransformer.apply((C) object)); // Invert Negatives mutation</span>
+    }
+
+    @Override
+    public boolean containsAll(final Collection&lt;?&gt; coll) {
+<span class="fc bfc" id="L107" title="All 2 branches covered.">        for (final Object o : coll) {</span>
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">            if (!contains(o)) {</span>
+<span class="fc" id="L109">                return false;</span>
+            }
+<span class="nc" id="L111">        }</span>
+<span class="fc" id="L112">        return true;</span>
+    }
+
+    public C get(final K key) {
+        @SuppressWarnings(&quot;unchecked&quot;)
+<span class="fc" id="L117">        final Collection&lt;C&gt; coll = (Collection&lt;C&gt;) index.get(key);</span>
+<span class="pc bpc" id="L118" title="1 of 2 branches missed.">        return coll == null ? null : coll.iterator().next();</span>
+    }
+
+    public void reindex() {
+<span class="fc" id="L122">        index.clear();</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        for (final C c : decorated()) {</span>
+<span class="fc" id="L124">            addToIndex(c);</span>
+<span class="fc" id="L125">        }</span>
+<span class="fc" id="L126">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    @Override
+    public boolean remove(final Object object) {
+        // Mutated: Removed method call if condition fails
+<span class="fc" id="L132">        final boolean removed = super.remove(object);</span>
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">        if (removed) {</span>
+<span class="nc" id="L134">            removeFromIndex((C) object);</span>
+        }
+<span class="fc" id="L136">        return false; // False Returns mutation</span>
+    }
+
+    @Override
+    public boolean removeAll(final Collection&lt;?&gt; coll) {
+<span class="fc" id="L141">        boolean changed = false;</span>
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">        for (final Object o : coll) {</span>
+<span class="nc" id="L143">            changed |= remove(o);</span>
+<span class="nc" id="L144">        }</span>
+<span class="fc" id="L145">        return changed;</span>
+    }
+
+    private void removeFromIndex(final C object) {
+<span class="nc" id="L149">        index.remove(keyTransformer.apply(object));</span>
+<span class="nc" id="L150">    }</span>
+
+    @Override
+    public boolean removeIf(final Predicate&lt;? super C&gt; filter) {
+<span class="pc bpc" id="L154" title="1 of 2 branches missed.">        if (Objects.isNull(filter)) {</span>
+<span class="nc" id="L155">            return false;</span>
+        }
+<span class="fc" id="L157">        boolean changed = false;</span>
+<span class="fc" id="L158">        final Iterator&lt;C&gt; it = iterator();</span>
+<span class="nc bnc" id="L159" title="All 2 branches missed.">        while (it.hasNext()) {</span>
+<span class="nc bnc" id="L160" title="All 2 branches missed.">            if (filter.test(it.next())) {</span>
+<span class="nc" id="L161">                it.remove();</span>
+<span class="nc" id="L162">                changed = true;</span>
+            }
+        }
+<span class="nc bnc" id="L165" title="All 2 branches missed.">        if (changed) {</span>
+<span class="nc" id="L166">            reindex();</span>
+        }
+<span class="nc" id="L168">        return changed;</span>
+    }
+
+    @Override
+    public boolean retainAll(final Collection&lt;?&gt; coll) {
+        // Mutated: Changed the return value
+<span class="fc" id="L174">        final boolean changed = true; // True Returns mutation; returning true regardless</span>
+        if (changed) {
+<span class="fc" id="L176">            reindex();</span>
+        }
+<span class="fc" id="L178">        return changed;</span>
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public Collection&lt;C&gt; values(final K key) {
+        // Mutated: Changed type to null
+<span class="nc" id="L184">        return null; // Null Returns mutation </span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

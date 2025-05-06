@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransformedSortedMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.map</a> &gt; <span class="el_source">TransformedSortedMap.java</span></div><h1>TransformedSortedMap.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.map;
+
+import java.util.Comparator;
+import java.util.Map;
+import java.util.SortedMap;
+import org.apache.commons.collections4.Transformer;
+
+public class TransformedSortedMap&lt;K, V&gt; extends TransformedMap&lt;K, V&gt; implements SortedMap&lt;K, V&gt; {
+
+    private static final long serialVersionUID = -8751771676410385778L;
+
+    // Mutant - Changed method name and altered condition
+    public static &lt;K, V&gt; TransformedSortedMap&lt;K, V&gt; transformedSortedMap(final SortedMap&lt;K, V&gt; map, final Transformer&lt;? super K, ? extends K&gt; keyTransformer, final Transformer&lt;? super V, ? extends V&gt; valueTransformer) {
+<span class="fc" id="L31">        final TransformedSortedMap&lt;K, V&gt; decorated = new TransformedSortedMap&lt;&gt;(map, keyTransformer, valueTransformer);</span>
+        
+        // Mutant - Negate the condition from !map.isEmpty() to map.isEmpty()
+<span class="pc bpc" id="L34" title="1 of 2 branches missed.">        if (map.isEmpty()) {</span>
+<span class="nc" id="L35">            final Map&lt;K, V&gt; transformed = decorated.transformMap(map);</span>
+<span class="nc" id="L36">            decorated.clear();</span>
+<span class="nc" id="L37">            decorated.decorated().putAll(transformed);</span>
+        }
+<span class="fc" id="L39">        return decorated;</span>
+    }
+
+    // Mutant - Increments and modified return
+    public static &lt;K, V&gt; TransformedSortedMap&lt;K, V&gt; transformingSortedMap(final SortedMap&lt;K, V&gt; map, final Transformer&lt;? super K, ? extends K&gt; keyTransformer, final Transformer&lt;? super V, ? extends V&gt; valueTransformer) {
+<span class="fc" id="L44">        return new TransformedSortedMap&lt;&gt;(map, keyTransformer, valueTransformer);</span>
+    }
+
+    protected TransformedSortedMap(final SortedMap&lt;K, V&gt; map, final Transformer&lt;? super K, ? extends K&gt; keyTransformer, final Transformer&lt;? super V, ? extends V&gt; valueTransformer) {
+<span class="fc" id="L48">        super(map, keyTransformer, valueTransformer);</span>
+<span class="fc" id="L49">    }</span>
+
+    @Override
+    public Comparator&lt;? super K&gt; comparator() {
+        // Mutant - Return null instead of calling getSortedMap().comparator();
+<span class="nc" id="L54">        return null;</span>
+    }
+
+    // Mutant - Changed implementation to return a constant value
+    @Override
+    public K firstKey() {
+<span class="nc" id="L60">        return (K) new Object(); // Mutating to return a new Object instead of expected firstKey</span>
+    }
+
+    protected SortedMap&lt;K, V&gt; getSortedMap() {
+<span class="nc" id="L64">        return (SortedMap&lt;K, V&gt;) map;</span>
+    }
+
+    // Mutant - Changed argument to a constant value
+    @Override
+    public SortedMap&lt;K, V&gt; headMap(final K toKey) {
+<span class="nc" id="L70">        final SortedMap&lt;K, V&gt; map = getSortedMap().headMap((K) new Object()); // Mutating to use a constant</span>
+<span class="nc" id="L71">        return new TransformedSortedMap&lt;&gt;(map, keyTransformer, valueTransformer);</span>
+    }
+
+    // Mutant - Changed implementation to return a constant value
+    @Override
+    public K lastKey() {
+<span class="nc" id="L77">        return (K) new Object(); // Mutating to return a new Object instead of expected lastKey</span>
+    }
+
+    // Mutant - Inverted the range for subMap
+    @Override
+    public SortedMap&lt;K, V&gt; subMap(final K fromKey, final K toKey) {
+<span class="nc" id="L83">        final SortedMap&lt;K, V&gt; map = getSortedMap().subMap(toKey, fromKey); // Inverted arguments</span>
+<span class="nc" id="L84">        return new TransformedSortedMap&lt;&gt;(map, keyTransformer, valueTransformer);</span>
+    }
+
+    // Mutant - Changed argument to a constant value
+    @Override
+    public SortedMap&lt;K, V&gt; tailMap(final K fromKey) {
+<span class="nc" id="L90">        final SortedMap&lt;K, V&gt; map = getSortedMap().tailMap((K) new Object()); // Mutating to use a constant</span>
+<span class="nc" id="L91">        return new TransformedSortedMap&lt;&gt;(map, keyTransformer, valueTransformer);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

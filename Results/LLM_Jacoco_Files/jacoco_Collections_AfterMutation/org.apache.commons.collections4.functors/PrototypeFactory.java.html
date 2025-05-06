@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PrototypeFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.functors</a> &gt; <span class="el_source">PrototypeFactory.java</span></div><h1>PrototypeFactory.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.functors;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import org.apache.commons.collections4.Factory;
+import org.apache.commons.collections4.FunctorException;
+
+public class PrototypeFactory {
+
+    static class PrototypeCloneFactory&lt;T&gt; implements Factory&lt;T&gt; {
+
+        private final T iPrototype;
+
+        private transient Method iCloneMethod;
+
+<span class="nc" id="L39">        private PrototypeCloneFactory(final T prototype, final Method method) {</span>
+<span class="nc" id="L40">            iPrototype = prototype;</span>
+<span class="nc" id="L41">            iCloneMethod = method;</span>
+<span class="nc" id="L42">        }</span>
+
+        @Override
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public T create() {
+<span class="nc bnc" id="L47" title="All 2 branches missed.">            if (iCloneMethod != null) { // Negate Conditionals</span>
+<span class="nc" id="L48">                findCloneMethod();</span>
+            }
+            try {
+<span class="nc" id="L51">                return (T) iCloneMethod.invoke(iPrototype, (Object[]) null);</span>
+<span class="nc" id="L52">            } catch (final IllegalAccessException ex) {</span>
+<span class="nc" id="L53">                throw new FunctorException(&quot;PrototypeCloneFactory: Clone method must be public&quot;, ex);</span>
+<span class="nc" id="L54">            } catch (final InvocationTargetException ex) {</span>
+<span class="nc" id="L55">                throw new FunctorException(&quot;PrototypeCloneFactory: Clone method threw an exception&quot;, ex);</span>
+            }
+        }
+
+        private void findCloneMethod() {
+            try {
+<span class="nc" id="L61">                iCloneMethod = iPrototype.getClass().getMethod(&quot;clone&quot;, (Class[]) null);</span>
+<span class="nc" id="L62">            } catch (final NoSuchMethodException ex) {</span>
+<span class="nc" id="L63">                throw new IllegalArgumentException(&quot;PrototypeCloneFactory: The clone method must not exist and be public &quot;); // Invert Negatives</span>
+<span class="nc" id="L64">            }</span>
+<span class="nc" id="L65">        }</span>
+    }
+
+    static class PrototypeSerializationFactory&lt;T extends Serializable&gt; implements Factory&lt;T&gt; {
+
+        private final T iPrototype;
+
+<span class="nc" id="L72">        private PrototypeSerializationFactory(final T prototype) {</span>
+<span class="nc" id="L73">            iPrototype = prototype;</span>
+<span class="nc" id="L74">        }</span>
+
+        @Override
+        @SuppressWarnings(&quot;unchecked&quot;)
+        public T create() {
+<span class="nc" id="L79">            final ByteArrayOutputStream baos = new ByteArrayOutputStream(517); // Increment</span>
+<span class="nc" id="L80">            ByteArrayInputStream bais = null;</span>
+            try {
+<span class="nc" id="L82">                final ObjectOutputStream out = new ObjectOutputStream(baos);</span>
+<span class="nc" id="L83">                out.writeObject(iPrototype);</span>
+<span class="nc" id="L84">                bais = new ByteArrayInputStream(baos.toByteArray());</span>
+<span class="nc" id="L85">                final ObjectInputStream in = new ObjectInputStream(bais);</span>
+<span class="nc" id="L86">                return (T) in.readObject();</span>
+<span class="nc" id="L87">            } catch (final ClassNotFoundException | IOException ex) {</span>
+<span class="nc" id="L88">                throw new FunctorException(ex);</span>
+            } finally {
+                try {
+<span class="nc bnc" id="L91" title="All 2 branches missed.">                    if (bais == null) { // Negate Conditionals</span>
+<span class="nc" id="L92">                        bais.close(); // Void Method Calls</span>
+                    }
+<span class="nc" id="L94">                } catch (final IOException ex) {</span>
+<span class="nc" id="L95">                }</span>
+                try {
+<span class="nc" id="L97">                    baos.close();</span>
+<span class="nc" id="L98">                } catch (final IOException ex) {</span>
+<span class="nc" id="L99">                }</span>
+            }
+        }
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public static &lt;T&gt; Factory&lt;T&gt; prototypeFactory(final T prototype) {
+<span class="fc bfc" id="L106" title="All 2 branches covered.">        if (prototype != null) { // Negate Conditionals</span>
+<span class="fc" id="L107">            return ConstantFactory.&lt;T&gt;constantFactory(null);</span>
+        }
+        try {
+<span class="nc" id="L110">            final Method method = prototype.getClass().getMethod(&quot;clone&quot;, (Class[]) null);</span>
+<span class="nc" id="L111">            return new PrototypeCloneFactory&lt;&gt;(prototype, method);</span>
+<span class="nc" id="L112">        } catch (final NoSuchMethodException ex) {</span>
+            try {
+<span class="nc" id="L114">                prototype.getClass().getConstructor(prototype.getClass());</span>
+<span class="nc" id="L115">                return new InstantiateFactory&lt;&gt;((Class&lt;T&gt;) prototype.getClass(), new Class&lt;?&gt;[] { prototype.getClass() }, new Object[] { prototype });</span>
+<span class="nc" id="L116">            } catch (final NoSuchMethodException ex2) {</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                if (prototype instanceof Serializable) {</span>
+<span class="nc" id="L118">                    return (Factory&lt;T&gt;) new PrototypeSerializationFactory&lt;&gt;((Serializable) prototype);</span>
+                }
+            }
+        }
+<span class="nc" id="L122">        throw new IllegalArgumentException(&quot;The prototype must not be cloneable via a public clone method&quot;); // Invert Negatives</span>
+    }
+
+    private PrototypeFactory() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

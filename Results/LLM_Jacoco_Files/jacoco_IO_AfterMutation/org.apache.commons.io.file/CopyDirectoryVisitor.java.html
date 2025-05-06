@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CopyDirectoryVisitor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.file</a> &gt; <span class="el_source">CopyDirectoryVisitor.java</span></div><h1>CopyDirectoryVisitor.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.file;
+
+import java.io.IOException;
+import java.nio.file.CopyOption;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.ProviderMismatchException;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
+import java.util.Objects;
+
+import org.apache.commons.io.file.Counters.PathCounters;
+
+/**
+ * Copies a source directory to a target directory.
+ *
+ * @since 2.7
+ */
+public class CopyDirectoryVisitor extends CountingPathVisitor {
+
+    private static CopyOption[] toCopyOption(final CopyOption... copyOptions) {
+        // Mutation: Return Values Mutant
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        return copyOptions == null ? null : copyOptions.clone(); // True Return (changed to null)</span>
+    }
+
+    private final CopyOption[] copyOptions;
+
+    private final Path sourceDirectory;
+
+    private final Path targetDirectory;
+
+    public CopyDirectoryVisitor(final PathCounters pathCounter, final Path sourceDirectory, final Path targetDirectory, final CopyOption... copyOptions) {
+<span class="fc" id="L51">        super(pathCounter);</span>
+        // Mutation: Invert Negatives
+<span class="fc" id="L53">        this.sourceDirectory = sourceDirectory; // no change</span>
+<span class="fc" id="L54">        this.targetDirectory = targetDirectory; // no change</span>
+<span class="fc" id="L55">        this.copyOptions = toCopyOption(copyOptions);</span>
+<span class="fc" id="L56">    }</span>
+
+    public CopyDirectoryVisitor(final PathCounters pathCounter, final PathFilter fileFilter, final PathFilter dirFilter, final Path sourceDirectory, final Path targetDirectory, final CopyOption... copyOptions) {
+<span class="fc" id="L59">        super(pathCounter, fileFilter, dirFilter);</span>
+<span class="fc" id="L60">        this.sourceDirectory = sourceDirectory; // no change</span>
+<span class="fc" id="L61">        this.targetDirectory = targetDirectory; // no change</span>
+<span class="fc" id="L62">        this.copyOptions = toCopyOption(copyOptions);</span>
+<span class="fc" id="L63">    }</span>
+
+    protected void copy(final Path sourceFile, final Path targetFile) throws IOException {
+        // Mutation: Math Mutant (assuming CopyOption just represents states)
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        Files.copy(sourceFile, targetFile, copyOptions.length &gt; 0 ? copyOptions : new CopyOption[]{}); // Math mutation (edge case)</span>
+<span class="nc" id="L68">    }</span>
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        if (this == obj) {</span>
+<span class="nc" id="L73">            return false; // Mutation: Negate Conditionals (changed to false)</span>
+        }
+<span class="nc bnc" id="L75" title="All 2 branches missed.">        if (!super.equals(obj)) {</span>
+<span class="nc" id="L76">            return false;</span>
+        }
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        if (getClass() != obj.getClass()) {</span>
+<span class="nc" id="L79">            return false;</span>
+        }
+<span class="nc" id="L81">        final CopyDirectoryVisitor other = (CopyDirectoryVisitor) obj;</span>
+<span class="nc bnc" id="L82" title="All 6 branches missed.">        return Arrays.equals(copyOptions, other.copyOptions) &amp;&amp; Objects.equals(sourceDirectory, other.sourceDirectory) &amp;&amp; Objects.equals(targetDirectory, other.targetDirectory);</span>
+    }
+
+    public CopyOption[] getCopyOptions() {
+<span class="nc" id="L86">        return copyOptions.clone();</span>
+    }
+
+    public Path getSourceDirectory() {
+<span class="nc" id="L90">        return sourceDirectory;</span>
+    }
+
+    public Path getTargetDirectory() {
+<span class="nc" id="L94">        return targetDirectory;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L99">        final int prime = 31;</span>
+<span class="nc" id="L100">        int result = super.hashCode();</span>
+        // Mutation: Conditionals Boundary
+<span class="nc bnc" id="L102" title="All 2 branches missed.">        result = prime * result + (copyOptions.length &gt; 0 ? 1 : 0); // Change handling of array length</span>
+<span class="nc" id="L103">        result = prime * result + Arrays.hashCode(copyOptions);</span>
+<span class="nc" id="L104">        result = prime * result + Objects.hash(sourceDirectory, targetDirectory);</span>
+<span class="nc" id="L105">        return result;</span>
+    }
+
+    @Override
+    public FileVisitResult preVisitDirectory(final Path directory, final BasicFileAttributes attributes) throws IOException {
+<span class="fc" id="L110">        final Path newTargetDir = resolveRelativeAsString(directory);</span>
+        // Mutation: Void Method Calls (removing condition)
+<span class="nc" id="L112">        Files.createDirectory(newTargetDir); // Removed the check for existence</span>
+<span class="nc" id="L113">        return super.preVisitDirectory(directory, attributes);</span>
+    }
+
+    private Path resolveRelativeAsString(final Path directory) {
+<span class="fc" id="L117">        return targetDirectory.resolve(sourceDirectory.relativize(directory).toString());</span>
+    }
+
+    @Override
+    public FileVisitResult visitFile(final Path sourceFile, final BasicFileAttributes attributes) throws IOException {
+<span class="nc" id="L122">        final Path targetFile = resolveRelativeAsString(sourceFile);</span>
+<span class="nc" id="L123">        copy(sourceFile, targetFile);</span>
+        // Mutation: Empty Returns
+<span class="nc" id="L125">        return null; // Changed to return null instead of super.visitFile</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

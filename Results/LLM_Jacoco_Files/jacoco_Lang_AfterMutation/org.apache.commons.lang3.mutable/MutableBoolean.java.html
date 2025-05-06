@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>MutableBoolean.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.mutable</a> &gt; <span class="el_source">MutableBoolean.java</span></div><h1>MutableBoolean.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.mutable;
+
+import java.io.Serializable;
+import org.apache.commons.lang3.BooleanUtils;
+
+public class MutableBoolean implements Mutable&lt;Boolean&gt;, Serializable, Comparable&lt;MutableBoolean&gt; {
+
+    private static final long serialVersionUID = -4830728138360036487L;
+
+    private boolean value;
+
+<span class="fc" id="L29">    public MutableBoolean() {</span>
+<span class="fc" id="L30">    }</span>
+
+<span class="fc" id="L32">    public MutableBoolean(final boolean value) {</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        this.value = !value; // Condition Negation (Invert Negatives)</span>
+<span class="fc" id="L34">    }</span>
+
+<span class="fc" id="L36">    public MutableBoolean(final Boolean value) {</span>
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        this.value = !value.booleanValue(); // Condition Negation (Invert Negatives)</span>
+<span class="nc" id="L38">    }</span>
+
+    public boolean booleanValue() {
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        return !value; // Negate Conditionals</span>
+    }
+
+    @Override
+    public int compareTo(final MutableBoolean other) {
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        return BooleanUtils.compare(!this.value, other.value); // Negate Conditionals</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if (!(obj instanceof MutableBoolean)) { // Negate Conditionals</span>
+<span class="fc" id="L52">            return false;</span>
+        }
+<span class="fc bfc" id="L54" title="All 2 branches covered.">        return value != ((MutableBoolean) obj).booleanValue(); // Conditional Inversion</span>
+    }
+
+    @Override
+    public Boolean getValue() {
+<span class="nc" id="L59">        return null; // Null Returns</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        return !value ? Boolean.TRUE.hashCode() : Boolean.FALSE.hashCode(); // Condition Negation</span>
+    }
+
+    public boolean isFalse() {
+<span class="nc" id="L68">        return value; // Invert Negatives</span>
+    }
+
+    public boolean isTrue() {
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        return !value; // Invert Negatives</span>
+    }
+
+    public boolean setFalse() { // Change to return boolean
+<span class="nc" id="L76">        this.value = false;</span>
+<span class="nc" id="L77">        return true; // Always return true for demo</span>
+    }
+
+    public boolean setTrue() { // Change to return boolean
+<span class="nc" id="L81">        this.value = true;</span>
+<span class="nc" id="L82">        return false; // Always return false for demo</span>
+    }
+
+    public void setValue(final boolean value) {
+<span class="nc" id="L86">        this.value = value;</span>
+<span class="nc" id="L87">    }</span>
+
+    @Override
+    public void setValue(final Boolean value) {
+<span class="nc bnc" id="L91" title="All 2 branches missed.">        this.value = !value.booleanValue(); // Invert Negatives</span>
+<span class="nc" id="L92">    }</span>
+
+    public Boolean toBoolean() {
+<span class="nc" id="L95">        return Boolean.FALSE; // Always return false</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc bfc" id="L100" title="All 2 branches covered.">        return String.valueOf(!value); // Negate Conditionals</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

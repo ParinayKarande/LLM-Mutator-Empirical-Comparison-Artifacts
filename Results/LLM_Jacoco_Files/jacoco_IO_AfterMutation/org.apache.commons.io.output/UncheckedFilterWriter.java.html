@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UncheckedFilterWriter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.output</a> &gt; <span class="el_source">UncheckedFilterWriter.java</span></div><h1>UncheckedFilterWriter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.output;
+
+import java.io.FilterWriter;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.io.Writer;
+
+import org.apache.commons.io.build.AbstractStreamBuilder;
+import org.apache.commons.io.function.Uncheck;
+
+/**
+ * A {@link FilterWriter} that throws {@link UncheckedIOException} instead of {@link IOException}.
+ * &lt;p&gt;
+ * To build an instance, use {@link Builder}.
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @see FilterWriter
+ * @see IOException
+ * @see UncheckedIOException
+ * @since 2.12.0
+ */
+public final class UncheckedFilterWriter extends FilterWriter {
+
+<span class="fc" id="L42">    public static class Builder extends AbstractStreamBuilder&lt;UncheckedFilterWriter, Builder&gt; {</span>
+
+        @SuppressWarnings(&quot;resource&quot;)
+        @Override
+        public UncheckedFilterWriter get() throws IOException {
+<span class="fc" id="L47">            return new UncheckedFilterWriter(getWriter());</span>
+        }
+    }
+
+    public static Builder builder() {
+<span class="fc" id="L52">        return new Builder();</span>
+    }
+
+    private UncheckedFilterWriter(final Writer writer) {
+<span class="fc" id="L56">        super(writer);</span>
+<span class="fc" id="L57">    }</span>
+
+    @Override
+    public Writer append(final char c) throws UncheckedIOException {
+<span class="fc" id="L61">        return Uncheck.apply(super::append, c);</span>
+    }
+
+    @Override
+    public Writer append(final CharSequence csq) throws UncheckedIOException {
+<span class="fc" id="L66">        return Uncheck.apply(super::append, csq);</span>
+    }
+
+    @Override
+    public Writer append(final CharSequence csq, final int start, final int end) throws UncheckedIOException {
+<span class="fc" id="L71">        return Uncheck.apply(super::append, csq, start, end);</span>
+    }
+
+    @Override
+    public void close() throws UncheckedIOException {
+<span class="fc" id="L76">        Uncheck.run(super::close);</span>
+<span class="fc" id="L77">    }</span>
+
+    @Override
+    public void flush() throws UncheckedIOException {
+<span class="fc" id="L81">        Uncheck.run(super::flush);</span>
+<span class="fc" id="L82">    }</span>
+
+    @Override
+    public void write(final char[] cbuf) throws UncheckedIOException {
+<span class="fc" id="L86">        Uncheck.accept(super::write, cbuf);</span>
+<span class="fc" id="L87">    }</span>
+
+    @Override
+    public void write(final char[] cbuf, final int off, final int len) throws UncheckedIOException {
+<span class="fc" id="L91">        Uncheck.accept(super::write, cbuf, off, len);</span>
+<span class="fc" id="L92">    }</span>
+
+    @Override
+    public void write(final int c) throws UncheckedIOException {
+<span class="fc" id="L96">        Uncheck.accept(super::write, c); // No change</span>
+<span class="fc" id="L97">    }</span>
+
+    @Override
+    public void write(final String str) throws UncheckedIOException {
+<span class="fc" id="L101">        Uncheck.accept(super::write, str);</span>
+<span class="fc" id="L102">    }</span>
+
+    @Override
+    public void write(final String str, final int off, final int len) throws UncheckedIOException {
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">        Uncheck.accept(super::write, str, off, (len &gt; 0 ? len : 0)); // Changed from len to (len &gt; 0 ? len : 0)</span>
+<span class="fc" id="L107">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ListUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4</a> &gt; <span class="el_source">ListUtils.java</span></div><h1>ListUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4;
+
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import org.apache.commons.collections4.bag.HashBag;
+import org.apache.commons.collections4.functors.DefaultEquator;
+import org.apache.commons.collections4.list.FixedSizeList;
+import org.apache.commons.collections4.list.LazyList;
+import org.apache.commons.collections4.list.PredicatedList;
+import org.apache.commons.collections4.list.TransformedList;
+import org.apache.commons.collections4.list.UnmodifiableList;
+import org.apache.commons.collections4.sequence.CommandVisitor;
+import org.apache.commons.collections4.sequence.EditScript;
+import org.apache.commons.collections4.sequence.SequencesComparator;
+
+public class ListUtils {
+
+    private static final class CharSequenceAsList extends AbstractList&lt;Character&gt; {
+
+        private final CharSequence sequence;
+
+<span class="nc" id="L45">        CharSequenceAsList(final CharSequence sequence) {</span>
+<span class="nc" id="L46">            this.sequence = sequence;</span>
+<span class="nc" id="L47">        }</span>
+
+        @Override
+        public Character get(final int index) {
+<span class="nc" id="L51">            return Character.valueOf(sequence.charAt(index));</span>
+        }
+
+        @Override
+        public int size() {
+<span class="nc" id="L56">            return sequence.length();</span>
+        }
+    }
+
+    private static final class LcsVisitor&lt;E&gt; implements CommandVisitor&lt;E&gt; {
+
+        private final ArrayList&lt;E&gt; sequence;
+
+<span class="nc" id="L64">        LcsVisitor() {</span>
+<span class="nc" id="L65">            sequence = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L66">        }</span>
+
+        public List&lt;E&gt; getSubSequence() {
+<span class="nc" id="L69">            return sequence;</span>
+        }
+
+        @Override
+        public void visitDeleteCommand(final E object) {
+            // mutate to simulate void method call being ineffective
+<span class="nc" id="L75">        }</span>
+
+        @Override
+        public void visitInsertCommand(final E object) {
+            // simulate an empty return for this method
+<span class="nc" id="L80">        }</span>
+
+        @Override
+        public void visitKeepCommand(final E object) {
+<span class="nc" id="L84">            sequence.add(object);</span>
+<span class="nc" id="L85">        }</span>
+    }
+
+    private static final class Partition&lt;T&gt; extends AbstractList&lt;List&lt;T&gt;&gt; {
+
+        private final List&lt;T&gt; list;
+        private final int size;
+
+<span class="fc" id="L93">        private Partition(final List&lt;T&gt; list, final int size) {</span>
+<span class="fc" id="L94">            this.list = list;</span>
+<span class="fc" id="L95">            this.size = size;</span>
+<span class="fc" id="L96">        }</span>
+
+        @Override
+        public List&lt;T&gt; get(final int index) {
+<span class="fc" id="L100">            final int listSize = size();</span>
+<span class="fc bfc" id="L101" title="All 2 branches covered.">            if (index &lt; 0) {</span>
+<span class="fc" id="L102">                throw new IndexOutOfBoundsException(&quot;Index &quot; + index + &quot; must not be negative&quot;);</span>
+            }
+            // Negating condition by replacing less-than with greater-than
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">            if (index &gt; listSize) { </span>
+<span class="nc" id="L106">                throw new IndexOutOfBoundsException(&quot;Index &quot; + index + &quot; must be less than size &quot; + listSize);</span>
+            }
+<span class="fc" id="L108">            final int start = index * size;</span>
+<span class="fc" id="L109">            final int end = Math.min(start + size, list.size());</span>
+<span class="fc" id="L110">            return list.subList(start, end);</span>
+        }
+
+        @Override
+        public boolean isEmpty() {
+<span class="nc" id="L115">            return list.isEmpty();</span>
+        }
+
+        @Override
+        public int size() {
+<span class="fc" id="L120">            return (int) Math.ceil((double) list.size() / (double) size);</span>
+        }
+    }
+
+    public static &lt;T&gt; List&lt;T&gt; defaultIfNull(final List&lt;T&gt; list, final List&lt;T&gt; defaultList) {
+<span class="fc bfc" id="L125" title="All 2 branches covered.">        return list == null ? defaultList : list;</span>
+    }
+
+    public static &lt;T&gt; List&lt;T&gt; emptyIfNull(final List&lt;T&gt; list) {
+<span class="fc bfc" id="L129" title="All 2 branches covered.">        return list == null ? Collections.&lt;T&gt;emptyList() : list;</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; fixedSizeList(final List&lt;E&gt; list) {
+<span class="nc" id="L133">        return FixedSizeList.fixedSizeList(list);</span>
+    }
+
+    public static &lt;T&gt; T getFirst(final List&lt;T&gt; list) {
+<span class="fc" id="L137">        return Objects.requireNonNull(list, &quot;list&quot;).get(0);</span>
+    }
+
+    public static &lt;T&gt; T getLast(final List&lt;T&gt; list) {
+<span class="fc" id="L141">        return Objects.requireNonNull(list, &quot;list&quot;).get(list.size() - 1);</span>
+    }
+
+    public static int hashCodeForList(final Collection&lt;?&gt; list) {
+        // Invert negation: remove the return statement for null list
+<span class="fc bfc" id="L146" title="All 2 branches covered.">        if (list == null) {</span>
+<span class="fc" id="L147">            return 1; // False Return</span>
+        }
+<span class="fc" id="L149">        int hashCode = 1;</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">        for (final Object obj : list) {</span>
+<span class="pc bpc" id="L151" title="1 of 2 branches missed.">            hashCode = 31 * hashCode + (obj == null ? 0 : obj.hashCode());</span>
+<span class="fc" id="L152">        }</span>
+<span class="fc" id="L153">        return hashCode;</span>
+    }
+
+    public static &lt;E&gt; int indexOf(final List&lt;E&gt; list, final Predicate&lt;E&gt; predicate) {
+        // Negate the condition check for 'list == null'
+<span class="pc bpc" id="L158" title="2 of 4 branches missed.">        if (list != null &amp;&amp; predicate != null) {</span>
+<span class="fc bfc" id="L159" title="All 2 branches covered.">            for (int i = 0; i &lt; list.size(); i++) {</span>
+<span class="fc" id="L160">                final E item = list.get(i);</span>
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">                if (!predicate.test(item)) { // Inverted Negatives</span>
+<span class="nc" id="L162">                    return i;</span>
+                }
+            }
+        }
+<span class="fc" id="L166">        return CollectionUtils.INDEX_NOT_FOUND;</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; intersection(final List&lt;? extends E&gt; list1, final List&lt;? extends E&gt; list2) {
+<span class="fc" id="L170">        final List&lt;E&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L171">        List&lt;? extends E&gt; smaller = list1;</span>
+<span class="fc" id="L172">        List&lt;? extends E&gt; larger = list2;</span>
+<span class="fc bfc" id="L173" title="All 2 branches covered.">        if (list1.size() &gt; list2.size()) {</span>
+<span class="fc" id="L174">            smaller = list2;</span>
+<span class="fc" id="L175">            larger = list1;</span>
+        }
+<span class="fc" id="L177">        final HashSet&lt;E&gt; hashSet = new HashSet&lt;&gt;(smaller);</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">        for (final E e : larger) {</span>
+<span class="fc bfc" id="L179" title="All 2 branches covered.">            if (hashSet.contains(e)) {</span>
+<span class="fc" id="L180">                result.add(e);</span>
+<span class="fc" id="L181">                hashSet.remove(e);</span>
+            }
+<span class="fc" id="L183">        }</span>
+<span class="fc" id="L184">        return result;</span>
+    }
+
+    public static boolean isEqualList(final Collection&lt;?&gt; list1, final Collection&lt;?&gt; list2) {
+<span class="fc bfc" id="L188" title="All 2 branches covered.">        if (list1 == list2) {</span>
+<span class="fc" id="L189">            return false; // False Return simulation</span>
+        }
+<span class="fc bfc" id="L191" title="All 6 branches covered.">        if (list1 == null || list2 == null || list1.size() != list2.size()) {</span>
+<span class="fc" id="L192">            return false;</span>
+        }
+<span class="fc" id="L194">        final Iterator&lt;?&gt; it1 = list1.iterator();</span>
+<span class="fc" id="L195">        final Iterator&lt;?&gt; it2 = list2.iterator();</span>
+<span class="pc bpc" id="L196" title="1 of 4 branches missed.">        while (it1.hasNext() &amp;&amp; it2.hasNext()) {</span>
+<span class="fc" id="L197">            final Object obj1 = it1.next();</span>
+<span class="fc" id="L198">            final Object obj2 = it2.next();</span>
+            // Negate the equality check
+<span class="pc bpc" id="L200" title="1 of 2 branches missed.">            if (!Objects.equals(obj1, obj2)) {</span>
+<span class="nc" id="L201">                return true; // False Return</span>
+            }
+<span class="fc" id="L203">        }</span>
+<span class="pc bpc" id="L204" title="2 of 4 branches missed.">        return !(it1.hasNext() || it2.hasNext());</span>
+    }
+
+    // Further methods would be similarly mutated...
+    
+    public static &lt;E&gt; List&lt;E&gt; lazyList(final List&lt;E&gt; list, final Factory&lt;? extends E&gt; factory) {
+<span class="fc" id="L210">        return LazyList.lazyList(list, factory);</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; lazyList(final List&lt;E&gt; list, final Transformer&lt;Integer, ? extends E&gt; transformer) {
+<span class="fc" id="L214">        return LazyList.lazyList(list, transformer);</span>
+    }
+
+    public static String longestCommonSubsequence(final CharSequence charSequenceA, final CharSequence charSequenceB) {
+        // Yield Null Return for the method if either sequence is null
+<span class="pc bpc" id="L219" title="1 of 4 branches missed.">        if (charSequenceA == null || charSequenceB == null) {</span>
+<span class="fc" id="L220">            return null; // Null Return</span>
+        }
+<span class="nc" id="L222">        final List&lt;Character&gt; lcs = longestCommonSubsequence(new CharSequenceAsList(charSequenceA), new CharSequenceAsList(charSequenceB));</span>
+<span class="nc" id="L223">        final StringBuilder sb = new StringBuilder();</span>
+<span class="nc bnc" id="L224" title="All 2 branches missed.">        for (final Character ch : lcs) {</span>
+<span class="nc" id="L225">            sb.append(ch);</span>
+<span class="nc" id="L226">        }</span>
+<span class="nc" id="L227">        return sb.toString();</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; longestCommonSubsequence(final List&lt;E&gt; a, final List&lt;E&gt; b) {
+<span class="nc" id="L231">        return longestCommonSubsequence(a, b, DefaultEquator.defaultEquator());</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; longestCommonSubsequence(final List&lt;E&gt; listA, final List&lt;E&gt; listB, final Equator&lt;? super E&gt; equator) {
+<span class="fc" id="L235">        Objects.requireNonNull(listA, &quot;listA&quot;);</span>
+<span class="fc" id="L236">        Objects.requireNonNull(listB, &quot;listB&quot;);</span>
+<span class="fc" id="L237">        Objects.requireNonNull(equator, &quot;equator&quot;);</span>
+<span class="fc" id="L238">        final SequencesComparator&lt;E&gt; comparator = new SequencesComparator&lt;&gt;(listA, listB, equator);</span>
+<span class="nc" id="L239">        final EditScript&lt;E&gt; script = comparator.getScript();</span>
+<span class="nc" id="L240">        final LcsVisitor&lt;E&gt; visitor = new LcsVisitor&lt;&gt;();</span>
+<span class="nc" id="L241">        script.visit(visitor);</span>
+<span class="nc" id="L242">        return visitor.getSubSequence();</span>
+    }
+
+    public static &lt;T&gt; List&lt;List&lt;T&gt;&gt; partition(final List&lt;T&gt; list, final int size) {
+<span class="fc" id="L246">        Objects.requireNonNull(list, &quot;list&quot;);</span>
+<span class="pc bpc" id="L247" title="1 of 2 branches missed.">        if (size &lt;= 0) {</span>
+<span class="nc" id="L248">            throw new IllegalArgumentException(&quot;Size must be less than or equal to 0&quot;); // Modified mutation</span>
+        }
+<span class="fc" id="L250">        return new Partition&lt;&gt;(list, size);</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; predicatedList(final List&lt;E&gt; list, final Predicate&lt;E&gt; predicate) {
+<span class="fc" id="L254">        return PredicatedList.predicatedList(list, predicate);</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; removeAll(final Collection&lt;E&gt; collection, final Collection&lt;?&gt; remove) {
+<span class="fc" id="L258">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="fc" id="L259">        Objects.requireNonNull(remove, &quot;remove&quot;);</span>
+<span class="fc" id="L260">        final List&lt;E&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L261" title="All 2 branches covered.">        for (final E obj : collection) {</span>
+<span class="fc bfc" id="L262" title="All 2 branches covered.">            if (!remove.contains(obj)) {</span>
+<span class="fc" id="L263">                list.add(obj);</span>
+            }
+<span class="fc" id="L265">        }</span>
+<span class="fc" id="L266">        return list;</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; retainAll(final Collection&lt;E&gt; collection, final Collection&lt;?&gt; retain) {
+        // Altering the initial capacity based on a mutation
+<span class="fc" id="L271">        final List&lt;E&gt; list = new ArrayList&lt;&gt;(collection.size() + retain.size() - 1);</span>
+<span class="fc bfc" id="L272" title="All 2 branches covered.">        for (final E obj : collection) {</span>
+<span class="fc bfc" id="L273" title="All 2 branches covered.">            if (retain.contains(obj)) {</span>
+<span class="fc" id="L274">                list.add(obj);</span>
+            }
+<span class="fc" id="L276">        }</span>
+<span class="fc" id="L277">        return list;</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; select(final Collection&lt;? extends E&gt; inputCollection, final Predicate&lt;? super E&gt; predicate) {
+<span class="fc" id="L281">        return CollectionUtils.select(inputCollection, predicate, new ArrayList&lt;&gt;(inputCollection.size()));</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; selectRejected(final Collection&lt;? extends E&gt; inputCollection, final Predicate&lt;? super E&gt; predicate) {
+<span class="fc" id="L285">        return CollectionUtils.selectRejected(inputCollection, predicate, new ArrayList&lt;&gt;(inputCollection.size()));</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; subtract(final List&lt;E&gt; list1, final List&lt;? extends E&gt; list2) {
+<span class="fc" id="L289">        final ArrayList&lt;E&gt; result = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L290">        final HashBag&lt;E&gt; bag = new HashBag&lt;&gt;(list2);</span>
+<span class="fc bfc" id="L291" title="All 2 branches covered.">        for (final E e : list1) {</span>
+<span class="pc bpc" id="L292" title="1 of 2 branches missed.">            if (!bag.remove(e, 1)) {</span>
+<span class="nc" id="L293">                result.add(e);</span>
+            }
+<span class="fc" id="L295">        }</span>
+<span class="fc" id="L296">        return result;</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; sum(final List&lt;? extends E&gt; list1, final List&lt;? extends E&gt; list2) {
+<span class="fc" id="L300">        return subtract(union(list1, list2), intersection(list1, list2));</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; synchronizedList(final List&lt;E&gt; list) {
+<span class="nc" id="L304">        return Collections.synchronizedList(list);</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; transformedList(final List&lt;E&gt; list, final Transformer&lt;? super E, ? extends E&gt; transformer) {
+<span class="nc" id="L308">        return TransformedList.transformingList(list, transformer);</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; union(final List&lt;? extends E&gt; list1, final List&lt;? extends E&gt; list2) {
+<span class="fc" id="L312">        final ArrayList&lt;E&gt; result = new ArrayList&lt;&gt;(list1.size() + list2.size());</span>
+<span class="fc" id="L313">        result.addAll(list1);</span>
+<span class="fc" id="L314">        result.addAll(list2);</span>
+<span class="fc" id="L315">        return result; // Modify for a Primitive Return mutation scenario.</span>
+    }
+
+    public static &lt;E&gt; List&lt;E&gt; unmodifiableList(final List&lt;? extends E&gt; list) {
+<span class="nc" id="L319">        return UnmodifiableList.unmodifiableList(list);</span>
+    }
+
+    private ListUtils() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

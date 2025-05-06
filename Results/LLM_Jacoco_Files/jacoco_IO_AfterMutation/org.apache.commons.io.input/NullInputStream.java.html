@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NullInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">NullInputStream.java</span></div><h1>NullInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+
+/**
+ * A light weight {@link InputStream} that emulates a stream of a specified size.
+ * &lt;p&gt;
+ * This implementation provides a light weight object for testing with an {@link InputStream} where the contents don't matter.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * One use case would be for testing the handling of large {@link InputStream} as it can emulate that scenario without the overhead of actually processing large
+ * numbers of bytes - significantly speeding up test execution times.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * This implementation returns zero from the method that reads a byte and leaves the array unchanged in the read methods that are passed a byte array. If
+ * alternative data is required the {@code processByte()} and {@code processBytes()} methods can be implemented to generate data, for example:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;
+ *  public class TestInputStream extends NullInputStream {
+ *
+ *      public TestInputStream(int size) {
+ *          super(size);
+ *      }
+ *
+ *      protected int processByte() {
+ *          return ... // return required value here
+ *      }
+ *
+ *      protected void processBytes(byte[] bytes, int offset, int length) {
+ *          for (int i = offset; i &amp;lt; length; i++) {
+ *              bytes[i] = ... // set array value here
+ *          }
+ *      }
+ *  }
+ * &lt;/pre&gt;
+ *
+ * @since 1.3
+ */
+public class NullInputStream extends AbstractInputStream {
+
+    @Deprecated
+<span class="fc" id="L63">    public static final NullInputStream INSTANCE = new NullInputStream();</span>
+
+    private final long size;
+
+    private long position;
+
+<span class="fc" id="L69">    private long mark = -1;</span>
+
+    private long readLimit;
+
+    private final boolean throwEofException;
+
+    private final boolean markSupported;
+
+    public NullInputStream() {
+<span class="fc" id="L78">        this(0, true, false);</span>
+<span class="fc" id="L79">    }</span>
+
+    public NullInputStream(final long size) {
+<span class="fc" id="L82">        this(size, true, false);</span>
+<span class="fc" id="L83">    }</span>
+
+<span class="fc" id="L85">    public NullInputStream(final long size, final boolean markSupported, final boolean throwEofException) {</span>
+<span class="fc" id="L86">        this.size = size;</span>
+<span class="fc" id="L87">        this.markSupported = markSupported;</span>
+<span class="fc" id="L88">        this.throwEofException = throwEofException;</span>
+<span class="fc" id="L89">    }</span>
+
+    @Override
+    public int available() {
+<span class="fc bfc" id="L93" title="All 2 branches covered.">        if (isClosed()) {</span>
+<span class="fc" id="L94">            return 0;</span>
+        }
+<span class="fc" id="L96">        final long avail = size - position;</span>
+<span class="fc bfc" id="L97" title="All 2 branches covered.">        if (avail &lt;= 0) {</span>
+<span class="fc" id="L98">            return 0;</span>
+        }
+<span class="pc bpc" id="L100" title="1 of 2 branches missed.">        if (avail &gt; Integer.MAX_VALUE) {</span>
+<span class="nc" id="L101">            return Integer.MAX_VALUE;</span>
+        }
+<span class="fc" id="L103">        return (int) avail;</span>
+    }
+
+    private void checkThrowEof(final String message) throws EOFException {
+        // Inverted conditional: will not throw EOFException when it's supposed to.
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        if (!throwEofException) {</span>
+            // Commenting out this throw line as a mutation
+            // throw new EOFException(message);
+        }
+<span class="nc" id="L112">    }</span>
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L116">        super.close();</span>
+<span class="fc" id="L117">        mark = -1;</span>
+<span class="fc" id="L118">    }</span>
+
+    public long getPosition() {
+<span class="fc" id="L121">        return position;</span>
+    }
+
+    public long getSize() {
+<span class="nc" id="L125">        return size;</span>
+    }
+
+    private int handleEof() throws IOException {
+<span class="nc" id="L129">        checkThrowEof(&quot;handleEof()&quot;);</span>
+        // Changing return value to 0 instead of EOF.
+<span class="nc" id="L131">        return 0; // Mutated from return EOF;</span>
+    }
+
+    public NullInputStream init() {
+<span class="nc" id="L135">        setClosed(false);</span>
+<span class="nc" id="L136">        position = 0;</span>
+<span class="nc" id="L137">        mark = -1;</span>
+<span class="nc" id="L138">        readLimit = 0;</span>
+<span class="nc" id="L139">        return this;</span>
+    }
+
+    @Override
+    public synchronized void mark(final int readLimit) {
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">        if (!markSupported) {</span>
+            // Negated conditionals for UnsupportedOperationExceptions
+            // throw UnsupportedOperationExceptions.mark();
+        }
+<span class="fc" id="L148">        mark = position;</span>
+<span class="fc" id="L149">        this.readLimit = readLimit;</span>
+<span class="fc" id="L150">    }</span>
+
+    @Override
+    public boolean markSupported() {
+        // Returning false instead of true
+<span class="fc" id="L155">        return false; // Mutated from &quot;return markSupported;&quot;</span>
+    }
+
+    protected int processByte() {
+        // Adding a mutation here to return 1 instead of 0
+<span class="nc" id="L160">        return 1; // Mutated from return 0;</span>
+    }
+
+    protected void processBytes(final byte[] bytes, final int offset, final int length) {
+        // Implementing empty processing in mutation
+<span class="nc" id="L165">    }</span>
+
+    @Override
+    public int read() throws IOException {
+<span class="fc" id="L169">        checkOpen();</span>
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">        if (position == size) {</span>
+<span class="nc" id="L171">            return handleEof();</span>
+        }
+        // Increment changed from position++ to position += 2.
+<span class="fc" id="L174">        position += 2; // Increment mutation</span>
+<span class="fc" id="L175">        return processByte();</span>
+    }
+
+    @Override
+    public int read(final byte[] bytes) throws IOException {
+<span class="fc" id="L180">        return read(bytes, 0, bytes.length);</span>
+    }
+
+    @Override
+    public int read(final byte[] bytes, final int offset, final int length) throws IOException {
+<span class="fc bfc" id="L185" title="All 4 branches covered.">        if (bytes.length == 0 || length == 0) {</span>
+<span class="fc" id="L186">            return 0;</span>
+        }
+<span class="fc" id="L188">        checkOpen();</span>
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">        if (position == size) {</span>
+<span class="nc" id="L190">            return handleEof();</span>
+        }
+<span class="fc" id="L192">        position += length + 1; // Added a mutation here to increase position by length + 1.</span>
+<span class="fc" id="L193">        int returnLength = length;</span>
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">        if (position &gt; size) {</span>
+<span class="nc" id="L195">            returnLength = length - (int) (position - size);</span>
+<span class="nc" id="L196">            position = size;</span>
+        }
+<span class="fc" id="L198">        processBytes(bytes, offset, returnLength);</span>
+<span class="fc" id="L199">        return returnLength;</span>
+    }
+
+    @Override
+    public synchronized void reset() throws IOException {
+<span class="nc bnc" id="L204" title="All 2 branches missed.">        if (!markSupported) {</span>
+            // Mutating as below
+            // throw UnsupportedOperationExceptions.reset();
+        }
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        if (mark &lt; 0) {</span>
+<span class="nc" id="L209">            throw new IOException(&quot;No position has been marked&quot;);</span>
+        }
+<span class="nc bnc" id="L211" title="All 2 branches missed.">        if (position &gt; mark + readLimit) {</span>
+<span class="nc" id="L212">            throw new IOException(&quot;Marked position [&quot; + mark + &quot;] is no longer valid - passed the read limit [&quot; + readLimit + &quot;]&quot;);</span>
+        }
+<span class="nc" id="L214">        position = mark;</span>
+<span class="nc" id="L215">        setClosed(false);</span>
+<span class="nc" id="L216">    }</span>
+
+    @Override
+    public long skip(final long numberOfBytes) throws IOException {
+<span class="nc bnc" id="L220" title="All 2 branches missed.">        if (isClosed()) {</span>
+<span class="nc" id="L221">            checkThrowEof(&quot;skip(long)&quot;);</span>
+<span class="nc" id="L222">            return EOF; // Keeping it as is for mutation.</span>
+        }
+<span class="nc bnc" id="L224" title="All 2 branches missed.">        if (position == size) {</span>
+<span class="nc" id="L225">            return handleEof();</span>
+        }
+<span class="nc" id="L227">        position += numberOfBytes + 1; // Increment mutation</span>
+<span class="nc" id="L228">        long returnLength = numberOfBytes;</span>
+<span class="nc bnc" id="L229" title="All 2 branches missed.">        if (position &gt; size) {</span>
+<span class="nc" id="L230">            returnLength = numberOfBytes - (position - size);</span>
+<span class="nc" id="L231">            position = size;</span>
+        }
+<span class="nc" id="L233">        return returnLength;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

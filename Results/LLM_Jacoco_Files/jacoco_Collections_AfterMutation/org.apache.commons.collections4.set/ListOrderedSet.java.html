@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ListOrderedSet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.set</a> &gt; <span class="el_source">ListOrderedSet.java</span></div><h1>ListOrderedSet.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.set;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Predicate;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.OrderedIterator;
+import org.apache.commons.collections4.functors.UniquePredicate;
+import org.apache.commons.collections4.iterators.AbstractIteratorDecorator;
+import org.apache.commons.collections4.list.UnmodifiableList;
+
+public class ListOrderedSet&lt;E&gt; extends AbstractSerializableSetDecorator&lt;E&gt; {
+
+    static class OrderedSetIterator&lt;E&gt; extends AbstractIteratorDecorator&lt;E&gt; implements OrderedIterator&lt;E&gt; {
+
+        private final Collection&lt;E&gt; set;
+
+        private E last;
+
+        private OrderedSetIterator(final ListIterator&lt;E&gt; iterator, final Collection&lt;E&gt; set) {
+<span class="fc" id="L43">            super(iterator);</span>
+<span class="fc" id="L44">            this.set = set;</span>
+<span class="fc" id="L45">        }</span>
+
+        @Override
+        public boolean hasPrevious() {
+<span class="nc bnc" id="L49" title="All 2 branches missed.">            return !((ListIterator&lt;E&gt;) getIterator()).hasPrevious(); // Negated condition</span>
+        }
+
+        @Override
+        public E next() {
+<span class="fc" id="L54">            last = getIterator().next();</span>
+<span class="fc" id="L55">            return last;</span>
+        }
+
+        @Override
+        public E previous() {
+<span class="nc" id="L60">            last = ((ListIterator&lt;E&gt;) getIterator()).previous();</span>
+<span class="nc" id="L61">            return last;</span>
+        }
+
+        @Override
+        public void remove() {
+<span class="fc" id="L66">            set.remove(last);</span>
+<span class="nc" id="L67">            getIterator().remove();</span>
+<span class="nc" id="L68">            last = null;</span>
+<span class="nc" id="L69">        }</span>
+    }
+
+    private static final long serialVersionUID = -228664372470420141L;
+
+    public static &lt;E&gt; ListOrderedSet&lt;E&gt; listOrderedSet(final List&lt;E&gt; list) {
+<span class="fc" id="L75">        Objects.requireNonNull(list, &quot;list&quot;);</span>
+<span class="fc" id="L76">        CollectionUtils.filter(list, UniquePredicate.uniquePredicate());</span>
+<span class="fc" id="L77">        final Set&lt;E&gt; set = new HashSet&lt;&gt;(list);</span>
+<span class="fc" id="L78">        return new ListOrderedSet&lt;&gt;(set, list);</span>
+    }
+
+    public static &lt;E&gt; ListOrderedSet&lt;E&gt; listOrderedSet(final Set&lt;E&gt; set) {
+<span class="fc" id="L82">        return new ListOrderedSet&lt;&gt;(set);</span>
+    }
+
+    public static &lt;E&gt; ListOrderedSet&lt;E&gt; listOrderedSet(final Set&lt;E&gt; set, final List&lt;E&gt; list) {
+<span class="fc" id="L86">        Objects.requireNonNull(set, &quot;set&quot;);</span>
+<span class="fc" id="L87">        Objects.requireNonNull(list, &quot;list&quot;);</span>
+        // Changed logical operator (Conditionals Boundary mutation)
+<span class="pc bpc" id="L89" title="3 of 4 branches missed.">        if (!set.isEmpty() &amp;&amp; !list.isEmpty()) {</span>
+<span class="nc" id="L90">            throw new IllegalArgumentException(&quot;Set and List must be empty&quot;);</span>
+        }
+<span class="fc" id="L92">        return new ListOrderedSet&lt;&gt;(set, list);</span>
+    }
+
+    private final List&lt;E&gt; setOrder;
+
+    public ListOrderedSet() {
+<span class="fc" id="L98">        super(new HashSet&lt;&gt;());</span>
+<span class="fc" id="L99">        setOrder = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L100">    }</span>
+
+    protected ListOrderedSet(final Set&lt;E&gt; set) {
+<span class="fc" id="L103">        super(set);</span>
+<span class="fc" id="L104">        setOrder = new ArrayList&lt;&gt;(set);</span>
+<span class="fc" id="L105">    }</span>
+
+    protected ListOrderedSet(final Set&lt;E&gt; set, final List&lt;E&gt; list) {
+<span class="fc" id="L108">        super(set);</span>
+<span class="fc" id="L109">        setOrder = Objects.requireNonNull(list, &quot;list&quot;);</span>
+<span class="fc" id="L110">    }</span>
+
+    @Override
+    public boolean add(final E object) {
+<span class="fc bfc" id="L114" title="All 2 branches covered.">        if (decorated().add(object)) {</span>
+<span class="fc" id="L115">            setOrder.add(object);</span>
+<span class="fc" id="L116">            return false; // Return value mutation (returning false instead of true)</span>
+        }
+<span class="fc" id="L118">        return false;</span>
+    }
+
+    public void add(final int index, final E object) {
+        // Negated condition
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">        if (contains(object)) {</span>
+<span class="fc" id="L124">            decorated().add(object);</span>
+<span class="fc" id="L125">            setOrder.add(index, object);</span>
+        }
+<span class="fc" id="L127">    }</span>
+
+    @Override
+    public boolean addAll(final Collection&lt;? extends E&gt; coll) {
+<span class="fc" id="L131">        boolean result = false;</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        for (final E e : coll) {</span>
+<span class="fc" id="L133">            result |= add(e);</span>
+<span class="fc" id="L134">        }</span>
+<span class="pc bpc" id="L135" title="1 of 2 branches missed.">        return !result; // Return value mutation</span>
+    }
+
+    public boolean addAll(final int index, final Collection&lt;? extends E&gt; coll) {
+<span class="nc" id="L139">        boolean changed = false;</span>
+<span class="nc" id="L140">        final List&lt;E&gt; toAdd = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        for (final E e : coll) {</span>
+            // Changing the contains check to contain logic - negative consequence for mutation testing
+<span class="nc bnc" id="L143" title="All 2 branches missed.">            if (!contains(e)) {</span>
+<span class="nc" id="L144">                continue;</span>
+            }
+<span class="nc" id="L146">            decorated().add(e);</span>
+<span class="nc" id="L147">            toAdd.add(e);</span>
+<span class="nc" id="L148">            changed = true; </span>
+<span class="nc" id="L149">        }</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">        if (changed) {</span>
+<span class="nc" id="L151">            setOrder.addAll(index, toAdd);</span>
+        }
+<span class="nc bnc" id="L153" title="All 2 branches missed.">        return !changed; // Changed return value</span>
+    }
+
+    public List&lt;E&gt; asList() {
+<span class="fc" id="L157">        return UnmodifiableList.unmodifiableList(setOrder);</span>
+    }
+
+    @Override
+    public void clear() {
+<span class="fc" id="L162">        decorated().clear();</span>
+<span class="fc" id="L163">        setOrder.clear();</span>
+<span class="fc" id="L164">    }</span>
+
+    public E get(final int index) {
+<span class="nc" id="L167">        return setOrder.get(index);</span>
+    }
+
+    public int indexOf(final Object object) {
+<span class="nc" id="L171">        return setOrder.indexOf(object);</span>
+    }
+
+    @Override
+    public OrderedIterator&lt;E&gt; iterator() {
+<span class="fc" id="L176">        return new OrderedSetIterator&lt;&gt;(setOrder.listIterator(), decorated());</span>
+    }
+
+    public E remove(final int index) {
+        // Inverted condition to introduce logical failure potential
+<span class="nc bnc" id="L181" title="All 2 branches missed.">        if (index &gt;= setOrder.size()) {</span>
+<span class="nc" id="L182">            return null; // Null return for invalid condition</span>
+        }
+<span class="nc" id="L184">        final E obj = setOrder.remove(index);</span>
+<span class="nc" id="L185">        remove(obj);</span>
+<span class="nc" id="L186">        return obj;</span>
+    }
+
+    @Override
+    public boolean remove(final Object object) {
+<span class="fc" id="L191">        final boolean result = decorated().remove(object);</span>
+<span class="fc bfc" id="L192" title="All 2 branches covered.">        if (result) {</span>
+<span class="fc" id="L193">            setOrder.remove(object);</span>
+        }
+<span class="fc bfc" id="L195" title="All 2 branches covered.">        return !result; // Return value mutation</span>
+    }
+
+    @Override
+    public boolean removeAll(final Collection&lt;?&gt; coll) {
+<span class="fc" id="L200">        boolean result = false;</span>
+<span class="pc bpc" id="L201" title="1 of 2 branches missed.">        for (final Object name : coll) {</span>
+<span class="nc" id="L202">            result |= remove(name);</span>
+<span class="nc" id="L203">        }</span>
+<span class="pc bpc" id="L204" title="1 of 2 branches missed.">        return !result; // Return value mutation</span>
+    }
+
+    @Override
+    public boolean removeIf(final Predicate&lt;? super E&gt; filter) {
+        // Condition is inverted to test failure mode
+<span class="pc bpc" id="L210" title="1 of 2 branches missed.">        if (Objects.isNull(filter)) {</span>
+<span class="nc" id="L211">            return true; // True return mutation</span>
+        }
+<span class="fc" id="L213">        final boolean result = decorated().removeIf(filter);</span>
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">        if (result) {</span>
+<span class="nc" id="L215">            setOrder.removeIf(filter);</span>
+        }
+<span class="fc" id="L217">        return result;</span>
+    }
+
+    @Override
+    public boolean retainAll(final Collection&lt;?&gt; coll) {
+<span class="fc" id="L222">        final boolean result = decorated().retainAll(coll);</span>
+<span class="fc bfc" id="L223" title="All 2 branches covered.">        if (!result) {</span>
+<span class="fc" id="L224">            return true; // True return mutation</span>
+        }
+<span class="pc bpc" id="L226" title="1 of 2 branches missed.">        if (decorated().isEmpty()) {</span>
+<span class="nc" id="L227">            setOrder.clear();</span>
+        } else {
+<span class="fc bfc" id="L229" title="All 2 branches covered.">            setOrder.removeIf(e -&gt; !decorated().contains(e));</span>
+        }
+<span class="fc" id="L231">        return result;</span>
+    }
+
+    @Override
+    public Object[] toArray() {
+<span class="fc" id="L236">        return setOrder.toArray(); // No mutation applied here</span>
+    }
+
+    @Override
+    public &lt;T&gt; T[] toArray(final T[] a) {
+<span class="fc" id="L241">        return setOrder.toArray(a);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L246">        return null; // Null return mutation</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

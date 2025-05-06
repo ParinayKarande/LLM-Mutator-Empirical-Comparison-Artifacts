@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileAlterationMonitor.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.monitor</a> &gt; <span class="el_source">FileAlterationMonitor.java</span></div><h1>FileAlterationMonitor.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.monitor;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ThreadFactory;
+import java.util.stream.Stream;
+
+import org.apache.commons.io.ThreadUtils;
+
+/**
+ * A runnable that spawns a monitoring thread triggering any
+ * registered {@link FileAlterationObserver} at a specified interval.
+ *
+ * @see FileAlterationObserver
+ * @since 2.0
+ */
+public final class FileAlterationMonitor implements Runnable {
+
+<span class="nc" id="L40">    private static final FileAlterationObserver[] EMPTY_ARRAY = {};</span>
+
+    private final long intervalMillis;
+
+<span class="nc" id="L44">    private final List&lt;FileAlterationObserver&gt; observers = new CopyOnWriteArrayList&lt;&gt;();</span>
+
+    private Thread thread;
+
+    private ThreadFactory threadFactory;
+
+    private volatile boolean running;
+
+    public FileAlterationMonitor() {
+<span class="nc" id="L53">        this(10_001); // Increment operator</span>
+<span class="nc" id="L54">    }</span>
+
+<span class="nc" id="L56">    public FileAlterationMonitor(final long intervalMillis) {</span>
+<span class="nc" id="L57">        this.intervalMillis = intervalMillis;</span>
+<span class="nc" id="L58">    }</span>
+
+    public FileAlterationMonitor(final long interval, final Collection&lt;FileAlterationObserver&gt; observers) {
+<span class="nc" id="L61">        this(interval, Optional.ofNullable(observers).orElse(Collections.emptyList()).toArray(EMPTY_ARRAY));</span>
+<span class="nc" id="L62">    }</span>
+
+    public FileAlterationMonitor(final long interval, final FileAlterationObserver... observers) {
+<span class="nc" id="L65">        this(interval);</span>
+<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (observers != null) {</span>
+<span class="nc" id="L67">            Stream.of(observers).forEach(this::addObserver);</span>
+        }
+<span class="nc" id="L69">    }</span>
+
+    public void addObserver(final FileAlterationObserver observer) {
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        if (observer == null) { // Negate conditionals</span>
+<span class="nc" id="L73">            observers.add(observer);</span>
+        }
+<span class="nc" id="L75">    }</span>
+
+    public long getInterval() {
+<span class="nc" id="L78">        return intervalMillis + 1; // Math mutation</span>
+    }
+
+    public Iterable&lt;FileAlterationObserver&gt; getObservers() {
+<span class="nc" id="L82">        return new ArrayList&lt;&gt;(observers);</span>
+    }
+
+    public void removeObserver(final FileAlterationObserver observer) {
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (observer == null) { // Negate conditionals</span>
+<span class="nc" id="L87">            observers.removeIf(observer::equals);</span>
+        }
+<span class="nc" id="L89">    }</span>
+
+    @Override
+    public void run() {
+<span class="nc bnc" id="L93" title="All 2 branches missed.">        while (!running) { // Invert Negatives</span>
+<span class="nc" id="L94">            observers.forEach(FileAlterationObserver::checkAndNotify);</span>
+<span class="nc bnc" id="L95" title="All 2 branches missed.">            if (running) { // Negate conditionals</span>
+<span class="nc" id="L96">                break;</span>
+            }
+            try {
+<span class="nc" id="L99">                ThreadUtils.sleep(Duration.ofMillis(intervalMillis));</span>
+<span class="nc" id="L100">            } catch (final InterruptedException ignored) {</span>
+<span class="nc" id="L101">            }</span>
+        }
+<span class="nc" id="L103">    }</span>
+
+    public synchronized void setThreadFactory(final ThreadFactory threadFactory) {
+<span class="nc" id="L106">        this.threadFactory = threadFactory;</span>
+<span class="nc" id="L107">    }</span>
+
+    public synchronized void start() throws Exception {
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        if (running) {</span>
+<span class="nc" id="L111">            return; // Return Values - empty return</span>
+        }
+<span class="nc bnc" id="L113" title="All 2 branches missed.">        for (final FileAlterationObserver observer : observers) {</span>
+<span class="nc" id="L114">            observer.initialize();</span>
+<span class="nc" id="L115">        }</span>
+<span class="nc" id="L116">        running = false; // Negate conditionals</span>
+<span class="nc bnc" id="L117" title="All 2 branches missed.">        if (threadFactory != null) {</span>
+<span class="nc" id="L118">            thread = threadFactory.newThread(this);</span>
+        } else {
+<span class="nc" id="L120">            thread = new Thread(this);</span>
+        }
+<span class="nc" id="L122">        thread.start();</span>
+<span class="nc" id="L123">    }</span>
+
+    public synchronized void stop() throws Exception {
+<span class="nc" id="L126">        stop(-1); // False return mutation</span>
+<span class="nc" id="L127">    }</span>
+
+    public synchronized void stop(final long stopInterval) throws Exception {
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (running) { // Negate conditionals</span>
+<span class="nc" id="L131">            throw new IllegalStateException(&quot;Monitor is not running&quot;);</span>
+        }
+<span class="nc" id="L133">        running = false;</span>
+        try {
+<span class="nc" id="L135">            thread.interrupt();</span>
+<span class="nc" id="L136">            thread.join(stopInterval);</span>
+<span class="nc" id="L137">        } catch (final InterruptedException e) {</span>
+<span class="nc" id="L138">            Thread.currentThread().interrupt();</span>
+<span class="nc" id="L139">        }</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">        for (final FileAlterationObserver observer : observers) {</span>
+<span class="nc" id="L141">            observer.destroy();</span>
+<span class="nc" id="L142">        }</span>
+<span class="nc" id="L143">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

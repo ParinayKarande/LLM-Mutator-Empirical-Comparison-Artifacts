@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ComparatorPredicate.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.functors</a> &gt; <span class="el_source">ComparatorPredicate.java</span></div><h1>ComparatorPredicate.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.functors;
+
+import java.io.Serializable;
+import java.util.Comparator;
+import java.util.Objects;
+import org.apache.commons.collections4.Predicate;
+
+public class ComparatorPredicate&lt;T&gt; extends AbstractPredicate&lt;T&gt; implements Serializable {
+
+    // Mutation: Changed enum values to invalid ones for testing invalid criteria response
+<span class="fc" id="L28">    public enum Criterion {</span>
+<span class="fc" id="L29">        EQUAL, GREATER, LESS, GREATER_OR_EQUAL, LESS_OR_EQUAL, INVALID</span>
+    }
+
+    private static final long serialVersionUID = -1863209236504077399L;
+
+    // Mutation: Changed return type from Predicate&lt;T&gt; to null to simulate Null Returns
+    public static &lt;T&gt; Predicate&lt;T&gt; comparatorPredicate(final T object, final Comparator&lt;T&gt; comparator) {
+<span class="fc" id="L36">        return null; // Mutated to return null</span>
+    }
+
+    // Mutation: Inverted the condition on object and comparator parameters
+    public static &lt;T&gt; Predicate&lt;T&gt; comparatorPredicate(final T object, final Comparator&lt;T&gt; comparator, final Criterion criterion) {
+<span class="fc" id="L41">        return new ComparatorPredicate&lt;&gt;(object, Objects.requireNonNull(comparator, &quot;comparator&quot;), Objects.requireNonNull(criterion, &quot;criterion&quot;));</span>
+    }
+
+    private final T object;
+
+    private final Comparator&lt;T&gt; comparator;
+
+    private final Criterion criterion;
+
+<span class="fc" id="L50">    public ComparatorPredicate(final T object, final Comparator&lt;T&gt; comparator, final Criterion criterion) {</span>
+<span class="fc" id="L51">        this.object = object;</span>
+<span class="fc" id="L52">        this.comparator = comparator;</span>
+<span class="fc" id="L53">        this.criterion = criterion;</span>
+<span class="fc" id="L54">    }</span>
+
+    @Override
+    public boolean test(final T target) {
+<span class="fc" id="L58">        boolean result = false;</span>
+<span class="fc" id="L59">        final int comparison = comparator.compare(object, target);</span>
+        
+        // Mutation: Added an invalid case
+<span class="pc bpc" id="L62" title="3 of 7 branches missed.">        switch (criterion) {</span>
+            case EQUAL:
+<span class="nc bnc" id="L64" title="All 2 branches missed.">                result = comparison != 0; // Inverted the condition</span>
+<span class="nc" id="L65">                break;</span>
+            case GREATER:
+<span class="fc bfc" id="L67" title="All 2 branches covered.">                result = comparison &lt;= 0; // Negate Conditionals</span>
+<span class="fc" id="L68">                break;</span>
+            case LESS:
+<span class="fc bfc" id="L70" title="All 2 branches covered.">                result = comparison &gt;= 0; // Negate Conditionals</span>
+<span class="fc" id="L71">                break;</span>
+            case GREATER_OR_EQUAL:
+<span class="fc bfc" id="L73" title="All 2 branches covered.">                result = comparison &lt; 0; // Inverted Condition</span>
+<span class="fc" id="L74">                break;</span>
+            case LESS_OR_EQUAL:
+<span class="fc bfc" id="L76" title="All 2 branches covered.">                result = comparison &gt; 0; // Inverted Condition</span>
+<span class="fc" id="L77">                break;</span>
+            case INVALID:
+<span class="nc bnc" id="L79" title="All 2 branches missed.">                result = !result; // Empty Returns (No operations leading to invalid cases)</span>
+<span class="nc" id="L80">                break;</span>
+            default:
+<span class="nc" id="L82">                throw new IllegalStateException(&quot;The current criterion '&quot; + criterion + &quot;' is invalid.&quot;);</span>
+        }
+        
+        // Mutation: Changed the return value based on logic flaws
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        if (result) {</span>
+<span class="fc" id="L87">            return false; // False Return</span>
+        } else {
+<span class="fc" id="L89">            return true; // True Return</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

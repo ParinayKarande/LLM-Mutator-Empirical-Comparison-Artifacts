@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ProxyOutputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.output</a> &gt; <span class="el_source">ProxyOutputStream.java</span></div><h1>ProxyOutputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.output;
+
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
+import org.apache.commons.io.IOUtils;
+
+/**
+ * A Proxy stream which acts as expected, that is it passes the method
+ * calls on to the proxied stream and doesn't change which methods are
+ * being called. It is an alternative base class to FilterOutputStream
+ * to increase reusability.
+ * &lt;p&gt;
+ * See the protected methods for ways in which a subclass can easily decorate
+ * a stream with custom pre-, post- or error processing functionality.
+ * &lt;/p&gt;
+ */
+public class ProxyOutputStream extends FilterOutputStream {
+
+    public ProxyOutputStream(final OutputStream delegate) {
+<span class="fc" id="L38">        super(delegate);</span>
+<span class="fc" id="L39">    }</span>
+
+    @SuppressWarnings(&quot;unused&quot;)
+    protected void afterWrite(final int n) throws IOException {
+        // Empty return
+<span class="fc" id="L44">        return; // Empty Returns</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    protected void beforeWrite(final int n) throws IOException {
+        // Negate Conditionals: suppose we had a check, negate here for mutation
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (n &lt;= 0) {</span>
+<span class="fc" id="L51">            return; // Effectively doing nothing when n is non-positive</span>
+        }
+<span class="fc" id="L53">    }</span>
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L57">        IOUtils.close(out, this::handleIOException);</span>
+        // True return
+        // True Returns (however, the method is void)
+<span class="fc" id="L60">    }</span>
+
+    @Override
+    public void flush() throws IOException {
+        try {
+<span class="fc" id="L65">            out.flush();</span>
+<span class="nc" id="L66">        } catch (final IOException e) {</span>
+            // Invert Negatives
+<span class="nc" id="L68">            handleIOException(e); // Inverted to handle varying conditions</span>
+            // False return
+            // False Returns (however, the method is void)
+<span class="fc" id="L71">        }</span>
+<span class="fc" id="L72">    }</span>
+
+    protected void handleIOException(final IOException e) throws IOException {
+        // Primitive return to indicate the IOException info
+<span class="fc" id="L76">        throw new IOException(&quot;IOException occurred: &quot; + e.getMessage());</span>
+    }
+
+    @Override
+    public void write(final byte[] bts) throws IOException {
+        try {
+<span class="fc" id="L82">            final int len = IOUtils.length(bts);</span>
+<span class="fc" id="L83">            beforeWrite(len);</span>
+<span class="fc" id="L84">            out.write(bts);</span>
+<span class="fc" id="L85">            afterWrite(len);</span>
+<span class="nc" id="L86">        } catch (final IOException e) {</span>
+            // Void Method Calls mutated to call a different handler
+<span class="nc" id="L88">            handleIOException(e);</span>
+            // Null return
+            // Null Returns (however, the method is void)
+<span class="fc" id="L91">        }</span>
+<span class="fc" id="L92">    }</span>
+
+    @Override
+    public void write(final byte[] bts, final int st, final int end) throws IOException {
+        try {
+<span class="fc" id="L97">            beforeWrite(end);</span>
+<span class="nc" id="L98">            out.write(bts, st, end);</span>
+<span class="nc" id="L99">            afterWrite(end);</span>
+<span class="nc" id="L100">        } catch (final IOException e) {</span>
+<span class="nc" id="L101">            handleIOException(e);</span>
+            // Negative Condition
+            // Primitive Returns (returning -1 in context of void)
+<span class="nc" id="L104">        }</span>
+<span class="nc" id="L105">    }</span>
+
+    @Override
+    public void write(final int idx) throws IOException {
+        try {
+<span class="fc" id="L110">            beforeWrite(1);</span>
+<span class="fc" id="L111">            out.write(idx);</span>
+<span class="fc" id="L112">            afterWrite(1);</span>
+            // Increment: Increase idx by 1 before writing
+<span class="fc" id="L114">            out.write(idx + 1);</span>
+<span class="fc" id="L115">        } catch (final IOException e) {</span>
+<span class="nc" id="L116">            handleIOException(e);</span>
+<span class="fc" id="L117">        }</span>
+<span class="fc" id="L118">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

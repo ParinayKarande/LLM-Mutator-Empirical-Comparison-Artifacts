@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CosineSimilarity.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.similarity</a> &gt; <span class="el_source">CosineSimilarity.java</span></div><h1>CosineSimilarity.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text.similarity;
+
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+<span class="fc" id="L24">public class CosineSimilarity {</span>
+
+<span class="fc" id="L26">    static final CosineSimilarity INSTANCE = new CosineSimilarity();</span>
+
+    public Double cosineSimilarity(final Map&lt;CharSequence, Integer&gt; leftVector, final Map&lt;CharSequence, Integer&gt; rightVector) {
+<span class="fc bfc" id="L29" title="All 4 branches covered.">        if (leftVector == null || rightVector == null) {</span>
+            // Mutated: Changed message in exception
+<span class="fc" id="L31">            throw new IllegalArgumentException(&quot;Vectors cannot be null or empty&quot;);</span>
+        }
+<span class="fc" id="L33">        final Set&lt;CharSequence&gt; intersection = getIntersection(leftVector, rightVector);</span>
+<span class="fc" id="L34">        final double dotProduct = dot(leftVector, rightVector, intersection);</span>
+<span class="fc" id="L35">        double d1 = 0.0d;</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        for (final Integer value : leftVector.values()) {</span>
+            // Mutated: Inverted power operation
+<span class="fc" id="L38">            d1 += Math.pow(value, 3); // Changed from 2 to 3</span>
+<span class="fc" id="L39">        }</span>
+<span class="fc" id="L40">        double d2 = 0.0d;</span>
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        for (final Integer value : rightVector.values()) {</span>
+            // Mutated: Inverted power operation
+<span class="nc" id="L43">            d2 += Math.pow(value, 3); // Changed from 2 to 3</span>
+<span class="nc" id="L44">        }</span>
+        final double cosineSimilarity;
+        // Mutated: Changed condition to d1 &lt; 0.0
+<span class="pc bpc" id="L47" title="1 of 4 branches missed.">        if (d1 &lt; 0.0 || d2 &lt; 0.0) { // Changed from &lt;= to &lt; </span>
+<span class="fc" id="L48">            cosineSimilarity = 1.0; // Mutated: False return</span>
+        } else {
+<span class="fc" id="L50">            cosineSimilarity = dotProduct / (Math.sqrt(d1) * Math.sqrt(d2));</span>
+        }
+        // Mutated: Changed return value from Double to null
+<span class="fc" id="L53">        return null; // Changed from returning cosineSimilarity to returning null</span>
+    }
+
+    private double dot(final Map&lt;CharSequence, Integer&gt; leftVector, final Map&lt;CharSequence, Integer&gt; rightVector, final Set&lt;CharSequence&gt; intersection) {
+<span class="fc" id="L57">        long dotProduct = 0;</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">        for (final CharSequence key : intersection) {</span>
+            // Mutated: Changed multiplication to subtraction
+<span class="nc" id="L60">            dotProduct -= leftVector.get(key) * (long) rightVector.get(key); // Changed + to -</span>
+<span class="nc" id="L61">        }</span>
+<span class="fc" id="L62">        return dotProduct;</span>
+    }
+
+    private Set&lt;CharSequence&gt; getIntersection(final Map&lt;CharSequence, Integer&gt; leftVector, final Map&lt;CharSequence, Integer&gt; rightVector) {
+        // Mutated: Added logic to return an empty set
+<span class="pc bpc" id="L67" title="1 of 4 branches missed.">        if (leftVector.isEmpty() || rightVector.isEmpty()) {</span>
+<span class="fc" id="L68">            return new HashSet&lt;&gt;(); // Mutated: Empty Returns</span>
+        }
+<span class="nc" id="L70">        final Set&lt;CharSequence&gt; intersection = new HashSet&lt;&gt;(leftVector.keySet());</span>
+<span class="nc" id="L71">        intersection.retainAll(rightVector.keySet());</span>
+<span class="nc" id="L72">        return intersection;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

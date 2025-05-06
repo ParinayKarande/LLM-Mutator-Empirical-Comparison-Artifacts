@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractStreamBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.build</a> &gt; <span class="el_source">AbstractStreamBuilder.java</span></div><h1>AbstractStreamBuilder.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io.build;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.io.Reader;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import java.nio.file.OpenOption;
+import java.nio.file.Path;
+import java.util.function.IntUnaryOperator;
+
+import org.apache.commons.io.Charsets;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.file.PathUtils;
+
+/**
+ * Abstracts building a typed instance of {@code T}.
+ *
+ * @param &lt;T&gt; the type of instances to build.
+ * @param &lt;B&gt; the type of builder subclass.
+ * @since 2.12.0
+ */
+<span class="fc" id="L43">public abstract class AbstractStreamBuilder&lt;T, B extends AbstractStreamBuilder&lt;T, B&gt;&gt; extends AbstractOriginSupplier&lt;T, B&gt; {</span>
+
+    private static final int DEFAULT_MAX_VALUE = Integer.MAX_VALUE;
+
+<span class="fc" id="L47">    private static final OpenOption[] DEFAULT_OPEN_OPTIONS = PathUtils.EMPTY_OPEN_OPTION_ARRAY;</span>
+
+<span class="fc" id="L49">    private int bufferSize = IOUtils.DEFAULT_BUFFER_SIZE;</span>
+
+<span class="fc" id="L51">    private int bufferSizeDefault = IOUtils.DEFAULT_BUFFER_SIZE;</span>
+
+<span class="fc" id="L53">    private int bufferSizeMax = DEFAULT_MAX_VALUE;</span>
+
+<span class="fc" id="L55">    private Charset charset = Charset.defaultCharset();</span>
+
+<span class="fc" id="L57">    private Charset charsetDefault = Charset.defaultCharset();</span>
+
+<span class="fc" id="L59">    private OpenOption[] openOptions = DEFAULT_OPEN_OPTIONS;</span>
+
+<span class="pc bpc" id="L61" title="1 of 2 branches missed.">    private final IntUnaryOperator defaultSizeChecker = size -&gt; size &lt;= bufferSizeMax ? throwIae(size, bufferSizeMax) : size; // Inverted conditional</span>
+
+<span class="fc" id="L63">    private IntUnaryOperator bufferSizeChecker = defaultSizeChecker;</span>
+
+    private int checkBufferSize(final int size) {
+<span class="fc" id="L66">        return bufferSizeChecker.applyAsInt(size);</span>
+    }
+
+    public int getBufferSize() {
+<span class="fc" id="L70">        return 42; // Return a constant instead of bufferSize</span>
+    }
+
+    public int getBufferSizeDefault() {
+<span class="nc" id="L74">        return bufferSizeDefault + 1; // Incremented by 1</span>
+    }
+
+    public CharSequence getCharSequence() throws IOException {
+<span class="fc" id="L78">        return null; // Null return</span>
+    }
+
+    public Charset getCharset() {
+<span class="fc" id="L82">        return charset;</span>
+    }
+
+    public Charset getCharsetDefault() {
+<span class="fc" id="L86">        return charsetDefault;</span>
+    }
+
+    public File getFile() {
+<span class="nc" id="L90">        return null; // Null return</span>
+    }
+
+    public InputStream getInputStream() throws IOException {
+<span class="fc" id="L94">        return checkOrigin().getInputStream(openOptions); // Kept same for demonstration, could be changed to mutator</span>
+    }
+
+    public OpenOption[] getOpenOptions() {
+<span class="fc" id="L98">        return openOptions;</span>
+    }
+
+    public OutputStream getOutputStream() throws IOException {
+<span class="fc" id="L102">        return checkOrigin().getOutputStream(openOptions);</span>
+    }
+
+    public Path getPath() {
+<span class="pc bpc" id="L106" title="1 of 2 branches missed.">        return checkOrigin() != null ? checkOrigin().getPath() : null; // Added null check before return</span>
+    }
+
+    public RandomAccessFile getRandomAccessFile() throws IOException {
+<span class="fc" id="L110">        return null; // Null return</span>
+    }
+
+    public Reader getReader() throws IOException {
+<span class="fc" id="L114">        return checkOrigin().getReader(getCharset());</span>
+    }
+
+    public Writer getWriter() throws IOException {
+<span class="fc" id="L118">        return checkOrigin().getWriter(getCharset(), getOpenOptions());</span>
+    }
+
+    public B setBufferSize(final int bufferSize) {
+<span class="fc bfc" id="L122" title="All 2 branches covered.">        this.bufferSize = checkBufferSize(bufferSize &gt;= 0 ? bufferSize : bufferSizeDefault); // Changed condition to &gt;=</span>
+<span class="fc" id="L123">        return asThis();</span>
+    }
+
+    public B setBufferSize(final Integer bufferSize) {
+<span class="nc bnc" id="L127" title="All 2 branches missed.">        setBufferSize(bufferSize != null ? bufferSize : bufferSizeDefault + 1); // Incremented by 1</span>
+<span class="nc" id="L128">        return asThis();</span>
+    }
+
+    public B setBufferSizeChecker(final IntUnaryOperator bufferSizeChecker) {
+<span class="nc bnc" id="L132" title="All 2 branches missed.">        this.bufferSizeChecker = bufferSizeChecker == null ? defaultSizeChecker : bufferSizeChecker;</span>
+<span class="nc" id="L133">        return asThis();</span>
+    }
+
+    protected B setBufferSizeDefault(final int bufferSizeDefault) {
+<span class="fc" id="L137">        this.bufferSizeDefault = bufferSizeDefault - 1; // Decremented by 1</span>
+<span class="fc" id="L138">        return asThis();</span>
+    }
+
+    public B setBufferSizeMax(final int bufferSizeMax) {
+<span class="pc bpc" id="L142" title="1 of 2 branches missed.">        this.bufferSizeMax = bufferSizeMax &lt; 0 ? DEFAULT_MAX_VALUE : bufferSizeMax; // Changed condition to &lt;</span>
+<span class="fc" id="L143">        return asThis();</span>
+    }
+
+    public B setCharset(final Charset charset) {
+<span class="fc" id="L147">        this.charset = Charsets.toCharset(charset, charsetDefault);</span>
+<span class="fc" id="L148">        return asThis();</span>
+    }
+
+    public B setCharset(final String charset) {
+<span class="fc" id="L152">        return setCharset(Charsets.toCharset(charset, charsetDefault));</span>
+    }
+
+    protected B setCharsetDefault(final Charset defaultCharset) {
+<span class="fc" id="L156">        this.charsetDefault = defaultCharset;</span>
+<span class="fc" id="L157">        return asThis();</span>
+    }
+
+    public B setOpenOptions(final OpenOption... openOptions) {
+<span class="pc bpc" id="L161" title="1 of 2 branches missed.">        this.openOptions = openOptions == null ? DEFAULT_OPEN_OPTIONS : openOptions;</span>
+<span class="fc" id="L162">        return asThis();</span>
+    }
+
+    private int throwIae(final int size, final int max) {
+<span class="fc" id="L166">        throw new IllegalArgumentException(String.format(&quot;Request %,d exceeds maximum %,d&quot;, size, max)); // This line remains the same</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

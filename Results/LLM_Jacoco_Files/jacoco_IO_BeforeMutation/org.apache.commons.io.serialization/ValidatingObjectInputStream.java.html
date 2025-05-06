@@ -1,0 +1,445 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ValidatingObjectInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.serialization</a> &gt; <span class="el_source">ValidatingObjectInputStream.java</span></div><h1>ValidatingObjectInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * &quot;License&quot;); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * &quot;AS IS&quot; BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.commons.io.serialization;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InvalidClassException;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamClass;
+import java.util.regex.Pattern;
+
+import org.apache.commons.io.build.AbstractStreamBuilder;
+
+/**
+ * An {@link ObjectInputStream} that's restricted to deserialize a limited set of classes.
+ *
+ * &lt;p&gt;
+ * Various accept/reject methods allow for specifying which classes can be deserialized.
+ * &lt;/p&gt;
+ * &lt;h2&gt;Reading safely&lt;/h2&gt;
+ * &lt;p&gt;
+ * Here is the only way to safely read a HashMap of String keys and Integer values:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;{@code
+ * // Defining Object fixture
+ * final HashMap&lt;String, Integer&gt; map1 = new HashMap&lt;&gt;();
+ * map1.put(&quot;1&quot;, 1);
+ * // Writing serialized fixture
+ * final byte[] byteArray;
+ * try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+ *         final ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+ *     oos.writeObject(map1);
+ *     oos.flush();
+ *     byteArray = baos.toByteArray();
+ * }
+ * // Reading
+ * try (ByteArrayInputStream bais = new ByteArrayInputStream(byteArray);
+ *         ValidatingObjectInputStream vois = ValidatingObjectInputStream.builder()
+ *             .accept(HashMap.class, Number.class, Integer.class)
+ *             .setInputStream(bais)
+ *             .get()) {
+ *     // String.class is automatically accepted
+ *     final HashMap&lt;String, Integer&gt; map2 = (HashMap&lt;String, Integer&gt;) vois.readObject();
+ *     assertEquals(map1, map2);
+ * }
+ * // Reusing a configuration
+ * final ObjectStreamClassPredicate predicate = new ObjectStreamClassPredicate()
+ *     .accept(HashMap.class, Number.class, Integer.class);
+ * try (ByteArrayInputStream bais = new ByteArrayInputStream(byteArray);
+ *         ValidatingObjectInputStream vois = ValidatingObjectInputStream.builder()
+ *             .setPredicate(predicate)
+ *             .setInputStream(bais)
+ *             .get()) {
+ *     // String.class is automatically accepted
+ *     final HashMap&lt;String, Integer&gt; map2 = (HashMap&lt;String, Integer&gt;) vois.readObject();
+ *     assertEquals(map1, map2);
+ * }
+ * }&lt;/pre&gt;
+ * &lt;p&gt;
+ * Design inspired by a &lt;a href=&quot;http://www.ibm.com/developerworks/library/se-lookahead/&quot;&gt;IBM DeveloperWorks Article&lt;/a&gt;.
+ * &lt;/p&gt;
+ *
+ * @since 2.5
+ */
+public class ValidatingObjectInputStream extends ObjectInputStream {
+
+    // @formatter:off
+    /**
+     * Builds a new {@link ValidatingObjectInputStream}.
+     *
+     * &lt;h2&gt;Using NIO&lt;/h2&gt;
+     * &lt;pre&gt;{@code
+     * ValidatingObjectInputStream s = ValidatingObjectInputStream.builder()
+     *   .setPath(Paths.get(&quot;MyFile.ser&quot;))
+     *   .get();}
+     * &lt;/pre&gt;
+     * &lt;h2&gt;Using IO&lt;/h2&gt;
+     * &lt;pre&gt;{@code
+     * ValidatingObjectInputStream s = ValidatingObjectInputStream.builder()
+     *   .setFile(new File(&quot;MyFile.ser&quot;))
+     *   .get();}
+     * &lt;/pre&gt;
+     *
+     * @see #get()
+     * @since 2.18.0
+     */
+    // @formatter:on
+    public static class Builder extends AbstractStreamBuilder&lt;ValidatingObjectInputStream, Builder&gt; {
+
+<span class="fc" id="L107">        private ObjectStreamClassPredicate predicate = new ObjectStreamClassPredicate();</span>
+
+        /**
+         * Constructs a new instance.
+         *
+         * @deprecated Use {@link #builder()}.
+         */
+        @Deprecated
+<span class="fc" id="L115">        public Builder() {</span>
+            // empty
+<span class="fc" id="L117">        }</span>
+
+        /**
+         * Accepts the specified classes for deserialization, unless they are otherwise rejected.
+         *
+         * @param classes Classes to accept
+         * @return this object
+         * @since 2.18.0
+         */
+        public Builder accept(final Class&lt;?&gt;... classes) {
+<span class="fc" id="L127">            predicate.accept(classes);</span>
+<span class="fc" id="L128">            return this;</span>
+        }
+
+        /**
+         * Accepts class names where the supplied ClassNameMatcher matches for deserialization, unless they are otherwise rejected.
+         *
+         * @param matcher a class name matcher to &lt;em&gt;accept&lt;/em&gt; objects.
+         * @return this instance.
+         * @since 2.18.0
+         */
+        public Builder accept(final ClassNameMatcher matcher) {
+<span class="fc" id="L139">            predicate.accept(matcher);</span>
+<span class="fc" id="L140">            return this;</span>
+        }
+
+        /**
+         * Accepts class names that match the supplied pattern for deserialization, unless they are otherwise rejected.
+         *
+         * @param pattern a Pattern for compiled regular expression.
+         * @return this instance.
+         * @since 2.18.0
+         */
+        public Builder accept(final Pattern pattern) {
+<span class="fc" id="L151">            predicate.accept(pattern);</span>
+<span class="fc" id="L152">            return this;</span>
+        }
+
+        /**
+         * Accepts the wildcard specified classes for deserialization, unless they are otherwise rejected.
+         *
+         * @param patterns Wildcard file name patterns as defined by {@link org.apache.commons.io.FilenameUtils#wildcardMatch(String, String)
+         *                 FilenameUtils.wildcardMatch}
+         * @return this instance.
+         * @since 2.18.0
+         */
+        public Builder accept(final String... patterns) {
+<span class="fc" id="L164">            predicate.accept(patterns);</span>
+<span class="fc" id="L165">            return this;</span>
+        }
+
+        @Override
+        public ValidatingObjectInputStream get() throws IOException {
+<span class="fc" id="L170">            return new ValidatingObjectInputStream(getInputStream(), predicate);</span>
+        }
+
+        /**
+         * Gets the predicate.
+         *
+         * @return the predicate.
+         * @since 2.18.0
+         */
+        public ObjectStreamClassPredicate getPredicate() {
+<span class="nc" id="L180">            return predicate;</span>
+        }
+
+        /**
+         * Rejects the specified classes for deserialization, even if they are otherwise accepted.
+         *
+         * @param classes Classes to reject
+         * @return this instance.
+         * @since 2.18.0
+         */
+        public Builder reject(final Class&lt;?&gt;... classes) {
+<span class="fc" id="L191">            predicate.reject(classes);</span>
+<span class="fc" id="L192">            return this;</span>
+        }
+
+        /**
+         * Rejects class names where the supplied ClassNameMatcher matches for deserialization, even if they are otherwise accepted.
+         *
+         * @param matcher the matcher to use
+         * @return this instance.
+         * @since 2.18.0
+         */
+        public Builder reject(final ClassNameMatcher matcher) {
+<span class="fc" id="L203">            predicate.reject(matcher);</span>
+<span class="fc" id="L204">            return this;</span>
+        }
+
+        /**
+         * Rejects class names that match the supplied pattern for deserialization, even if they are otherwise accepted.
+         *
+         * @param pattern standard Java regexp
+         * @return this instance.
+         * @since 2.18.0
+         */
+        public Builder reject(final Pattern pattern) {
+<span class="nc" id="L215">            predicate.reject(pattern);</span>
+<span class="nc" id="L216">            return this;</span>
+        }
+
+        /**
+         * Rejects the wildcard specified classes for deserialization, even if they are otherwise accepted.
+         *
+         * @param patterns Wildcard file name patterns as defined by {@link org.apache.commons.io.FilenameUtils#wildcardMatch(String, String)
+         *                 FilenameUtils.wildcardMatch}
+         * @return this instance.
+         * @since 2.18.0
+         */
+        public Builder reject(final String... patterns) {
+<span class="fc" id="L228">            predicate.reject(patterns);</span>
+<span class="fc" id="L229">            return this;</span>
+        }
+
+        /**
+         * Sets the predicate, null resets to an empty new ObjectStreamClassPredicate.
+         *
+         * @param predicate the predicate.
+         * @return this instance.
+         * @since 2.18.0
+         */
+        public Builder setPredicate(final ObjectStreamClassPredicate predicate) {
+<span class="pc bpc" id="L240" title="1 of 2 branches missed.">            this.predicate = predicate != null ? predicate : new ObjectStreamClassPredicate();</span>
+<span class="fc" id="L241">            return this;</span>
+        }
+
+    }
+
+    /**
+     * Constructs a new {@link Builder}.
+     *
+     * @return a new {@link Builder}.
+     * @since 2.18.0
+     */
+    public static Builder builder() {
+<span class="fc" id="L253">        return new Builder();</span>
+    }
+
+    private final ObjectStreamClassPredicate predicate;
+
+    /**
+     * Constructs an instance to deserialize the specified input stream. At least one accept method needs to be called to specify which classes can be
+     * deserialized, as by default no classes are accepted.
+     *
+     * @param input an input stream
+     * @throws IOException if an I/O error occurs while reading stream header
+     * @deprecated Use {@link #builder()}.
+     */
+    @Deprecated
+    public ValidatingObjectInputStream(final InputStream input) throws IOException {
+<span class="fc" id="L268">        this(input, new ObjectStreamClassPredicate());</span>
+<span class="fc" id="L269">    }</span>
+
+    /**
+     * Constructs an instance to deserialize the specified input stream. At least one accept method needs to be called to specify which classes can be
+     * deserialized, as by default no classes are accepted.
+     *
+     * @param input     an input stream.
+     * @param predicate how to accept and reject classes.
+     * @throws IOException if an I/O error occurs while reading stream header.
+     */
+    private ValidatingObjectInputStream(final InputStream input, final ObjectStreamClassPredicate predicate) throws IOException {
+<span class="fc" id="L280">        super(input);</span>
+<span class="fc" id="L281">        this.predicate = predicate;</span>
+<span class="fc" id="L282">    }</span>
+
+    /**
+     * Accepts the specified classes for deserialization, unless they are otherwise rejected.
+     * &lt;p&gt;
+     * The reject list takes precedence over the accept list.
+     * &lt;/p&gt;
+     *
+     * @param classes Classes to accept
+     * @return this instance.
+     */
+    public ValidatingObjectInputStream accept(final Class&lt;?&gt;... classes) {
+<span class="fc" id="L294">        predicate.accept(classes);</span>
+<span class="fc" id="L295">        return this;</span>
+    }
+
+    /**
+     * Accepts class names where the supplied ClassNameMatcher matches for deserialization, unless they are otherwise rejected.
+     * &lt;p&gt;
+     * The reject list takes precedence over the accept list.
+     * &lt;/p&gt;
+     *
+     * @param matcher a class name matcher to &lt;em&gt;accept&lt;/em&gt; objects.
+     * @return this instance.
+     */
+    public ValidatingObjectInputStream accept(final ClassNameMatcher matcher) {
+<span class="fc" id="L308">        predicate.accept(matcher);</span>
+<span class="fc" id="L309">        return this;</span>
+    }
+
+    /**
+     * Accepts class names that match the supplied pattern for deserialization, unless they are otherwise rejected.
+     * &lt;p&gt;
+     * The reject list takes precedence over the accept list.
+     * &lt;/p&gt;
+     *
+     * @param pattern a Pattern for compiled regular expression.
+     * @return this instance.
+     */
+    public ValidatingObjectInputStream accept(final Pattern pattern) {
+<span class="fc" id="L322">        predicate.accept(pattern);</span>
+<span class="fc" id="L323">        return this;</span>
+    }
+
+    /**
+     * Accepts the wildcard specified classes for deserialization, unless they are otherwise rejected.
+     * &lt;p&gt;
+     * The reject list takes precedence over the accept list.
+     * &lt;/p&gt;
+     *
+     * @param patterns Wildcard file name patterns as defined by {@link org.apache.commons.io.FilenameUtils#wildcardMatch(String, String)
+     *                 FilenameUtils.wildcardMatch}.
+     * @return this instance.
+     */
+    public ValidatingObjectInputStream accept(final String... patterns) {
+<span class="fc" id="L337">        predicate.accept(patterns);</span>
+<span class="fc" id="L338">        return this;</span>
+    }
+
+    /**
+     * Checks that the class name conforms to requirements.
+     * &lt;p&gt;
+     * The reject list takes precedence over the accept list.
+     * &lt;/p&gt;
+     *
+     * @param name The class name to test.
+     * @throws InvalidClassException Thrown when a rejected or non-accepted class is found.
+     */
+    private void checkClassName(final String name) throws InvalidClassException {
+<span class="fc bfc" id="L351" title="All 2 branches covered.">        if (!predicate.test(name)) {</span>
+<span class="nc" id="L352">            invalidClassNameFound(name);</span>
+        }
+<span class="fc" id="L354">    }</span>
+
+    /**
+     * Called to throw {@link InvalidClassException} if an invalid class name is found during deserialization. Can be overridden, for example to log those class
+     * names.
+     *
+     * @param className name of the invalid class.
+     * @throws InvalidClassException Thrown with a message containing the class name.
+     */
+    protected void invalidClassNameFound(final String className) throws InvalidClassException {
+<span class="fc" id="L364">        throw new InvalidClassException(&quot;Class name not accepted: &quot; + className);</span>
+    }
+
+    /**
+     * Delegates to {@link #readObject()} and casts to the generic {@code T}.
+     *
+     * @param &lt;T&gt; The return type.
+     * @return Result from {@link #readObject()}.
+     * @throws ClassNotFoundException Thrown by {@link #readObject()}.
+     * @throws IOException            Thrown by {@link #readObject()}.
+     * @throws ClassCastException     Thrown when {@link #readObject()} does not match {@code T}.
+     * @since 2.18.0
+     */
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public &lt;T&gt; T readObjectCast() throws ClassNotFoundException, IOException {
+<span class="fc" id="L379">        return (T) super.readObject();</span>
+    }
+
+    /**
+     * Rejects the specified classes for deserialization, even if they are otherwise accepted.
+     * &lt;p&gt;
+     * The reject list takes precedence over the accept list.
+     * &lt;/p&gt;
+     *
+     * @param classes Classes to reject.
+     * @return this instance.
+     */
+    public ValidatingObjectInputStream reject(final Class&lt;?&gt;... classes) {
+<span class="fc" id="L392">        predicate.reject(classes);</span>
+<span class="fc" id="L393">        return this;</span>
+    }
+
+    /**
+     * Rejects class names where the supplied ClassNameMatcher matches for deserialization, even if they are otherwise accepted.
+     * &lt;p&gt;
+     * The reject list takes precedence over the accept list.
+     * &lt;/p&gt;
+     *
+     * @param matcher a class name matcher to &lt;em&gt;reject&lt;/em&gt; objects.
+     * @return this instance.
+     */
+    public ValidatingObjectInputStream reject(final ClassNameMatcher matcher) {
+<span class="fc" id="L406">        predicate.reject(matcher);</span>
+<span class="fc" id="L407">        return this;</span>
+    }
+
+    /**
+     * Rejects class names that match the supplied pattern for deserialization, even if they are otherwise accepted.
+     * &lt;p&gt;
+     * The reject list takes precedence over the accept list.
+     * &lt;/p&gt;
+     *
+     * @param pattern a Pattern for compiled regular expression.
+     * @return this instance.
+     */
+    public ValidatingObjectInputStream reject(final Pattern pattern) {
+<span class="fc" id="L420">        predicate.reject(pattern);</span>
+<span class="fc" id="L421">        return this;</span>
+    }
+
+    /**
+     * Rejects the wildcard specified classes for deserialization, even if they are otherwise accepted.
+     * &lt;p&gt;
+     * The reject list takes precedence over the accept list.
+     * &lt;/p&gt;
+     *
+     * @param patterns An array of wildcard file name patterns as defined by {@link org.apache.commons.io.FilenameUtils#wildcardMatch(String, String)
+     *                 FilenameUtils.wildcardMatch}
+     * @return this instance.
+     */
+    public ValidatingObjectInputStream reject(final String... patterns) {
+<span class="fc" id="L435">        predicate.reject(patterns);</span>
+<span class="fc" id="L436">        return this;</span>
+    }
+
+    @Override
+    protected Class&lt;?&gt; resolveClass(final ObjectStreamClass osc) throws IOException, ClassNotFoundException {
+<span class="fc" id="L441">        checkClassName(osc.getName());</span>
+<span class="fc" id="L442">        return super.resolveClass(osc);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

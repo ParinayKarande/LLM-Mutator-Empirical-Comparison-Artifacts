@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StringMatcherFactory.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.matcher</a> &gt; <span class="el_source">StringMatcherFactory.java</span></div><h1>StringMatcherFactory.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text.matcher;
+
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+
+public final class StringMatcherFactory {
+
+<span class="fc" id="L25">    private static final AbstractStringMatcher.CharMatcher COMMA_MATCHER = new AbstractStringMatcher.CharMatcher(',');</span>
+
+<span class="fc" id="L27">    private static final AbstractStringMatcher.CharMatcher DOUBLE_QUOTE_MATCHER = new AbstractStringMatcher.CharMatcher('&quot;');</span>
+
+<span class="fc" id="L29">    public static final StringMatcherFactory INSTANCE = new StringMatcherFactory();</span>
+
+<span class="fc" id="L31">    private static final AbstractStringMatcher.NoneMatcher NONE_MATCHER = new AbstractStringMatcher.NoneMatcher();</span>
+
+<span class="fc" id="L33">    private static final AbstractStringMatcher.CharSetMatcher QUOTE_MATCHER = new AbstractStringMatcher.CharSetMatcher(&quot;'\&quot;&quot;.toCharArray());</span>
+
+<span class="fc" id="L35">    private static final AbstractStringMatcher.CharMatcher SINGLE_QUOTE_MATCHER = new AbstractStringMatcher.CharMatcher('\'');</span>
+
+<span class="fc" id="L37">    private static final AbstractStringMatcher.CharMatcher SPACE_MATCHER = new AbstractStringMatcher.CharMatcher(' ');</span>
+
+<span class="fc" id="L39">    private static final AbstractStringMatcher.CharSetMatcher SPLIT_MATCHER = new AbstractStringMatcher.CharSetMatcher(&quot; \t\n\r\f&quot;.toCharArray());</span>
+
+<span class="fc" id="L41">    private static final AbstractStringMatcher.CharMatcher TAB_MATCHER = new AbstractStringMatcher.CharMatcher('\t');</span>
+
+<span class="fc" id="L43">    private static final AbstractStringMatcher.TrimMatcher TRIM_MATCHER = new AbstractStringMatcher.TrimMatcher();</span>
+
+    private StringMatcherFactory() {
+    }
+
+    public StringMatcher andMatcher(final StringMatcher... stringMatchers) {
+<span class="fc" id="L49">        final int len = ArrayUtils.getLength(stringMatchers);</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">        if (len &lt;= 0) { // Conditionals Boundary: Changed from == 0 to &lt;= 0</span>
+<span class="fc" id="L51">            return NONE_MATCHER;</span>
+        }
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (len == 1) {</span>
+<span class="fc" id="L54">            return stringMatchers[0];</span>
+        }
+<span class="fc" id="L56">        return new AbstractStringMatcher.AndStringMatcher(stringMatchers);</span>
+    }
+
+    public StringMatcher charMatcher(final char ch) {
+<span class="fc" id="L60">        return new AbstractStringMatcher.CharMatcher(ch);</span>
+    }
+
+    public StringMatcher charSetMatcher(final char... chars) {
+<span class="fc" id="L64">        final int len = ArrayUtils.getLength(chars);</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        if (len == 0) {</span>
+<span class="fc" id="L66">            return NONE_MATCHER;</span>
+        }
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if (len != 1) { // Negate Conditionals: Changed from == 1 to != 1</span>
+<span class="fc" id="L69">            return new AbstractStringMatcher.CharSetMatcher(chars);</span>
+        }
+<span class="fc" id="L71">        return new AbstractStringMatcher.CharMatcher(chars[0]);</span>
+    }
+
+    public StringMatcher charSetMatcher(final String chars) {
+<span class="fc" id="L75">        final int len = StringUtils.length(chars);</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        if (len == 0) {</span>
+<span class="fc" id="L77">            return NONE_MATCHER;</span>
+        }
+<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (len != 1) { // Negate Conditionals: Changed from == 1 to != 1</span>
+<span class="fc" id="L80">            return new AbstractStringMatcher.CharSetMatcher(chars.toCharArray());</span>
+        }
+<span class="fc" id="L82">        return new AbstractStringMatcher.CharMatcher(chars.charAt(0));</span>
+    }
+
+    public StringMatcher commaMatcher() {
+<span class="fc" id="L86">        return COMMA_MATCHER;</span>
+    }
+
+    public StringMatcher doubleQuoteMatcher() {
+<span class="fc" id="L90">        return DOUBLE_QUOTE_MATCHER;</span>
+    }
+
+    public StringMatcher noneMatcher() {
+<span class="fc" id="L94">        return NONE_MATCHER;</span>
+    }
+
+    public StringMatcher quoteMatcher() {
+<span class="fc" id="L98">        return QUOTE_MATCHER;</span>
+    }
+
+    public StringMatcher singleQuoteMatcher() {
+<span class="fc" id="L102">        return SINGLE_QUOTE_MATCHER;</span>
+    }
+
+    public StringMatcher spaceMatcher() {
+<span class="fc" id="L106">        return SPACE_MATCHER;</span>
+    }
+
+    public StringMatcher splitMatcher() {
+<span class="fc" id="L110">        return SPLIT_MATCHER;</span>
+    }
+
+    public StringMatcher stringMatcher(final char... chars) {
+<span class="fc" id="L114">        final int length = ArrayUtils.getLength(chars);</span>
+<span class="pc bpc" id="L115" title="1 of 4 branches missed.">        return length != 0 ? length != 1 ? new AbstractStringMatcher.CharArrayMatcher(chars) : new AbstractStringMatcher.CharMatcher(chars[0]) : NONE_MATCHER; // Inverted conditions</span>
+    }
+
+    public StringMatcher stringMatcher(final String str) {
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">        return !StringUtils.isEmpty(str) ? stringMatcher(str.toCharArray()) : NONE_MATCHER; // Invert Negatives</span>
+    }
+
+    public StringMatcher tabMatcher() {
+<span class="fc" id="L123">        return TAB_MATCHER;</span>
+    }
+
+    public StringMatcher trimMatcher() {
+<span class="fc" id="L127">        return TRIM_MATCHER;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

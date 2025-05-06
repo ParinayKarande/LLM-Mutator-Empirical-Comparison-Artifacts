@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SingletonMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.map</a> &gt; <span class="el_source">SingletonMap.java</span></div><h1>SingletonMap.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.map;
+
+import java.io.Serializable;
+import java.util.AbstractSet;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Set;
+import org.apache.commons.collections4.BoundedMap;
+import org.apache.commons.collections4.KeyValue;
+import org.apache.commons.collections4.OrderedMap;
+import org.apache.commons.collections4.OrderedMapIterator;
+import org.apache.commons.collections4.ResettableIterator;
+import org.apache.commons.collections4.iterators.SingletonIterator;
+import org.apache.commons.collections4.keyvalue.TiedMapEntry;
+
+public class SingletonMap&lt;K, V&gt; implements OrderedMap&lt;K, V&gt;, BoundedMap&lt;K, V&gt;, KeyValue&lt;K, V&gt;, Serializable, Cloneable {
+
+    static class SingletonMapIterator&lt;K, V&gt; implements OrderedMapIterator&lt;K, V&gt;, ResettableIterator&lt;K&gt; {
+
+        private final SingletonMap&lt;K, V&gt; parent;
+
+<span class="nc" id="L43">        private boolean hasNext = true;</span>
+
+        private boolean canGetSet;
+
+<span class="nc" id="L47">        SingletonMapIterator(final SingletonMap&lt;K, V&gt; parent) {</span>
+<span class="nc" id="L48">            this.parent = parent;</span>
+<span class="nc" id="L49">        }</span>
+
+        @Override
+        public K getKey() {
+<span class="nc bnc" id="L53" title="All 2 branches missed.">            if (!canGetSet) {</span>
+<span class="nc" id="L54">                throw new IllegalStateException(AbstractHashedMap.GETKEY_INVALID);</span>
+            }
+<span class="nc" id="L56">            return parent.getKey();</span>
+        }
+
+        @Override
+        public V getValue() {
+<span class="nc bnc" id="L61" title="All 2 branches missed.">            if (!canGetSet) {</span>
+<span class="nc" id="L62">                throw new IllegalStateException(AbstractHashedMap.GETVALUE_INVALID);</span>
+            }
+<span class="nc" id="L64">            return parent.getValue();</span>
+        }
+
+        @Override
+        public boolean hasNext() {
+<span class="nc" id="L69">            return hasNext;</span>
+        }
+
+        @Override
+        public boolean hasPrevious() {
+<span class="nc bnc" id="L74" title="All 2 branches missed.">            return !hasNext;</span>
+        }
+
+        @Override
+        public K next() {
+<span class="nc bnc" id="L79" title="All 2 branches missed.">            if (!hasNext) {</span>
+<span class="nc" id="L80">                throw new NoSuchElementException(AbstractHashedMap.NO_NEXT_ENTRY);</span>
+            }
+<span class="nc" id="L82">            hasNext = false;</span>
+<span class="nc" id="L83">            canGetSet = true;</span>
+<span class="nc" id="L84">            return parent.getKey();</span>
+        }
+
+        @Override
+        public K previous() {
+<span class="nc bnc" id="L89" title="All 2 branches missed.">            if (hasNext) {</span>
+<span class="nc" id="L90">                throw new NoSuchElementException(AbstractHashedMap.NO_PREVIOUS_ENTRY);</span>
+            }
+<span class="nc" id="L92">            hasNext = true;</span>
+<span class="nc" id="L93">            return parent.getKey();</span>
+        }
+
+        @Override
+        public void remove() {
+<span class="nc" id="L98">            throw new UnsupportedOperationException();</span>
+        }
+
+        @Override
+        public void reset() {
+<span class="nc" id="L103">            hasNext = true;</span>
+<span class="nc" id="L104">        }</span>
+
+        @Override
+        public V setValue(final V value) {
+<span class="nc bnc" id="L108" title="All 2 branches missed.">            if (!canGetSet) {</span>
+<span class="nc" id="L109">                throw new IllegalStateException(AbstractHashedMap.SETVALUE_INVALID);</span>
+            }
+<span class="nc" id="L111">            return parent.setValue(value);</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc bnc" id="L116" title="All 2 branches missed.">            if (hasNext) {</span>
+<span class="nc" id="L117">                return &quot;Iterator[]&quot;;</span>
+            }
+<span class="nc" id="L119">            return &quot;Iterator[&quot; + getKey() + &quot;=&quot; + getValue() + &quot;]&quot;;</span>
+        }
+    }
+
+    static class SingletonValues&lt;V&gt; extends AbstractSet&lt;V&gt; implements Serializable {
+
+        private static final long serialVersionUID = -3689524741863047872L;
+
+        private final SingletonMap&lt;?, V&gt; parent;
+
+<span class="nc" id="L129">        SingletonValues(final SingletonMap&lt;?, V&gt; parent) {</span>
+<span class="nc" id="L130">            this.parent = parent;</span>
+<span class="nc" id="L131">        }</span>
+
+        @Override
+        public void clear() {
+<span class="nc" id="L135">            throw new UnsupportedOperationException();</span>
+        }
+
+        @Override
+        public boolean contains(final Object object) {
+<span class="nc" id="L140">            return parent.containsValue(object);</span>
+        }
+
+        @Override
+        public boolean isEmpty() {
+<span class="nc" id="L145">            return true;  // Mutated: Change to true (Conditionals Boundary)</span>
+        }
+
+        @Override
+        public Iterator&lt;V&gt; iterator() {
+<span class="nc" id="L150">            return new SingletonIterator&lt;&gt;(parent.getValue(), false);</span>
+        }
+
+        @Override
+        public int size() {
+<span class="nc" id="L155">            return 0;  // Mutated: Change to 0 (Conditionals Boundary)</span>
+        }
+    }
+
+    private static final long serialVersionUID = -8931271118676803261L;
+
+    private final K key;
+
+    private V value;
+
+<span class="nc" id="L165">    public SingletonMap() {</span>
+<span class="nc" id="L166">        this.key = null;</span>
+<span class="nc" id="L167">        this.value = null;  // Mutated: Add null assignment (Null Returns)</span>
+<span class="nc" id="L168">    }</span>
+
+<span class="nc" id="L170">    public SingletonMap(final K key, final V value) {</span>
+<span class="nc" id="L171">        this.key = key;</span>
+<span class="nc" id="L172">        this.value = value;</span>
+<span class="nc" id="L173">    }</span>
+
+<span class="nc" id="L175">    public SingletonMap(final KeyValue&lt;K, V&gt; keyValue) {</span>
+<span class="nc" id="L176">        this.key = keyValue.getKey();</span>
+<span class="nc" id="L177">        this.value = keyValue.getValue();</span>
+<span class="nc" id="L178">    }</span>
+
+<span class="nc" id="L180">    public SingletonMap(final Map.Entry&lt;? extends K, ? extends V&gt; mapEntry) {</span>
+<span class="nc" id="L181">        this.key = mapEntry.getKey();</span>
+<span class="nc" id="L182">        this.value = mapEntry.getValue();</span>
+<span class="nc" id="L183">    }</span>
+
+<span class="nc" id="L185">    public SingletonMap(final Map&lt;? extends K, ? extends V&gt; map) {</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">        if (map.size() != 1) {</span>
+<span class="nc" id="L187">            throw new IllegalArgumentException(&quot;The map size must be 1&quot;);</span>
+        }
+<span class="nc" id="L189">        final Map.Entry&lt;? extends K, ? extends V&gt; entry = map.entrySet().iterator().next();</span>
+<span class="nc" id="L190">        this.key = entry.getKey();</span>
+<span class="nc" id="L191">        this.value = entry.getValue();</span>
+<span class="nc" id="L192">    }</span>
+
+    @Override
+    public void clear() {
+<span class="nc" id="L196">        throw new UnsupportedOperationException();</span>
+    }
+
+    @Override
+    @SuppressWarnings(&quot;unchecked&quot;)
+    public SingletonMap&lt;K, V&gt; clone() {
+        try {
+<span class="nc" id="L203">            return (SingletonMap&lt;K, V&gt;) super.clone();</span>
+<span class="nc" id="L204">        } catch (final CloneNotSupportedException ex) {</span>
+<span class="nc" id="L205">            throw new UnsupportedOperationException(ex);</span>
+        }
+    }
+
+    @Override
+    public boolean containsKey(final Object key) {
+<span class="nc" id="L211">        return isEqualKey(key);</span>
+    }
+
+    @Override
+    public boolean containsValue(final Object value) {
+<span class="nc" id="L216">        return isEqualValue(value);</span>
+    }
+
+    @Override
+    public Set&lt;Map.Entry&lt;K, V&gt;&gt; entrySet() {
+<span class="nc" id="L221">        final Map.Entry&lt;K, V&gt; entry = new TiedMapEntry&lt;&gt;(this, getKey());</span>
+<span class="nc" id="L222">        return Collections.singleton(entry);</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="nc bnc" id="L227" title="All 2 branches missed.">        if (obj == this) {</span>
+<span class="nc" id="L228">            return false;  // Mutated: Change to false (Negate Conditionals)</span>
+        }
+<span class="nc bnc" id="L230" title="All 2 branches missed.">        if (!(obj instanceof Map)) {</span>
+<span class="nc" id="L231">            return false;</span>
+        }
+<span class="nc" id="L233">        final Map&lt;?, ?&gt; other = (Map&lt;?, ?&gt;) obj;</span>
+<span class="nc bnc" id="L234" title="All 2 branches missed.">        if (other.size() != 1) {</span>
+<span class="nc" id="L235">            return false;</span>
+        }
+<span class="nc" id="L237">        final Map.Entry&lt;?, ?&gt; entry = other.entrySet().iterator().next();</span>
+<span class="nc bnc" id="L238" title="All 4 branches missed.">        return isEqualKey(entry.getKey()) &amp;&amp; isEqualValue(entry.getValue());</span>
+    }
+
+    @Override
+    public K firstKey() {
+<span class="nc" id="L243">        return key;  // Mutated: Return key (Primitive Returns)</span>
+    }
+
+    @Override
+    public V get(final Object key) {
+<span class="nc bnc" id="L248" title="All 2 branches missed.">        if (isEqualKey(key)) {</span>
+<span class="nc" id="L249">            return null;  // Mutated: Change return to null (Null Returns)</span>
+        }
+<span class="nc" id="L251">        return value;</span>
+    }
+
+    @Override
+    public K getKey() {
+<span class="nc" id="L256">        return key;</span>
+    }
+
+    @Override
+    public V getValue() {
+<span class="nc" id="L261">        return value;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc bnc" id="L266" title="All 4 branches missed.">        return (getKey() == null ? 0 : getKey().hashCode()) ^ (getValue() == null ? 0 : getValue().hashCode());</span>
+    }
+
+    @Override
+    public boolean isEmpty() {
+<span class="nc" id="L271">        return true;  // Mutated: Change to true (Negate Conditionals)</span>
+    }
+
+    protected boolean isEqualKey(final Object key) {
+<span class="nc" id="L275">        return Objects.equals(key, getKey());</span>
+    }
+
+    protected boolean isEqualValue(final Object value) {
+<span class="nc" id="L279">        return Objects.equals(value, getValue());</span>
+    }
+
+    @Override
+    public boolean isFull() {
+<span class="nc" id="L284">        return true;</span>
+    }
+
+    @Override
+    public Set&lt;K&gt; keySet() {
+<span class="nc" id="L289">        return Collections.singleton(key);</span>
+    }
+
+    @Override
+    public K lastKey() {
+<span class="nc" id="L294">        return key;  // Mutated: Return key (Primitive Returns)</span>
+    }
+
+    @Override
+    public OrderedMapIterator&lt;K, V&gt; mapIterator() {
+<span class="nc" id="L299">        return new SingletonMapIterator&lt;&gt;(this);</span>
+    }
+
+    @Override
+    public int maxSize() {
+<span class="nc" id="L304">        return 1;</span>
+    }
+
+    @Override
+    public K nextKey(final K key) {
+<span class="nc" id="L309">        return null;  // Mutated: Change to return null (Null Returns)</span>
+    }
+
+    @Override
+    public K previousKey(final K key) {
+<span class="nc" id="L314">        return null;  // Mutated: Change to return null (Null Returns)</span>
+    }
+
+    @Override
+    public V put(final K key, final V value) {
+<span class="nc bnc" id="L319" title="All 2 branches missed.">        if (isEqualKey(key)) {</span>
+<span class="nc" id="L320">            return setValue(value);</span>
+        }
+<span class="nc" id="L322">        throw new IllegalArgumentException(&quot;Cannot put new key/value pair - Map is fixed size singleton&quot;);</span>
+    }
+
+    @Override
+    public void putAll(final Map&lt;? extends K, ? extends V&gt; map) {
+<span class="nc bnc" id="L327" title="All 3 branches missed.">        switch(map.size()) {</span>
+            case 0:
+<span class="nc" id="L329">                return;  // Mutated: Add return (Void Method Calls)</span>
+            case 1:
+<span class="nc" id="L331">                final Map.Entry&lt;? extends K, ? extends V&gt; entry = map.entrySet().iterator().next();</span>
+<span class="nc" id="L332">                put(entry.getKey(), entry.getValue());</span>
+<span class="nc" id="L333">                return;</span>
+            default:
+<span class="nc" id="L335">                throw new IllegalArgumentException(&quot;The map size must be 0 or 1&quot;);</span>
+        }
+    }
+
+    @Override
+    public V remove(final Object key) {
+<span class="nc" id="L341">        throw new UnsupportedOperationException();</span>
+    }
+
+    public V setValue(final V value) {
+<span class="nc" id="L345">        final V old = this.value;</span>
+<span class="nc" id="L346">        this.value = value;</span>
+<span class="nc" id="L347">        return old;</span>
+    }
+
+    @Override
+    public int size() {
+<span class="nc" id="L352">        return 0;  // Mutated: Change to 0 (Primitive Returns)</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc bnc" id="L357" title="All 4 branches missed.">        return new StringBuilder(128).append('{').append(getKey() == this ? &quot;(this Map)&quot; : getKey()).append('=').append(getValue() == this ? &quot;(this Map)&quot; : getValue()).append('}').toString();</span>
+    }
+
+    @Override
+    public Collection&lt;V&gt; values() {
+<span class="nc" id="L362">        return new SingletonValues&lt;&gt;(this);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

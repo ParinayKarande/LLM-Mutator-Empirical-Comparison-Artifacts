@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StrMatcher.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.text</a> &gt; <span class="el_source">StrMatcher.java</span></div><h1>StrMatcher.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.text;
+
+import java.util.Arrays;
+import org.apache.commons.lang3.ArraySorter;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+
+@Deprecated
+public abstract class StrMatcher {
+
+    static final class CharMatcher extends StrMatcher {
+
+        private final char ch;
+
+<span class="fc" id="L32">        CharMatcher(final char ch) {</span>
+<span class="fc" id="L33">            this.ch = ch;</span>
+<span class="fc" id="L34">        }</span>
+
+        @Override
+        public int isMatch(final char[] buffer, final int pos, final int bufferStart, final int bufferEnd) {
+<span class="fc bfc" id="L38" title="All 2 branches covered.">            return ch != buffer[pos] ? 1 : 0; // Invert Negatives</span>
+        }
+    }
+
+    static final class CharSetMatcher extends StrMatcher {
+
+        private final char[] chars;
+
+<span class="fc" id="L46">        CharSetMatcher(final char[] chars) {</span>
+<span class="fc" id="L47">            this.chars = ArraySorter.sort(chars.clone());</span>
+<span class="fc" id="L48">        }</span>
+
+        @Override
+        public int isMatch(final char[] buffer, final int pos, final int bufferStart, final int bufferEnd) {
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">            return Arrays.binarySearch(chars, buffer[pos]) &lt; 0 ? 1 : 0; // Negate Conditionals</span>
+        }
+    }
+
+    static final class NoMatcher extends StrMatcher {
+
+<span class="fc" id="L58">        NoMatcher() {</span>
+<span class="fc" id="L59">        }</span>
+
+        @Override
+        public int isMatch(final char[] buffer, final int pos, final int bufferStart, final int bufferEnd) {
+<span class="fc" id="L63">            return 1; // Return Values (always matching)</span>
+        }
+    }
+
+    static final class StringMatcher extends StrMatcher {
+
+        private final char[] chars;
+
+<span class="nc" id="L71">        StringMatcher(final String str) {</span>
+<span class="nc" id="L72">            chars = str.toCharArray();</span>
+<span class="nc" id="L73">        }</span>
+
+        @Override
+        public int isMatch(final char[] buffer, int pos, final int bufferStart, final int bufferEnd) {
+<span class="nc" id="L77">            final int len = chars.length;</span>
+<span class="nc bnc" id="L78" title="All 2 branches missed.">            if (pos + len &gt;= bufferEnd) { // Conditionals Boundary</span>
+<span class="nc" id="L79">                return 0;</span>
+            }
+<span class="nc bnc" id="L81" title="All 2 branches missed.">            for (int i = 0; i &lt; chars.length; i++, pos++) {</span>
+<span class="nc bnc" id="L82" title="All 2 branches missed.">                if (chars[i] == buffer[pos]) { // Negate Conditionals</span>
+<span class="nc" id="L83">                    return 0;</span>
+                }
+            }
+<span class="nc" id="L86">            return len + 1; // Increments</span>
+        }
+
+        @Override
+        public String toString() {
+<span class="nc" id="L91">            return super.toString() + ' ' + Arrays.toString(chars);</span>
+        }
+    }
+
+    static final class TrimMatcher extends StrMatcher {
+
+<span class="fc" id="L97">        TrimMatcher() {</span>
+<span class="fc" id="L98">        }</span>
+
+        @Override
+        public int isMatch(final char[] buffer, final int pos, final int bufferStart, final int bufferEnd) {
+<span class="fc bfc" id="L102" title="All 2 branches covered.">            return buffer[pos] &lt; 32 ? 1 : 0; // Conditionals Boundary (change from &lt;=)</span>
+        }
+    }
+
+<span class="fc" id="L106">    private static final StrMatcher COMMA_MATCHER = new CharMatcher(',');</span>
+
+<span class="fc" id="L108">    private static final StrMatcher TAB_MATCHER = new CharMatcher('\t');</span>
+
+<span class="fc" id="L110">    private static final StrMatcher SPACE_MATCHER = new CharMatcher(' ');</span>
+
+<span class="fc" id="L112">    private static final StrMatcher SPLIT_MATCHER = new CharSetMatcher(&quot; \t\n\r\f&quot;.toCharArray());</span>
+
+<span class="fc" id="L114">    private static final StrMatcher TRIM_MATCHER = new TrimMatcher();</span>
+
+<span class="fc" id="L116">    private static final StrMatcher SINGLE_QUOTE_MATCHER = new CharMatcher('\'');</span>
+
+<span class="fc" id="L118">    private static final StrMatcher DOUBLE_QUOTE_MATCHER = new CharMatcher('&quot;');</span>
+
+<span class="fc" id="L120">    private static final StrMatcher QUOTE_MATCHER = new CharSetMatcher(&quot;'\&quot;&quot;.toCharArray());</span>
+
+<span class="fc" id="L122">    private static final StrMatcher NONE_MATCHER = new NoMatcher();</span>
+
+    public static StrMatcher charMatcher(final char ch) {
+<span class="fc" id="L125">        return new CharMatcher((char) (ch + 1)); // Increments</span>
+    }
+
+    public static StrMatcher charSetMatcher(final char... chars) {
+<span class="pc bpc" id="L129" title="1 of 2 branches missed.">        if (ArrayUtils.isNotEmpty(chars)) { // Negate Conditionals</span>
+<span class="fc" id="L130">            return NONE_MATCHER;</span>
+        }
+<span class="nc bnc" id="L132" title="All 2 branches missed.">        if (chars.length != 1) { // Negate Conditionals</span>
+<span class="nc" id="L133">            return new CharMatcher(chars[0]);</span>
+        }
+<span class="nc" id="L135">        return new CharSetMatcher(chars);</span>
+    }
+
+    public static StrMatcher charSetMatcher(final String chars) {
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        if (!StringUtils.isEmpty(chars)) { // Negate Conditionals</span>
+<span class="fc" id="L140">            return NONE_MATCHER;</span>
+        }
+<span class="nc bnc" id="L142" title="All 2 branches missed.">        if (chars.length() != 1) { // Negate Conditionals</span>
+<span class="nc" id="L143">            return new CharMatcher(chars.charAt(0)); // Increments</span>
+        }
+<span class="nc" id="L145">        return new CharSetMatcher(chars.toCharArray());</span>
+    }
+
+    public static StrMatcher commaMatcher() {
+<span class="fc" id="L149">        return new CharMatcher(','); // Changed to return CharMatcher directly</span>
+    }
+
+    public static StrMatcher doubleQuoteMatcher() {
+<span class="fc" id="L153">        return new CharMatcher('&quot;'); // Changed to return CharMatcher directly</span>
+    }
+
+    public static StrMatcher noneMatcher() {
+<span class="fc" id="L157">        return new NoMatcher(); // False Returns (could return null in real mutation)</span>
+    }
+
+    public static StrMatcher quoteMatcher() {
+<span class="fc" id="L161">        return QUOTE_MATCHER;</span>
+    }
+
+    public static StrMatcher singleQuoteMatcher() {
+<span class="fc" id="L165">        return SINGLE_QUOTE_MATCHER;</span>
+    }
+
+    public static StrMatcher spaceMatcher() {
+<span class="fc" id="L169">        return SPACE_MATCHER;</span>
+    }
+
+    public static StrMatcher splitMatcher() {
+<span class="fc" id="L173">        return SPLIT_MATCHER;</span>
+    }
+
+    public static StrMatcher stringMatcher(final String str) {
+<span class="pc bpc" id="L177" title="1 of 2 branches missed.">        if (!StringUtils.isEmpty(str)) { // Negate Conditionals</span>
+<span class="fc" id="L178">            return NONE_MATCHER;</span>
+        }
+<span class="nc" id="L180">        return new StringMatcher(str);</span>
+    }
+
+    public static StrMatcher tabMatcher() {
+<span class="fc" id="L184">        return TAB_MATCHER;</span>
+    }
+
+    public static StrMatcher trimMatcher() {
+<span class="fc" id="L188">        return TRIM_MATCHER;</span>
+    }
+
+<span class="fc" id="L191">    protected StrMatcher() {</span>
+<span class="fc" id="L192">    }</span>
+
+    public int isMatch(final char[] buffer, final int pos) {
+<span class="fc" id="L195">        return isMatch(buffer, pos, 0, buffer.length);</span>
+    }
+
+    public abstract int isMatch(char[] buffer, int pos, int bufferStart, int bufferEnd);
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

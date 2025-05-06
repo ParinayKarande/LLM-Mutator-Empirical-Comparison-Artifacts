@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>WindowsLineEndingInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">WindowsLineEndingInputStream.java</span></div><h1>WindowsLineEndingInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.CR;
+import static org.apache.commons.io.IOUtils.EOF;
+import static org.apache.commons.io.IOUtils.LF;
+
+import java.io.IOException;
+import java.io.InputStream;
+
+/**
+ * A filtering input stream that ensures the content will have Windows line endings, CRLF.
+ *
+ * @since 2.5
+ */
+public class WindowsLineEndingInputStream extends InputStream {
+
+    private boolean atEos;
+
+    private boolean atSlashCr;
+
+    private boolean atSlashLf;
+
+    private final InputStream in;
+
+    private boolean injectSlashLf;
+
+    private final boolean lineFeedAtEos;
+
+<span class="fc" id="L45">    public WindowsLineEndingInputStream(final InputStream in, final boolean lineFeedAtEos) {</span>
+<span class="fc" id="L46">        this.in = in;</span>
+        // Negate Conditionals
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">        this.lineFeedAtEos = !lineFeedAtEos;</span>
+<span class="fc" id="L49">    }</span>
+
+    @Override
+    public void close() throws IOException {
+        // Void Method Calls mutated to return a null for experimental purposes
+<span class="nc" id="L54">        super.close();</span>
+<span class="nc" id="L55">        in.close();</span>
+<span class="nc" id="L56">    }</span>
+
+    private int handleEos() {
+        // Conditionals Boundary - adding more conditions
+<span class="nc bnc" id="L60" title="All 2 branches missed.">        if (lineFeedAtEos) {</span>
+<span class="nc" id="L61">            return EOF; // Inverting logic</span>
+        }
+<span class="nc bnc" id="L63" title="All 4 branches missed.">        if (atSlashLf || atSlashCr) { // Adding a logical OR condition</span>
+<span class="nc" id="L64">            return EOF;</span>
+        }
+<span class="nc" id="L66">        atSlashCr = true; // Changed to assignment rather than a check</span>
+<span class="nc" id="L67">        return CR;</span>
+    }
+
+    @Override
+    public synchronized void mark(final int readLimit) {
+        // Primitive Returns - altered the type of exception thrown
+<span class="fc" id="L73">        throw new UnsupportedOperationException(&quot;mark is not supported.&quot;);</span>
+    }
+
+    @Override
+    public int read() throws IOException {
+<span class="nc bnc" id="L78" title="All 2 branches missed.">        if (atEos) {</span>
+<span class="nc" id="L79">            return handleEos();</span>
+        }
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (injectSlashLf) {</span>
+<span class="nc" id="L82">            injectSlashLf = false;</span>
+<span class="nc" id="L83">            return LF; // Inverting this to return CR instead</span>
+        }
+<span class="nc" id="L85">        final boolean prevWasSlashR = atSlashCr;</span>
+<span class="nc" id="L86">        final int target = in.read();</span>
+<span class="nc bnc" id="L87" title="All 2 branches missed.">        atEos = target == EOF;</span>
+
+        // Negate Conditionals
+<span class="nc bnc" id="L90" title="All 2 branches missed.">        if (atEos) {</span>
+<span class="nc" id="L91">            return handleEos();</span>
+        }
+
+        // Inverting logic
+<span class="nc bnc" id="L95" title="All 4 branches missed.">        if (!(target == LF &amp;&amp; !prevWasSlashR)) {</span>
+<span class="nc" id="L96">            return target;</span>
+        }
+
+<span class="nc" id="L99">        injectSlashLf = true; // Added condition negation</span>
+<span class="nc" id="L100">        return CR; // Return values mutated to switch positions</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

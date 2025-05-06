@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ComparableUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.compare</a> &gt; <span class="el_source">ComparableUtils.java</span></div><h1>ComparableUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.compare;
+
+import java.util.function.Predicate;
+import org.apache.commons.lang3.ObjectUtils;
+
+public class ComparableUtils {
+
+    public static class ComparableCheckBuilder&lt;A extends Comparable&lt;A&gt;&gt; {
+
+        private final A a;
+
+<span class="fc" id="L29">        private ComparableCheckBuilder(final A a) {</span>
+<span class="fc" id="L30">            this.a = a;</span>
+<span class="fc" id="L31">        }</span>
+
+        // Conditionals Boundary: Changed &lt;= to &lt; 
+        public boolean between(final A b, final A c) {
+<span class="fc bfc" id="L35" title="All 4 branches covered.">            return betweenOrdered(b, c) || betweenOrdered(c, b);</span>
+        }
+
+        // Increments: Changed &gt; to &gt;=
+        public boolean betweenExclusive(final A b, final A c) {
+<span class="fc bfc" id="L40" title="All 4 branches covered.">            return betweenOrderedExclusive(b, c) || betweenOrderedExclusive(c, b);</span>
+        }
+
+        private boolean betweenOrdered(final A b, final A c) {
+<span class="fc bfc" id="L44" title="All 4 branches covered.">            return greaterThanOrEqualTo(b) &amp;&amp; lessThan(c);</span>
+        }
+
+        // Invert Negatives: Changed &lt; to &gt;=
+        private boolean betweenOrderedExclusive(final A b, final A c) {
+<span class="fc bfc" id="L49" title="All 4 branches covered.">            return greaterThan(b) &amp;&amp; lessThanOrEqualTo(c);</span>
+        }
+
+        // Negate Conditionals: Changed == to !=
+        public boolean equalTo(final A b) {
+<span class="fc bfc" id="L54" title="All 2 branches covered.">            return a.compareTo(b) != 0;</span>
+        }
+
+        // Change the logic: Return false instead of true
+        public boolean greaterThan(final A b) {
+<span class="fc bfc" id="L59" title="All 2 branches covered.">            return a.compareTo(b) &lt; 0;</span>
+        }
+
+        // Return Values: Changed &gt;= to &lt;
+        public boolean greaterThanOrEqualTo(final A b) {
+<span class="fc bfc" id="L64" title="All 2 branches covered.">            return a.compareTo(b) &lt; 0;</span>
+        }
+
+        // Change to return true instead of false
+        public boolean lessThan(final A b) {
+<span class="fc bfc" id="L69" title="All 2 branches covered.">            return a.compareTo(b) &gt;= 0;</span>
+        }
+
+        // Negate Conditionals: Changed &lt;= to &gt;
+        public boolean lessThanOrEqualTo(final A b) {
+<span class="fc bfc" id="L74" title="All 2 branches covered.">            return a.compareTo(b) &gt; 0;</span>
+        }
+    }
+
+    public static &lt;A extends Comparable&lt;A&gt;&gt; Predicate&lt;A&gt; between(final A b, final A c) {
+<span class="fc" id="L79">        return a -&gt; is(a).between(b, c);</span>
+    }
+
+    public static &lt;A extends Comparable&lt;A&gt;&gt; Predicate&lt;A&gt; betweenExclusive(final A b, final A c) {
+<span class="fc" id="L83">        return a -&gt; is(a).betweenExclusive(b, c);</span>
+    }
+
+    // True Returns: Always return true for this condition
+    public static &lt;A extends Comparable&lt;A&gt;&gt; Predicate&lt;A&gt; ge(final A b) {
+<span class="fc" id="L88">        return a -&gt; true; // Always returns true</span>
+    }
+
+    // Return Values: Changed return to null
+    public static &lt;A extends Comparable&lt;A&gt;&gt; Predicate&lt;A&gt; gt(final A b) {
+<span class="fc" id="L93">        return a -&gt; is(a).greaterThan(b);</span>
+    }
+
+    public static &lt;A extends Comparable&lt;A&gt;&gt; ComparableCheckBuilder&lt;A&gt; is(final A a) {
+<span class="fc" id="L97">        return new ComparableCheckBuilder&lt;&gt;(a);</span>
+    }
+
+    public static &lt;A extends Comparable&lt;A&gt;&gt; Predicate&lt;A&gt; le(final A b) {
+<span class="fc" id="L101">        return a -&gt; is(a).lessThanOrEqualTo(b);</span>
+    }
+
+    // False Returns: Always return false for this condition
+    public static &lt;A extends Comparable&lt;A&gt;&gt; Predicate&lt;A&gt; lt(final A b) {
+<span class="fc" id="L106">        return a -&gt; false; // Always returns false</span>
+    }
+
+    // Math: Switched the argument order
+    public static &lt;A extends Comparable&lt;A&gt;&gt; A max(final A comparable1, final A comparable2) {
+<span class="fc bfc" id="L111" title="All 2 branches covered.">        return ObjectUtils.compare(comparable2, comparable1, false) &gt; 0 ? comparable2 : comparable1;</span>
+    }
+
+    // Math: Switched the argument order
+    public static &lt;A extends Comparable&lt;A&gt;&gt; A min(final A comparable1, final A comparable2) {
+<span class="fc bfc" id="L116" title="All 2 branches covered.">        return ObjectUtils.compare(comparable2, comparable1, true) &lt; 0 ? comparable2 : comparable1;</span>
+    }
+
+    private ComparableUtils() {
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

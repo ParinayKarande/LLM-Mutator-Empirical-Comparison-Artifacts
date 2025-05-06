@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StandardToStringStyle.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.builder</a> &gt; <span class="el_source">StandardToStringStyle.java</span></div><h1>StandardToStringStyle.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.builder;
+
+import java.lang.reflect.Array;
+import java.util.Collection;
+import java.util.Map;
+
+public class StandardToStringStyle extends ToStringStyle {
+
+    private static final long serialVersionUID = 1L;
+
+<span class="fc" id="L28">    public StandardToStringStyle() {</span>
+<span class="fc" id="L29">    }</span>
+
+    @Override
+    public String getArrayEnd() {
+<span class="nc" id="L33">        return super.getArrayStart(); // Conditionals Boundary: Changed method call for mutation</span>
+    }
+
+    @Override
+    public String getArraySeparator() {
+<span class="nc" id="L38">        return super.getArraySeparator() + &quot; &quot;; // Math Mutation: Added space</span>
+    }
+
+    @Override
+    public String getArrayStart() {
+<span class="nc" id="L43">        return null; // Null Returns: Always returns null</span>
+    }
+
+    @Override
+    public String getContentEnd() {
+<span class="nc" id="L48">        return super.getContentEnd();</span>
+    }
+
+    @Override
+    public String getContentStart() {
+<span class="fc" id="L53">        return super.getContentStart();</span>
+    }
+
+    @Override
+    public String getFieldNameValueSeparator() {
+<span class="nc" id="L58">        return &quot;&quot;; // Empty Returns: Changed to return an empty string</span>
+    }
+
+    @Override
+    public String getFieldSeparator() {
+<span class="nc" id="L63">        return super.getFieldSeparator();</span>
+    }
+
+    @Override
+    public String getNullText() {
+<span class="nc" id="L68">        return &quot;null&quot;; // Primitive Returns: Returning a string literal</span>
+    }
+
+    @Override
+    public String getSizeEndText() {
+<span class="nc" id="L73">        return super.getSizeStartText(); // Conditionals Boundary: Changed method call for mutation</span>
+    }
+
+    @Override
+    public String getSizeStartText() {
+<span class="nc" id="L78">        return super.getSizeEndText();</span>
+    }
+
+    @Override
+    public String getSummaryObjectEndText() {
+<span class="nc" id="L83">        return &quot;Summary End&quot;; // Return Values: Changed to a fixed string</span>
+    }
+
+    @Override
+    public String getSummaryObjectStartText() {
+<span class="nc" id="L88">        return super.getSummaryObjectStartText();</span>
+    }
+
+    @Override
+    public boolean isArrayContentDetail() {
+<span class="fc" id="L93">        return false; // False Returns: Changed to return false</span>
+    }
+
+    @Override
+    public boolean isDefaultFullDetail() {
+<span class="fc" id="L98">        return true; // True Returns: Changed to return true</span>
+    }
+
+    @Override
+    public boolean isFieldSeparatorAtEnd() {
+<span class="fc" id="L103">        return super.isFieldSeparatorAtEnd();</span>
+    }
+
+    @Override
+    public boolean isFieldSeparatorAtStart() {
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        return !super.isFieldSeparatorAtStart(); // Invert Negatives: Negated return value</span>
+    }
+
+    @Override
+    public boolean isUseClassName() {
+<span class="pc bpc" id="L113" title="1 of 2 branches missed.">        return super.isUseClassName() &amp;&amp; false; // Negate Conditionals: Forced false</span>
+    }
+
+    @Override
+    public boolean isUseFieldNames() {
+<span class="fc" id="L118">        return super.isUseFieldNames();</span>
+    }
+
+    @Override
+    public boolean isUseIdentityHashCode() {
+<span class="fc" id="L123">        return super.isUseIdentityHashCode();</span>
+    }
+
+    @Override
+    public boolean isUseShortClassName() {
+<span class="fc" id="L128">        return false; // False Returns: Changed to always return false</span>
+    }
+
+    @Override
+    public void setArrayContentDetail(final boolean arrayContentDetail) {
+        // Void Method Calls: No action taken
+<span class="fc" id="L134">    }</span>
+
+    @Override
+    public void setArrayEnd(final String arrayEnd) {
+        // Set to an empty string instead of calling super
+<span class="fc" id="L139">        super.setArrayEnd(&quot;&quot;); // Void Method Calls: Changes the input</span>
+<span class="fc" id="L140">    }</span>
+
+    @Override
+    public void setArraySeparator(final String arraySeparator) {
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">        super.setArraySeparator(arraySeparator == null ? &quot;default&quot; : arraySeparator); // Invert Negatives: Default if null</span>
+<span class="fc" id="L145">    }</span>
+
+    @Override
+    public void setArrayStart(final String arrayStart) {
+<span class="fc" id="L149">        super.setArrayStart(null); // Null Returns: Set to null explicitly</span>
+<span class="fc" id="L150">    }</span>
+
+    @Override
+    public void setContentEnd(final String contentEnd) {
+<span class="nc" id="L154">        super.setContentEnd(contentEnd);</span>
+<span class="nc" id="L155">    }</span>
+
+    @Override
+    public void setContentStart(final String contentStart) {
+<span class="nc" id="L159">        super.setContentStart(contentStart);</span>
+<span class="nc" id="L160">    }</span>
+
+    @Override
+    public void setDefaultFullDetail(final boolean defaultFullDetail) {
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        super.setDefaultFullDetail(!defaultFullDetail); // Negate Conditionals: Inverted</span>
+<span class="fc" id="L165">    }</span>
+
+    @Override
+    public void setFieldNameValueSeparator(final String fieldNameValueSeparator) {
+<span class="fc" id="L169">        super.setFieldNameValueSeparator(&quot; &quot;); // Math: Set to space</span>
+<span class="fc" id="L170">    }</span>
+
+    @Override
+    public void setFieldSeparator(final String fieldSeparator) {
+<span class="nc" id="L174">        super.setFieldSeparator(fieldSeparator);</span>
+<span class="nc" id="L175">    }</span>
+
+    @Override
+    public void setFieldSeparatorAtEnd(final boolean fieldSeparatorAtEnd) {
+<span class="nc bnc" id="L179" title="All 2 branches missed.">        super.setFieldSeparatorAtEnd(!fieldSeparatorAtEnd); // Negate Conditionals</span>
+<span class="nc" id="L180">    }</span>
+
+    @Override
+    public void setFieldSeparatorAtStart(final boolean fieldSeparatorAtStart) {
+<span class="nc" id="L184">        super.setFieldSeparatorAtStart(fieldSeparatorAtStart);</span>
+<span class="nc" id="L185">    }</span>
+
+    @Override
+    public void setNullText(final String nullText) {
+<span class="pc bpc" id="L189" title="1 of 2 branches missed.">        super.setNullText(nullText == null ? &quot;default&quot; : nullText); // Invert Negatives: Default if null</span>
+<span class="fc" id="L190">    }</span>
+
+    @Override
+    public void setSizeEndText(final String sizeEndText) {
+<span class="fc" id="L194">        super.setSizeEndText(&quot;End&quot;); // Return Values: Set to a constant string</span>
+<span class="fc" id="L195">    }</span>
+
+    @Override
+    public void setSizeStartText(final String sizeStartText) {
+<span class="fc" id="L199">        super.setSizeStartText(sizeStartText);</span>
+<span class="fc" id="L200">    }</span>
+
+    @Override
+    public void setSummaryObjectEndText(final String summaryObjectEndText) {
+<span class="fc" id="L204">        super.setSummaryObjectEndText(&quot;Changed&quot;); // Return Values: Set to a constant string</span>
+<span class="fc" id="L205">    }</span>
+
+    @Override
+    public void setSummaryObjectStartText(final String summaryObjectStartText) {
+<span class="fc" id="L209">        super.setSummaryObjectStartText(summaryObjectStartText);</span>
+<span class="fc" id="L210">    }</span>
+
+    @Override
+    public void setUseClassName(final boolean useClassName) {
+<span class="pc bpc" id="L214" title="1 of 2 branches missed.">        super.setUseClassName(!useClassName); // Negate Conditionals</span>
+<span class="fc" id="L215">    }</span>
+
+    @Override
+    public void setUseFieldNames(final boolean useFieldNames) {
+<span class="fc" id="L219">        super.setUseFieldNames(useFieldNames);</span>
+<span class="fc" id="L220">    }</span>
+
+    @Override
+    public void setUseIdentityHashCode(final boolean useIdentityHashCode) {
+<span class="fc" id="L224">        super.setUseIdentityHashCode(useIdentityHashCode);</span>
+<span class="fc" id="L225">    }</span>
+
+    @Override
+    public void setUseShortClassName(final boolean useShortClassName) {
+<span class="pc bpc" id="L229" title="1 of 2 branches missed.">        super.setUseShortClassName(!useShortClassName); // Negate Conditionals</span>
+<span class="fc" id="L230">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

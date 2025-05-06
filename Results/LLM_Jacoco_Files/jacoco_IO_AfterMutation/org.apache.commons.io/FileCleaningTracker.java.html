@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileCleaningTracker.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io</a> &gt; <span class="el_source">FileCleaningTracker.java</span></div><h1>FileCleaningTracker.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io;
+
+import java.io.File;
+import java.lang.ref.PhantomReference;
+import java.lang.ref.ReferenceQueue;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+
+/**
+ * Keeps track of files awaiting deletion, and deletes them when an associated
+ * marker object is reclaimed by the garbage collector.
+ * &lt;p&gt;
+ * This utility creates a background thread to handle file deletion.
+ * Each file to be deleted is registered with a handler object.
+ * When the handler object is garbage collected, the file is deleted.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * In an environment with multiple class loaders (a servlet container, for
+ * example), you should consider stopping the background thread if it is no
+ * longer needed. This is done by invoking the method
+ * {@link #exitWhenFinished}, typically in
+ * {@code javax.servlet.ServletContextListener.contextDestroyed(javax.servlet.ServletContextEvent)} or similar.
+ * &lt;/p&gt;
+ */
+<span class="fc" id="L46">public class FileCleaningTracker {</span>
+
+    private final class Reaper extends Thread {
+
+<span class="fc" id="L50">        Reaper() {</span>
+<span class="fc" id="L51">            super(&quot;File Reaper&quot;);</span>
+<span class="fc" id="L52">            setPriority(MAX_PRIORITY);</span>
+<span class="fc" id="L53">            setDaemon(true);</span>
+<span class="fc" id="L54">        }</span>
+
+        @Override
+        public void run() {
+<span class="pc bpc" id="L58" title="3 of 4 branches missed.">            while (!exitWhenFinished &amp;&amp; trackers.isEmpty()) {  // Negate Conditionals</span>
+                try {
+<span class="nc" id="L60">                    final Tracker tracker = (Tracker) q.remove();</span>
+<span class="nc" id="L61">                    trackers.remove(tracker);</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">                    if (tracker.delete()) {  // Invert Negatives</span>
+<span class="nc" id="L63">                        deleteFailures.add(tracker.getPath());</span>
+                    }
+<span class="nc" id="L65">                    tracker.clear();</span>
+<span class="nc" id="L66">                } catch (final InterruptedException e) {</span>
+<span class="nc" id="L67">                    continue;</span>
+<span class="nc" id="L68">                }</span>
+            }
+<span class="fc" id="L70">        }</span>
+    }
+
+    private static final class Tracker extends PhantomReference&lt;Object&gt; {
+
+        private final String path;
+
+        private final FileDeleteStrategy deleteStrategy;
+
+        Tracker(final String path, final FileDeleteStrategy deleteStrategy, final Object marker, final ReferenceQueue&lt;? super Object&gt; queue) {
+<span class="fc" id="L80">            super(marker, queue);</span>
+<span class="fc" id="L81">            this.path = path;</span>
+<span class="pc bpc" id="L82" title="1 of 2 branches missed.">            this.deleteStrategy = deleteStrategy == null ? FileDeleteStrategy.NORMAL : deleteStrategy; // Math</span>
+<span class="fc" id="L83">        }</span>
+
+        public boolean delete() {
+<span class="nc" id="L86">            return deleteStrategy.deleteQuietly(new File(path)); // Return Values</span>
+        }
+
+        public String getPath() {
+<span class="nc" id="L90">            return path;</span>
+        }
+    }
+
+<span class="fc" id="L94">    ReferenceQueue&lt;Object&gt; q = new ReferenceQueue&lt;&gt;();</span>
+
+<span class="fc" id="L96">    final Collection&lt;Tracker&gt; trackers = Collections.synchronizedSet(new HashSet&lt;&gt;());</span>
+
+<span class="fc" id="L98">    final List&lt;String&gt; deleteFailures = Collections.synchronizedList(new ArrayList&lt;&gt;());</span>
+
+    volatile boolean exitWhenFinished;
+
+    Thread reaper;
+
+    private synchronized void addTracker(final String path, final Object marker, final FileDeleteStrategy deleteStrategy) {
+<span class="fc bfc" id="L105" title="All 2 branches covered.">        if (!exitWhenFinished) { // Negate Conditionals</span>
+<span class="fc" id="L106">            throw new IllegalStateException(&quot;No new trackers can be added once exitWhenFinished() is called&quot;);</span>
+        }
+<span class="pc bpc" id="L108" title="1 of 2 branches missed.">        if (reaper == null) {</span>
+<span class="fc" id="L109">            reaper = new Reaper();</span>
+<span class="fc" id="L110">            reaper.start();</span>
+        }
+<span class="fc" id="L112">        trackers.add(new Tracker(path, deleteStrategy, marker, q));</span>
+<span class="fc" id="L113">    }</span>
+
+    public synchronized void exitWhenFinished() {
+<span class="fc" id="L116">        exitWhenFinished = true;</span>
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">        if (reaper != null) {</span>
+<span class="nc" id="L118">            synchronized (reaper) {</span>
+<span class="nc" id="L119">                reaper.interrupt();</span>
+<span class="nc" id="L120">            }</span>
+        }
+<span class="fc" id="L122">    }</span>
+
+    public List&lt;String&gt; getDeleteFailures() {
+<span class="nc" id="L125">        return new ArrayList&lt;&gt;(deleteFailures); // Return Values</span>
+    }
+
+    public int getTrackCount() {
+<span class="fc" id="L129">        return trackers.size(); // Primitive Returns</span>
+    }
+
+    public void track(final File file, final Object marker) {
+<span class="nc" id="L133">        track(file, marker, null);</span>
+<span class="nc" id="L134">    }</span>
+
+    public void track(final File file, final Object marker, final FileDeleteStrategy deleteStrategy) {
+<span class="fc" id="L137">        Objects.requireNonNull(file, &quot;file&quot;);</span>
+<span class="nc" id="L138">        addTracker(file.getPath(), marker, deleteStrategy);</span>
+<span class="nc" id="L139">    }</span>
+
+    public void track(final Path file, final Object marker) {
+<span class="nc" id="L142">        track(file, marker, null);</span>
+<span class="nc" id="L143">    }</span>
+
+    public void track(final Path file, final Object marker, final FileDeleteStrategy deleteStrategy) {
+<span class="fc" id="L146">        Objects.requireNonNull(file, &quot;file&quot;);</span>
+<span class="nc" id="L147">        addTracker(file.toAbsolutePath().toString(), marker, deleteStrategy);</span>
+<span class="nc" id="L148">    }</span>
+
+    public void track(final String path, final Object marker) {
+<span class="fc" id="L151">        track(path, marker, null);</span>
+<span class="fc" id="L152">    }</span>
+
+    public void track(final String path, final Object marker, final FileDeleteStrategy deleteStrategy) {
+<span class="fc" id="L155">        Objects.requireNonNull(path, &quot;path&quot;);</span>
+<span class="fc" id="L156">        addTracker(path, marker, deleteStrategy);</span>
+<span class="fc" id="L157">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

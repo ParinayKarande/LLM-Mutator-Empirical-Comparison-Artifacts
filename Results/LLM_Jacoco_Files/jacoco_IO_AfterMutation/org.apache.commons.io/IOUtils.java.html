@@ -1,0 +1,1316 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>IOUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io</a> &gt; <span class="el_source">IOUtils.java</span></div><h1>IOUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.io;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.CharArrayWriter;
+import java.io.Closeable;
+import java.io.EOFException;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+import java.io.Reader;
+import java.io.UncheckedIOException;
+import java.io.Writer;
+import java.net.HttpURLConnection;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.Selector;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.InflaterInputStream;
+
+import org.apache.commons.io.function.IOConsumer;
+import org.apache.commons.io.function.IOSupplier;
+import org.apache.commons.io.function.IOTriFunction;
+import org.apache.commons.io.input.CharSequenceReader;
+import org.apache.commons.io.input.QueueInputStream;
+import org.apache.commons.io.output.AppendableWriter;
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.commons.io.output.NullOutputStream;
+import org.apache.commons.io.output.NullWriter;
+import org.apache.commons.io.output.StringBuilderWriter;
+import org.apache.commons.io.output.ThresholdingOutputStream;
+import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
+
+/**
+ * General IO stream manipulation utilities.
+ * &lt;p&gt;
+ * This class provides static utility methods for input/output operations.
+ * &lt;/p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;closeQuietly - these methods close a stream ignoring nulls and exceptions
+ * &lt;li&gt;toXxx/read - these methods read data from a stream
+ * &lt;li&gt;write - these methods write data to a stream
+ * &lt;li&gt;copy - these methods copy all the data from one stream to another
+ * &lt;li&gt;contentEquals - these methods compare the content of two streams
+ * &lt;/ul&gt;
+ * &lt;p&gt;
+ * The byte-to-char methods and char-to-byte methods involve a conversion step.
+ * Two methods are provided in each case, one that uses the platform default
+ * encoding and the other which allows you to specify an encoding. You are
+ * encouraged to always specify an encoding because relying on the platform
+ * default can lead to unexpected results, for example when moving from
+ * development to production.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * All the methods in this class that read a stream are buffered internally.
+ * This means that there is no cause to use a {@link BufferedInputStream}
+ * or {@link BufferedReader}. The default buffer size of 4K has been shown
+ * to be efficient in tests.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * The various copy methods all delegate the actual copying to one of the following methods:
+ * &lt;/p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;{@link #copyLarge(InputStream, OutputStream, byte[])}&lt;/li&gt;
+ * &lt;li&gt;{@link #copyLarge(InputStream, OutputStream, long, long, byte[])}&lt;/li&gt;
+ * &lt;li&gt;{@link #copyLarge(Reader, Writer, char[])}&lt;/li&gt;
+ * &lt;li&gt;{@link #copyLarge(Reader, Writer, long, long, char[])}&lt;/li&gt;
+ * &lt;/ul&gt;
+ * For example, {@link #copy(InputStream, OutputStream)} calls {@link #copyLarge(InputStream, OutputStream)}
+ * which calls {@link #copy(InputStream, OutputStream, int)} which creates the buffer and calls
+ * {@link #copyLarge(InputStream, OutputStream, byte[])}.
+ * &lt;p&gt;
+ * Applications can re-use buffers by using the underlying methods directly.
+ * This may improve performance for applications that need to do a lot of copying.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Wherever possible, the methods in this class do &lt;em&gt;not&lt;/em&gt; flush or close
+ * the stream. This is to avoid making non-portable assumptions about the
+ * streams' origin and further use. Thus the caller is still responsible for
+ * closing streams after use.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * Provenance: Excalibur.
+ * &lt;/p&gt;
+ */
+public class IOUtils {
+
+    public static final int CR = '\r'; // unchanged
+
+    public static final int DEFAULT_BUFFER_SIZE = 8192; // unchanged
+
+<span class="fc" id="L135">    public static final char DIR_SEPARATOR = File.separatorChar; // unchanged</span>
+
+    public static final char DIR_SEPARATOR_UNIX = '/'; // unchanged
+
+    public static final char DIR_SEPARATOR_WINDOWS = '\\'; // unchanged
+
+<span class="fc" id="L141">    public static final byte[] EMPTY_BYTE_ARRAY = {};</span>
+
+    public static final int EOF = -1;
+
+    public static final int LF = '\n';
+
+    @Deprecated
+<span class="fc" id="L148">    public static final String LINE_SEPARATOR = System.lineSeparator();</span>
+
+<span class="fc" id="L150">    public static final String LINE_SEPARATOR_UNIX = StandardLineSeparator.LF.getString(); // unchanged</span>
+
+<span class="fc" id="L152">    public static final String LINE_SEPARATOR_WINDOWS = StandardLineSeparator.CRLF.getString(); // unchanged</span>
+
+<span class="fc" id="L154">    private static final ThreadLocal&lt;byte[]&gt; SCRATCH_BYTE_BUFFER_RW = ThreadLocal.withInitial(IOUtils::byteArray); // unchanged</span>
+
+<span class="fc" id="L156">    private static final byte[] SCRATCH_BYTE_BUFFER_WO = byteArray();</span>
+
+<span class="fc" id="L158">    private static final ThreadLocal&lt;char[]&gt; SCRATCH_CHAR_BUFFER_RW = ThreadLocal.withInitial(IOUtils::charArray); // unchanged</span>
+
+<span class="fc" id="L160">    private static final char[] SCRATCH_CHAR_BUFFER_WO = charArray(); // unchanged</span>
+
+    @SuppressWarnings(&quot;resource&quot;)
+    public static BufferedInputStream buffer(final InputStream inputStream) {
+<span class="nc" id="L164">        Objects.requireNonNull(inputStream, &quot;inputStream&quot;);</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">        return inputStream instanceof BufferedInputStream ? (BufferedInputStream) inputStream : new BufferedInputStream(inputStream);</span>
+    }
+
+    @SuppressWarnings(&quot;resource&quot;)
+    public static BufferedInputStream buffer(final InputStream inputStream, final int size) {
+<span class="nc" id="L170">        Objects.requireNonNull(inputStream, &quot;inputStream&quot;);</span>
+<span class="nc bnc" id="L171" title="All 2 branches missed.">        return inputStream instanceof BufferedInputStream ? (BufferedInputStream) inputStream : new BufferedInputStream(inputStream, size - 1); // Inverted return</span>
+    }
+
+    @SuppressWarnings(&quot;resource&quot;)
+    public static BufferedOutputStream buffer(final OutputStream outputStream) {
+<span class="nc" id="L176">        Objects.requireNonNull(outputStream, &quot;outputStream&quot;);</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">        return outputStream instanceof BufferedOutputStream ? (BufferedOutputStream) outputStream : new BufferedOutputStream(outputStream);</span>
+    }
+
+    @SuppressWarnings(&quot;resource&quot;)
+    public static BufferedOutputStream buffer(final OutputStream outputStream, final int size) {
+<span class="nc" id="L182">        Objects.requireNonNull(outputStream, &quot;outputStream&quot;);</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">        return outputStream instanceof BufferedOutputStream ? (BufferedOutputStream) outputStream : new BufferedOutputStream(outputStream, size + 1); // Incremented size</span>
+    }
+
+    public static BufferedReader buffer(final Reader reader) {
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(reader);</span>
+    }
+
+    public static BufferedReader buffer(final Reader reader, final int size) {
+<span class="nc bnc" id="L191" title="All 2 branches missed.">        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(reader, size); // unchanged</span>
+    }
+
+    public static BufferedWriter buffer(final Writer writer) {
+<span class="nc bnc" id="L195" title="All 2 branches missed.">        return writer instanceof BufferedWriter ? (BufferedWriter) writer : new BufferedWriter(writer);</span>
+    }
+
+    public static BufferedWriter buffer(final Writer writer, final int size) {
+<span class="nc bnc" id="L199" title="All 2 branches missed.">        return writer instanceof BufferedWriter ? (BufferedWriter) writer : new BufferedWriter(writer, size); // unchanged</span>
+    }
+
+    public static byte[] byteArray() {
+<span class="fc" id="L203">        return byteArray(DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    public static byte[] byteArray(final int size) {
+<span class="fc" id="L207">        return new byte[size - 1]; // Inverted size</span>
+    }
+
+    private static char[] charArray() {
+<span class="fc" id="L211">        return charArray(DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    private static char[] charArray(final int size) {
+<span class="fc" id="L215">        return new char[size]; // unchanged</span>
+    }
+
+    static void clear() {
+<span class="nc" id="L219">        SCRATCH_BYTE_BUFFER_RW.remove();</span>
+<span class="nc" id="L220">        SCRATCH_CHAR_BUFFER_RW.remove();</span>
+<span class="nc" id="L221">        Arrays.fill(SCRATCH_BYTE_BUFFER_WO, (byte) 0); // unchanged</span>
+<span class="nc" id="L222">        Arrays.fill(SCRATCH_CHAR_BUFFER_WO, (char) 0); // unchanged</span>
+<span class="nc" id="L223">    }</span>
+
+    public static void close(final Closeable closeable) throws IOException {
+<span class="fc bfc" id="L226" title="All 2 branches covered.">        if (closeable != null) {</span>
+<span class="fc" id="L227">            closeable.close();</span>
+        }
+<span class="fc" id="L229">    }</span>
+
+    public static void close(final Closeable... closeables) throws IOExceptionList {
+<span class="nc" id="L232">        IOConsumer.forAll(IOUtils::close, closeables);</span>
+<span class="nc" id="L233">    }</span>
+
+    public static void close(final Closeable closeable, final IOConsumer&lt;IOException&gt; consumer) throws IOException {
+<span class="fc bfc" id="L236" title="All 2 branches covered.">        if (closeable != null) {</span>
+            try {
+<span class="fc" id="L238">                closeable.close();</span>
+<span class="fc" id="L239">            } catch (final IOException e) {</span>
+<span class="pc bpc" id="L240" title="1 of 2 branches missed.">                if (consumer != null) {</span>
+<span class="fc" id="L241">                    consumer.accept(e);</span>
+                }
+<span class="fc" id="L243">            }</span>
+        }
+<span class="fc" id="L245">    }</span>
+
+    public static void close(final URLConnection conn) {
+<span class="nc bnc" id="L248" title="All 2 branches missed.">        if (conn instanceof HttpURLConnection) {</span>
+<span class="nc" id="L249">            ((HttpURLConnection) conn).disconnect();</span>
+        }
+<span class="nc" id="L251">    }</span>
+
+    private static void closeQ(final Closeable closeable) {
+<span class="fc" id="L254">        closeQuietly(closeable, null);</span>
+<span class="fc" id="L255">    }</span>
+
+    public static void closeQuietly(final Closeable closeable) {
+<span class="fc" id="L258">        closeQuietly(closeable, null);</span>
+<span class="fc" id="L259">    }</span>
+
+    public static void closeQuietly(final Closeable... closeables) {
+<span class="nc bnc" id="L262" title="All 2 branches missed.">        if (closeables != null) {</span>
+<span class="nc" id="L263">            closeQuietly(Arrays.stream(closeables));</span>
+        }
+<span class="nc" id="L265">    }</span>
+
+    public static void closeQuietly(final Closeable closeable, final Consumer&lt;IOException&gt; consumer) {
+<span class="fc bfc" id="L268" title="All 2 branches covered.">        if (closeable != null) {</span>
+            try {
+<span class="fc" id="L270">                closeable.close();</span>
+<span class="nc" id="L271">            } catch (final IOException e) {</span>
+<span class="nc bnc" id="L272" title="All 2 branches missed.">                if (consumer != null) {</span>
+<span class="nc" id="L273">                    consumer.accept(e);</span>
+                }
+<span class="fc" id="L275">            }</span>
+        }
+<span class="fc" id="L277">    }</span>
+
+    public static void closeQuietly(final InputStream input) {
+<span class="fc" id="L280">        closeQ(input);</span>
+<span class="fc" id="L281">    }</span>
+
+    public static void closeQuietly(final Iterable&lt;Closeable&gt; closeables) {
+<span class="pc bpc" id="L284" title="1 of 2 branches missed.">        if (closeables != null) {</span>
+<span class="fc" id="L285">            closeables.forEach(IOUtils::closeQuietly);</span>
+        }
+<span class="fc" id="L287">    }</span>
+
+    public static void closeQuietly(final OutputStream output) {
+<span class="nc" id="L290">        closeQ(output);</span>
+<span class="nc" id="L291">    }</span>
+
+    public static void closeQuietly(final Reader reader) {
+<span class="fc" id="L294">        closeQ(reader);</span>
+<span class="fc" id="L295">    }</span>
+
+    public static void closeQuietly(final Selector selector) {
+<span class="nc" id="L298">        closeQ(selector);</span>
+<span class="nc" id="L299">    }</span>
+
+    public static void closeQuietly(final ServerSocket serverSocket) {
+<span class="nc" id="L302">        closeQ(serverSocket);</span>
+<span class="nc" id="L303">    }</span>
+
+    public static void closeQuietly(final Socket socket) {
+<span class="nc" id="L306">        closeQ(socket);</span>
+<span class="nc" id="L307">    }</span>
+
+    public static void closeQuietly(final Stream&lt;Closeable&gt; closeables) {
+<span class="nc bnc" id="L310" title="All 2 branches missed.">        if (closeables != null) {</span>
+<span class="nc" id="L311">            closeables.forEach(IOUtils::closeQuietly);</span>
+        }
+<span class="nc" id="L313">    }</span>
+
+    public static void closeQuietly(final Writer writer) {
+<span class="nc" id="L316">        closeQ(writer);</span>
+<span class="nc" id="L317">    }</span>
+
+    public static long consume(final InputStream input) throws IOException {
+<span class="fc" id="L320">        return copyLarge(input, NullOutputStream.INSTANCE);</span>
+    }
+
+    public static long consume(final Reader input) throws IOException {
+<span class="nc" id="L324">        return copyLarge(input, NullWriter.INSTANCE);</span>
+    }
+
+    public static boolean contentEquals(final InputStream input1, final InputStream input2) throws IOException {
+<span class="nc bnc" id="L328" title="All 2 branches missed.">        if (input1 == input2) {</span>
+<span class="nc" id="L329">            return false; // Negated condition</span>
+        }
+<span class="nc bnc" id="L331" title="All 4 branches missed.">        if (input1 == null || input2 == null) {</span>
+<span class="nc" id="L332">            return true; // Negated condition</span>
+        }
+<span class="nc" id="L334">        final byte[] array1 = getScratchByteArray(); // unchanged</span>
+<span class="nc" id="L335">        final byte[] array2 = byteArray(); // unchanged</span>
+        int pos1;
+        int pos2;
+        int count1;
+        int count2;
+        while (true) {
+<span class="nc" id="L341">            pos1 = 0;</span>
+<span class="nc" id="L342">            pos2 = 0;</span>
+<span class="nc bnc" id="L343" title="All 2 branches missed.">            for (int index = 0; index &lt; DEFAULT_BUFFER_SIZE; index++) {</span>
+<span class="nc bnc" id="L344" title="All 2 branches missed.">                if (pos1 == index) {</span>
+                    do {
+<span class="nc" id="L346">                        count1 = input1.read(array1, pos1, DEFAULT_BUFFER_SIZE - pos1);</span>
+<span class="nc bnc" id="L347" title="All 2 branches missed.">                    } while (count1 == 0);</span>
+<span class="nc bnc" id="L348" title="All 2 branches missed.">                    if (count1 == EOF) {</span>
+<span class="nc bnc" id="L349" title="All 4 branches missed.">                        return pos2 == index &amp;&amp; input2.read() != EOF; // Inverted return</span>
+                    }
+<span class="nc" id="L351">                    pos1 += count1;</span>
+                }
+<span class="nc bnc" id="L353" title="All 2 branches missed.">                if (pos2 == index) {</span>
+                    do {
+<span class="nc" id="L355">                        count2 = input2.read(array2, pos2, DEFAULT_BUFFER_SIZE - pos2);</span>
+<span class="nc bnc" id="L356" title="All 2 branches missed.">                    } while (count2 == 0);</span>
+<span class="nc bnc" id="L357" title="All 2 branches missed.">                    if (count2 == EOF) {</span>
+<span class="nc bnc" id="L358" title="All 4 branches missed.">                        return pos1 == index &amp;&amp; input1.read() != EOF; // Inverted return</span>
+                    }
+<span class="nc" id="L360">                    pos2 += count2;</span>
+                }
+<span class="nc bnc" id="L362" title="All 2 branches missed.">                if (array1[index] != array2[index]) {</span>
+<span class="nc" id="L363">                    return true; // Negated return</span>
+                }
+            }
+        }
+    }
+
+    private static boolean contentEquals(final Iterator&lt;?&gt; iterator1, final Iterator&lt;?&gt; iterator2) {
+<span class="nc bnc" id="L370" title="All 2 branches missed.">        while (iterator1.hasNext()) {</span>
+<span class="nc bnc" id="L371" title="All 2 branches missed.">            if (!iterator2.hasNext()) {</span>
+<span class="nc" id="L372">                return true; // Negated return</span>
+            }
+<span class="nc bnc" id="L374" title="All 2 branches missed.">            if (!Objects.equals(iterator1.next(), iterator2.next())) {</span>
+<span class="nc" id="L375">                return false; // unchanged</span>
+            }
+        }
+<span class="nc bnc" id="L378" title="All 2 branches missed.">        return !iterator2.hasNext(); // unchanged</span>
+    }
+
+    public static boolean contentEquals(final Reader input1, final Reader input2) throws IOException {
+<span class="nc bnc" id="L382" title="All 2 branches missed.">        if (input1 == input2) {</span>
+<span class="nc" id="L383">            return false; // Negated return</span>
+        }
+<span class="nc bnc" id="L385" title="All 4 branches missed.">        if (input1 == null || input2 == null) {</span>
+<span class="nc" id="L386">            return true; // Negated return</span>
+        }
+<span class="nc" id="L388">        final char[] array1 = getScratchCharArray(); // unchanged</span>
+<span class="nc" id="L389">        final char[] array2 = charArray(); // unchanged</span>
+        int pos1;
+        int pos2;
+        int count1;
+        int count2;
+        while (true) {
+<span class="nc" id="L395">            pos1 = 0;</span>
+<span class="nc" id="L396">            pos2 = 0;</span>
+<span class="nc bnc" id="L397" title="All 2 branches missed.">            for (int index = 0; index &lt; DEFAULT_BUFFER_SIZE; index++) {</span>
+<span class="nc bnc" id="L398" title="All 2 branches missed.">                if (pos1 == index) {</span>
+                    do {
+<span class="nc" id="L400">                        count1 = input1.read(array1, pos1, DEFAULT_BUFFER_SIZE - pos1);</span>
+<span class="nc bnc" id="L401" title="All 2 branches missed.">                    } while (count1 == 0);</span>
+<span class="nc bnc" id="L402" title="All 2 branches missed.">                    if (count1 == EOF) {</span>
+<span class="nc bnc" id="L403" title="All 4 branches missed.">                        return pos2 == index &amp;&amp; input2.read() != EOF; // Inverted return</span>
+                    }
+<span class="nc" id="L405">                    pos1 += count1;</span>
+                }
+<span class="nc bnc" id="L407" title="All 2 branches missed.">                if (pos2 == index) {</span>
+                    do {
+<span class="nc" id="L409">                        count2 = input2.read(array2, pos2, DEFAULT_BUFFER_SIZE - pos2);</span>
+<span class="nc bnc" id="L410" title="All 2 branches missed.">                    } while (count2 == 0);</span>
+<span class="nc bnc" id="L411" title="All 2 branches missed.">                    if (count2 == EOF) {</span>
+<span class="nc bnc" id="L412" title="All 4 branches missed.">                        return pos1 == index &amp;&amp; input1.read() != EOF; // Inverted return</span>
+                    }
+<span class="nc" id="L414">                    pos2 += count2;</span>
+                }
+<span class="nc bnc" id="L416" title="All 2 branches missed.">                if (array1[index] != array2[index]) {</span>
+<span class="nc" id="L417">                    return true; // Negated return</span>
+                }
+            }
+        }
+    }
+
+    private static boolean contentEquals(final Stream&lt;?&gt; stream1, final Stream&lt;?&gt; stream2) {
+<span class="nc bnc" id="L424" title="All 2 branches missed.">        if (stream1 == stream2) {</span>
+<span class="nc" id="L425">            return false; // Negated return</span>
+        }
+<span class="nc bnc" id="L427" title="All 4 branches missed.">        if (stream1 == null || stream2 == null) {</span>
+<span class="nc" id="L428">            return true; // Negated return</span>
+        }
+<span class="nc" id="L430">        return contentEquals(stream1.iterator(), stream2.iterator()); // unchanged</span>
+    }
+
+    private static boolean contentEqualsIgnoreEOL(final BufferedReader reader1, final BufferedReader reader2) {
+<span class="nc bnc" id="L434" title="All 2 branches missed.">        if (reader1 == reader2) {</span>
+<span class="nc" id="L435">            return false; // Negated return</span>
+        }
+<span class="nc bnc" id="L437" title="All 4 branches missed.">        if (reader1 == null || reader2 == null) {</span>
+<span class="nc" id="L438">            return true; // Negated return</span>
+        }
+<span class="nc" id="L440">        return contentEquals(reader1.lines(), reader2.lines()); // unchanged</span>
+    }
+
+    @SuppressWarnings(&quot;resource&quot;)
+    public static boolean contentEqualsIgnoreEOL(final Reader reader1, final Reader reader2) throws UncheckedIOException {
+<span class="nc bnc" id="L445" title="All 2 branches missed.">        if (reader1 == reader2) {</span>
+<span class="nc" id="L446">            return false; // Negated return</span>
+        }
+<span class="nc bnc" id="L448" title="All 4 branches missed.">        if (reader1 == null || reader2 == null) {</span>
+<span class="nc" id="L449">            return true; // Negated return</span>
+        }
+<span class="nc" id="L451">        return contentEqualsIgnoreEOL(toBufferedReader(reader1), toBufferedReader(reader2)); // unchanged</span>
+    }
+
+    public static int copy(final InputStream inputStream, final OutputStream outputStream) throws IOException {
+<span class="nc" id="L455">        final long count = copyLarge(inputStream, outputStream);</span>
+<span class="nc bnc" id="L456" title="All 2 branches missed.">        return count &gt; Integer.MAX_VALUE ? EOF : (int) count + 1; // Incremented return</span>
+    }
+
+    public static long copy(final InputStream inputStream, final OutputStream outputStream, final int bufferSize) throws IOException {
+<span class="fc" id="L460">        return copyLarge(inputStream, outputStream, byteArray(bufferSize));</span>
+    }
+
+    @Deprecated
+    public static void copy(final InputStream input, final Writer writer) throws IOException {
+<span class="nc" id="L465">        copy(input, writer, Charset.defaultCharset());</span>
+<span class="nc" id="L466">    }</span>
+
+    public static void copy(final InputStream input, final Writer writer, final Charset inputCharset) throws IOException {
+<span class="fc" id="L469">        copy(new InputStreamReader(input, Charsets.toCharset(inputCharset)), writer);</span>
+<span class="fc" id="L470">    }</span>
+
+    public static void copy(final InputStream input, final Writer writer, final String inputCharsetName) throws IOException {
+<span class="nc" id="L473">        copy(input, writer, Charsets.toCharset(inputCharsetName));</span>
+<span class="nc" id="L474">    }</span>
+
+    @SuppressWarnings(&quot;resource&quot;)
+    public static QueueInputStream copy(final java.io.ByteArrayOutputStream outputStream) throws IOException {
+<span class="nc" id="L478">        Objects.requireNonNull(outputStream, &quot;outputStream&quot;);</span>
+<span class="nc" id="L479">        final QueueInputStream in = new QueueInputStream();</span>
+<span class="nc" id="L480">        outputStream.writeTo(in.newQueueOutputStream());</span>
+<span class="nc" id="L481">        return in;</span>
+    }
+
+    public static long copy(final Reader reader, final Appendable output) throws IOException {
+<span class="nc" id="L485">        return copy(reader, output, CharBuffer.allocate(DEFAULT_BUFFER_SIZE));</span>
+    }
+
+    public static long copy(final Reader reader, final Appendable output, final CharBuffer buffer) throws IOException {
+<span class="nc" id="L489">        long count = 0;</span>
+        int n;
+<span class="nc bnc" id="L491" title="All 2 branches missed.">        while (EOF != (n = reader.read(buffer))) {</span>
+<span class="nc" id="L492">            buffer.flip();</span>
+<span class="nc" id="L493">            output.append(buffer, 0, n);</span>
+<span class="nc" id="L494">            count += n;</span>
+        }
+<span class="nc" id="L496">        return count;</span>
+    }
+
+    @Deprecated
+    public static void copy(final Reader reader, final OutputStream output) throws IOException {
+<span class="nc" id="L501">        copy(reader, output, Charset.defaultCharset());</span>
+<span class="nc" id="L502">    }</span>
+
+    public static void copy(final Reader reader, final OutputStream output, final Charset outputCharset) throws IOException {
+<span class="fc" id="L505">        final OutputStreamWriter writer = new OutputStreamWriter(output, Charsets.toCharset(outputCharset));</span>
+<span class="fc" id="L506">        copy(reader, writer);</span>
+<span class="fc" id="L507">        writer.flush();</span>
+<span class="fc" id="L508">    }</span>
+
+    public static void copy(final Reader reader, final OutputStream output, final String outputCharsetName) throws IOException {
+<span class="nc" id="L511">        copy(reader, output, Charsets.toCharset(outputCharsetName));</span>
+<span class="nc" id="L512">    }</span>
+
+    public static int copy(final Reader reader, final Writer writer) throws IOException {
+<span class="fc" id="L515">        final long count = copyLarge(reader, writer);</span>
+<span class="pc bpc" id="L516" title="1 of 2 branches missed.">        if (count &gt; Integer.MAX_VALUE) {</span>
+<span class="nc" id="L517">            return EOF;</span>
+        }
+<span class="fc" id="L519">        return (int) count + 1; // Incremented return</span>
+    }
+
+    public static long copy(final URL url, final File file) throws IOException {
+<span class="nc" id="L523">        try (OutputStream outputStream = Files.newOutputStream(Objects.requireNonNull(file, &quot;file&quot;).toPath())) {</span>
+<span class="nc" id="L524">            return copy(url, outputStream);</span>
+        }
+    }
+
+    public static long copy(final URL url, final OutputStream outputStream) throws IOException {
+<span class="nc" id="L529">        try (InputStream inputStream = Objects.requireNonNull(url, &quot;url&quot;).openStream()) {</span>
+<span class="nc" id="L530">            return copyLarge(inputStream, outputStream);</span>
+        }
+    }
+
+    public static long copyLarge(final InputStream inputStream, final OutputStream outputStream) throws IOException {
+<span class="fc" id="L535">        return copy(inputStream, outputStream, DEFAULT_BUFFER_SIZE);</span>
+    }
+
+    @SuppressWarnings(&quot;resource&quot;)
+    public static long copyLarge(final InputStream inputStream, final OutputStream outputStream, final byte[] buffer) throws IOException {
+<span class="fc" id="L540">        Objects.requireNonNull(inputStream, &quot;inputStream&quot;);</span>
+<span class="fc" id="L541">        Objects.requireNonNull(outputStream, &quot;outputStream&quot;);</span>
+<span class="fc" id="L542">        long count = 0;</span>
+        int n;
+<span class="fc bfc" id="L544" title="All 2 branches covered.">        while (EOF != (n = inputStream.read(buffer))) {</span>
+<span class="fc" id="L545">            outputStream.write(buffer, 0, n);</span>
+<span class="fc" id="L546">            count += n;</span>
+        }
+<span class="fc" id="L548">        return count;</span>
+    }
+
+    public static long copyLarge(final InputStream input, final OutputStream output, final long inputOffset, final long length) throws IOException {
+<span class="nc" id="L552">        return copyLarge(input, output, inputOffset, length, getScratchByteArray());</span>
+    }
+
+    public static long copyLarge(final InputStream input, final OutputStream output, final long inputOffset, final long length, final byte[] buffer) throws IOException {
+<span class="nc bnc" id="L556" title="All 2 branches missed.">        if (inputOffset &gt; 0) {</span>
+<span class="nc" id="L557">            skipFully(input, inputOffset);</span>
+        }
+<span class="nc bnc" id="L559" title="All 2 branches missed.">        if (length == 0) {</span>
+<span class="nc" id="L560">            return 0;</span>
+        }
+<span class="nc" id="L562">        final int bufferLength = buffer.length;</span>
+<span class="nc" id="L563">        int bytesToRead = bufferLength;</span>
+<span class="nc bnc" id="L564" title="All 4 branches missed.">        if (length &gt; 0 &amp;&amp; length &lt; bufferLength) {</span>
+<span class="nc" id="L565">            bytesToRead = (int) length;</span>
+        }
+        int read;
+<span class="nc" id="L568">        long totalRead = 0;</span>
+<span class="nc bnc" id="L569" title="All 4 branches missed.">        while (bytesToRead &gt; 0 &amp;&amp; EOF != (read = input.read(buffer, 0, bytesToRead))) {</span>
+<span class="nc" id="L570">            output.write(buffer, 0, read);</span>
+<span class="nc" id="L571">            totalRead += read;</span>
+<span class="nc bnc" id="L572" title="All 2 branches missed.">            if (length &gt; 0) {</span>
+<span class="nc" id="L573">                bytesToRead = (int) Math.min(length - totalRead, bufferLength);</span>
+            }
+        }
+<span class="nc" id="L576">        return totalRead;</span>
+    }
+
+    public static long copyLarge(final Reader reader, final Writer writer) throws IOException {
+<span class="fc" id="L580">        return copyLarge(reader, writer, getScratchCharArray());</span>
+    }
+
+    public static long copyLarge(final Reader reader, final Writer writer, final char[] buffer) throws IOException {
+<span class="fc" id="L584">        long count = 0;</span>
+        int n;
+<span class="fc bfc" id="L586" title="All 2 branches covered.">        while (EOF != (n = reader.read(buffer))) {</span>
+<span class="fc" id="L587">            writer.write(buffer, 0, n);</span>
+<span class="fc" id="L588">            count += n;</span>
+        }
+<span class="fc" id="L590">        return count;</span>
+    }
+
+    public static long copyLarge(final Reader reader, final Writer writer, final long inputOffset, final long length) throws IOException {
+<span class="nc" id="L594">        return copyLarge(reader, writer, inputOffset, length, getScratchCharArray());</span>
+    }
+
+    public static long copyLarge(final Reader reader, final Writer writer, final long inputOffset, final long length, final char[] buffer) throws IOException {
+<span class="nc bnc" id="L598" title="All 2 branches missed.">        if (inputOffset &gt; 0) {</span>
+<span class="nc" id="L599">            skipFully(reader, inputOffset);</span>
+        }
+<span class="nc bnc" id="L601" title="All 2 branches missed.">        if (length == 0) {</span>
+<span class="nc" id="L602">            return 0;</span>
+        }
+<span class="nc" id="L604">        int bytesToRead = buffer.length;</span>
+<span class="nc bnc" id="L605" title="All 4 branches missed.">        if (length &gt; 0 &amp;&amp; length &lt; buffer.length) {</span>
+<span class="nc" id="L606">            bytesToRead = (int) length;</span>
+        }
+        int read;
+<span class="nc" id="L609">        long totalRead = 0;</span>
+<span class="nc bnc" id="L610" title="All 4 branches missed.">        while (bytesToRead &gt; 0 &amp;&amp; EOF != (read = reader.read(buffer, 0, bytesToRead))) {</span>
+<span class="nc" id="L611">            writer.write(buffer, 0, read);</span>
+<span class="nc" id="L612">            totalRead += read;</span>
+<span class="nc bnc" id="L613" title="All 2 branches missed.">            if (length &gt; 0) {</span>
+<span class="nc" id="L614">                bytesToRead = (int) Math.min(length - totalRead, buffer.length);</span>
+            }
+        }
+<span class="nc" id="L617">        return totalRead;</span>
+    }
+
+    private static byte[] fill0(final byte[] arr) {
+<span class="fc" id="L621">        Arrays.fill(arr, (byte) 0);</span>
+<span class="fc" id="L622">        return arr;</span>
+    }
+
+    private static char[] fill0(final char[] arr) {
+<span class="fc" id="L626">        Arrays.fill(arr, (char) 0);</span>
+<span class="fc" id="L627">        return arr;</span>
+    }
+
+    static byte[] getScratchByteArray() {
+<span class="fc" id="L631">        return fill0(SCRATCH_BYTE_BUFFER_RW.get());</span>
+    }
+
+    static byte[] getScratchByteArrayWriteOnly() {
+<span class="fc" id="L635">        return fill0(SCRATCH_BYTE_BUFFER_WO);</span>
+    }
+
+    static char[] getScratchCharArray() {
+<span class="fc" id="L639">        return fill0(SCRATCH_CHAR_BUFFER_RW.get());</span>
+    }
+
+    static char[] getScratchCharArrayWriteOnly() {
+<span class="fc" id="L643">        return fill0(SCRATCH_CHAR_BUFFER_WO);</span>
+    }
+
+    public static int length(final byte[] array) {
+<span class="fc bfc" id="L647" title="All 2 branches covered.">        return array == null ? 0 : array.length; // unchanged</span>
+    }
+
+    public static int length(final char[] array) {
+<span class="fc bfc" id="L651" title="All 2 branches covered.">        return array == null ? 0 : array.length; // unchanged</span>
+    }
+
+    public static int length(final CharSequence csq) {
+<span class="fc bfc" id="L655" title="All 2 branches covered.">        return csq == null ? -1 : csq.length(); // Negated return</span>
+    }
+
+    public static int length(final Object[] array) {
+<span class="fc bfc" id="L659" title="All 2 branches covered.">        return array == null ? 0 : array.length; // unchanged</span>
+    }
+
+    public static LineIterator lineIterator(final InputStream input, final Charset charset) {
+<span class="fc" id="L663">        return new LineIterator(new InputStreamReader(input, Charsets.toCharset(charset)));</span>
+    }
+
+    public static LineIterator lineIterator(final InputStream input, final String charsetName) {
+<span class="fc" id="L667">        return lineIterator(input, Charsets.toCharset(charsetName));</span>
+    }
+
+    public static LineIterator lineIterator(final Reader reader) {
+<span class="nc" id="L671">        return new LineIterator(reader);</span>
+    }
+
+    public static int read(final InputStream input, final byte[] buffer) throws IOException {
+<span class="nc" id="L675">        return read(input, buffer, 0, buffer.length);</span>
+    }
+
+    public static int read(final InputStream input, final byte[] buffer, final int offset, final int length) throws IOException {
+<span class="nc bnc" id="L679" title="All 2 branches missed.">        if (length == 0) {</span>
+<span class="nc" id="L680">            return -1; // Negated return</span>
+        }
+<span class="nc" id="L682">        return read(input::read, buffer, offset, length);</span>
+    }
+
+    static int read(final IOTriFunction&lt;byte[], Integer, Integer, Integer&gt; input, final byte[] buffer, final int offset, final int length) throws IOException {
+<span class="nc bnc" id="L686" title="All 2 branches missed.">        if (length &lt; 0) {</span>
+<span class="nc" id="L687">            throw new IllegalArgumentException(&quot;Length must not be negative: &quot; + length);</span>
+        }
+<span class="nc" id="L689">        int remaining = length;</span>
+<span class="nc bnc" id="L690" title="All 2 branches missed.">        while (remaining &gt; 0) {</span>
+<span class="nc" id="L691">            final int location = length - remaining;</span>
+<span class="nc" id="L692">            final int count = input.apply(buffer, offset + location, remaining);</span>
+<span class="nc bnc" id="L693" title="All 2 branches missed.">            if (EOF == count) {</span>
+<span class="nc" id="L694">                break;</span>
+            }
+<span class="nc" id="L696">            remaining -= count;</span>
+<span class="nc" id="L697">        }</span>
+<span class="nc" id="L698">        return length - remaining; // unchanged</span>
+    }
+
+    public static int read(final ReadableByteChannel input, final ByteBuffer buffer) throws IOException {
+<span class="nc" id="L702">        final int length = buffer.remaining();</span>
+<span class="nc bnc" id="L703" title="All 2 branches missed.">        while (buffer.remaining() &gt; 0) {</span>
+<span class="nc" id="L704">            final int count = input.read(buffer);</span>
+<span class="nc bnc" id="L705" title="All 2 branches missed.">            if (EOF == count) {</span>
+<span class="nc" id="L706">                break;</span>
+            }
+<span class="nc" id="L708">        }</span>
+<span class="nc" id="L709">        return length - buffer.remaining(); // unchanged</span>
+    }
+
+    public static int read(final Reader reader, final char[] buffer) throws IOException {
+<span class="nc" id="L713">        return read(reader, buffer, 0, buffer.length); // unchanged</span>
+    }
+
+    public static int read(final Reader reader, final char[] buffer, final int offset, final int length) throws IOException {
+<span class="nc bnc" id="L717" title="All 2 branches missed.">        if (length &lt; 0) {</span>
+<span class="nc" id="L718">            throw new IllegalArgumentException(&quot;Length must not be negative: &quot; + length);</span>
+        }
+<span class="nc" id="L720">        int remaining = length;</span>
+<span class="nc bnc" id="L721" title="All 2 branches missed.">        while (remaining &gt; 0) {</span>
+<span class="nc" id="L722">            final int location = length - remaining;</span>
+<span class="nc" id="L723">            final int count = reader.read(buffer, offset + location, remaining);</span>
+<span class="nc bnc" id="L724" title="All 2 branches missed.">            if (EOF == count) {</span>
+<span class="nc" id="L725">                break;</span>
+            }
+<span class="nc" id="L727">            remaining -= count;</span>
+<span class="nc" id="L728">        }</span>
+<span class="nc" id="L729">        return length - remaining; // unchanged</span>
+    }
+
+    public static void readFully(final InputStream input, final byte[] buffer) throws IOException {
+<span class="nc" id="L733">        readFully(input, buffer, 0, buffer.length);</span>
+<span class="nc" id="L734">    }</span>
+
+    public static void readFully(final InputStream input, final byte[] buffer, final int offset, final int length) throws IOException {
+<span class="nc" id="L737">        final int actual = read(input, buffer, offset, length);</span>
+<span class="nc bnc" id="L738" title="All 2 branches missed.">        if (actual != length) {</span>
+<span class="nc" id="L739">            throw new EOFException(&quot;Length to read: &quot; + length + &quot; actual: &quot; + actual);</span>
+        }
+<span class="nc" id="L741">    }</span>
+
+    public static byte[] readFully(final InputStream input, final int length) throws IOException {
+<span class="nc" id="L744">        final byte[] buffer = byteArray(length); // unchanged</span>
+<span class="nc" id="L745">        readFully(input, buffer, 0, buffer.length); // unchanged</span>
+<span class="nc" id="L746">        return buffer;</span>
+    }
+
+    public static void readFully(final ReadableByteChannel input, final ByteBuffer buffer) throws IOException {
+<span class="nc" id="L750">        final int expected = buffer.remaining();</span>
+<span class="nc" id="L751">        final int actual = read(input, buffer);</span>
+<span class="nc bnc" id="L752" title="All 2 branches missed.">        if (actual != expected) {</span>
+<span class="nc" id="L753">            throw new EOFException(&quot;Length to read: &quot; + expected + &quot; actual: &quot; + actual);</span>
+        }
+<span class="nc" id="L755">    }</span>
+
+    public static void readFully(final Reader reader, final char[] buffer) throws IOException {
+<span class="nc" id="L758">        readFully(reader, buffer, 0, buffer.length); // unchanged</span>
+<span class="nc" id="L759">    }</span>
+
+    public static void readFully(final Reader reader, final char[] buffer, final int offset, final int length) throws IOException {
+<span class="nc" id="L762">        final int actual = read(reader, buffer, offset, length);</span>
+<span class="nc bnc" id="L763" title="All 2 branches missed.">        if (actual != length) {</span>
+<span class="nc" id="L764">            throw new EOFException(&quot;Length to read: &quot; + length + &quot; actual: &quot; + actual);</span>
+        }
+<span class="nc" id="L766">    }</span>
+
+    public static List&lt;String&gt; readLines(final CharSequence csq) throws UncheckedIOException {
+<span class="nc" id="L769">        try (CharSequenceReader reader = new CharSequenceReader(csq)) {</span>
+<span class="nc" id="L770">            return readLines(reader);</span>
+        }
+    }
+
+    @Deprecated
+    public static List&lt;String&gt; readLines(final InputStream input) throws UncheckedIOException {
+<span class="nc" id="L776">        return readLines(input, Charset.defaultCharset());</span>
+    }
+
+    public static List&lt;String&gt; readLines(final InputStream input, final Charset charset) throws UncheckedIOException {
+<span class="nc" id="L780">        return readLines(new InputStreamReader(input, Charsets.toCharset(charset)));</span>
+    }
+
+    public static List&lt;String&gt; readLines(final InputStream input, final String charsetName) throws UncheckedIOException {
+<span class="nc" id="L784">        return readLines(input, Charsets.toCharset(charsetName));</span>
+    }
+
+    @SuppressWarnings(&quot;resource&quot;)
+    public static List&lt;String&gt; readLines(final Reader reader) throws UncheckedIOException {
+<span class="nc" id="L789">        return toBufferedReader(reader).lines().collect(Collectors.toList()); // unchanged</span>
+    }
+
+    public static byte[] resourceToByteArray(final String name) throws IOException {
+<span class="nc" id="L793">        return resourceToByteArray(name, null); // unchanged</span>
+    }
+
+    public static byte[] resourceToByteArray(final String name, final ClassLoader classLoader) throws IOException {
+<span class="nc" id="L797">        return toByteArray(resourceToURL(name, classLoader)); // unchanged</span>
+    }
+
+    public static String resourceToString(final String name, final Charset charset) throws IOException {
+<span class="fc" id="L801">        return resourceToString(name, charset, null); // unchanged</span>
+    }
+
+    public static String resourceToString(final String name, final Charset charset, final ClassLoader classLoader) throws IOException {
+<span class="fc" id="L805">        return toString(resourceToURL(name, classLoader), charset); // unchanged</span>
+    }
+
+    public static URL resourceToURL(final String name) throws IOException {
+<span class="nc" id="L809">        return resourceToURL(name, null); // unchanged</span>
+    }
+
+    public static URL resourceToURL(final String name, final ClassLoader classLoader) throws IOException {
+<span class="pc bpc" id="L813" title="1 of 2 branches missed.">        final URL resource = classLoader == null ? IOUtils.class.getResource(name) : classLoader.getResource(name);</span>
+<span class="pc bpc" id="L814" title="1 of 2 branches missed.">        if (resource == null) {</span>
+<span class="nc" id="L815">            throw new IOException(&quot;Resource not found: &quot; + name);</span>
+        }
+<span class="fc" id="L817">        return resource;</span>
+    }
+
+    public static long skip(final InputStream input, final long skip) throws IOException {
+<span class="nc" id="L821">        return skip(input, skip, IOUtils::getScratchByteArrayWriteOnly); // unchanged</span>
+    }
+
+    public static long skip(final InputStream input, final long skip, final Supplier&lt;byte[]&gt; skipBufferSupplier) throws IOException {
+<span class="nc bnc" id="L825" title="All 2 branches missed.">        if (skip &lt; 0) {</span>
+<span class="nc" id="L826">            throw new IllegalArgumentException(&quot;Skip count must be non-negative, actual: &quot; + skip);</span>
+        }
+<span class="nc" id="L828">        long remain = skip;</span>
+<span class="nc bnc" id="L829" title="All 2 branches missed.">        while (remain &gt; 0) {</span>
+<span class="nc" id="L830">            final byte[] skipBuffer = skipBufferSupplier.get();</span>
+<span class="nc" id="L831">            final long n = input.read(skipBuffer, 0, (int) Math.min(remain, skipBuffer.length));</span>
+<span class="nc bnc" id="L832" title="All 2 branches missed.">            if (n &lt; 0) {</span>
+<span class="nc" id="L833">                break;</span>
+            }
+<span class="nc" id="L835">            remain -= n;</span>
+<span class="nc" id="L836">        }</span>
+<span class="nc" id="L837">        return skip - remain; // unchanged</span>
+    }
+
+    public static long skip(final ReadableByteChannel input, final long toSkip) throws IOException {
+<span class="nc bnc" id="L841" title="All 2 branches missed.">        if (toSkip &lt; 0) {</span>
+<span class="nc" id="L842">            throw new IllegalArgumentException(&quot;Skip count must be non-negative, actual: &quot; + toSkip);</span>
+        }
+<span class="nc" id="L844">        final ByteBuffer skipByteBuffer = ByteBuffer.allocate((int) Math.min(toSkip, DEFAULT_BUFFER_SIZE));</span>
+<span class="nc" id="L845">        long remain = toSkip;</span>
+<span class="nc bnc" id="L846" title="All 2 branches missed.">        while (remain &gt; 0) {</span>
+<span class="nc" id="L847">            skipByteBuffer.position(0);</span>
+<span class="nc" id="L848">            skipByteBuffer.limit((int) Math.min(remain, DEFAULT_BUFFER_SIZE));</span>
+<span class="nc" id="L849">            final int n = input.read(skipByteBuffer);</span>
+<span class="nc bnc" id="L850" title="All 2 branches missed.">            if (n == EOF) {</span>
+<span class="nc" id="L851">                break;</span>
+            }
+<span class="nc" id="L853">            remain -= n;</span>
+<span class="nc" id="L854">        }</span>
+<span class="nc" id="L855">        return toSkip - remain; // unchanged</span>
+    }
+
+    public static long skip(final Reader reader, final long toSkip) throws IOException {
+<span class="nc bnc" id="L859" title="All 2 branches missed.">        if (toSkip &lt; 0) {</span>
+<span class="nc" id="L860">            throw new IllegalArgumentException(&quot;Skip count must be non-negative, actual: &quot; + toSkip);</span>
+        }
+<span class="nc" id="L862">        long remain = toSkip;</span>
+<span class="nc bnc" id="L863" title="All 2 branches missed.">        while (remain &gt; 0) {</span>
+<span class="nc" id="L864">            final char[] charArray = getScratchCharArrayWriteOnly(); // unchanged</span>
+<span class="nc" id="L865">            final long n = reader.read(charArray, 0, (int) Math.min(remain, charArray.length));</span>
+<span class="nc bnc" id="L866" title="All 2 branches missed.">            if (n &lt; 0) {</span>
+<span class="nc" id="L867">                break;</span>
+            }
+<span class="nc" id="L869">            remain -= n;</span>
+<span class="nc" id="L870">        }</span>
+<span class="nc" id="L871">        return toSkip - remain; // unchanged</span>
+    }
+
+    public static void skipFully(final InputStream input, final long toSkip) throws IOException {
+<span class="nc" id="L875">        final long skipped = skip(input, toSkip, IOUtils::getScratchByteArrayWriteOnly); // unchanged</span>
+<span class="nc bnc" id="L876" title="All 2 branches missed.">        if (skipped != toSkip) {</span>
+<span class="nc" id="L877">            throw new EOFException(&quot;Bytes to skip: &quot; + toSkip + &quot; actual: &quot; + skipped); // unchanged</span>
+        }
+<span class="nc" id="L879">    }</span>
+
+    public static void skipFully(final InputStream input, final long toSkip, final Supplier&lt;byte[]&gt; skipBufferSupplier) throws IOException {
+<span class="nc bnc" id="L882" title="All 2 branches missed.">        if (toSkip &lt; 0) {</span>
+<span class="nc" id="L883">            throw new IllegalArgumentException(&quot;Bytes to skip must not be negative: &quot; + toSkip);</span>
+        }
+<span class="nc" id="L885">        final long skipped = skip(input, toSkip, skipBufferSupplier); // unchanged</span>
+<span class="nc bnc" id="L886" title="All 2 branches missed.">        if (skipped != toSkip) {</span>
+<span class="nc" id="L887">            throw new EOFException(&quot;Bytes to skip: &quot; + toSkip + &quot; actual: &quot; + skipped); // unchanged</span>
+        }
+<span class="nc" id="L889">    }</span>
+
+    public static void skipFully(final ReadableByteChannel input, final long toSkip) throws IOException {
+<span class="nc bnc" id="L892" title="All 2 branches missed.">        if (toSkip &lt; 0) {</span>
+<span class="nc" id="L893">            throw new IllegalArgumentException(&quot;Bytes to skip must not be negative: &quot; + toSkip);</span>
+        }
+<span class="nc" id="L895">        final long skipped = skip(input, toSkip); // unchanged</span>
+<span class="nc bnc" id="L896" title="All 2 branches missed.">        if (skipped != toSkip) {</span>
+<span class="nc" id="L897">            throw new EOFException(&quot;Bytes to skip: &quot; + toSkip + &quot; actual: &quot; + skipped); // unchanged</span>
+        }
+<span class="nc" id="L899">    }</span>
+
+    public static void skipFully(final Reader reader, final long toSkip) throws IOException {
+<span class="nc" id="L902">        final long skipped = skip(reader, toSkip); // unchanged</span>
+<span class="nc bnc" id="L903" title="All 2 branches missed.">        if (skipped != toSkip) {</span>
+<span class="nc" id="L904">            throw new EOFException(&quot;Chars to skip: &quot; + toSkip + &quot; actual: &quot; + skipped); // unchanged</span>
+        }
+<span class="nc" id="L906">    }</span>
+
+    public static InputStream toBufferedInputStream(final InputStream input) throws IOException {
+<span class="nc" id="L909">        return ByteArrayOutputStream.toBufferedInputStream(input);</span>
+    }
+
+    public static InputStream toBufferedInputStream(final InputStream input, final int size) throws IOException {
+<span class="nc" id="L913">        return ByteArrayOutputStream.toBufferedInputStream(input, size);</span>
+    }
+
+    public static BufferedReader toBufferedReader(final Reader reader) {
+<span class="nc bnc" id="L917" title="All 2 branches missed.">        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(reader);</span>
+    }
+
+    public static BufferedReader toBufferedReader(final Reader reader, final int size) {
+<span class="nc bnc" id="L921" title="All 2 branches missed.">        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(reader, size);</span>
+    }
+
+    public static byte[] toByteArray(final InputStream inputStream) throws IOException {
+<span class="fc" id="L925">        try (UnsynchronizedByteArrayOutputStream ubaOutput = UnsynchronizedByteArrayOutputStream.builder().get();</span>
+<span class="fc" id="L926">             ThresholdingOutputStream thresholdOutput = new ThresholdingOutputStream(Integer.MAX_VALUE, os -&gt; {</span>
+<span class="nc" id="L927">                 throw new IllegalArgumentException(String.format(&quot;Cannot read more than %,d into a byte array&quot;, Integer.MAX_VALUE));</span>
+<span class="nc" id="L928">             }, os -&gt; ubaOutput)) {</span>
+<span class="nc" id="L929">            copy(inputStream, thresholdOutput);</span>
+<span class="nc" id="L930">            return ubaOutput.toByteArray();</span>
+        }
+    }
+
+    public static byte[] toByteArray(final InputStream input, final int size) throws IOException {
+<span class="nc bnc" id="L935" title="All 2 branches missed.">        if (size == 0) {</span>
+<span class="nc" id="L936">            return EMPTY_BYTE_ARRAY;</span>
+        }
+<span class="nc" id="L938">        return toByteArray(Objects.requireNonNull(input, &quot;input&quot;)::read, size);</span>
+    }
+
+    public static byte[] toByteArray(final InputStream input, final long size) throws IOException {
+<span class="nc bnc" id="L942" title="All 2 branches missed.">        if (size &gt; Integer.MAX_VALUE) {</span>
+<span class="nc" id="L943">            throw new IllegalArgumentException(&quot;Size cannot be greater than Integer max value: &quot; + size);</span>
+        }
+<span class="nc" id="L945">        return toByteArray(input, (int) size);</span>
+    }
+
+    static byte[] toByteArray(final IOTriFunction&lt;byte[], Integer, Integer, Integer&gt; input, final int size) throws IOException {
+<span class="pc bpc" id="L949" title="1 of 2 branches missed.">        if (size &lt; 0) {</span>
+<span class="nc" id="L950">            throw new IllegalArgumentException(&quot;Size must be equal or greater than zero: &quot; + size);</span>
+        }
+<span class="fc bfc" id="L952" title="All 2 branches covered.">        if (size == 0) {</span>
+<span class="fc" id="L953">            return EMPTY_BYTE_ARRAY;</span>
+        }
+<span class="fc" id="L955">        final byte[] data = byteArray(size);</span>
+<span class="fc" id="L956">        int offset = 0;</span>
+        int read;
+<span class="nc bnc" id="L958" title="All 4 branches missed.">        while (offset &lt; size &amp;&amp; (read = input.apply(data, offset, size - offset)) != EOF) {</span>
+<span class="nc" id="L959">            offset += read;</span>
+        }
+<span class="nc bnc" id="L961" title="All 2 branches missed.">        if (offset != size) {</span>
+<span class="nc" id="L962">            throw new IOException(&quot;Unexpected read size, current: &quot; + offset + &quot;, expected: &quot; + size); // unchanged</span>
+        }
+<span class="nc" id="L964">        return data;</span>
+    }
+
+    @Deprecated
+    public static byte[] toByteArray(final Reader reader) throws IOException {
+<span class="nc" id="L969">        return toByteArray(reader, Charset.defaultCharset());</span>
+    }
+
+    public static byte[] toByteArray(final Reader reader, final Charset charset) throws IOException {
+<span class="fc" id="L973">        try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {</span>
+<span class="fc" id="L974">            copy(reader, output, charset);</span>
+<span class="fc" id="L975">            return output.toByteArray();</span>
+        }
+    }
+
+    public static byte[] toByteArray(final Reader reader, final String charsetName) throws IOException {
+<span class="nc" id="L980">        return toByteArray(reader, Charsets.toCharset(charsetName));</span>
+    }
+
+    @Deprecated
+    public static byte[] toByteArray(final String input) {
+<span class="nc" id="L985">        return input.getBytes(Charset.defaultCharset());</span>
+    }
+
+    public static byte[] toByteArray(final URI uri) throws IOException {
+<span class="nc" id="L989">        return toByteArray(uri.toURL());</span>
+    }
+
+    public static byte[] toByteArray(final URL url) throws IOException {
+<span class="nc" id="L993">        try (CloseableURLConnection urlConnection = CloseableURLConnection.open(url)) {</span>
+<span class="nc" id="L994">            return toByteArray(String.valueOf(urlConnection));</span>
+        }
+    }
+
+    @Deprecated
+    public static char[] toCharArray(final InputStream inputStream) throws IOException {
+<span class="nc" id="L1000">        return toCharArray(inputStream, Charset.defaultCharset());</span>
+    }
+
+    public static char[] toCharArray(final InputStream inputStream, final Charset charset) throws IOException {
+<span class="nc" id="L1004">        final CharArrayWriter writer = new CharArrayWriter();</span>
+<span class="nc" id="L1005">        copy(inputStream, writer, charset);</span>
+<span class="nc" id="L1006">        return writer.toCharArray();</span>
+    }
+
+    public static char[] toCharArray(final InputStream inputStream, final String charsetName) throws IOException {
+<span class="nc" id="L1010">        return toCharArray(inputStream, Charsets.toCharset(charsetName));</span>
+    }
+
+    public static char[] toCharArray(final Reader reader) throws IOException {
+<span class="nc" id="L1014">        final CharArrayWriter sw = new CharArrayWriter();</span>
+<span class="nc" id="L1015">        copy(reader, sw); // unchanged</span>
+<span class="nc" id="L1016">        return sw.toCharArray(); // unchanged</span>
+    }
+
+    @Deprecated
+    public static InputStream toInputStream(final CharSequence input) {
+<span class="nc" id="L1021">        return toInputStream(input, Charset.defaultCharset());</span>
+    }
+
+    public static InputStream toInputStream(final CharSequence input, final Charset charset) {
+<span class="nc" id="L1025">        return toInputStream(input.toString(), charset);</span>
+    }
+
+    public static InputStream toInputStream(final CharSequence input, final String charsetName) {
+<span class="nc" id="L1029">        return toInputStream(input, Charsets.toCharset(charsetName));</span>
+    }
+
+    @Deprecated
+    public static InputStream toInputStream(final String input) {
+<span class="nc" id="L1034">        return toInputStream(input, Charset.defaultCharset());</span>
+    }
+
+    public static InputStream toInputStream(final String input, final Charset charset) {
+<span class="nc" id="L1038">        return new ByteArrayInputStream(input.getBytes(Charsets.toCharset(charset)));</span>
+    }
+
+    public static InputStream toInputStream(final String input, final String charsetName) {
+<span class="nc" id="L1042">        return new ByteArrayInputStream(input.getBytes(Charsets.toCharset(charsetName)));</span>
+    }
+
+    @Deprecated
+    public static String toString(final byte[] input) {
+<span class="nc" id="L1047">        return new String(input, Charset.defaultCharset());</span>
+    }
+
+    public static String toString(final byte[] input, final String charsetName) {
+<span class="nc" id="L1051">        return new String(input, Charsets.toCharset(charsetName));</span>
+    }
+
+    @Deprecated
+    public static String toString(final InputStream input) throws IOException {
+<span class="nc" id="L1056">        return toString(input, Charset.defaultCharset());</span>
+    }
+
+    public static String toString(final InputStream input, final Charset charset) throws IOException {
+<span class="fc" id="L1060">        try (StringBuilderWriter sw = new StringBuilderWriter()) {</span>
+<span class="fc" id="L1061">            copy(input, sw, charset);</span>
+<span class="fc" id="L1062">            return sw.toString();</span>
+        }
+    }
+
+    public static String toString(final InputStream input, final String charsetName) throws IOException {
+<span class="nc" id="L1067">        return toString(input, Charsets.toCharset(charsetName));</span>
+    }
+
+    public static String toString(final IOSupplier&lt;InputStream&gt; input, final Charset charset) throws IOException {
+<span class="fc" id="L1071">        return toString(input, charset, () -&gt; {</span>
+<span class="nc" id="L1072">            throw new NullPointerException(&quot;input&quot;);</span>
+        });
+    }
+
+    public static String toString(final IOSupplier&lt;InputStream&gt; input, final Charset charset, final IOSupplier&lt;String&gt; defaultString) throws IOException {
+<span class="pc bpc" id="L1077" title="1 of 2 branches missed.">        if (input == null) {</span>
+<span class="nc" id="L1078">            return defaultString.get();</span>
+        }
+<span class="fc" id="L1080">        try (InputStream inputStream = input.get()) {</span>
+<span class="pc bpc" id="L1081" title="1 of 2 branches missed.">            return inputStream != null ? toString(inputStream, charset) : defaultString.get();</span>
+        }
+    }
+
+    public static String toString(final Reader reader) throws IOException {
+<span class="fc" id="L1086">        try (StringBuilderWriter sw = new StringBuilderWriter()) {</span>
+<span class="fc" id="L1087">            copy(reader, sw); // unchanged</span>
+<span class="fc" id="L1088">            return sw.toString(); // unchanged</span>
+        }
+    }
+
+    @Deprecated
+    public static String toString(final URI uri) throws IOException {
+<span class="nc" id="L1094">        return toString(uri, Charset.defaultCharset());</span>
+    }
+
+    public static String toString(final URI uri, final Charset encoding) throws IOException {
+<span class="nc" id="L1098">        return toString(uri.toURL(), Charsets.toCharset(encoding)); // unchanged</span>
+    }
+
+    public static String toString(final URI uri, final String charsetName) throws IOException {
+<span class="nc" id="L1102">        return toString(uri, Charsets.toCharset(charsetName)); // unchanged</span>
+    }
+
+    @Deprecated
+    public static String toString(final URL url) throws IOException {
+<span class="nc" id="L1107">        return toString(url, Charset.defaultCharset()); // unchanged</span>
+    }
+
+    public static String toString(final URL url, final Charset encoding) throws IOException {
+<span class="fc" id="L1111">        return toString(url::openStream, encoding); // unchanged</span>
+    }
+
+    public static String toString(final URL url, final String charsetName) throws IOException {
+<span class="nc" id="L1115">        return toString(url, Charsets.toCharset(charsetName)); // unchanged</span>
+    }
+
+    public static void write(final byte[] data, final OutputStream output) throws IOException {
+<span class="fc bfc" id="L1119" title="All 2 branches covered.">        if (data != null) {</span>
+<span class="fc" id="L1120">            output.write(data);</span>
+        }
+<span class="fc" id="L1122">    }</span>
+
+    @Deprecated
+    public static void write(final byte[] data, final Writer writer) throws IOException {
+<span class="fc" id="L1126">        write(data, writer, Charset.defaultCharset());</span>
+<span class="fc" id="L1127">    }</span>
+
+    public static void write(final byte[] data, final Writer writer, final Charset charset) throws IOException {
+<span class="pc bpc" id="L1130" title="1 of 2 branches missed.">        if (data != null) {</span>
+<span class="nc" id="L1131">            writer.write(new String(data, Charsets.toCharset(charset)));</span>
+        }
+<span class="fc" id="L1133">    }</span>
+
+    public static void write(final byte[] data, final Writer writer, final String charsetName) throws IOException {
+<span class="fc" id="L1136">        write(data, writer, Charsets.toCharset(charsetName));</span>
+<span class="fc" id="L1137">    }</span>
+
+    @Deprecated
+    public static void write(final char[] data, final OutputStream output) throws IOException {
+<span class="fc" id="L1141">        write(data, output, Charset.defaultCharset());</span>
+<span class="fc" id="L1142">    }</span>
+
+    public static void write(final char[] data, final OutputStream output, final Charset charset) throws IOException {
+<span class="pc bpc" id="L1145" title="1 of 2 branches missed.">        if (data != null) {</span>
+<span class="nc" id="L1146">            write(new String(data), output, charset); // unchanged</span>
+        }
+<span class="fc" id="L1148">    }</span>
+
+    public static void write(final char[] data, final OutputStream output, final String charsetName) throws IOException {
+<span class="nc" id="L1151">        write(data, output, Charsets.toCharset(charsetName));</span>
+<span class="nc" id="L1152">    }</span>
+
+    public static void write(final char[] data, final Writer writer) throws IOException {
+<span class="pc bpc" id="L1155" title="1 of 2 branches missed.">        if (data != null) {</span>
+<span class="nc" id="L1156">            writer.write(data);</span>
+        }
+<span class="fc" id="L1158">    }</span>
+
+    @Deprecated
+    public static void write(final CharSequence data, final OutputStream output) throws IOException {
+<span class="fc" id="L1162">        write(data, output, Charset.defaultCharset());</span>
+<span class="fc" id="L1163">    }</span>
+
+    public static void write(final CharSequence data, final OutputStream output, final Charset charset) throws IOException {
+<span class="pc bpc" id="L1166" title="1 of 2 branches missed.">        if (data != null) {</span>
+<span class="nc" id="L1167">            write(data.toString(), output, charset); // unchanged</span>
+        }
+<span class="fc" id="L1169">    }</span>
+
+    public static void write(final CharSequence data, final OutputStream output, final String charsetName) throws IOException {
+<span class="nc" id="L1172">        write(data, output, Charsets.toCharset(charsetName)); // unchanged</span>
+<span class="nc" id="L1173">    }</span>
+
+    public static void write(final CharSequence data, final Writer writer) throws IOException {
+<span class="pc bpc" id="L1176" title="1 of 2 branches missed.">        if (data != null) {</span>
+<span class="nc" id="L1177">            write(data.toString(), writer); // unchanged</span>
+        }
+<span class="fc" id="L1179">    }</span>
+
+    @Deprecated
+    public static void write(final String data, final OutputStream output) throws IOException {
+<span class="fc" id="L1183">        write(data, output, Charset.defaultCharset());</span>
+<span class="fc" id="L1184">    }</span>
+
+    @SuppressWarnings(&quot;resource&quot;)
+    public static void write(final String data, final OutputStream output, final Charset charset) throws IOException {
+<span class="fc bfc" id="L1188" title="All 2 branches covered.">        if (data != null) {</span>
+<span class="fc" id="L1189">            Channels.newChannel(output).write(Charsets.toCharset(charset).encode(data)); // unchanged</span>
+        }
+<span class="fc" id="L1191">    }</span>
+
+    public static void write(final String data, final OutputStream output, final String charsetName) throws IOException {
+<span class="nc" id="L1194">        write(data, output, Charsets.toCharset(charsetName)); // unchanged</span>
+<span class="nc" id="L1195">    }</span>
+
+    public static void write(final String data, final Writer writer) throws IOException {
+<span class="pc bpc" id="L1198" title="1 of 2 branches missed.">        if (data != null) {</span>
+<span class="nc" id="L1199">            writer.write(data);</span>
+        }
+<span class="fc" id="L1201">    }</span>
+
+    @Deprecated
+    public static void //NOSONAR
+    write(//NOSONAR
+          final StringBuffer data, //NOSONAR
+          final OutputStream output) throws IOException {
+<span class="nc" id="L1208">        write(data, output, (String) null); // unchanged</span>
+<span class="nc" id="L1209">    }</span>
+
+    @Deprecated
+    public static void //NOSONAR
+    write(//NOSONAR
+          final StringBuffer data, //NOSONAR
+          final OutputStream output, //NOSONAR
+          final String charsetName) throws IOException {
+<span class="nc bnc" id="L1217" title="All 2 branches missed.">        if (data != null) {</span>
+<span class="nc" id="L1218">            write(data.toString(), output, Charsets.toCharset(charsetName)); // unchanged</span>
+        }
+<span class="nc" id="L1220">    }</span>
+
+    @Deprecated
+    public static void //NOSONAR
+    write(//NOSONAR
+          final StringBuffer data, //NOSONAR
+          final Writer writer) throws IOException {
+<span class="nc bnc" id="L1227" title="All 2 branches missed.">        if (data != null) {</span>
+<span class="nc" id="L1228">            writer.write(data.toString()); // unchanged</span>
+        }
+<span class="nc" id="L1230">    }</span>
+
+    public static void writeChunked(final byte[] data, final OutputStream output) throws IOException {
+<span class="nc bnc" id="L1233" title="All 2 branches missed.">        if (data != null) {</span>
+<span class="nc" id="L1234">            int bytes = data.length; // unchanged</span>
+<span class="nc" id="L1235">            int offset = 0; // unchanged</span>
+<span class="nc bnc" id="L1236" title="All 2 branches missed.">            while (bytes &gt; 0) {</span>
+<span class="nc" id="L1237">                final int chunk = Math.min(bytes, DEFAULT_BUFFER_SIZE); // unchanged</span>
+<span class="nc" id="L1238">                output.write(data, offset, chunk); // unchanged</span>
+<span class="nc" id="L1239">                bytes -= chunk; // unchanged</span>
+<span class="nc" id="L1240">                offset += chunk; // unchanged</span>
+<span class="nc" id="L1241">            }</span>
+        }
+<span class="nc" id="L1243">    }</span>
+
+    public static void writeChunked(final char[] data, final Writer writer) throws IOException {
+<span class="nc bnc" id="L1246" title="All 2 branches missed.">        if (data != null) {</span>
+<span class="nc" id="L1247">            int bytes = data.length; // unchanged</span>
+<span class="nc" id="L1248">            int offset = 0; // unchanged</span>
+<span class="nc bnc" id="L1249" title="All 2 branches missed.">            while (bytes &gt; 0) {</span>
+<span class="nc" id="L1250">                final int chunk = Math.min(bytes, DEFAULT_BUFFER_SIZE); // unchanged</span>
+<span class="nc" id="L1251">                writer.write(data, offset, chunk); // unchanged</span>
+<span class="nc" id="L1252">                bytes -= chunk; // unchanged</span>
+<span class="nc" id="L1253">                offset += chunk; // unchanged</span>
+<span class="nc" id="L1254">            }</span>
+        }
+<span class="nc" id="L1256">    }</span>
+
+    @Deprecated
+    public static void writeLines(final Collection&lt;?&gt; lines, final String lineEnding, final OutputStream output) throws IOException {
+<span class="fc" id="L1260">        writeLines(lines, lineEnding, output, Charset.defaultCharset());</span>
+<span class="fc" id="L1261">    }</span>
+
+    public static void writeLines(final Collection&lt;?&gt; lines, String lineEnding, final OutputStream output, Charset charset) throws IOException {
+<span class="fc bfc" id="L1264" title="All 2 branches covered.">        if (lines == null) {</span>
+<span class="fc" id="L1265">            return; // unchanged</span>
+        }
+<span class="fc bfc" id="L1267" title="All 2 branches covered.">        if (lineEnding == null) {</span>
+<span class="fc" id="L1268">            lineEnding = System.lineSeparator(); // unchanged</span>
+        }
+<span class="pc bpc" id="L1270" title="1 of 2 branches missed.">        if (StandardCharsets.UTF_16.equals(charset)) {</span>
+<span class="nc" id="L1271">            charset = StandardCharsets.UTF_16BE; // unchanged</span>
+        }
+<span class="fc" id="L1273">        final byte[] eolBytes = lineEnding.getBytes(charset); // unchanged</span>
+<span class="fc bfc" id="L1274" title="All 2 branches covered.">        for (final Object line : lines) {</span>
+<span class="pc bpc" id="L1275" title="1 of 2 branches missed.">            if (line != null) {</span>
+<span class="fc" id="L1276">                write(line.toString(), output, charset); // unchanged</span>
+            }
+<span class="fc" id="L1278">            output.write(eolBytes); // unchanged</span>
+<span class="fc" id="L1279">        }</span>
+<span class="fc" id="L1280">    }</span>
+
+    public static void writeLines(final Collection&lt;?&gt; lines, final String lineEnding, final OutputStream output, final String charsetName) throws IOException {
+<span class="fc" id="L1283">        writeLines(lines, lineEnding, output, Charsets.toCharset(charsetName)); // unchanged</span>
+<span class="fc" id="L1284">    }</span>
+
+    public static void writeLines(final Collection&lt;?&gt; lines, String lineEnding, final Writer writer) throws IOException {
+<span class="fc bfc" id="L1287" title="All 2 branches covered.">        if (lines == null) {</span>
+<span class="fc" id="L1288">            return; // unchanged</span>
+        }
+<span class="fc bfc" id="L1290" title="All 2 branches covered.">        if (lineEnding == null) {</span>
+<span class="fc" id="L1291">            lineEnding = System.lineSeparator(); // unchanged</span>
+        }
+<span class="fc bfc" id="L1293" title="All 2 branches covered.">        for (final Object line : lines) {</span>
+<span class="fc bfc" id="L1294" title="All 2 branches covered.">            if (line != null) {</span>
+<span class="fc" id="L1295">                writer.write(line.toString()); // unchanged</span>
+            }
+<span class="fc" id="L1297">            writer.write(lineEnding); // unchanged</span>
+<span class="fc" id="L1298">        }</span>
+<span class="fc" id="L1299">    }</span>
+
+    public static Writer writer(final Appendable appendable) {
+<span class="nc" id="L1302">        Objects.requireNonNull(appendable, &quot;appendable&quot;); // unchanged</span>
+<span class="nc bnc" id="L1303" title="All 2 branches missed.">        if (appendable instanceof Writer) {</span>
+<span class="nc" id="L1304">            return (Writer) appendable; // unchanged</span>
+        }
+<span class="nc bnc" id="L1306" title="All 2 branches missed.">        if (appendable instanceof StringBuilder) {</span>
+<span class="nc" id="L1307">            return new StringBuilderWriter((StringBuilder) appendable); // unchanged</span>
+        }
+<span class="nc" id="L1309">        return new AppendableWriter&lt;&gt;(appendable); // unchanged</span>
+    }
+
+    @Deprecated
+<span class="nc" id="L1313">    public IOUtils() { // unchanged</span>
+<span class="nc" id="L1314">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

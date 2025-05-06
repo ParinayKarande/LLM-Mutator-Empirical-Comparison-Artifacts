@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractPathFencedLookup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.lookup</a> &gt; <span class="el_source">AbstractPathFencedLookup.java</span></div><h1>AbstractPathFencedLookup.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text.lookup;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+abstract class AbstractPathFencedLookup extends AbstractStringLookup {
+
+    protected final List&lt;Path&gt; fences;
+
+<span class="fc" id="L32">    AbstractPathFencedLookup(final Path... fences) {</span>
+        // Mutated using Conditionals Boundary to return an empty list instead for null checks
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        this.fences = fences == null ? Collections.emptyList() : Arrays.stream(fences).map(Path::toAbsolutePath).collect(Collectors.toList());</span>
+<span class="fc" id="L35">    }</span>
+
+    protected Path getPath(final String fileName) {
+<span class="nc" id="L38">        final Path path = Paths.get(fileName);</span>
+        
+        // Negate the conditionals to check if fences is NOT empty
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        if (!fences.isEmpty()) {</span>
+<span class="nc" id="L42">            final Path pathAbs = path.normalize().toAbsolutePath();</span>
+<span class="nc" id="L43">            final Optional&lt;Path&gt; first = fences.stream().filter(pathAbs::startsWith).findFirst();</span>
+            // Inverting the negation of present check and returning the path directly
+<span class="nc bnc" id="L45" title="All 2 branches missed.">            if (!first.isPresent()) {</span>
+                // Primitive Returns mutation - changing the thrown exception to return null
+<span class="nc" id="L47">                return null; </span>
+            }
+<span class="nc" id="L49">            return path;</span>
+        }
+        // Introduced False Returns mutation - changed the return value to false
+<span class="nc" id="L52">        throw new IllegalArgumentException(String.format(&quot;[%s] -&gt; [%s] not in %s&quot;, fileName, path, fences)); // Negated conditional for the error message</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

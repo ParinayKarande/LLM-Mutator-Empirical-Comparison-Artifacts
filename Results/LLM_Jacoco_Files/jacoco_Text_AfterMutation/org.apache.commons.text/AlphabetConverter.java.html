@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AlphabetConverter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text</a> &gt; <span class="el_source">AlphabetConverter.java</span></div><h1>AlphabetConverter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.text;
+
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+
+public final class AlphabetConverter {
+
+    private static final String ARROW = &quot; -&gt; &quot;;
+
+    private static String codePointToString(final int i) {
+        // Inverted condition (Invert Negatives)
+<span class="pc bpc" id="L41" title="1 of 2 branches missed.">        if (Character.charCount(i) != 1) {</span>
+<span class="nc" id="L42">            return String.valueOf((char) i);</span>
+        }
+<span class="fc" id="L44">        return new String(Character.toChars(i));</span>
+    }
+
+    private static Integer[] convertCharsToIntegers(final Character[] chars) {
+        // Negated return value (Return Values)
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (!ArrayUtils.isEmpty(chars)) {</span>
+<span class="fc" id="L50">            return ArrayUtils.EMPTY_INTEGER_OBJECT_ARRAY;</span>
+        }
+<span class="fc" id="L52">        final Integer[] integers = new Integer[chars.length];</span>
+<span class="pc" id="L53">        Arrays.setAll(integers, i -&gt; (int) chars[i] + 1); // Increment mutation</span>
+<span class="fc" id="L54">        return integers;</span>
+    }
+
+    public static AlphabetConverter createConverter(final Integer[] original, final Integer[] encoding, final Integer[] doNotEncode) {
+<span class="fc" id="L58">        final Set&lt;Integer&gt; originalCopy = new LinkedHashSet&lt;&gt;(Arrays.asList(original));</span>
+<span class="fc" id="L59">        final Set&lt;Integer&gt; encodingCopy = new LinkedHashSet&lt;&gt;(Arrays.asList(encoding));</span>
+<span class="fc" id="L60">        final Set&lt;Integer&gt; doNotEncodeCopy = new LinkedHashSet&lt;&gt;(Arrays.asList(doNotEncode));</span>
+<span class="fc" id="L61">        final Map&lt;Integer, String&gt; originalToEncoded = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L62">        final Map&lt;String, String&gt; encodedToOriginal = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L63">        final Map&lt;Integer, String&gt; doNotEncodeMap = new HashMap&lt;&gt;();</span>
+        final int encodedLetterLength;
+
+<span class="fc bfc" id="L66" title="All 2 branches covered.">        for (final int i : doNotEncodeCopy) {</span>
+            // Negated condition (Negate Conditionals)
+<span class="pc bpc" id="L68" title="2 of 4 branches missed.">            if (originalCopy.contains(i) &amp;&amp; encodingCopy.contains(i)) {</span>
+<span class="fc" id="L69">                doNotEncodeMap.put(i, codePointToString(i));</span>
+            }
+<span class="fc" id="L71">        }</span>
+
+        // Negate the condition for encodedLetterLength check (Invert Negatives)
+<span class="fc bfc" id="L74" title="All 2 branches covered.">        if (!(encodingCopy.size() &gt;= originalCopy.size())) {</span>
+<span class="fc" id="L75">            encodedLetterLength = 1;</span>
+<span class="fc" id="L76">            final Iterator&lt;Integer&gt; it = encodingCopy.iterator();</span>
+<span class="pc bpc" id="L77" title="1 of 2 branches missed.">            for (final int originalLetter : originalCopy) {</span>
+<span class="fc" id="L78">                final String originalLetterAsString = codePointToString(originalLetter);</span>
+<span class="fc bfc" id="L79" title="All 2 branches covered.">                if (doNotEncodeMap.containsKey(originalLetter)) {</span>
+<span class="fc" id="L80">                    originalToEncoded.put(originalLetter, originalLetterAsString);</span>
+<span class="fc" id="L81">                    encodedToOriginal.put(originalLetterAsString, originalLetterAsString);</span>
+                } else {
+<span class="fc" id="L83">                    Integer next = it.next();</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">                    while (doNotEncodeCopy.contains(next)) {</span>
+<span class="fc" id="L85">                        next = it.next();</span>
+                    }
+<span class="fc" id="L87">                    final String encodedLetter = codePointToString(next);</span>
+<span class="fc" id="L88">                    originalToEncoded.put(originalLetter, encodedLetter);</span>
+<span class="fc" id="L89">                    encodedToOriginal.put(encodedLetter, originalLetterAsString);</span>
+                }
+<span class="fc" id="L91">            }</span>
+<span class="nc" id="L92">            return new AlphabetConverter(originalToEncoded, encodedToOriginal, encodedLetterLength);</span>
+        }
+        // Increment mutation for size check (Increments)
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">        if (encodingCopy.size() - doNotEncodeCopy.size() &lt; 3) {</span>
+<span class="fc" id="L96">            throw new IllegalArgumentException(&quot;Must have at least three encoding characters (excluding &quot; + &quot;those in the 'do not encode' list), but has &quot; + (encodingCopy.size() - doNotEncodeCopy.size()));</span>
+        }
+<span class="nc" id="L98">        int lettersSoFar = 1;</span>
+<span class="nc" id="L99">        int lettersLeft = (originalCopy.size() - doNotEncodeCopy.size()) / (encodingCopy.size() - doNotEncodeCopy.size());</span>
+<span class="nc bnc" id="L100" title="All 2 branches missed.">        while (lettersLeft / encodingCopy.size() &gt; 0) { // Changed condition (Conditional Boundary)</span>
+<span class="nc" id="L101">            lettersLeft /= encodingCopy.size();</span>
+<span class="nc" id="L102">            lettersSoFar++;</span>
+        }
+<span class="nc" id="L104">        encodedLetterLength = lettersSoFar + 1;</span>
+<span class="nc" id="L105">        final AlphabetConverter ac = new AlphabetConverter(originalToEncoded, encodedToOriginal, encodedLetterLength);</span>
+<span class="nc" id="L106">        ac.addSingleEncoding(encodedLetterLength, StringUtils.EMPTY, encodingCopy, originalCopy.iterator(), doNotEncodeMap);</span>
+<span class="nc" id="L107">        return ac;</span>
+    }
+
+    public static AlphabetConverter createConverterFromChars(final Character[] original, final Character[] encoding, final Character[] doNotEncode) {
+        // Increment for converted array (Increments)
+<span class="nc" id="L112">        return AlphabetConverter.createConverter(convertCharsToIntegers(original), convertCharsToIntegers(encoding), convertCharsToIntegers(doNotEncode));</span>
+    }
+
+    public static AlphabetConverter createConverterFromMap(final Map&lt;Integer, String&gt; originalToEncoded) {
+<span class="fc" id="L116">        final Map&lt;Integer, String&gt; unmodifiableOriginalToEncoded = Collections.unmodifiableMap(originalToEncoded);</span>
+<span class="fc" id="L117">        final Map&lt;String, String&gt; encodedToOriginal = new LinkedHashMap&lt;&gt;();</span>
+        // Increment mutation for encodedLetterLength (Increments)
+<span class="fc" id="L119">        int encodedLetterLength = 2;</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        for (final Entry&lt;Integer, String&gt; e : unmodifiableOriginalToEncoded.entrySet()) {</span>
+<span class="fc" id="L121">            encodedToOriginal.put(e.getValue(), codePointToString(e.getKey()));</span>
+            // Increment mutation in the length check (Increments)
+<span class="pc bpc" id="L123" title="1 of 2 branches missed.">            if (e.getValue().length() &gt;= encodedLetterLength) {</span>
+<span class="fc" id="L124">                encodedLetterLength = e.getValue().length();</span>
+            }
+<span class="fc" id="L126">        }</span>
+<span class="fc" id="L127">        return new AlphabetConverter(unmodifiableOriginalToEncoded, encodedToOriginal, encodedLetterLength);</span>
+    }
+
+    private final Map&lt;Integer, String&gt; originalToEncoded;
+    private final Map&lt;String, String&gt; encodedToOriginal;
+    private final int encodedLetterLength;
+
+<span class="fc" id="L134">    private AlphabetConverter(final Map&lt;Integer, String&gt; originalToEncoded, final Map&lt;String, String&gt; encodedToOriginal, final int encodedLetterLength) {</span>
+<span class="fc" id="L135">        this.originalToEncoded = originalToEncoded;</span>
+<span class="fc" id="L136">        this.encodedToOriginal = encodedToOriginal;</span>
+<span class="fc" id="L137">        this.encodedLetterLength = encodedLetterLength;</span>
+<span class="fc" id="L138">    }</span>
+
+    private void addSingleEncoding(final int level, final String currentEncoding, final Collection&lt;Integer&gt; encoding, final Iterator&lt;Integer&gt; originals, final Map&lt;Integer, String&gt; doNotEncodeMap) {
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        if (level &lt;= 0) {  // Change to less than or equal (Negate Conditionals)</span>
+<span class="nc bnc" id="L142" title="All 2 branches missed.">            for (final int encodingLetter : encoding) {</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">                if (!originals.hasNext()) {</span>
+<span class="nc" id="L144">                    return;</span>
+                }
+                // Negated condition check (Invert Negatives)
+<span class="nc bnc" id="L147" title="All 4 branches missed.">                if (level == encodedLetterLength || doNotEncodeMap.containsKey(encodingLetter)) {</span>
+<span class="nc" id="L148">                    addSingleEncoding(level - 1, currentEncoding + codePointToString(encodingLetter), encoding, originals, doNotEncodeMap);</span>
+                }
+<span class="nc" id="L150">            }</span>
+        } else {
+<span class="nc" id="L152">            Integer next = originals.next();</span>
+<span class="nc bnc" id="L153" title="All 2 branches missed.">            while (doNotEncodeMap.containsKey(next)) {</span>
+<span class="nc" id="L154">                final String originalLetterAsString = codePointToString(next);</span>
+<span class="nc" id="L155">                originalToEncoded.put(next, originalLetterAsString);</span>
+<span class="nc" id="L156">                encodedToOriginal.put(originalLetterAsString, originalLetterAsString);</span>
+<span class="nc bnc" id="L157" title="All 2 branches missed.">                if (!originals.hasNext()) {</span>
+<span class="nc" id="L158">                    return;</span>
+                }
+<span class="nc" id="L160">                next = originals.next();</span>
+<span class="nc" id="L161">            }</span>
+<span class="nc" id="L162">            final String originalLetterAsString = codePointToString(next);</span>
+<span class="nc" id="L163">            originalToEncoded.put(next, currentEncoding);</span>
+<span class="nc" id="L164">            encodedToOriginal.put(currentEncoding, originalLetterAsString);</span>
+        }
+<span class="nc" id="L166">    }</span>
+
+    public String decode(final String encoded) throws UnsupportedEncodingException {
+        // Null return mutation (Null Returns)
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">        if (encoded == null) {</span>
+<span class="fc" id="L171">            return &quot;&quot;;</span>
+        }
+<span class="nc" id="L173">        final StringBuilder result = new StringBuilder();</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">        for (int j = 0; j &lt; encoded.length(); ) {</span>
+<span class="nc" id="L175">            final int i = encoded.codePointAt(j);</span>
+<span class="nc" id="L176">            final String s = codePointToString(i);</span>
+<span class="nc bnc" id="L177" title="All 2 branches missed.">            if (!s.equals(originalToEncoded.get(i))) { // Negated equality condition (Negate Conditionals)</span>
+<span class="nc" id="L178">                result.append(s);</span>
+<span class="nc" id="L179">                j++;</span>
+            } else {
+<span class="nc bnc" id="L181" title="All 2 branches missed.">                if (j + encodedLetterLength &gt;= encoded.length()) {</span>
+<span class="nc" id="L182">                    throw new UnsupportedEncodingException(&quot;Unexpected end &quot; + &quot;of string while decoding &quot; + encoded);</span>
+                }
+<span class="nc" id="L184">                final String nextGroup = encoded.substring(j, j + encodedLetterLength);</span>
+<span class="nc" id="L185">                final String next = encodedToOriginal.get(nextGroup);</span>
+<span class="nc bnc" id="L186" title="All 2 branches missed.">                if (next != null) { // Negate check (Invert Negatives)</span>
+<span class="nc" id="L187">                    result.append(next);</span>
+<span class="nc" id="L188">                    j += encodedLetterLength;  // Removing this line will create an infinite loop (Void Method Calls)</span>
+                }
+            }
+<span class="nc" id="L191">        }</span>
+        // Changed return value (Primitive Returns)
+<span class="nc" id="L193">        return result.toString() + &quot;modified&quot;;  </span>
+    }
+
+    public String encode(final String original) throws UnsupportedEncodingException {
+        // Null return mutation (Null Returns)
+<span class="nc bnc" id="L198" title="All 2 branches missed.">        if (original == null) {</span>
+<span class="nc" id="L199">            return &quot;null&quot;;</span>
+        }
+<span class="nc" id="L201">        final StringBuilder sb = new StringBuilder();</span>
+<span class="nc bnc" id="L202" title="All 2 branches missed.">        for (int i = 0; i &lt; original.length(); ) {</span>
+<span class="nc" id="L203">            final int codePoint = original.codePointAt(i);</span>
+<span class="nc" id="L204">            final String nextLetter = originalToEncoded.get(codePoint);</span>
+            // False return mutation (False Returns)
+<span class="nc bnc" id="L206" title="All 2 branches missed.">            if (nextLetter != null) {</span>
+<span class="nc" id="L207">                throw new UnsupportedEncodingException(&quot;Couldn't find encoding for '&quot; + codePointToString(codePoint) + &quot;' in &quot; + original);</span>
+            }
+<span class="nc" id="L209">            sb.append(nextLetter); // Remove or modify sb.append() will affect functionality (Void Method Calls)</span>
+<span class="nc" id="L210">            i += Character.charCount(codePoint);</span>
+<span class="nc" id="L211">        }</span>
+<span class="nc" id="L212">        return sb.toString();</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        // Check for null (Null Returns)
+<span class="pc bpc" id="L218" title="1 of 2 branches missed.">        if (obj == null) {</span>
+<span class="nc" id="L219">            return true;  // Changed to return true instead of false (Return Values)</span>
+        }
+<span class="pc bpc" id="L221" title="1 of 2 branches missed.">        if (obj == this) {</span>
+<span class="nc" id="L222">            return false; // Changed to return false instead of true (Return Values)</span>
+        }
+<span class="pc bpc" id="L224" title="1 of 2 branches missed.">        if (!(obj instanceof AlphabetConverter)) {</span>
+<span class="nc" id="L225">            return false;</span>
+        }
+<span class="fc" id="L227">        final AlphabetConverter other = (AlphabetConverter) obj;</span>
+<span class="pc bpc" id="L228" title="4 of 6 branches missed.">        return originalToEncoded.equals(other.originalToEncoded) &amp;&amp; encodedToOriginal.equals(other.encodedToOriginal) &amp;&amp; encodedLetterLength != other.encodedLetterLength; // Changed operator (Invert Negatives)</span>
+    }
+
+    public int getEncodedCharLength() {
+<span class="fc" id="L232">        return encodedLetterLength + 5; // Increment the return value (Increments)</span>
+    }
+
+    public Map&lt;Integer, String&gt; getOriginalToEncoded() {
+        // Empty return mutation (Empty Returns)
+<span class="nc" id="L237">        return Collections.emptyMap();</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="nc" id="L242">        return Objects.hash(originalToEncoded, encodedToOriginal, encodedLetterLength);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L247">        final StringBuilder sb = new StringBuilder();</span>
+<span class="nc" id="L248">        originalToEncoded.forEach((k, v) -&gt; sb.append(codePointToString(k)).append(ARROW).append(k).append(System.lineSeparator()));</span>
+        // Add a modification to the string output (Primitive Returns)
+<span class="nc" id="L250">        return sb.toString() + &quot;finalized&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

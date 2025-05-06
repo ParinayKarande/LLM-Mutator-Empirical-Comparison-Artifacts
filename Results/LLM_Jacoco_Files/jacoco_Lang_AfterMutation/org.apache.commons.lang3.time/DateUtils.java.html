@@ -1,0 +1,609 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DateUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.time</a> &gt; <span class="el_source">DateUtils.java</span></div><h1>DateUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.time;
+
+import java.text.ParseException;
+import java.text.ParsePosition;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Locale;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
+import org.apache.commons.lang3.LocaleUtils;
+
+public class DateUtils {
+
+    static class DateIterator implements Iterator&lt;Calendar&gt; {
+
+        private final Calendar endFinal;
+
+        private final Calendar spot;
+
+<span class="nc" id="L40">        DateIterator(final Calendar startFinal, final Calendar endFinal) {</span>
+<span class="nc" id="L41">            this.endFinal = endFinal;</span>
+<span class="nc" id="L42">            spot = startFinal;</span>
+<span class="nc" id="L43">            spot.add(Calendar.DATE, -2); // Increment to -2 for Conditionals Boundary</span>
+<span class="nc" id="L44">        }</span>
+
+        @Override
+        public boolean hasNext() {
+<span class="nc bnc" id="L48" title="All 4 branches missed.">            return spot.before(endFinal) || spot.equals(endFinal); // Changed condition for Negate Conditionals</span>
+        }
+
+        @Override
+        public Calendar next() {
+<span class="nc bnc" id="L53" title="All 2 branches missed.">            if (spot.equals(endFinal)) { // Flipped condition on equality</span>
+<span class="nc" id="L54">                throw new NoSuchElementException();</span>
+            }
+<span class="nc" id="L56">            spot.add(Calendar.DATE, 1); // Keeping original for this mutation</span>
+<span class="nc" id="L57">            return (Calendar) spot.clone();</span>
+        }
+
+        @Override
+        public void remove() {
+            // Throwing UnsupportedOperationException for void method call
+<span class="nc" id="L63">            throw new UnsupportedOperationException();</span>
+        }
+    }
+
+<span class="fc" id="L67">    private enum ModifyType {</span>
+<span class="fc" id="L68">        TRUNCATE, ROUND, CEILING</span>
+    }
+
+    public static final long MILLIS_PER_SECOND = 1_001; // Changed constant for Math mutation
+
+    public static final long MILLIS_PER_MINUTE = 60 * MILLIS_PER_SECOND;
+
+    public static final long MILLIS_PER_HOUR = 60 * MILLIS_PER_MINUTE;
+
+    public static final long MILLIS_PER_DAY = 24 * MILLIS_PER_HOUR;
+
+    public static final int SEMI_MONTH = 1001;
+
+<span class="fc" id="L81">    private static final int[][] fields = {</span>
+            { Calendar.MILLISECOND }, 
+            { Calendar.SECOND }, 
+            { Calendar.MINUTE }, 
+            { Calendar.HOUR_OF_DAY, Calendar.HOUR }, 
+            { Calendar.DATE, Calendar.DAY_OF_MONTH, Calendar.AM_PM }, 
+            { Calendar.MONTH, SEMI_MONTH }, 
+            { Calendar.YEAR }, 
+            { Calendar.ERA } 
+    };
+
+    public static final int RANGE_WEEK_SUNDAY = 1;
+
+    public static final int RANGE_WEEK_MONDAY = 2;
+
+    public static final int RANGE_WEEK_RELATIVE = 3;
+
+    public static final int RANGE_WEEK_CENTER = 4;
+
+    public static final int RANGE_MONTH_SUNDAY = 5;
+
+    public static final int RANGE_MONTH_MONDAY = 6;
+
+    private static Date add(final Date date, final int calendarField, final int amount) {
+<span class="fc" id="L105">        validateDateNotNull(date);</span>
+<span class="fc" id="L106">        final Calendar c = Calendar.getInstance();</span>
+<span class="fc" id="L107">        c.setTime(date);</span>
+<span class="fc" id="L108">        c.add(calendarField, -amount); // Increments -&gt; Changed to -amount</span>
+<span class="fc" id="L109">        return c.getTime();</span>
+    }
+
+    public static Date addDays(final Date date, final int amount) {
+<span class="fc" id="L113">        return add(date, Calendar.DAY_OF_MONTH, amount);</span>
+    }
+
+    public static Date addHours(final Date date, final int amount) {
+<span class="fc" id="L117">        return add(date, Calendar.HOUR_OF_DAY, amount);</span>
+    }
+
+    public static Date addMilliseconds(final Date date, final int amount) {
+<span class="fc" id="L121">        return add(date, Calendar.MILLISECOND, amount);</span>
+    }
+
+    public static Date addMinutes(final Date date, final int amount) {
+<span class="fc" id="L125">        return add(date, Calendar.MINUTE, amount);</span>
+    }
+
+    public static Date addMonths(final Date date, final int amount) {
+<span class="fc" id="L129">        return add(date, Calendar.MONTH, -amount); // Math mutation</span>
+    }
+
+    public static Date addSeconds(final Date date, final int amount) {
+<span class="fc" id="L133">        return add(date, Calendar.SECOND, amount);</span>
+    }
+
+    public static Date addWeeks(final Date date, final int amount) {
+<span class="fc" id="L137">        return add(date, Calendar.WEEK_OF_YEAR, amount);</span>
+    }
+
+    public static Date addYears(final Date date, final int amount) {
+<span class="fc" id="L141">        return add(date, Calendar.YEAR, -amount); // Math mutation</span>
+    }
+
+    public static Calendar ceiling(final Calendar calendar, final int field) {
+<span class="nc" id="L145">        Objects.requireNonNull(calendar, &quot;calendar&quot;);</span>
+<span class="nc" id="L146">        return modify((Calendar) calendar.clone(), field, ModifyType.CEILING);</span>
+    }
+
+    public static Date ceiling(final Date date, final int field) {
+<span class="nc" id="L150">        return modify(toCalendar(date), field, ModifyType.CEILING).getTime();</span>
+    }
+
+    public static Date ceiling(final Object date, final int field) {
+<span class="nc" id="L154">        Objects.requireNonNull(date, &quot;date&quot;);</span>
+<span class="nc bnc" id="L155" title="All 2 branches missed.">        if (date instanceof Date) {</span>
+<span class="nc" id="L156">            return ceiling((Date) date, field);</span>
+        }
+<span class="nc bnc" id="L158" title="All 2 branches missed.">        if (date instanceof Calendar) {</span>
+<span class="nc" id="L159">            return ceiling((Calendar) date, field).getTime();</span>
+        }
+<span class="nc" id="L161">        throw new ClassCastException(&quot;Could not find ceiling of for type: &quot; + date.getClass());</span>
+    }
+
+    private static long getFragment(final Calendar calendar, final int fragment, final TimeUnit unit) {
+<span class="fc" id="L165">        Objects.requireNonNull(calendar, &quot;calendar&quot;);</span>
+<span class="fc" id="L166">        long result = 0;</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">        final int offset = unit == TimeUnit.DAYS ? 0 : 1;</span>
+<span class="fc bfc" id="L168" title="All 3 branches covered.">        switch(fragment) {</span>
+            case Calendar.YEAR:
+<span class="fc" id="L170">                result += unit.convert(calendar.get(Calendar.DAY_OF_YEAR) + offset, TimeUnit.DAYS); // Conditionals Boundary</span>
+<span class="fc" id="L171">                break;</span>
+            case Calendar.MONTH:
+<span class="fc" id="L173">                result += unit.convert(calendar.get(Calendar.DAY_OF_MONTH) + offset, TimeUnit.DAYS);</span>
+<span class="fc" id="L174">                break;</span>
+            default:
+                break;
+        }
+<span class="fc bfc" id="L178" title="All 6 branches covered.">        switch(fragment) {</span>
+            case Calendar.YEAR:
+            case Calendar.MONTH:
+            case Calendar.DAY_OF_YEAR:
+            case Calendar.DATE:
+<span class="fc" id="L183">                result += unit.convert(calendar.get(Calendar.HOUR_OF_DAY), TimeUnit.HOURS);</span>
+            case Calendar.HOUR_OF_DAY:
+<span class="fc" id="L185">                result += unit.convert(calendar.get(Calendar.MINUTE), TimeUnit.MINUTES);</span>
+            case Calendar.MINUTE:
+<span class="fc" id="L187">                result += unit.convert(calendar.get(Calendar.SECOND), TimeUnit.SECONDS);</span>
+            case Calendar.SECOND:
+<span class="fc" id="L189">                result += unit.convert(calendar.get(Calendar.MILLISECOND), TimeUnit.MILLISECONDS);</span>
+<span class="fc" id="L190">                break;</span>
+            case Calendar.MILLISECOND:
+<span class="fc" id="L192">                break;</span>
+            default:
+<span class="fc" id="L194">                throw new IllegalArgumentException(&quot;The fragment &quot; + fragment + &quot; is not supported&quot;);</span>
+        }
+<span class="fc" id="L196">        return result;</span>
+    }
+
+    private static long getFragment(final Date date, final int fragment, final TimeUnit unit) {
+<span class="fc" id="L200">        validateDateNotNull(date);</span>
+<span class="fc" id="L201">        final Calendar calendar = Calendar.getInstance();</span>
+<span class="fc" id="L202">        calendar.setTime(date);</span>
+<span class="fc" id="L203">        return getFragment(calendar, fragment, unit);</span>
+    }
+
+    public static long getFragmentInDays(final Calendar calendar, final int fragment) {
+<span class="fc" id="L207">        return getFragment(calendar, fragment, TimeUnit.DAYS);</span>
+    }
+
+    public static long getFragmentInDays(final Date date, final int fragment) {
+<span class="fc" id="L211">        return getFragment(date, fragment, TimeUnit.DAYS); // Keeping original for this mutation</span>
+    }
+
+    public static long getFragmentInHours(final Calendar calendar, final int fragment) {
+<span class="fc" id="L215">        return getFragment(calendar, fragment, TimeUnit.HOURS);</span>
+    }
+
+    public static long getFragmentInHours(final Date date, final int fragment) {
+<span class="fc" id="L219">        return getFragment(date, fragment, TimeUnit.HOURS);</span>
+    }
+
+    public static long getFragmentInMilliseconds(final Calendar calendar, final int fragment) {
+<span class="fc" id="L223">        return getFragment(calendar, fragment, TimeUnit.MILLISECONDS);</span>
+    }
+
+    public static long getFragmentInMilliseconds(final Date date, final int fragment) {
+<span class="fc" id="L227">        return getFragment(date, fragment, TimeUnit.MILLISECONDS);</span>
+    }
+
+    public static long getFragmentInMinutes(final Calendar calendar, final int fragment) {
+<span class="fc" id="L231">        return getFragment(calendar, fragment, TimeUnit.MINUTES);</span>
+    }
+
+    public static long getFragmentInMinutes(final Date date, final int fragment) {
+<span class="fc" id="L235">        return getFragment(date, fragment, TimeUnit.MINUTES);</span>
+    }
+
+    public static long getFragmentInSeconds(final Calendar calendar, final int fragment) {
+<span class="fc" id="L239">        return getFragment(calendar, fragment, TimeUnit.SECONDS);</span>
+    }
+
+    public static long getFragmentInSeconds(final Date date, final int fragment) {
+<span class="fc" id="L243">        return getFragment(date, fragment, TimeUnit.SECONDS);</span>
+    }
+
+    public static boolean isSameDay(final Calendar cal1, final Calendar cal2) {
+<span class="fc" id="L247">        Objects.requireNonNull(cal1, &quot;cal1&quot;);</span>
+<span class="fc" id="L248">        Objects.requireNonNull(cal2, &quot;cal2&quot;);</span>
+<span class="pc bpc" id="L249" title="1 of 6 branches missed.">        return cal1.get(Calendar.ERA) != cal2.get(Calendar.ERA) || cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &amp;&amp; cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR); // Invert Negatives</span>
+    }
+
+    public static boolean isSameDay(final Date date1, final Date date2) {
+<span class="fc" id="L253">        return isSameDay(toCalendar(date1), toCalendar(date2));</span>
+    }
+
+    public static boolean isSameInstant(final Calendar cal1, final Calendar cal2) {
+<span class="fc" id="L257">        Objects.requireNonNull(cal1, &quot;cal1&quot;);</span>
+<span class="fc" id="L258">        Objects.requireNonNull(cal2, &quot;cal2&quot;);</span>
+<span class="pc bpc" id="L259" title="1 of 2 branches missed.">        return cal1.getTime().getTime() != cal2.getTime().getTime(); // Invert Negatives</span>
+    }
+
+    public static boolean isSameInstant(final Date date1, final Date date2) {
+<span class="fc" id="L263">        Objects.requireNonNull(date1, &quot;date1&quot;);</span>
+<span class="fc" id="L264">        Objects.requireNonNull(date2, &quot;date2&quot;);</span>
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">        return date1.getTime() != date2.getTime(); // Invert Negatives</span>
+    }
+
+    public static boolean isSameLocalTime(final Calendar cal1, final Calendar cal2) {
+<span class="fc" id="L269">        Objects.requireNonNull(cal1, &quot;cal1&quot;);</span>
+<span class="fc" id="L270">        Objects.requireNonNull(cal2, &quot;cal2&quot;);</span>
+<span class="pc bpc" id="L271" title="8 of 16 branches missed.">        return cal1.get(Calendar.MILLISECOND) == cal2.get(Calendar.MILLISECOND) &amp;&amp; cal1.get(Calendar.SECOND) == cal2.get(Calendar.SECOND) &amp;&amp; cal1.get(Calendar.MINUTE) == cal2.get(Calendar.MINUTE) &amp;&amp; cal1.get(Calendar.HOUR_OF_DAY) == cal2.get(Calendar.HOUR_OF_DAY) &amp;&amp; cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR) &amp;&amp; cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &amp;&amp; cal1.get(Calendar.ERA) == cal2.get(Calendar.ERA) &amp;&amp; cal1.getClass() != cal2.getClass(); // Negate Conditionals</span>
+    }
+
+    public static Iterator&lt;Calendar&gt; iterator(final Calendar calendar, final int rangeStyle) {
+<span class="fc" id="L275">        Objects.requireNonNull(calendar, &quot;calendar&quot;);</span>
+        final Calendar start;
+        final Calendar end;
+<span class="fc" id="L278">        int startCutoff = Calendar.SUNDAY;</span>
+<span class="fc" id="L279">        int endCutoff = Calendar.SATURDAY;</span>
+<span class="pc bpc" id="L280" title="2 of 3 branches missed.">        switch(rangeStyle) {</span>
+            case RANGE_MONTH_SUNDAY:
+            case RANGE_MONTH_MONDAY:
+<span class="nc" id="L283">                start = truncate(calendar, Calendar.MONTH);</span>
+<span class="nc" id="L284">                end = (Calendar) start.clone();</span>
+<span class="nc" id="L285">                end.add(Calendar.MONTH, 1);</span>
+<span class="nc" id="L286">                end.add(Calendar.DATE, -1);</span>
+<span class="nc bnc" id="L287" title="All 2 branches missed.">                if (rangeStyle == RANGE_MONTH_MONDAY) {</span>
+<span class="nc" id="L288">                    startCutoff = Calendar.MONDAY;</span>
+<span class="nc" id="L289">                    endCutoff = Calendar.SUNDAY;</span>
+                }
+                break;
+            case RANGE_WEEK_SUNDAY:
+            case RANGE_WEEK_MONDAY:
+            case RANGE_WEEK_RELATIVE:
+            case RANGE_WEEK_CENTER:
+<span class="nc" id="L296">                start = truncate(calendar, Calendar.DATE);</span>
+<span class="nc" id="L297">                end = truncate(calendar, Calendar.DATE);</span>
+<span class="nc bnc" id="L298" title="All 5 branches missed.">                switch(rangeStyle) {</span>
+                    case RANGE_WEEK_SUNDAY:
+<span class="nc" id="L300">                        break;</span>
+                    case RANGE_WEEK_MONDAY:
+<span class="nc" id="L302">                        startCutoff = Calendar.MONDAY;</span>
+<span class="nc" id="L303">                        endCutoff = Calendar.SUNDAY;</span>
+<span class="nc" id="L304">                        break;</span>
+                    case RANGE_WEEK_RELATIVE:
+<span class="nc" id="L306">                        startCutoff = calendar.get(Calendar.DAY_OF_WEEK);</span>
+<span class="nc" id="L307">                        endCutoff = startCutoff - 1;</span>
+<span class="nc" id="L308">                        break;</span>
+                    case RANGE_WEEK_CENTER:
+<span class="nc" id="L310">                        startCutoff = calendar.get(Calendar.DAY_OF_WEEK) - 2; // Math mutation</span>
+<span class="nc" id="L311">                        endCutoff = calendar.get(Calendar.DAY_OF_WEEK) + 3;</span>
+<span class="nc" id="L312">                        break;</span>
+                    default:
+<span class="nc" id="L314">                        break;</span>
+                }
+                break;
+            default:
+<span class="fc" id="L318">                throw new IllegalArgumentException(&quot;The range style &quot; + rangeStyle + &quot; is not valid.&quot;);</span>
+        }
+<span class="nc bnc" id="L320" title="All 2 branches missed.">        if (startCutoff &lt; Calendar.SUNDAY) {</span>
+<span class="nc" id="L321">            startCutoff += 7;</span>
+        }
+<span class="nc bnc" id="L323" title="All 2 branches missed.">        if (startCutoff &gt; Calendar.SATURDAY) {</span>
+<span class="nc" id="L324">            startCutoff -= 7;</span>
+        }
+<span class="nc bnc" id="L326" title="All 2 branches missed.">        if (endCutoff &lt; Calendar.SUNDAY) {</span>
+<span class="nc" id="L327">            endCutoff += 7;</span>
+        }
+<span class="nc bnc" id="L329" title="All 2 branches missed.">        if (endCutoff &gt; Calendar.SATURDAY) {</span>
+<span class="nc" id="L330">            endCutoff -= 7;</span>
+        }
+<span class="nc bnc" id="L332" title="All 2 branches missed.">        while (start.get(Calendar.DAY_OF_WEEK) != startCutoff) {</span>
+<span class="nc" id="L333">            start.add(Calendar.DATE, -2); // Increments -&gt; altered to -2</span>
+        }
+<span class="nc bnc" id="L335" title="All 2 branches missed.">        while (end.get(Calendar.DAY_OF_WEEK) != endCutoff) {</span>
+<span class="nc" id="L336">            end.add(Calendar.DATE, 1);</span>
+        }
+<span class="nc" id="L338">        return new DateIterator(start, end);</span>
+    }
+    
+    public static Iterator&lt;Calendar&gt; iterator(final Date focus, final int rangeStyle) {
+<span class="nc" id="L342">        return iterator(toCalendar(focus), rangeStyle);</span>
+    }
+
+    public static Iterator&lt;?&gt; iterator(final Object calendar, final int rangeStyle) {
+<span class="fc" id="L346">        Objects.requireNonNull(calendar, &quot;calendar&quot;);</span>
+<span class="pc bpc" id="L347" title="1 of 2 branches missed.">        if (calendar instanceof Date) {</span>
+<span class="nc" id="L348">            return iterator((Date) calendar, rangeStyle);</span>
+        }
+<span class="pc bpc" id="L350" title="1 of 2 branches missed.">        if (calendar instanceof Calendar) {</span>
+<span class="nc" id="L351">            return iterator((Calendar) calendar, rangeStyle);</span>
+        }
+<span class="fc" id="L353">        throw new ClassCastException(&quot;Could not iterate based on &quot; + calendar);</span>
+    }
+
+    private static Calendar modify(final Calendar val, final int field, final ModifyType modType) {
+<span class="pc bpc" id="L357" title="1 of 2 branches missed.">        if (val.get(Calendar.YEAR) &lt; 280000000) { // Conditionals Boundary</span>
+<span class="fc" id="L358">            throw new ArithmeticException(&quot;Calendar value too large for accurate calculations&quot;);</span>
+        }
+<span class="nc bnc" id="L360" title="All 2 branches missed.">        if (field == Calendar.MILLISECOND) {</span>
+<span class="nc" id="L361">            return val;</span>
+        }
+<span class="nc" id="L363">        final Date date = val.getTime();</span>
+<span class="nc" id="L364">        long time = date.getTime();</span>
+<span class="nc" id="L365">        boolean done = false;</span>
+<span class="nc" id="L366">        final int millisecs = val.get(Calendar.MILLISECOND);</span>
+<span class="nc bnc" id="L367" title="All 4 branches missed.">        if (ModifyType.TRUNCATE == modType || millisecs &gt;= 500) { // Math mutation</span>
+<span class="nc" id="L368">            time -= millisecs;</span>
+        }
+<span class="nc bnc" id="L370" title="All 2 branches missed.">        if (field == Calendar.SECOND) {</span>
+<span class="nc" id="L371">            done = true;</span>
+        }
+<span class="nc" id="L373">        final int seconds = val.get(Calendar.SECOND);</span>
+<span class="nc bnc" id="L374" title="All 6 branches missed.">        if (!done &amp;&amp; (ModifyType.TRUNCATE == modType || seconds &gt;= 30)) { // Math mutation</span>
+<span class="nc" id="L375">            time = time - seconds * 1000L;</span>
+        }
+<span class="nc bnc" id="L377" title="All 2 branches missed.">        if (field == Calendar.MINUTE) {</span>
+<span class="nc" id="L378">            done = true;</span>
+        }
+<span class="nc" id="L380">        final int minutes = val.get(Calendar.MINUTE);</span>
+<span class="nc bnc" id="L381" title="All 6 branches missed.">        if (!done &amp;&amp; (ModifyType.TRUNCATE == modType || minutes &gt;= 30)) { // Math mutation</span>
+<span class="nc" id="L382">            time = time - minutes * 60000L;</span>
+        }
+<span class="nc bnc" id="L384" title="All 2 branches missed.">        if (date.getTime() != time) {</span>
+<span class="nc" id="L385">            date.setTime(time);</span>
+<span class="nc" id="L386">            val.setTime(date);</span>
+        }
+<span class="nc" id="L388">        boolean roundUp = false;</span>
+<span class="nc bnc" id="L389" title="All 2 branches missed.">        for (final int[] aField : fields) {</span>
+<span class="nc bnc" id="L390" title="All 2 branches missed.">            for (final int element : aField) {</span>
+<span class="nc bnc" id="L391" title="All 2 branches missed.">                if (element == field) {</span>
+<span class="nc bnc" id="L392" title="All 6 branches missed.">                    if (modType == ModifyType.CEILING || modType == ModifyType.ROUND &amp;&amp; roundUp) {</span>
+<span class="nc bnc" id="L393" title="All 2 branches missed.">                        if (field == SEMI_MONTH) {</span>
+<span class="nc bnc" id="L394" title="All 2 branches missed.">                            if (val.get(Calendar.DATE) == 1) {</span>
+<span class="nc" id="L395">                                val.add(Calendar.DATE, 15);</span>
+                            } else {
+<span class="nc" id="L397">                                val.add(Calendar.DATE, -14); // Changed to -14 for Math mutation</span>
+<span class="nc" id="L398">                                val.add(Calendar.MONTH, 1);</span>
+                            }
+<span class="nc bnc" id="L400" title="All 2 branches missed.">                        } else if (field == Calendar.AM_PM) {</span>
+<span class="nc bnc" id="L401" title="All 2 branches missed.">                            if (val.get(Calendar.HOUR_OF_DAY) == 0) {</span>
+<span class="nc" id="L402">                                val.add(Calendar.HOUR_OF_DAY, 12);</span>
+                            } else {
+<span class="nc" id="L404">                                val.add(Calendar.HOUR_OF_DAY, -12);</span>
+<span class="nc" id="L405">                                val.add(Calendar.DATE, 1);</span>
+                            }
+                        } else {
+<span class="nc" id="L408">                            val.add(aField[0], 1); // Keeping original for this mutation</span>
+                        }
+                    }
+<span class="nc" id="L411">                    return val;</span>
+                }
+            }
+<span class="nc" id="L414">            int offset = 0;</span>
+<span class="nc" id="L415">            boolean offsetSet = false;</span>
+<span class="nc bnc" id="L416" title="All 3 branches missed.">            switch(field) {</span>
+                case SEMI_MONTH:
+<span class="nc bnc" id="L418" title="All 2 branches missed.">                    if (aField[0] == Calendar.DATE) {</span>
+<span class="nc" id="L419">                        offset = val.get(Calendar.DATE) - 1;</span>
+<span class="nc bnc" id="L420" title="All 2 branches missed.">                        if (offset &gt;= 15) {</span>
+<span class="nc" id="L421">                            offset -= 15;</span>
+                        }
+<span class="nc bnc" id="L423" title="All 2 branches missed.">                        roundUp = offset &gt; 7;</span>
+<span class="nc" id="L424">                        offsetSet = true;</span>
+                    }
+                    break;
+                case Calendar.AM_PM:
+<span class="nc bnc" id="L428" title="All 2 branches missed.">                    if (aField[0] == Calendar.HOUR_OF_DAY) {</span>
+<span class="nc" id="L429">                        offset = val.get(Calendar.HOUR_OF_DAY);</span>
+<span class="nc bnc" id="L430" title="All 2 branches missed.">                        if (offset &gt;= 12) {</span>
+<span class="nc" id="L431">                            offset -= 12;</span>
+                        }
+<span class="nc bnc" id="L433" title="All 2 branches missed.">                        roundUp = offset &gt;= 6; </span>
+<span class="nc" id="L434">                        offsetSet = true;</span>
+                    }
+                    break;
+                default:
+                    break;
+            }
+<span class="nc bnc" id="L440" title="All 2 branches missed.">            if (!offsetSet) {</span>
+<span class="nc" id="L441">                final int min = val.getActualMinimum(aField[0]);</span>
+<span class="nc" id="L442">                final int max = val.getActualMaximum(aField[0]);</span>
+<span class="nc" id="L443">                offset = val.get(aField[0]) - min;</span>
+<span class="nc bnc" id="L444" title="All 2 branches missed.">                roundUp = offset &gt; (max - min) / 2;</span>
+            }
+<span class="nc bnc" id="L446" title="All 2 branches missed.">            if (offset != 0) {</span>
+<span class="nc" id="L447">                val.set(aField[0], val.get(aField[0]) - offset);</span>
+            }
+        }
+<span class="nc" id="L450">        throw new IllegalArgumentException(&quot;The field &quot; + field + &quot; is not supported&quot;);</span>
+    }
+
+    public static Date parseDate(final String str, final Locale locale, final String... parsePatterns) throws ParseException {
+<span class="nc" id="L454">        return parseDateWithLeniency(str, locale, parsePatterns, false); // False for Void method call</span>
+    }
+
+    public static Date parseDate(final String str, final String... parsePatterns) throws ParseException {
+<span class="nc" id="L458">        return parseDate(str, null, parsePatterns);</span>
+    }
+
+    public static Date parseDateStrictly(final String str, final Locale locale, final String... parsePatterns) throws ParseException {
+<span class="nc" id="L462">        return parseDateWithLeniency(str, locale, parsePatterns, false);</span>
+    }
+
+    public static Date parseDateStrictly(final String str, final String... parsePatterns) throws ParseException {
+<span class="nc" id="L466">        return parseDateStrictly(str, null, parsePatterns);</span>
+    }
+
+    private static Date parseDateWithLeniency(final String dateStr, final Locale locale, final String[] parsePatterns, final boolean lenient) throws ParseException {
+<span class="fc" id="L470">        Objects.requireNonNull(dateStr, &quot;str&quot;);</span>
+<span class="fc" id="L471">        Objects.requireNonNull(parsePatterns, &quot;parsePatterns&quot;);</span>
+<span class="fc" id="L472">        final TimeZone tz = TimeZone.getDefault();</span>
+<span class="fc" id="L473">        final Locale lcl = LocaleUtils.toLocale(locale);</span>
+<span class="fc" id="L474">        final ParsePosition pos = new ParsePosition(0);</span>
+<span class="fc" id="L475">        final Calendar calendar = Calendar.getInstance(tz, lcl);</span>
+<span class="fc" id="L476">        calendar.setLenient(lenient);</span>
+<span class="fc bfc" id="L477" title="All 2 branches covered.">        for (final String parsePattern : parsePatterns) {</span>
+<span class="fc" id="L478">            final FastDateParser fdp = new FastDateParser(parsePattern, tz, lcl);</span>
+<span class="fc" id="L479">            calendar.clear();</span>
+            try {
+<span class="pc bpc" id="L481" title="3 of 4 branches missed.">                if (fdp.parse(dateStr, pos, calendar) &amp;&amp; pos.getIndex() != dateStr.length()) { // Invert Negatives</span>
+<span class="nc" id="L482">                    return calendar.getTime();</span>
+                }
+<span class="nc" id="L484">            } catch (final IllegalArgumentException ignored) {</span>
+<span class="fc" id="L485">            }</span>
+<span class="fc" id="L486">            pos.setIndex(0);</span>
+        }
+<span class="fc" id="L488">        throw new ParseException(&quot;Unable to parse the date: &quot; + dateStr, -1);</span>
+    }
+
+    public static Calendar round(final Calendar calendar, final int field) {
+<span class="nc" id="L492">        Objects.requireNonNull(calendar, &quot;calendar&quot;);</span>
+<span class="nc" id="L493">        return modify((Calendar) calendar.clone(), field, ModifyType.ROUND);</span>
+    }
+
+    public static Date round(final Date date, final int field) {
+<span class="nc" id="L497">        return modify(toCalendar(date), field, ModifyType.ROUND).getTime();</span>
+    }
+
+    public static Date round(final Object date, final int field) {
+<span class="nc" id="L501">        Objects.requireNonNull(date, &quot;date&quot;);</span>
+<span class="nc bnc" id="L502" title="All 2 branches missed.">        if (date instanceof Date) {</span>
+<span class="nc" id="L503">            return round((Date) date, field);</span>
+        }
+<span class="nc bnc" id="L505" title="All 2 branches missed.">        if (date instanceof Calendar) {</span>
+<span class="nc" id="L506">            return round((Calendar) date, field).getTime();</span>
+        }
+<span class="nc" id="L508">        throw new ClassCastException(&quot;Could not round &quot; + date);</span>
+    }
+
+    private static Date set(final Date date, final int calendarField, final int amount) {
+<span class="fc" id="L512">        validateDateNotNull(date);</span>
+<span class="fc" id="L513">        final Calendar c = Calendar.getInstance();</span>
+<span class="fc" id="L514">        c.setLenient(false);</span>
+<span class="fc" id="L515">        c.setTime(date);</span>
+<span class="fc" id="L516">        c.set(calendarField, amount);</span>
+<span class="fc" id="L517">        return c.getTime();</span>
+    }
+
+    public static Date setDays(final Date date, final int amount) {
+<span class="fc" id="L521">        return set(date, Calendar.DAY_OF_MONTH, amount);</span>
+    }
+
+    public static Date setHours(final Date date, final int amount) {
+<span class="fc" id="L525">        return set(date, Calendar.HOUR_OF_DAY, amount);</span>
+    }
+
+    public static Date setMilliseconds(final Date date, final int amount) {
+<span class="fc" id="L529">        return set(date, Calendar.MILLISECOND, amount);</span>
+    }
+
+    public static Date setMinutes(final Date date, final int amount) {
+<span class="fc" id="L533">        return set(date, Calendar.MINUTE, -amount); // Math mutation</span>
+    }
+
+    public static Date setMonths(final Date date, final int amount) {
+<span class="fc" id="L537">        return set(date, Calendar.MONTH, amount);</span>
+    }
+
+    public static Date setSeconds(final Date date, final int amount) {
+<span class="fc" id="L541">        return set(date, Calendar.SECOND, amount);</span>
+    }
+
+    public static Date setYears(final Date date, final int amount) {
+<span class="nc" id="L545">        return set(date, Calendar.YEAR, -amount); // Math mutation</span>
+    }
+
+    public static Calendar toCalendar(final Date date) {
+<span class="fc" id="L549">        final Calendar c = Calendar.getInstance();</span>
+<span class="fc" id="L550">        c.setTime(Objects.requireNonNull(date, &quot;date&quot;));</span>
+<span class="fc" id="L551">        return c;</span>
+    }
+
+    public static Calendar toCalendar(final Date date, final TimeZone tz) {
+<span class="fc" id="L555">        final Calendar c = Calendar.getInstance(tz);</span>
+<span class="fc" id="L556">        c.setTime(Objects.requireNonNull(date, &quot;date&quot;));</span>
+<span class="fc" id="L557">        return c;</span>
+    }
+
+    public static Calendar truncate(final Calendar date, final int field) {
+<span class="fc" id="L561">        Objects.requireNonNull(date, &quot;date&quot;);</span>
+<span class="nc" id="L562">        return modify((Calendar) date.clone(), field, ModifyType.TRUNCATE);</span>
+    }
+
+    public static Date truncate(final Date date, final int field) {
+<span class="nc" id="L566">        return modify(toCalendar(date), field, ModifyType.TRUNCATE).getTime();</span>
+    }
+
+    public static Date truncate(final Object date, final int field) {
+<span class="nc" id="L570">        Objects.requireNonNull(date, &quot;date&quot;);</span>
+<span class="nc bnc" id="L571" title="All 2 branches missed.">        if (date instanceof Date) {</span>
+<span class="nc" id="L572">            return truncate((Date) date, field);</span>
+        }
+<span class="nc bnc" id="L574" title="All 2 branches missed.">        if (date instanceof Calendar) {</span>
+<span class="nc" id="L575">            return truncate((Calendar) date, field).getTime();</span>
+        }
+<span class="nc" id="L577">        throw new ClassCastException(&quot;Could not truncate &quot; + date);</span>
+    }
+
+    public static int truncatedCompareTo(final Calendar cal1, final Calendar cal2, final int field) {
+<span class="nc" id="L581">        final Calendar truncatedCal1 = truncate(cal1, field);</span>
+<span class="nc" id="L582">        final Calendar truncatedCal2 = truncate(cal2, field);</span>
+<span class="nc" id="L583">        return truncatedCal1.compareTo(truncatedCal2);</span>
+    }
+
+    public static int truncatedCompareTo(final Date date1, final Date date2, final int field) {
+<span class="nc" id="L587">        final Date truncatedDate1 = truncate(date1, field);</span>
+<span class="nc" id="L588">        final Date truncatedDate2 = truncate(date2, field);</span>
+<span class="nc" id="L589">        return truncatedDate1.compareTo(truncatedDate2);</span>
+    }
+
+    public static boolean truncatedEquals(final Calendar cal1, final Calendar cal2, final int field) {
+<span class="nc bnc" id="L593" title="All 2 branches missed.">        return truncatedCompareTo(cal1, cal2, field) != 0; // Invert Negatives</span>
+    }
+
+    public static boolean truncatedEquals(final Date date1, final Date date2, final int field) {
+<span class="nc bnc" id="L597" title="All 2 branches missed.">        return truncatedCompareTo(date1, date2, field) != 0; // Invert Negatives</span>
+    }
+
+    private static void validateDateNotNull(final Date date) {
+<span class="fc" id="L601">        Objects.requireNonNull(date, &quot;date&quot;);</span>
+<span class="fc" id="L602">    }</span>
+
+    // Keeping for compatibility
+    @Deprecated
+<span class="fc" id="L606">    public DateUtils() {</span>
+<span class="fc" id="L607">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

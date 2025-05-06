@@ -1,0 +1,2965 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StrBuilder.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text</a> &gt; <span class="el_source">StrBuilder.java</span></div><h1>StrBuilder.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.text;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Serializable;
+import java.io.Writer;
+import java.nio.CharBuffer;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
+
+/**
+ * Builds a string from constituent parts providing a more flexible and powerful API than {@link StringBuffer} and {@link StringBuilder}.
+ * &lt;p&gt;
+ * The main differences from {@link StrBuilder} and {@link StringBuilder} are:
+ * &lt;/p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;Not synchronized&lt;/li&gt;
+ * &lt;li&gt;Not final&lt;/li&gt;
+ * &lt;li&gt;Subclasses have direct access to character array&lt;/li&gt;
+ * &lt;li&gt;Additional methods
+ * &lt;ul&gt;
+ * &lt;li&gt;appendWithSeparators - adds an array of values, with a separator&lt;/li&gt;
+ * &lt;li&gt;appendPadding - adds a length padding characters&lt;/li&gt;
+ * &lt;li&gt;appendFixedLength - adds a fixed width field to the builder&lt;/li&gt;
+ * &lt;li&gt;toCharArray/getChars - simpler ways to get a range of the character array&lt;/li&gt;
+ * &lt;li&gt;delete - delete char or string&lt;/li&gt;
+ * &lt;li&gt;replace - search and replace for a char or string&lt;/li&gt;
+ * &lt;li&gt;leftString/rightString/midString - substring without exceptions&lt;/li&gt;
+ * &lt;li&gt;contains - whether the builder contains a char or string&lt;/li&gt;
+ * &lt;li&gt;size/clear/isEmpty - collections style API methods&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;/li&gt;
+ * &lt;li&gt;Views
+ * &lt;ul&gt;
+ * &lt;li&gt;asTokenizer - uses the internal buffer as the source of a StrTokenizer&lt;/li&gt;
+ * &lt;li&gt;asReader - uses the internal buffer as the source of a Reader&lt;/li&gt;
+ * &lt;li&gt;asWriter - allows a Writer to write directly to the internal buffer&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;p&gt;
+ * The aim has been to provide an API that mimics very closely what StringBuffer provides, but with additional methods. It should be noted that some edge cases,
+ * with invalid indices or null input, have been altered - see individual methods. The biggest of these changes is that by default, null will not output the
+ * text 'null'. This can be controlled by a property, {@link #setNullText(String)}.
+ * &lt;/p&gt;
+ *
+ * @since 1.0
+ * @deprecated Deprecated as of 1.3, use {@link TextStringBuilder} instead. This class will be removed in 2.0.
+ */
+@Deprecated
+public class StrBuilder implements CharSequence, Appendable, Serializable, Builder&lt;String&gt; {
+
+    /**
+     * Inner class to allow StrBuilder to operate as a reader.
+     */
+    final class StrBuilderReader extends Reader {
+
+        /** The current stream position. */
+        private int pos;
+
+        /** The last mark position. */
+        private int mark;
+
+        /**
+         * Default constructor.
+         */
+<span class="fc" id="L88">        StrBuilderReader() {</span>
+<span class="fc" id="L89">        }</span>
+
+        /** {@inheritDoc} */
+        @Override
+        public void close() {
+            // do nothing
+<span class="fc" id="L95">        }</span>
+
+        /** {@inheritDoc} */
+        @Override
+        public void mark(final int readAheadLimit) {
+<span class="fc" id="L100">            mark = pos;</span>
+<span class="fc" id="L101">        }</span>
+
+        /** {@inheritDoc} */
+        @Override
+        public boolean markSupported() {
+<span class="fc" id="L106">            return true;</span>
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public int read() {
+<span class="fc bfc" id="L112" title="All 2 branches covered.">            if (!ready()) {</span>
+<span class="fc" id="L113">                return -1;</span>
+            }
+<span class="fc" id="L115">            return charAt(pos++);</span>
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public int read(final char[] b, final int off, int len) {
+<span class="pc bpc" id="L121" title="1 of 10 branches missed.">            if (off &lt; 0 || len &lt; 0 || off &gt; b.length || off + len &gt; b.length || off + len &lt; 0) {</span>
+<span class="fc" id="L122">                throw new IndexOutOfBoundsException();</span>
+            }
+<span class="fc bfc" id="L124" title="All 2 branches covered.">            if (len == 0) {</span>
+<span class="fc" id="L125">                return 0;</span>
+            }
+<span class="fc bfc" id="L127" title="All 2 branches covered.">            if (pos &gt;= size()) {</span>
+<span class="fc" id="L128">                return -1;</span>
+            }
+<span class="fc bfc" id="L130" title="All 2 branches covered.">            if (pos + len &gt; size()) {</span>
+<span class="fc" id="L131">                len = size() - pos;</span>
+            }
+<span class="fc" id="L133">            StrBuilder.this.getChars(pos, pos + len, b, off);</span>
+<span class="fc" id="L134">            pos += len;</span>
+<span class="fc" id="L135">            return len;</span>
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public boolean ready() {
+<span class="fc bfc" id="L141" title="All 2 branches covered.">            return pos &lt; size();</span>
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        public void reset() {
+<span class="fc" id="L147">            pos = mark;</span>
+<span class="fc" id="L148">        }</span>
+
+        /** {@inheritDoc} */
+        @Override
+        public long skip(long n) {
+<span class="fc bfc" id="L153" title="All 2 branches covered.">            if (pos + n &gt; size()) {</span>
+<span class="fc" id="L154">                n = size() - pos;</span>
+            }
+<span class="fc bfc" id="L156" title="All 2 branches covered.">            if (n &lt; 0) {</span>
+<span class="fc" id="L157">                return 0;</span>
+            }
+<span class="fc" id="L159">            pos = Math.addExact(pos, Math.toIntExact(n));</span>
+<span class="fc" id="L160">            return n;</span>
+        }
+    }
+
+    /**
+     * Inner class to allow StrBuilder to operate as a tokenizer.
+     */
+    final class StrBuilderTokenizer extends StrTokenizer {
+
+        /**
+         * Default constructor.
+         */
+<span class="fc" id="L172">        StrBuilderTokenizer() {</span>
+<span class="fc" id="L173">        }</span>
+
+        /** {@inheritDoc} */
+        @Override
+        public String getContent() {
+<span class="fc" id="L178">            final String str = super.getContent();</span>
+<span class="pc bpc" id="L179" title="1 of 2 branches missed.">            if (str == null) {</span>
+<span class="fc" id="L180">                return StrBuilder.this.toString();</span>
+            }
+<span class="nc" id="L182">            return str;</span>
+        }
+
+        /** {@inheritDoc} */
+        @Override
+        protected List&lt;String&gt; tokenize(final char[] chars, final int offset, final int count) {
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">            if (chars == null) {</span>
+<span class="fc" id="L189">                return super.tokenize(StrBuilder.this.buffer, 0, StrBuilder.this.size());</span>
+            }
+<span class="nc" id="L191">            return super.tokenize(chars, offset, count);</span>
+        }
+    }
+
+    /**
+     * Inner class to allow StrBuilder to operate as a writer.
+     */
+    final class StrBuilderWriter extends Writer {
+
+        /**
+         * Default constructor.
+         */
+<span class="fc" id="L203">        StrBuilderWriter() {</span>
+<span class="fc" id="L204">        }</span>
+
+        /** {@inheritDoc} */
+        @Override
+        public void close() {
+            // do nothing
+<span class="fc" id="L210">        }</span>
+
+        /** {@inheritDoc} */
+        @Override
+        public void flush() {
+            // do nothing
+<span class="fc" id="L216">        }</span>
+
+        /** {@inheritDoc} */
+        @Override
+        public void write(final char[] cbuf) {
+<span class="fc" id="L221">            StrBuilder.this.append(cbuf);</span>
+<span class="fc" id="L222">        }</span>
+
+        /** {@inheritDoc} */
+        @Override
+        public void write(final char[] cbuf, final int off, final int len) {
+<span class="fc" id="L227">            StrBuilder.this.append(cbuf, off, len);</span>
+<span class="fc" id="L228">        }</span>
+
+        /** {@inheritDoc} */
+        @Override
+        public void write(final int c) {
+<span class="fc" id="L233">            StrBuilder.this.append((char) c);</span>
+<span class="fc" id="L234">        }</span>
+
+        /** {@inheritDoc} */
+        @Override
+        public void write(final String str) {
+<span class="fc" id="L239">            StrBuilder.this.append(str);</span>
+<span class="fc" id="L240">        }</span>
+
+        /** {@inheritDoc} */
+        @Override
+        public void write(final String str, final int off, final int len) {
+<span class="fc" id="L245">            StrBuilder.this.append(str, off, len);</span>
+<span class="fc" id="L246">        }</span>
+    }
+
+    /**
+     * The extra capacity for new builders.
+     */
+    static final int CAPACITY = 32;
+
+    /**
+     * Required for serialization support.
+     *
+     * @see java.io.Serializable
+     */
+    private static final long serialVersionUID = 7628716375283629643L;
+
+    /** Internal data storage. */
+    char[] buffer; // package-protected for test code use only
+
+    /** Current size of the buffer. */
+    private int size;
+
+    /**
+     * The new line, {@code null} means use the system default from {@link System#lineSeparator()}.
+     */
+    private String newLine;
+
+    /** The null text. */
+    private String nullText;
+
+    /**
+     * Constructs an empty builder initial capacity 32 characters.
+     */
+    public StrBuilder() {
+<span class="fc" id="L279">        this(CAPACITY);</span>
+<span class="fc" id="L280">    }</span>
+
+    /**
+     * Constructs an empty builder the specified initial capacity.
+     *
+     * @param initialCapacity the initial capacity, zero or less will be converted to 32
+     */
+<span class="fc" id="L287">    public StrBuilder(int initialCapacity) {</span>
+<span class="fc bfc" id="L288" title="All 2 branches covered.">        if (initialCapacity &lt;= 0) {</span>
+<span class="fc" id="L289">            initialCapacity = CAPACITY;</span>
+        }
+<span class="fc" id="L291">        buffer = new char[initialCapacity];</span>
+<span class="fc" id="L292">    }</span>
+
+    /**
+     * Constructs a builder from the string, allocating 32 extra characters for growth.
+     *
+     * @param str the string to copy, null treated as blank string
+     */
+<span class="fc" id="L299">    public StrBuilder(final String str) {</span>
+<span class="fc bfc" id="L300" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L301">            buffer = new char[CAPACITY];</span>
+        } else {
+<span class="fc" id="L303">            buffer = new char[str.length() + CAPACITY];</span>
+<span class="fc" id="L304">            append(str);</span>
+        }
+<span class="fc" id="L306">    }</span>
+
+    /**
+     * Appends a boolean value to the string builder.
+     *
+     * @param value the value to append
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final boolean value) {
+<span class="fc bfc" id="L315" title="All 2 branches covered.">        if (value) {</span>
+<span class="fc" id="L316">            ensureCapacity(size + 4);</span>
+<span class="fc" id="L317">            buffer[size++] = 't';</span>
+<span class="fc" id="L318">            buffer[size++] = 'r';</span>
+<span class="fc" id="L319">            buffer[size++] = 'u';</span>
+        } else {
+<span class="fc" id="L321">            ensureCapacity(size + 5);</span>
+<span class="fc" id="L322">            buffer[size++] = 'f';</span>
+<span class="fc" id="L323">            buffer[size++] = 'a';</span>
+<span class="fc" id="L324">            buffer[size++] = 'l';</span>
+<span class="fc" id="L325">            buffer[size++] = 's';</span>
+        }
+<span class="fc" id="L327">        buffer[size++] = 'e';</span>
+<span class="fc" id="L328">        return this;</span>
+    }
+
+    /**
+     * Appends a char value to the string builder.
+     *
+     * @param ch the value to append
+     * @return {@code this} instance.
+     */
+    @Override
+    public StrBuilder append(final char ch) {
+<span class="fc" id="L339">        final int len = length();</span>
+<span class="fc" id="L340">        ensureCapacity(len + 1);</span>
+<span class="fc" id="L341">        buffer[size++] = ch;</span>
+<span class="fc" id="L342">        return this;</span>
+    }
+
+    /**
+     * Appends a char array to the string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param chars the char array to append
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final char[] chars) {
+<span class="fc bfc" id="L352" title="All 2 branches covered.">        if (chars == null) {</span>
+<span class="fc" id="L353">            return appendNull();</span>
+        }
+<span class="fc" id="L355">        final int strLen = chars.length;</span>
+<span class="fc bfc" id="L356" title="All 2 branches covered.">        if (strLen &gt; 0) {</span>
+<span class="fc" id="L357">            final int len = length();</span>
+<span class="fc" id="L358">            ensureCapacity(len + strLen);</span>
+<span class="fc" id="L359">            System.arraycopy(chars, 0, buffer, len, strLen);</span>
+<span class="fc" id="L360">            size += strLen;</span>
+        }
+<span class="fc" id="L362">        return this;</span>
+    }
+
+    /**
+     * Appends a char array to the string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param chars      the char array to append
+     * @param startIndex the start index, inclusive, must be valid
+     * @param length     the length to append, must be valid
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final char[] chars, final int startIndex, final int length) {
+<span class="fc bfc" id="L374" title="All 2 branches covered.">        if (chars == null) {</span>
+<span class="fc" id="L375">            return appendNull();</span>
+        }
+<span class="fc bfc" id="L377" title="All 4 branches covered.">        if (startIndex &lt; 0 || startIndex &gt; chars.length) {</span>
+<span class="fc" id="L378">            throw new StringIndexOutOfBoundsException(&quot;Invalid startIndex: &quot; + length);</span>
+        }
+<span class="fc bfc" id="L380" title="All 4 branches covered.">        if (length &lt; 0 || startIndex + length &gt; chars.length) {</span>
+<span class="fc" id="L381">            throw new StringIndexOutOfBoundsException(&quot;Invalid length: &quot; + length);</span>
+        }
+<span class="fc bfc" id="L383" title="All 2 branches covered.">        if (length &gt; 0) {</span>
+<span class="fc" id="L384">            final int len = length();</span>
+<span class="fc" id="L385">            ensureCapacity(len + length);</span>
+<span class="fc" id="L386">            System.arraycopy(chars, startIndex, buffer, len, length);</span>
+<span class="fc" id="L387">            size += length;</span>
+        }
+<span class="fc" id="L389">        return this;</span>
+    }
+
+    /**
+     * Appends the contents of a char buffer to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param buf the char buffer to append
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final CharBuffer buf) {
+<span class="fc bfc" id="L399" title="All 2 branches covered.">        if (buf == null) {</span>
+<span class="fc" id="L400">            return appendNull();</span>
+        }
+<span class="pc bpc" id="L402" title="1 of 2 branches missed.">        if (buf.hasArray()) {</span>
+<span class="fc" id="L403">            final int length = buf.remaining();</span>
+<span class="fc" id="L404">            final int len = length();</span>
+<span class="fc" id="L405">            ensureCapacity(len + length);</span>
+<span class="fc" id="L406">            System.arraycopy(buf.array(), buf.arrayOffset() + buf.position(), buffer, len, length);</span>
+<span class="fc" id="L407">            size += length;</span>
+<span class="fc" id="L408">        } else {</span>
+<span class="nc" id="L409">            append(buf.toString());</span>
+        }
+<span class="fc" id="L411">        return this;</span>
+    }
+
+    /**
+     * Appends the contents of a char buffer to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param buf        the char buffer to append
+     * @param startIndex the start index, inclusive, must be valid
+     * @param length     the length to append, must be valid
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final CharBuffer buf, final int startIndex, final int length) {
+<span class="fc bfc" id="L423" title="All 2 branches covered.">        if (buf == null) {</span>
+<span class="fc" id="L424">            return appendNull();</span>
+        }
+<span class="pc bpc" id="L426" title="1 of 2 branches missed.">        if (buf.hasArray()) {</span>
+<span class="fc" id="L427">            final int totalLength = buf.remaining();</span>
+<span class="fc bfc" id="L428" title="All 4 branches covered.">            if (startIndex &lt; 0 || startIndex &gt; totalLength) {</span>
+<span class="fc" id="L429">                throw new StringIndexOutOfBoundsException(&quot;startIndex must be valid&quot;);</span>
+            }
+<span class="fc bfc" id="L431" title="All 4 branches covered.">            if (length &lt; 0 || startIndex + length &gt; totalLength) {</span>
+<span class="fc" id="L432">                throw new StringIndexOutOfBoundsException(&quot;length must be valid&quot;);</span>
+            }
+<span class="fc" id="L434">            final int len = length();</span>
+<span class="fc" id="L435">            ensureCapacity(len + length);</span>
+<span class="fc" id="L436">            System.arraycopy(buf.array(), buf.arrayOffset() + buf.position() + startIndex, buffer, len, length);</span>
+<span class="fc" id="L437">            size += length;</span>
+<span class="fc" id="L438">        } else {</span>
+<span class="nc" id="L439">            append(buf.toString(), startIndex, length);</span>
+        }
+<span class="fc" id="L441">        return this;</span>
+    }
+
+    /**
+     * Appends a CharSequence to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param seq the CharSequence to append
+     * @return {@code this} instance.
+     */
+    @Override
+    public StrBuilder append(final CharSequence seq) {
+<span class="fc bfc" id="L452" title="All 2 branches covered.">        if (seq == null) {</span>
+<span class="fc" id="L453">            return appendNull();</span>
+        }
+<span class="fc bfc" id="L455" title="All 2 branches covered.">        if (seq instanceof StrBuilder) {</span>
+<span class="fc" id="L456">            return append((StrBuilder) seq);</span>
+        }
+<span class="fc bfc" id="L458" title="All 2 branches covered.">        if (seq instanceof StringBuilder) {</span>
+<span class="fc" id="L459">            return append((StringBuilder) seq);</span>
+        }
+<span class="fc bfc" id="L461" title="All 2 branches covered.">        if (seq instanceof StringBuffer) {</span>
+<span class="fc" id="L462">            return append((StringBuffer) seq);</span>
+        }
+<span class="pc bpc" id="L464" title="1 of 2 branches missed.">        if (seq instanceof CharBuffer) {</span>
+<span class="nc" id="L465">            return append((CharBuffer) seq);</span>
+        }
+<span class="fc" id="L467">        return append(seq.toString());</span>
+    }
+
+    /**
+     * Appends part of a CharSequence to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param seq        the CharSequence to append
+     * @param startIndex the start index, inclusive, must be valid
+     * @param length     the length to append, must be valid
+     * @return {@code this} instance.
+     */
+    @Override
+    public StrBuilder append(final CharSequence seq, final int startIndex, final int length) {
+<span class="fc bfc" id="L480" title="All 2 branches covered.">        if (seq == null) {</span>
+<span class="fc" id="L481">            return appendNull();</span>
+        }
+<span class="fc" id="L483">        return append(seq.toString(), startIndex, length);</span>
+    }
+
+    /**
+     * Appends a double value to the string builder using {@code String.valueOf}.
+     *
+     * @param value the value to append
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final double value) {
+<span class="fc" id="L493">        return append(String.valueOf(value));</span>
+    }
+
+    /**
+     * Appends a float value to the string builder using {@code String.valueOf}.
+     *
+     * @param value the value to append
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final float value) {
+<span class="fc" id="L503">        return append(String.valueOf(value));</span>
+    }
+
+    /**
+     * Appends an int value to the string builder using {@code String.valueOf}.
+     *
+     * @param value the value to append
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final int value) {
+<span class="fc" id="L513">        return append(String.valueOf(value));</span>
+    }
+
+    /**
+     * Appends a long value to the string builder using {@code String.valueOf}.
+     *
+     * @param value the value to append
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final long value) {
+<span class="fc" id="L523">        return append(String.valueOf(value));</span>
+    }
+
+    /**
+     * Appends an object to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param obj the object to append
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final Object obj) {
+<span class="fc bfc" id="L533" title="All 2 branches covered.">        if (obj == null) {</span>
+<span class="fc" id="L534">            return appendNull();</span>
+        }
+<span class="fc bfc" id="L536" title="All 2 branches covered.">        if (obj instanceof CharSequence) {</span>
+<span class="fc" id="L537">            return append((CharSequence) obj);</span>
+        }
+<span class="fc" id="L539">        return append(obj.toString());</span>
+    }
+
+    /**
+     * Appends another string builder to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param str the string builder to append
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final StrBuilder str) {
+<span class="fc bfc" id="L549" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L550">            return appendNull();</span>
+        }
+<span class="fc" id="L552">        final int strLen = str.length();</span>
+<span class="fc bfc" id="L553" title="All 2 branches covered.">        if (strLen &gt; 0) {</span>
+<span class="fc" id="L554">            final int len = length();</span>
+<span class="fc" id="L555">            ensureCapacity(len + strLen);</span>
+<span class="fc" id="L556">            System.arraycopy(str.buffer, 0, buffer, len, strLen);</span>
+<span class="fc" id="L557">            size += strLen;</span>
+        }
+<span class="fc" id="L559">        return this;</span>
+    }
+
+    /**
+     * Appends part of a string builder to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param str        the string to append
+     * @param startIndex the start index, inclusive, must be valid
+     * @param length     the length to append, must be valid
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final StrBuilder str, final int startIndex, final int length) {
+<span class="fc bfc" id="L571" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L572">            return appendNull();</span>
+        }
+<span class="fc bfc" id="L574" title="All 4 branches covered.">        if (startIndex &lt; 0 || startIndex &gt; str.length()) {</span>
+<span class="fc" id="L575">            throw new StringIndexOutOfBoundsException(&quot;startIndex must be valid&quot;);</span>
+        }
+<span class="fc bfc" id="L577" title="All 4 branches covered.">        if (length &lt; 0 || startIndex + length &gt; str.length()) {</span>
+<span class="fc" id="L578">            throw new StringIndexOutOfBoundsException(&quot;length must be valid&quot;);</span>
+        }
+<span class="fc bfc" id="L580" title="All 2 branches covered.">        if (length &gt; 0) {</span>
+<span class="fc" id="L581">            final int len = length();</span>
+<span class="fc" id="L582">            ensureCapacity(len + length);</span>
+<span class="fc" id="L583">            str.getChars(startIndex, startIndex + length, buffer, len);</span>
+<span class="fc" id="L584">            size += length;</span>
+        }
+<span class="fc" id="L586">        return this;</span>
+    }
+
+    /**
+     * Appends a string to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param str the string to append
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final String str) {
+<span class="fc bfc" id="L596" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L597">            return appendNull();</span>
+        }
+<span class="fc" id="L599">        final int strLen = str.length();</span>
+<span class="fc bfc" id="L600" title="All 2 branches covered.">        if (strLen &gt; 0) {</span>
+<span class="fc" id="L601">            final int len = length();</span>
+<span class="fc" id="L602">            ensureCapacity(len + strLen);</span>
+<span class="fc" id="L603">            str.getChars(0, strLen, buffer, len);</span>
+<span class="fc" id="L604">            size += strLen;</span>
+        }
+<span class="fc" id="L606">        return this;</span>
+    }
+
+    /**
+     * Appends part of a string to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param str        the string to append
+     * @param startIndex the start index, inclusive, must be valid
+     * @param length     the length to append, must be valid
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final String str, final int startIndex, final int length) {
+<span class="fc bfc" id="L618" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L619">            return appendNull();</span>
+        }
+<span class="fc bfc" id="L621" title="All 4 branches covered.">        if (startIndex &lt; 0 || startIndex &gt; str.length()) {</span>
+<span class="fc" id="L622">            throw new StringIndexOutOfBoundsException(&quot;startIndex must be valid&quot;);</span>
+        }
+<span class="fc bfc" id="L624" title="All 4 branches covered.">        if (length &lt; 0 || startIndex + length &gt; str.length()) {</span>
+<span class="fc" id="L625">            throw new StringIndexOutOfBoundsException(&quot;length must be valid&quot;);</span>
+        }
+<span class="fc bfc" id="L627" title="All 2 branches covered.">        if (length &gt; 0) {</span>
+<span class="fc" id="L628">            final int len = length();</span>
+<span class="fc" id="L629">            ensureCapacity(len + length);</span>
+<span class="fc" id="L630">            str.getChars(startIndex, startIndex + length, buffer, len);</span>
+<span class="fc" id="L631">            size += length;</span>
+        }
+<span class="fc" id="L633">        return this;</span>
+    }
+
+    /**
+     * Calls {@link String#format(String, Object...)} and appends the result.
+     *
+     * @param format the format string
+     * @param objs   the objects to use in the format string
+     * @return {@code this} to enable chaining
+     * @see String#format(String, Object...)
+     */
+    public StrBuilder append(final String format, final Object... objs) {
+<span class="fc" id="L645">        return append(String.format(format, objs));</span>
+    }
+
+    /**
+     * Appends a string buffer to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param str the string buffer to append
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final StringBuffer str) {
+<span class="fc bfc" id="L655" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L656">            return appendNull();</span>
+        }
+<span class="fc" id="L658">        final int strLen = str.length();</span>
+<span class="fc bfc" id="L659" title="All 2 branches covered.">        if (strLen &gt; 0) {</span>
+<span class="fc" id="L660">            final int len = length();</span>
+<span class="fc" id="L661">            ensureCapacity(len + strLen);</span>
+<span class="fc" id="L662">            str.getChars(0, strLen, buffer, len);</span>
+<span class="fc" id="L663">            size += strLen;</span>
+        }
+<span class="fc" id="L665">        return this;</span>
+    }
+
+    /**
+     * Appends part of a string buffer to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param str        the string to append
+     * @param startIndex the start index, inclusive, must be valid
+     * @param length     the length to append, must be valid
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final StringBuffer str, final int startIndex, final int length) {
+<span class="fc bfc" id="L677" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L678">            return appendNull();</span>
+        }
+<span class="fc bfc" id="L680" title="All 4 branches covered.">        if (startIndex &lt; 0 || startIndex &gt; str.length()) {</span>
+<span class="fc" id="L681">            throw new StringIndexOutOfBoundsException(&quot;startIndex must be valid&quot;);</span>
+        }
+<span class="fc bfc" id="L683" title="All 4 branches covered.">        if (length &lt; 0 || startIndex + length &gt; str.length()) {</span>
+<span class="fc" id="L684">            throw new StringIndexOutOfBoundsException(&quot;length must be valid&quot;);</span>
+        }
+<span class="fc bfc" id="L686" title="All 2 branches covered.">        if (length &gt; 0) {</span>
+<span class="fc" id="L687">            final int len = length();</span>
+<span class="fc" id="L688">            ensureCapacity(len + length);</span>
+<span class="fc" id="L689">            str.getChars(startIndex, startIndex + length, buffer, len);</span>
+<span class="fc" id="L690">            size += length;</span>
+        }
+<span class="fc" id="L692">        return this;</span>
+    }
+
+    /**
+     * Appends a StringBuilder to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param str the StringBuilder to append
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final StringBuilder str) {
+<span class="fc bfc" id="L702" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L703">            return appendNull();</span>
+        }
+<span class="fc" id="L705">        final int strLen = str.length();</span>
+<span class="fc bfc" id="L706" title="All 2 branches covered.">        if (strLen &gt; 0) {</span>
+<span class="fc" id="L707">            final int len = length();</span>
+<span class="fc" id="L708">            ensureCapacity(len + strLen);</span>
+<span class="fc" id="L709">            str.getChars(0, strLen, buffer, len);</span>
+<span class="fc" id="L710">            size += strLen;</span>
+        }
+<span class="fc" id="L712">        return this;</span>
+    }
+
+    /**
+     * Appends part of a StringBuilder to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param str        the StringBuilder to append
+     * @param startIndex the start index, inclusive, must be valid
+     * @param length     the length to append, must be valid
+     * @return {@code this} instance.
+     */
+    public StrBuilder append(final StringBuilder str, final int startIndex, final int length) {
+<span class="fc bfc" id="L724" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L725">            return appendNull();</span>
+        }
+<span class="fc bfc" id="L727" title="All 4 branches covered.">        if (startIndex &lt; 0 || startIndex &gt; str.length()) {</span>
+<span class="fc" id="L728">            throw new StringIndexOutOfBoundsException(&quot;startIndex must be valid&quot;);</span>
+        }
+<span class="fc bfc" id="L730" title="All 4 branches covered.">        if (length &lt; 0 || startIndex + length &gt; str.length()) {</span>
+<span class="fc" id="L731">            throw new StringIndexOutOfBoundsException(&quot;length must be valid&quot;);</span>
+        }
+<span class="fc bfc" id="L733" title="All 2 branches covered.">        if (length &gt; 0) {</span>
+<span class="fc" id="L734">            final int len = length();</span>
+<span class="fc" id="L735">            ensureCapacity(len + length);</span>
+<span class="fc" id="L736">            str.getChars(startIndex, startIndex + length, buffer, len);</span>
+<span class="fc" id="L737">            size += length;</span>
+        }
+<span class="fc" id="L739">        return this;</span>
+    }
+
+    /**
+     * Appends each item in an iterable to the builder without any separators. Appending a null iterable will have no effect. Each object is appended using
+     * {@link #append(Object)}.
+     *
+     * @param iterable the iterable to append
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendAll(final Iterable&lt;?&gt; iterable) {
+<span class="fc bfc" id="L750" title="All 2 branches covered.">        if (iterable != null) {</span>
+<span class="fc" id="L751">            iterable.forEach(this::append);</span>
+        }
+<span class="fc" id="L753">        return this;</span>
+    }
+
+    /**
+     * Appends each item in an iterator to the builder without any separators. Appending a null iterator will have no effect. Each object is appended using
+     * {@link #append(Object)}.
+     *
+     * @param it the iterator to append
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendAll(final Iterator&lt;?&gt; it) {
+<span class="fc bfc" id="L764" title="All 2 branches covered.">        if (it != null) {</span>
+<span class="fc bfc" id="L765" title="All 2 branches covered.">            while (it.hasNext()) {</span>
+<span class="fc" id="L766">                append(it.next());</span>
+            }
+        }
+<span class="fc" id="L769">        return this;</span>
+    }
+
+    /**
+     * Appends each item in an array to the builder without any separators. Appending a null array will have no effect. Each object is appended using
+     * {@link #append(Object)}.
+     *
+     * @param &lt;T&gt;   the element type
+     * @param array the array to append
+     * @return {@code this} instance.
+     */
+    public &lt;T&gt; StrBuilder appendAll(@SuppressWarnings(&quot;unchecked&quot;) final T... array) {
+        /*
+         * @SuppressWarnings used to hide warning about vararg usage. We cannot use @SafeVarargs, since this method is not final. Using @SuppressWarnings is
+         * fine, because it isn't inherited by subclasses, so each subclass must vouch for itself whether its use of 'array' is safe.
+         */
+<span class="fc bfc" id="L785" title="All 4 branches covered.">        if (array != null &amp;&amp; array.length &gt; 0) {</span>
+<span class="fc bfc" id="L786" title="All 2 branches covered.">            for (final Object element : array) {</span>
+<span class="fc" id="L787">                append(element);</span>
+            }
+        }
+<span class="fc" id="L790">        return this;</span>
+    }
+
+    /**
+     * Appends an object to the builder padding on the left to a fixed width. The {@code String.valueOf} of the {@code int} value is used. If the formatted
+     * value is larger than the length, the left hand side is lost.
+     *
+     * @param value   the value to append
+     * @param width   the fixed field width, zero or negative has no effect
+     * @param padChar the pad character to use
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendFixedWidthPadLeft(final int value, final int width, final char padChar) {
+<span class="fc" id="L803">        return appendFixedWidthPadLeft(String.valueOf(value), width, padChar);</span>
+    }
+
+    /**
+     * Appends an object to the builder padding on the left to a fixed width. The {@code toString} of the object is used. If the object is larger than the
+     * length, the left hand side is lost. If the object is null, the null text value is used.
+     *
+     * @param obj     the object to append, null uses null text
+     * @param width   the fixed field width, zero or negative has no effect
+     * @param padChar the pad character to use
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendFixedWidthPadLeft(final Object obj, final int width, final char padChar) {
+<span class="fc bfc" id="L816" title="All 2 branches covered.">        if (width &gt; 0) {</span>
+<span class="fc" id="L817">            ensureCapacity(size + width);</span>
+<span class="fc" id="L818">            String str = Objects.toString(obj, getNullText());</span>
+<span class="fc bfc" id="L819" title="All 2 branches covered.">            if (str == null) {</span>
+<span class="fc" id="L820">                str = StringUtils.EMPTY;</span>
+            }
+<span class="fc" id="L822">            final int strLen = str.length();</span>
+<span class="fc bfc" id="L823" title="All 2 branches covered.">            if (strLen &gt;= width) {</span>
+<span class="fc" id="L824">                str.getChars(strLen - width, strLen, buffer, size);</span>
+            } else {
+<span class="fc" id="L826">                final int padLen = width - strLen;</span>
+<span class="fc bfc" id="L827" title="All 2 branches covered.">                for (int i = 0; i &lt; padLen; i++) {</span>
+<span class="fc" id="L828">                    buffer[size + i] = padChar;</span>
+                }
+<span class="fc" id="L830">                str.getChars(0, strLen, buffer, size + padLen);</span>
+            }
+<span class="fc" id="L832">            size += width;</span>
+        }
+<span class="fc" id="L834">        return this;</span>
+    }
+
+    /**
+     * Appends an object to the builder padding on the right to a fixed length. The {@code String.valueOf} of the {@code int} value is used. If the object is
+     * larger than the length, the right hand side is lost.
+     *
+     * @param value   the value to append
+     * @param width   the fixed field width, zero or negative has no effect
+     * @param padChar the pad character to use
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendFixedWidthPadRight(final int value, final int width, final char padChar) {
+<span class="fc" id="L847">        return appendFixedWidthPadRight(String.valueOf(value), width, padChar);</span>
+    }
+
+    /**
+     * Appends an object to the builder padding on the right to a fixed length. The {@code toString} of the object is used. If the object is larger than the
+     * length, the right hand side is lost. If the object is null, null text value is used.
+     *
+     * @param obj     the object to append, null uses null text
+     * @param width   the fixed field width, zero or negative has no effect
+     * @param padChar the pad character to use
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendFixedWidthPadRight(final Object obj, final int width, final char padChar) {
+<span class="fc bfc" id="L860" title="All 2 branches covered.">        if (width &gt; 0) {</span>
+<span class="fc" id="L861">            ensureCapacity(size + width);</span>
+<span class="fc" id="L862">            String str = Objects.toString(obj, getNullText());</span>
+<span class="fc bfc" id="L863" title="All 2 branches covered.">            if (str == null) {</span>
+<span class="fc" id="L864">                str = StringUtils.EMPTY;</span>
+            }
+<span class="fc" id="L866">            final int strLen = str.length();</span>
+<span class="fc bfc" id="L867" title="All 2 branches covered.">            if (strLen &gt;= width) {</span>
+<span class="fc" id="L868">                str.getChars(0, width, buffer, size);</span>
+            } else {
+<span class="fc" id="L870">                final int padLen = width - strLen;</span>
+<span class="fc" id="L871">                str.getChars(0, strLen, buffer, size);</span>
+<span class="fc bfc" id="L872" title="All 2 branches covered.">                for (int i = 0; i &lt; padLen; i++) {</span>
+<span class="fc" id="L873">                    buffer[size + strLen + i] = padChar;</span>
+                }
+            }
+<span class="fc" id="L876">            size += width;</span>
+        }
+<span class="fc" id="L878">        return this;</span>
+    }
+
+    /**
+     * Appends a boolean value followed by a {@link #appendNewLine() new line} to the string builder.
+     *
+     * @param value the value to append
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final boolean value) {
+<span class="fc" id="L889">        return append(value).appendNewLine();</span>
+    }
+
+    /**
+     * Appends a char value followed by a {@link #appendNewLine() new line} to the string builder.
+     *
+     * @param ch the value to append
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final char ch) {
+<span class="fc" id="L900">        return append(ch).appendNewLine();</span>
+    }
+
+    /**
+     * Appends a char array followed by a {@link #appendNewLine() new line} to the string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param chars the char array to append
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final char[] chars) {
+<span class="fc" id="L911">        return append(chars).appendNewLine();</span>
+    }
+
+    /**
+     * Appends a char array followed by a {@link #appendNewLine() new line} to the string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param chars      the char array to append
+     * @param startIndex the start index, inclusive, must be valid
+     * @param length     the length to append, must be valid
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final char[] chars, final int startIndex, final int length) {
+<span class="fc" id="L924">        return append(chars, startIndex, length).appendNewLine();</span>
+    }
+
+    /**
+     * Appends a double value followed by a {@link #appendNewLine() new line} to the string builder using {@code String.valueOf}.
+     *
+     * @param value the value to append
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final double value) {
+<span class="fc" id="L935">        return append(value).appendNewLine();</span>
+    }
+
+    /**
+     * Appends a float value followed by a {@link #appendNewLine() new line} to the string builder using {@code String.valueOf}.
+     *
+     * @param value the value to append
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final float value) {
+<span class="fc" id="L946">        return append(value).appendNewLine();</span>
+    }
+
+    /**
+     * Appends an int value followed by a {@link #appendNewLine() new line} to the string builder using {@code String.valueOf}.
+     *
+     * @param value the value to append
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final int value) {
+<span class="fc" id="L957">        return append(value).appendNewLine();</span>
+    }
+
+    /**
+     * Appends a long value followed by a {@link #appendNewLine() new line} to the string builder using {@code String.valueOf}.
+     *
+     * @param value the value to append
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final long value) {
+<span class="fc" id="L968">        return append(value).appendNewLine();</span>
+    }
+
+    /**
+     * Appends an object followed by a {@link #appendNewLine() new line} to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param obj the object to append
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final Object obj) {
+<span class="fc" id="L979">        return append(obj).appendNewLine();</span>
+    }
+
+    /**
+     * Appends another string builder followed by a {@link #appendNewLine() new line} to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param str the string builder to append
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final StrBuilder str) {
+<span class="fc" id="L990">        return append(str).appendNewLine();</span>
+    }
+
+    /**
+     * Appends part of a string builder followed by a {@link #appendNewLine() new line} to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param str        the string to append
+     * @param startIndex the start index, inclusive, must be valid
+     * @param length     the length to append, must be valid
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final StrBuilder str, final int startIndex, final int length) {
+<span class="fc" id="L1003">        return append(str, startIndex, length).appendNewLine();</span>
+    }
+
+    /**
+     * Appends a string followed by a {@link #appendNewLine() new line} to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param str the string to append
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final String str) {
+<span class="fc" id="L1014">        return append(str).appendNewLine();</span>
+    }
+
+    /**
+     * Appends part of a string followed by a {@link #appendNewLine() new line} to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param str        the string to append
+     * @param startIndex the start index, inclusive, must be valid
+     * @param length     the length to append, must be valid
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final String str, final int startIndex, final int length) {
+<span class="fc" id="L1027">        return append(str, startIndex, length).appendNewLine();</span>
+    }
+
+    /**
+     * Calls {@link String#format(String, Object...)} and appends the result.
+     *
+     * @param format the format string
+     * @param objs   the objects to use in the format string
+     * @return {@code this} to enable chaining
+     * @see String#format(String, Object...)
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final String format, final Object... objs) {
+<span class="fc" id="L1040">        return append(format, objs).appendNewLine();</span>
+    }
+
+    /**
+     * Appends a string buffer followed by a {@link #appendNewLine() new line} to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param str the string buffer to append
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final StringBuffer str) {
+<span class="fc" id="L1051">        return append(str).appendNewLine();</span>
+    }
+
+    /**
+     * Appends part of a string buffer followed by a {@link #appendNewLine() new line} to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param str        the string to append
+     * @param startIndex the start index, inclusive, must be valid
+     * @param length     the length to append, must be valid
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final StringBuffer str, final int startIndex, final int length) {
+<span class="fc" id="L1064">        return append(str, startIndex, length).appendNewLine();</span>
+    }
+
+    /**
+     * Appends a string builder followed by a {@link #appendNewLine() new line} to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param str the string builder to append
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final StringBuilder str) {
+<span class="fc" id="L1075">        return append(str).appendNewLine();</span>
+    }
+
+    /**
+     * Appends part of a string builder followed by a {@link #appendNewLine() new line} to this string builder. Appending null will call {@link #appendNull()}.
+     *
+     * @param str        the string builder to append
+     * @param startIndex the start index, inclusive, must be valid
+     * @param length     the length to append, must be valid
+     * @return {@code this} instance.
+     * @see #appendNewLine()
+     */
+    public StrBuilder appendln(final StringBuilder str, final int startIndex, final int length) {
+<span class="fc" id="L1088">        return append(str, startIndex, length).appendNewLine();</span>
+    }
+
+    /**
+     * Appends this builder's new line string to this builder.
+     * &lt;p&gt;
+     * By default, the new line is the system default from {@link System#lineSeparator()}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * The new line string can be changed using {@link #setNewLineText(String)}. For example, you can use this to force the output to always use Unix line
+     * endings even when on Windows.
+     * &lt;/p&gt;
+     *
+     * @return {@code this} instance.
+     * @see #getNewLineText()
+     * @see #setNewLineText(String)
+     */
+    public StrBuilder appendNewLine() {
+<span class="fc bfc" id="L1106" title="All 2 branches covered.">        if (newLine == null) {</span>
+<span class="fc" id="L1107">            append(System.lineSeparator());</span>
+<span class="fc" id="L1108">            return this;</span>
+        }
+<span class="fc" id="L1110">        return append(newLine);</span>
+    }
+
+    /**
+     * Appends this builder's null text to this builder.
+     *
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendNull() {
+<span class="fc bfc" id="L1119" title="All 2 branches covered.">        if (nullText == null) {</span>
+<span class="fc" id="L1120">            return this;</span>
+        }
+<span class="fc" id="L1122">        return append(nullText);</span>
+    }
+
+    /**
+     * Appends the pad character to the builder the specified number of times.
+     *
+     * @param length  the length to append, negative means no append
+     * @param padChar the character to append
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendPadding(final int length, final char padChar) {
+<span class="fc bfc" id="L1133" title="All 2 branches covered.">        if (length &gt;= 0) {</span>
+<span class="fc" id="L1134">            ensureCapacity(size + length);</span>
+<span class="fc bfc" id="L1135" title="All 2 branches covered.">            for (int i = 0; i &lt; length; i++) {</span>
+<span class="fc" id="L1136">                buffer[size++] = padChar;</span>
+            }
+        }
+<span class="fc" id="L1139">        return this;</span>
+    }
+
+    /**
+     * Appends a separator if the builder is currently non-empty. The separator is appended using {@link #append(char)}.
+     * &lt;p&gt;
+     * This method is useful for adding a separator each time around the loop except the first.
+     * &lt;/p&gt;
+     *
+     * &lt;pre&gt;
+     * for (Iterator it = list.iterator(); it.hasNext();) {
+     *     appendSeparator(',');
+     *     append(it.next());
+     * }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Note that for this simple example, you should use {@link #appendWithSeparators(Iterable, String)}.
+     * &lt;/p&gt;
+     *
+     * @param separator the separator to use
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendSeparator(final char separator) {
+<span class="fc bfc" id="L1162" title="All 2 branches covered.">        if (isNotEmpty()) {</span>
+<span class="fc" id="L1163">            append(separator);</span>
+        }
+<span class="fc" id="L1165">        return this;</span>
+    }
+
+    /**
+     * Appends one of both separators to the builder If the builder is currently empty it will append the defaultIfEmpty-separator Otherwise it will append the
+     * standard-separator
+     *
+     * The separator is appended using {@link #append(char)}.
+     *
+     * @param standard       the separator if builder is not empty
+     * @param defaultIfEmpty the separator if builder is empty
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendSeparator(final char standard, final char defaultIfEmpty) {
+<span class="fc bfc" id="L1179" title="All 2 branches covered.">        if (isNotEmpty()) {</span>
+<span class="fc" id="L1180">            append(standard);</span>
+        } else {
+<span class="fc" id="L1182">            append(defaultIfEmpty);</span>
+        }
+<span class="fc" id="L1184">        return this;</span>
+    }
+
+    /**
+     * Appends a separator to the builder if the loop index is greater than zero. The separator is appended using {@link #append(char)}.
+     * &lt;p&gt;
+     * This method is useful for adding a separator each time around the loop except the first.
+     * &lt;/p&gt;
+     *
+     * &lt;pre&gt;
+     * for (int i = 0; i &amp;lt; list.size(); i++) {
+     *     appendSeparator(&quot;,&quot;, i);
+     *     append(list.get(i));
+     * }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Note that for this simple example, you should use {@link #appendWithSeparators(Iterable, String)}.
+     * &lt;/p&gt;
+     *
+     * @param separator the separator to use
+     * @param loopIndex the loop index
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendSeparator(final char separator, final int loopIndex) {
+<span class="fc bfc" id="L1208" title="All 2 branches covered.">        if (loopIndex &gt; 0) {</span>
+<span class="fc" id="L1209">            append(separator);</span>
+        }
+<span class="fc" id="L1211">        return this;</span>
+    }
+
+    /**
+     * Appends a separator if the builder is currently non-empty. Appending a null separator will have no effect. The separator is appended using
+     * {@link #append(String)}.
+     * &lt;p&gt;
+     * This method is useful for adding a separator each time around the loop except the first.
+     * &lt;/p&gt;
+     *
+     * &lt;pre&gt;
+     * for (Iterator it = list.iterator(); it.hasNext();) {
+     *     appendSeparator(&quot;,&quot;);
+     *     append(it.next());
+     * }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Note that for this simple example, you should use {@link #appendWithSeparators(Iterable, String)}.
+     * &lt;/p&gt;
+     *
+     * @param separator the separator to use, null means no separator
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendSeparator(final String separator) {
+<span class="fc" id="L1235">        return appendSeparator(separator, null);</span>
+    }
+
+    /**
+     * Appends a separator to the builder if the loop index is greater than zero. Appending a null separator will have no effect. The separator is appended
+     * using {@link #append(String)}.
+     * &lt;p&gt;
+     * This method is useful for adding a separator each time around the loop except the first.
+     * &lt;/p&gt;
+     *
+     * &lt;pre&gt;
+     * for (int i = 0; i &amp;lt; list.size(); i++) {
+     *     appendSeparator(&quot;,&quot;, i);
+     *     append(list.get(i));
+     * }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Note that for this simple example, you should use {@link #appendWithSeparators(Iterable, String)}.
+     * &lt;/p&gt;
+     *
+     * @param separator the separator to use, null means no separator
+     * @param loopIndex the loop index
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendSeparator(final String separator, final int loopIndex) {
+<span class="pc bpc" id="L1260" title="1 of 4 branches missed.">        if (separator != null &amp;&amp; loopIndex &gt; 0) {</span>
+<span class="fc" id="L1261">            append(separator);</span>
+        }
+<span class="fc" id="L1263">        return this;</span>
+    }
+
+    /**
+     * Appends one of both separators to the StrBuilder. If the builder is currently empty it will append the defaultIfEmpty-separator Otherwise it will append
+     * the standard-separator
+     * &lt;p&gt;
+     * Appending a null separator will have no effect. The separator is appended using {@link #append(String)}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method is for example useful for constructing queries
+     * &lt;/p&gt;
+     *
+     * &lt;pre&gt;
+     * StrBuilder whereClause = new StrBuilder();
+     * if (searchCommand.getPriority() != null) {
+     *   whereClause.appendSeparator(&quot; and&quot;, &quot; where&quot;);
+     *   whereClause.append(&quot; priority = ?&quot;)
+     * }
+     * if (searchCommand.getComponent() != null) {
+     *   whereClause.appendSeparator(&quot; and&quot;, &quot; where&quot;);
+     *   whereClause.append(&quot; component = ?&quot;)
+     * }
+     * selectClause.append(whereClause)
+     * &lt;/pre&gt;
+     *
+     * @param standard       the separator if builder is not empty, null means no separator
+     * @param defaultIfEmpty the separator if builder is empty, null means no separator
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendSeparator(final String standard, final String defaultIfEmpty) {
+<span class="fc bfc" id="L1294" title="All 2 branches covered.">        final String str = isEmpty() ? defaultIfEmpty : standard;</span>
+<span class="fc bfc" id="L1295" title="All 2 branches covered.">        if (str != null) {</span>
+<span class="fc" id="L1296">            append(str);</span>
+        }
+<span class="fc" id="L1298">        return this;</span>
+    }
+
+    /**
+     * Appends current contents of this {@code StrBuilder} to the provided {@link Appendable}.
+     * &lt;p&gt;
+     * This method tries to avoid doing any extra copies of contents.
+     * &lt;/p&gt;
+     *
+     * @param appendable the appendable to append data to
+     * @throws IOException if an I/O error occurs
+     * @see #readFrom(Readable)
+     */
+    public void appendTo(final Appendable appendable) throws IOException {
+<span class="fc bfc" id="L1312" title="All 2 branches covered.">        if (appendable instanceof Writer) {</span>
+<span class="fc" id="L1313">            ((Writer) appendable).write(buffer, 0, size);</span>
+<span class="fc bfc" id="L1314" title="All 2 branches covered.">        } else if (appendable instanceof StringBuilder) {</span>
+<span class="fc" id="L1315">            ((StringBuilder) appendable).append(buffer, 0, size);</span>
+<span class="pc bpc" id="L1316" title="1 of 2 branches missed.">        } else if (appendable instanceof StringBuffer) {</span>
+<span class="nc" id="L1317">            ((StringBuffer) appendable).append(buffer, 0, size);</span>
+<span class="pc bpc" id="L1318" title="1 of 2 branches missed.">        } else if (appendable instanceof CharBuffer) {</span>
+<span class="fc" id="L1319">            ((CharBuffer) appendable).put(buffer, 0, size);</span>
+        } else {
+<span class="nc" id="L1321">            appendable.append(this);</span>
+        }
+<span class="fc" id="L1323">    }</span>
+
+    /**
+     * Appends an iterable placing separators between each value, but not before the first or after the last. Appending a null iterable will have no effect.
+     * Each object is appended using {@link #append(Object)}.
+     *
+     * @param iterable  the iterable to append
+     * @param separator the separator to use, null means no separator
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendWithSeparators(final Iterable&lt;?&gt; iterable, final String separator) {
+<span class="fc bfc" id="L1334" title="All 2 branches covered.">        if (iterable != null) {</span>
+<span class="fc" id="L1335">            appendWithSeparators(iterable.iterator(), separator);</span>
+        }
+<span class="fc" id="L1337">        return this;</span>
+    }
+
+    /**
+     * Appends an iterator placing separators between each value, but not before the first or after the last. Appending a null iterator will have no effect.
+     * Each object is appended using {@link #append(Object)}.
+     *
+     * @param iterator  the iterator to append
+     * @param separator the separator to use, null means no separator
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendWithSeparators(final Iterator&lt;?&gt; iterator, final String separator) {
+<span class="fc bfc" id="L1349" title="All 2 branches covered.">        if (iterator != null) {</span>
+<span class="fc" id="L1350">            final String sep = Objects.toString(separator, StringUtils.EMPTY);</span>
+<span class="fc bfc" id="L1351" title="All 2 branches covered.">            while (iterator.hasNext()) {</span>
+<span class="fc" id="L1352">                append(iterator.next());</span>
+<span class="fc bfc" id="L1353" title="All 2 branches covered.">                if (iterator.hasNext()) {</span>
+<span class="fc" id="L1354">                    append(sep);</span>
+                }
+            }
+        }
+<span class="fc" id="L1358">        return this;</span>
+    }
+
+    /**
+     * Appends an array placing separators between each value, but not before the first or after the last. Appending a null array will have no effect. Each
+     * object is appended using {@link #append(Object)}.
+     *
+     * @param array     the array to append
+     * @param separator the separator to use, null means no separator
+     * @return {@code this} instance.
+     */
+    public StrBuilder appendWithSeparators(final Object[] array, final String separator) {
+<span class="fc bfc" id="L1370" title="All 4 branches covered.">        if (array != null &amp;&amp; array.length &gt; 0) {</span>
+<span class="fc" id="L1371">            final String sep = Objects.toString(separator, StringUtils.EMPTY);</span>
+<span class="fc" id="L1372">            append(array[0]);</span>
+<span class="fc bfc" id="L1373" title="All 2 branches covered.">            for (int i = 1; i &lt; array.length; i++) {</span>
+<span class="fc" id="L1374">                append(sep);</span>
+<span class="fc" id="L1375">                append(array[i]);</span>
+            }
+        }
+<span class="fc" id="L1378">        return this;</span>
+    }
+
+    /**
+     * Gets the contents of this builder as a Reader.
+     * &lt;p&gt;
+     * This method allows the contents of the builder to be read using any standard method that expects a Reader.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * To use, simply create a {@code StrBuilder}, populate it with data, call {@code asReader}, and then read away.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * The internal character array is shared between the builder and the reader. This allows you to append to the builder after creating the reader, and the
+     * changes will be picked up. Note however, that no synchronization occurs, so you must perform all operations with the builder and the reader in one
+     * thread.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * The returned reader supports marking, and ignores the flush method.
+     * &lt;/p&gt;
+     *
+     * @return a reader that reads from this builder
+     */
+    public Reader asReader() {
+<span class="fc" id="L1401">        return new StrBuilderReader();</span>
+    }
+
+    /**
+     * Creates a tokenizer that can tokenize the contents of this builder.
+     * &lt;p&gt;
+     * This method allows the contents of this builder to be tokenized. The tokenizer will be setup by default to tokenize on space, tab, newline and form feed
+     * (as per StringTokenizer). These values can be changed on the tokenizer class, before retrieving the tokens.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * The returned tokenizer is linked to this builder. You may intermix calls to the builder and tokenizer within certain limits, however there is no
+     * synchronization. Once the tokenizer has been used once, it must be {@link StrTokenizer#reset() reset} to pickup the latest changes in the builder. For
+     * example:
+     * &lt;/p&gt;
+     *
+     * &lt;pre&gt;
+     * StrBuilder b = new StrBuilder();
+     * b.append(&quot;a b &quot;);
+     * StrTokenizer t = b.asTokenizer();
+     * String[] tokens1 = t.getTokenArray(); // returns a,b
+     * b.append(&quot;c d &quot;);
+     * String[] tokens2 = t.getTokenArray(); // returns a,b (c and d ignored)
+     * t.reset(); // reset causes builder changes to be picked up
+     * String[] tokens3 = t.getTokenArray(); // returns a,b,c,d
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * In addition to simply intermixing appends and tokenization, you can also call the set methods on the tokenizer to alter how it tokenizes. Just remember
+     * to call reset when you want to pickup builder changes.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * Calling {@link StrTokenizer#reset(String)} or {@link StrTokenizer#reset(char[])} with a non-null value will break the link with the builder.
+     * &lt;/p&gt;
+     *
+     * @return a tokenizer that is linked to this builder
+     */
+    public StrTokenizer asTokenizer() {
+<span class="fc" id="L1437">        return new StrBuilderTokenizer();</span>
+    }
+
+    /**
+     * Gets this builder as a Writer that can be written to.
+     * &lt;p&gt;
+     * This method allows you to populate the contents of the builder using any standard method that takes a Writer.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * To use, simply create a {@code StrBuilder}, call {@code asWriter}, and populate away. The data is available at any time using the methods of the
+     * {@code StrBuilder}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * The internal character array is shared between the builder and the writer. This allows you to intermix calls that append to the builder and write using
+     * the writer and the changes will be occur correctly. Note however, that no synchronization occurs, so you must perform all operations with the builder and
+     * the writer in one thread.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * The returned writer ignores the close and flush methods.
+     * &lt;/p&gt;
+     *
+     * @return a writer that populates this builder
+     */
+    public Writer asWriter() {
+<span class="fc" id="L1461">        return new StrBuilderWriter();</span>
+    }
+
+    /**
+     * Converts this instance to a String.
+     *
+     * @return This instance as a String
+     * @see #toString()
+     * @deprecated Use {@link #get()}.
+     */
+    @Deprecated
+    @Override
+    public String build() {
+<span class="fc" id="L1474">        return toString();</span>
+    }
+
+    /**
+     * Gets the current size of the internal character array buffer.
+     *
+     * @return The capacity
+     */
+    public int capacity() {
+<span class="fc" id="L1483">        return buffer.length;</span>
+    }
+
+    /**
+     * Gets the character at the specified index.
+     *
+     * @see #setCharAt(int, char)
+     * @see #deleteCharAt(int)
+     * @param index the index to retrieve, must be valid
+     * @return The character at the index
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    @Override
+    public char charAt(final int index) {
+<span class="fc bfc" id="L1497" title="All 4 branches covered.">        if (index &lt; 0 || index &gt;= length()) {</span>
+<span class="fc" id="L1498">            throw new StringIndexOutOfBoundsException(index);</span>
+        }
+<span class="fc" id="L1500">        return buffer[index];</span>
+    }
+
+    /**
+     * Clears the string builder (convenience Collections API style method).
+     * &lt;p&gt;
+     * This method does not reduce the size of the internal character buffer. To do that, call {@code clear()} followed by {@link #minimizeCapacity()}.
+     * &lt;/p&gt;
+     * &lt;p&gt;
+     * This method is the same as {@link #setLength(int)} called with zero and is provided to match the API of Collections.
+     * &lt;/p&gt;
+     *
+     * @return {@code this} instance.
+     */
+    public StrBuilder clear() {
+<span class="fc" id="L1515">        size = 0;</span>
+<span class="fc" id="L1516">        return this;</span>
+    }
+
+    /**
+     * Checks if the string builder contains the specified char.
+     *
+     * @param ch the character to find
+     * @return true if the builder contains the character
+     */
+    public boolean contains(final char ch) {
+<span class="fc" id="L1526">        final char[] thisBuf = buffer;</span>
+<span class="fc bfc" id="L1527" title="All 2 branches covered.">        for (int i = 0; i &lt; this.size; i++) {</span>
+<span class="fc bfc" id="L1528" title="All 2 branches covered.">            if (thisBuf[i] == ch) {</span>
+<span class="fc" id="L1529">                return true;</span>
+            }
+        }
+<span class="fc" id="L1532">        return false;</span>
+    }
+
+    /**
+     * Tests if the string builder contains the specified string.
+     *
+     * @param str the string to find
+     * @return true if the builder contains the string
+     */
+    public boolean contains(final String str) {
+<span class="fc bfc" id="L1542" title="All 2 branches covered.">        return indexOf(str, 0) &gt;= 0;</span>
+    }
+
+    /**
+     * Tests if the string builder contains a string matched using the specified matcher.
+     * &lt;p&gt;
+     * Matchers can be used to perform advanced searching behavior. For example you could write a matcher to search for the character 'a' followed by a number.
+     * &lt;/p&gt;
+     *
+     * @param matcher the matcher to use, null returns -1
+     * @return true if the matcher finds a match in the builder
+     */
+    public boolean contains(final StrMatcher matcher) {
+<span class="fc bfc" id="L1555" title="All 2 branches covered.">        return indexOf(matcher, 0) &gt;= 0;</span>
+    }
+
+    /**
+     * Deletes the characters between the two specified indices.
+     *
+     * @param startIndex the start index, inclusive, must be valid
+     * @param endIndex   the end index, exclusive, must be valid except that if too large it is treated as end of string
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    public StrBuilder delete(final int startIndex, int endIndex) {
+<span class="fc" id="L1567">        endIndex = validateRange(startIndex, endIndex);</span>
+<span class="fc" id="L1568">        final int len = endIndex - startIndex;</span>
+<span class="fc bfc" id="L1569" title="All 2 branches covered.">        if (len &gt; 0) {</span>
+<span class="fc" id="L1570">            deleteImpl(startIndex, endIndex, len);</span>
+        }
+<span class="fc" id="L1572">        return this;</span>
+    }
+
+    /**
+     * Deletes the character wherever it occurs in the builder.
+     *
+     * @param ch the character to delete
+     * @return {@code this} instance.
+     */
+    public StrBuilder deleteAll(final char ch) {
+<span class="fc bfc" id="L1582" title="All 2 branches covered.">        for (int i = 0; i &lt; size; i++) {</span>
+<span class="fc bfc" id="L1583" title="All 2 branches covered.">            if (buffer[i] == ch) {</span>
+<span class="fc" id="L1584">                final int start = i;</span>
+<span class="fc bfc" id="L1585" title="All 2 branches covered.">                while (++i &lt; size) {</span>
+<span class="fc bfc" id="L1586" title="All 2 branches covered.">                    if (buffer[i] != ch) {</span>
+<span class="fc" id="L1587">                        break;</span>
+                    }
+                }
+<span class="fc" id="L1590">                final int len = i - start;</span>
+<span class="fc" id="L1591">                deleteImpl(start, i, len);</span>
+<span class="fc" id="L1592">                i -= len;</span>
+            }
+        }
+<span class="fc" id="L1595">        return this;</span>
+    }
+
+    /**
+     * Deletes the string wherever it occurs in the builder.
+     *
+     * @param str the string to delete, null causes no action
+     * @return {@code this} instance.
+     */
+    public StrBuilder deleteAll(final String str) {
+<span class="fc bfc" id="L1605" title="All 2 branches covered.">        final int len = str == null ? 0 : str.length();</span>
+<span class="fc bfc" id="L1606" title="All 2 branches covered.">        if (len &gt; 0) {</span>
+<span class="fc" id="L1607">            int index = indexOf(str, 0);</span>
+<span class="fc bfc" id="L1608" title="All 2 branches covered.">            while (index &gt;= 0) {</span>
+<span class="fc" id="L1609">                deleteImpl(index, index + len, len);</span>
+<span class="fc" id="L1610">                index = indexOf(str, index);</span>
+            }
+        }
+<span class="fc" id="L1613">        return this;</span>
+    }
+
+    /**
+     * Deletes all parts of the builder that the matcher matches.
+     * &lt;p&gt;
+     * Matchers can be used to perform advanced deletion behavior. For example you could write a matcher to delete all occurrences where the character 'a' is
+     * followed by a number.
+     * &lt;/p&gt;
+     *
+     * @param matcher the matcher to use to find the deletion, null causes no action
+     * @return {@code this} instance.
+     */
+    public StrBuilder deleteAll(final StrMatcher matcher) {
+<span class="fc" id="L1627">        return replace(matcher, null, 0, size, -1);</span>
+    }
+
+    /**
+     * Deletes the character at the specified index.
+     *
+     * @see #charAt(int)
+     * @see #setCharAt(int, char)
+     * @param index the index to delete
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    public StrBuilder deleteCharAt(final int index) {
+<span class="fc bfc" id="L1640" title="All 4 branches covered.">        if (index &lt; 0 || index &gt;= size) {</span>
+<span class="fc" id="L1641">            throw new StringIndexOutOfBoundsException(index);</span>
+        }
+<span class="fc" id="L1643">        deleteImpl(index, index + 1, 1);</span>
+<span class="fc" id="L1644">        return this;</span>
+    }
+
+    /**
+     * Deletes the character wherever it occurs in the builder.
+     *
+     * @param ch the character to delete
+     * @return {@code this} instance.
+     */
+    public StrBuilder deleteFirst(final char ch) {
+<span class="fc bfc" id="L1654" title="All 2 branches covered.">        for (int i = 0; i &lt; size; i++) {</span>
+<span class="fc bfc" id="L1655" title="All 2 branches covered.">            if (buffer[i] == ch) {</span>
+<span class="fc" id="L1656">                deleteImpl(i, i + 1, 1);</span>
+<span class="fc" id="L1657">                break;</span>
+            }
+        }
+<span class="fc" id="L1660">        return this;</span>
+    }
+
+    /**
+     * Deletes the string wherever it occurs in the builder.
+     *
+     * @param str the string to delete, null causes no action
+     * @return {@code this} instance.
+     */
+    public StrBuilder deleteFirst(final String str) {
+<span class="fc bfc" id="L1670" title="All 2 branches covered.">        final int len = str == null ? 0 : str.length();</span>
+<span class="fc bfc" id="L1671" title="All 2 branches covered.">        if (len &gt; 0) {</span>
+<span class="fc" id="L1672">            final int index = indexOf(str, 0);</span>
+<span class="fc bfc" id="L1673" title="All 2 branches covered.">            if (index &gt;= 0) {</span>
+<span class="fc" id="L1674">                deleteImpl(index, index + len, len);</span>
+            }
+        }
+<span class="fc" id="L1677">        return this;</span>
+    }
+
+    /**
+     * Deletes the first match within the builder using the specified matcher.
+     * &lt;p&gt;
+     * Matchers can be used to perform advanced deletion behavior. For example you could write a matcher to delete where the character 'a' is followed by a
+     * number.
+     * &lt;/p&gt;
+     *
+     * @param matcher the matcher to use to find the deletion, null causes no action
+     * @return {@code this} instance.
+     */
+    public StrBuilder deleteFirst(final StrMatcher matcher) {
+<span class="fc" id="L1691">        return replace(matcher, null, 0, size, 1);</span>
+    }
+
+    /**
+     * Internal method to delete a range without validation.
+     *
+     * @param startIndex the start index, must be valid
+     * @param endIndex   the end index (exclusive), must be valid
+     * @param len        the length, must be valid
+     * @throws IndexOutOfBoundsException if any index is invalid
+     */
+    private void deleteImpl(final int startIndex, final int endIndex, final int len) {
+<span class="fc" id="L1703">        System.arraycopy(buffer, endIndex, buffer, startIndex, size - endIndex);</span>
+<span class="fc" id="L1704">        size -= len;</span>
+<span class="fc" id="L1705">    }</span>
+
+    /**
+     * Tests whether this builder ends with the specified string.
+     * &lt;p&gt;
+     * Note that this method handles null input quietly, unlike String.
+     * &lt;/p&gt;
+     *
+     * @param str the string to search for, null returns false
+     * @return true if the builder ends with the string
+     */
+    public boolean endsWith(final String str) {
+<span class="fc bfc" id="L1717" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L1718">            return false;</span>
+        }
+<span class="fc" id="L1720">        final int len = str.length();</span>
+<span class="fc bfc" id="L1721" title="All 2 branches covered.">        if (len == 0) {</span>
+<span class="fc" id="L1722">            return true;</span>
+        }
+<span class="fc bfc" id="L1724" title="All 2 branches covered.">        if (len &gt; size) {</span>
+<span class="fc" id="L1725">            return false;</span>
+        }
+<span class="fc" id="L1727">        int pos = size - len;</span>
+<span class="fc bfc" id="L1728" title="All 2 branches covered.">        for (int i = 0; i &lt; len; i++, pos++) {</span>
+<span class="fc bfc" id="L1729" title="All 2 branches covered.">            if (buffer[pos] != str.charAt(i)) {</span>
+<span class="fc" id="L1730">                return false;</span>
+            }
+        }
+<span class="fc" id="L1733">        return true;</span>
+    }
+
+    /**
+     * Tests the capacity and ensures that it is at least the size specified.
+     *
+     * @param capacity the capacity to ensure
+     * @return {@code this} instance.
+     */
+    public StrBuilder ensureCapacity(final int capacity) {
+<span class="fc bfc" id="L1743" title="All 2 branches covered.">        if (capacity &gt; buffer.length) {</span>
+<span class="fc" id="L1744">            final char[] old = buffer;</span>
+<span class="fc" id="L1745">            buffer = new char[capacity * 2];</span>
+<span class="fc" id="L1746">            System.arraycopy(old, 0, buffer, 0, size);</span>
+        }
+<span class="fc" id="L1748">        return this;</span>
+    }
+
+    /**
+     * Tests the contents of this builder against another to see if they contain the same character content.
+     *
+     * @param obj the object to check, null returns false
+     * @return true if the builders contain the same characters in the same order
+     */
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L1759" title="All 4 branches covered.">        return obj instanceof StrBuilder &amp;&amp; equals((StrBuilder) obj);</span>
+    }
+
+    /**
+     * Tests the contents of this builder against another to see if they contain the same character content.
+     *
+     * @param other the object to check, null returns false
+     * @return true if the builders contain the same characters in the same order
+     */
+    public boolean equals(final StrBuilder other) {
+<span class="fc bfc" id="L1769" title="All 2 branches covered.">        if (this == other) {</span>
+<span class="fc" id="L1770">            return true;</span>
+        }
+<span class="fc bfc" id="L1772" title="All 2 branches covered.">        if (other == null) {</span>
+<span class="fc" id="L1773">            return false;</span>
+        }
+<span class="fc bfc" id="L1775" title="All 2 branches covered.">        if (this.size != other.size) {</span>
+<span class="fc" id="L1776">            return false;</span>
+        }
+<span class="fc" id="L1778">        final char[] thisBuf = this.buffer;</span>
+<span class="fc" id="L1779">        final char[] otherBuf = other.buffer;</span>
+<span class="fc bfc" id="L1780" title="All 2 branches covered.">        for (int i = size - 1; i &gt;= 0; i--) {</span>
+<span class="fc bfc" id="L1781" title="All 2 branches covered.">            if (thisBuf[i] != otherBuf[i]) {</span>
+<span class="fc" id="L1782">                return false;</span>
+            }
+        }
+<span class="fc" id="L1785">        return true;</span>
+    }
+
+    /**
+     * Tests the contents of this builder against another to see if they contain the same character content ignoring case.
+     *
+     * @param other the object to check, null returns false
+     * @return true if the builders contain the same characters in the same order
+     */
+    public boolean equalsIgnoreCase(final StrBuilder other) {
+<span class="fc bfc" id="L1795" title="All 2 branches covered.">        if (this == other) {</span>
+<span class="fc" id="L1796">            return true;</span>
+        }
+<span class="fc bfc" id="L1798" title="All 2 branches covered.">        if (this.size != other.size) {</span>
+<span class="fc" id="L1799">            return false;</span>
+        }
+<span class="fc" id="L1801">        final char[] thisBuf = this.buffer;</span>
+<span class="fc" id="L1802">        final char[] otherBuf = other.buffer;</span>
+<span class="fc bfc" id="L1803" title="All 2 branches covered.">        for (int i = size - 1; i &gt;= 0; i--) {</span>
+<span class="fc" id="L1804">            final char c1 = thisBuf[i];</span>
+<span class="fc" id="L1805">            final char c2 = otherBuf[i];</span>
+<span class="pc bpc" id="L1806" title="1 of 4 branches missed.">            if (c1 != c2 &amp;&amp; Character.toUpperCase(c1) != Character.toUpperCase(c2)) {</span>
+<span class="nc" id="L1807">                return false;</span>
+            }
+        }
+<span class="fc" id="L1810">        return true;</span>
+    }
+
+    /**
+     * Converts this instance to a String.
+     *
+     * @return This instance as a String
+     * @see #toString()
+     * @since 1.12.0
+     */
+    @Override
+    public String get() {
+<span class="nc" id="L1822">        return toString();</span>
+    }
+
+    /**
+     * Copies the character array into the specified array.
+     *
+     * @param destination the destination array, null will cause an array to be created
+     * @return The input array, unless that was null or too small
+     */
+    public char[] getChars(char[] destination) {
+<span class="fc" id="L1832">        final int len = length();</span>
+<span class="fc bfc" id="L1833" title="All 4 branches covered.">        if (destination == null || destination.length &lt; len) {</span>
+<span class="fc" id="L1834">            destination = new char[len];</span>
+        }
+<span class="fc" id="L1836">        System.arraycopy(buffer, 0, destination, 0, len);</span>
+<span class="fc" id="L1837">        return destination;</span>
+    }
+
+    /**
+     * Copies the character array into the specified array.
+     *
+     * @param startIndex       first index to copy, inclusive, must be valid
+     * @param endIndex         last index, exclusive, must be valid
+     * @param destination      the destination array, must not be null or too small
+     * @param destinationIndex the index to start copying in destination
+     * @throws NullPointerException      if the array is null
+     * @throws IndexOutOfBoundsException if any index is invalid
+     */
+    public void getChars(final int startIndex, final int endIndex, final char[] destination, final int destinationIndex) {
+<span class="fc bfc" id="L1851" title="All 2 branches covered.">        if (startIndex &lt; 0) {</span>
+<span class="fc" id="L1852">            throw new StringIndexOutOfBoundsException(startIndex);</span>
+        }
+<span class="fc bfc" id="L1854" title="All 4 branches covered.">        if (endIndex &lt; 0 || endIndex &gt; length()) {</span>
+<span class="fc" id="L1855">            throw new StringIndexOutOfBoundsException(endIndex);</span>
+        }
+<span class="fc bfc" id="L1857" title="All 2 branches covered.">        if (startIndex &gt; endIndex) {</span>
+<span class="fc" id="L1858">            throw new StringIndexOutOfBoundsException(&quot;end &lt; start&quot;);</span>
+        }
+<span class="fc" id="L1860">        System.arraycopy(buffer, startIndex, destination, destinationIndex, endIndex - startIndex);</span>
+<span class="fc" id="L1861">    }</span>
+
+    /**
+     * Gets the text to be appended when a {@link #appendNewLine() new line} is added.
+     *
+     * @return The new line text, {@code null} means use the system default from {@link System#lineSeparator()}.
+     */
+    public String getNewLineText() {
+<span class="fc" id="L1869">        return newLine;</span>
+    }
+
+    /**
+     * Gets the text to be appended when null is added.
+     *
+     * @return The null text, null means no append
+     */
+    public String getNullText() {
+<span class="fc" id="L1878">        return nullText;</span>
+    }
+
+    /**
+     * Gets a suitable hash code for this builder.
+     *
+     * @return a hash code
+     */
+    @Override
+    public int hashCode() {
+<span class="fc" id="L1888">        final char[] buf = buffer;</span>
+<span class="fc" id="L1889">        int hash = 0;</span>
+<span class="fc bfc" id="L1890" title="All 2 branches covered.">        for (int i = size - 1; i &gt;= 0; i--) {</span>
+<span class="fc" id="L1891">            hash = 31 * hash + buf[i];</span>
+        }
+<span class="fc" id="L1893">        return hash;</span>
+    }
+
+    /**
+     * Searches the string builder to find the first reference to the specified char.
+     *
+     * @param ch the character to find
+     * @return The first index of the character, or -1 if not found
+     */
+    public int indexOf(final char ch) {
+<span class="fc" id="L1903">        return indexOf(ch, 0);</span>
+    }
+
+    /**
+     * Searches the string builder to find the first reference to the specified char.
+     *
+     * @param ch         the character to find
+     * @param startIndex the index to start at, invalid index rounded to edge
+     * @return The first index of the character, or -1 if not found
+     */
+    public int indexOf(final char ch, int startIndex) {
+<span class="fc" id="L1914">        startIndex = Math.max(startIndex, 0);</span>
+<span class="fc bfc" id="L1915" title="All 2 branches covered.">        if (startIndex &gt;= size) {</span>
+<span class="fc" id="L1916">            return -1;</span>
+        }
+<span class="fc" id="L1918">        final char[] thisBuf = buffer;</span>
+<span class="fc bfc" id="L1919" title="All 2 branches covered.">        for (int i = startIndex; i &lt; size; i++) {</span>
+<span class="fc bfc" id="L1920" title="All 2 branches covered.">            if (thisBuf[i] == ch) {</span>
+<span class="fc" id="L1921">                return i;</span>
+            }
+        }
+<span class="fc" id="L1924">        return -1;</span>
+    }
+
+    /**
+     * Searches the string builder to find the first reference to the specified string.
+     * &lt;p&gt;
+     * Note that a null input string will return -1, whereas the JDK throws an exception.
+     * &lt;/p&gt;
+     *
+     * @param str the string to find, null returns -1
+     * @return The first index of the string, or -1 if not found
+     */
+    public int indexOf(final String str) {
+<span class="fc" id="L1937">        return indexOf(str, 0);</span>
+    }
+
+    /**
+     * Searches the string builder to find the first reference to the specified string starting searching from the given index.
+     * &lt;p&gt;
+     * Note that a null input string will return -1, whereas the JDK throws an exception.
+     * &lt;/p&gt;
+     *
+     * @param str        the string to find, null returns -1
+     * @param startIndex the index to start at, invalid index rounded to edge
+     * @return The first index of the string, or -1 if not found
+     */
+    public int indexOf(final String str, int startIndex) {
+<span class="fc" id="L1951">        startIndex = Math.max(startIndex, 0);</span>
+<span class="fc bfc" id="L1952" title="All 4 branches covered.">        if (str == null || startIndex &gt;= size) {</span>
+<span class="fc" id="L1953">            return -1;</span>
+        }
+<span class="fc" id="L1955">        final int strLen = str.length();</span>
+<span class="fc bfc" id="L1956" title="All 2 branches covered.">        if (strLen == 1) {</span>
+<span class="fc" id="L1957">            return indexOf(str.charAt(0), startIndex);</span>
+        }
+<span class="fc bfc" id="L1959" title="All 2 branches covered.">        if (strLen == 0) {</span>
+<span class="fc" id="L1960">            return startIndex;</span>
+        }
+<span class="fc bfc" id="L1962" title="All 2 branches covered.">        if (strLen &gt; size) {</span>
+<span class="fc" id="L1963">            return -1;</span>
+        }
+<span class="fc" id="L1965">        final char[] thisBuf = buffer;</span>
+<span class="fc" id="L1966">        final int len = size - strLen + 1;</span>
+<span class="fc bfc" id="L1967" title="All 2 branches covered.">        outer: for (int i = startIndex; i &lt; len; i++) {</span>
+<span class="fc bfc" id="L1968" title="All 2 branches covered.">            for (int j = 0; j &lt; strLen; j++) {</span>
+<span class="fc bfc" id="L1969" title="All 2 branches covered.">                if (str.charAt(j) != thisBuf[i + j]) {</span>
+<span class="fc" id="L1970">                    continue outer;</span>
+                }
+            }
+<span class="fc" id="L1973">            return i;</span>
+        }
+<span class="fc" id="L1975">        return -1;</span>
+    }
+
+    /**
+     * Searches the string builder using the matcher to find the first match.
+     * &lt;p&gt;
+     * Matchers can be used to perform advanced searching behavior. For example you could write a matcher to find the character 'a' followed by a number.
+     * &lt;/p&gt;
+     *
+     * @param matcher the matcher to use, null returns -1
+     * @return The first index matched, or -1 if not found
+     */
+    public int indexOf(final StrMatcher matcher) {
+<span class="fc" id="L1988">        return indexOf(matcher, 0);</span>
+    }
+
+    /**
+     * Searches the string builder using the matcher to find the first match searching from the given index.
+     * &lt;p&gt;
+     * Matchers can be used to perform advanced searching behavior. For example you could write a matcher to find the character 'a' followed by a number.
+     * &lt;/p&gt;
+     *
+     * @param matcher    the matcher to use, null returns -1
+     * @param startIndex the index to start at, invalid index rounded to edge
+     * @return The first index matched, or -1 if not found
+     */
+    public int indexOf(final StrMatcher matcher, int startIndex) {
+<span class="fc" id="L2002">        startIndex = Math.max(startIndex, 0);</span>
+<span class="fc bfc" id="L2003" title="All 4 branches covered.">        if (matcher == null || startIndex &gt;= size) {</span>
+<span class="fc" id="L2004">            return -1;</span>
+        }
+<span class="fc" id="L2006">        final int len = size;</span>
+<span class="fc" id="L2007">        final char[] buf = buffer;</span>
+<span class="fc bfc" id="L2008" title="All 2 branches covered.">        for (int i = startIndex; i &lt; len; i++) {</span>
+<span class="fc bfc" id="L2009" title="All 2 branches covered.">            if (matcher.isMatch(buf, i, startIndex, len) &gt; 0) {</span>
+<span class="fc" id="L2010">                return i;</span>
+            }
+        }
+<span class="fc" id="L2013">        return -1;</span>
+    }
+
+    /**
+     * Inserts the value into this builder.
+     *
+     * @param index the index to add at, must be valid
+     * @param value the value to insert
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    public StrBuilder insert(int index, final boolean value) {
+<span class="fc" id="L2025">        validateIndex(index);</span>
+<span class="fc bfc" id="L2026" title="All 2 branches covered.">        if (value) {</span>
+<span class="fc" id="L2027">            ensureCapacity(size + 4);</span>
+<span class="fc" id="L2028">            System.arraycopy(buffer, index, buffer, index + 4, size - index);</span>
+<span class="fc" id="L2029">            buffer[index++] = 't';</span>
+<span class="fc" id="L2030">            buffer[index++] = 'r';</span>
+<span class="fc" id="L2031">            buffer[index++] = 'u';</span>
+<span class="fc" id="L2032">            buffer[index] = 'e';</span>
+<span class="fc" id="L2033">            size += 4;</span>
+        } else {
+<span class="fc" id="L2035">            ensureCapacity(size + 5);</span>
+<span class="fc" id="L2036">            System.arraycopy(buffer, index, buffer, index + 5, size - index);</span>
+<span class="fc" id="L2037">            buffer[index++] = 'f';</span>
+<span class="fc" id="L2038">            buffer[index++] = 'a';</span>
+<span class="fc" id="L2039">            buffer[index++] = 'l';</span>
+<span class="fc" id="L2040">            buffer[index++] = 's';</span>
+<span class="fc" id="L2041">            buffer[index] = 'e';</span>
+<span class="fc" id="L2042">            size += 5;</span>
+        }
+<span class="fc" id="L2044">        return this;</span>
+    }
+
+    /**
+     * Inserts the value into this builder.
+     *
+     * @param index the index to add at, must be valid
+     * @param value the value to insert
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    public StrBuilder insert(final int index, final char value) {
+<span class="fc" id="L2056">        validateIndex(index);</span>
+<span class="fc" id="L2057">        ensureCapacity(size + 1);</span>
+<span class="fc" id="L2058">        System.arraycopy(buffer, index, buffer, index + 1, size - index);</span>
+<span class="fc" id="L2059">        buffer[index] = value;</span>
+<span class="fc" id="L2060">        size++;</span>
+<span class="fc" id="L2061">        return this;</span>
+    }
+
+    /**
+     * Inserts the character array into this builder. Inserting null will use the stored null text value.
+     *
+     * @param index the index to add at, must be valid
+     * @param chars the char array to insert
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    public StrBuilder insert(final int index, final char[] chars) {
+<span class="fc" id="L2073">        validateIndex(index);</span>
+<span class="fc bfc" id="L2074" title="All 2 branches covered.">        if (chars == null) {</span>
+<span class="fc" id="L2075">            return insert(index, nullText);</span>
+        }
+<span class="fc" id="L2077">        final int len = chars.length;</span>
+<span class="fc bfc" id="L2078" title="All 2 branches covered.">        if (len &gt; 0) {</span>
+<span class="fc" id="L2079">            ensureCapacity(size + len);</span>
+<span class="fc" id="L2080">            System.arraycopy(buffer, index, buffer, index + len, size - index);</span>
+<span class="fc" id="L2081">            System.arraycopy(chars, 0, buffer, index, len);</span>
+<span class="fc" id="L2082">            size += len;</span>
+        }
+<span class="fc" id="L2084">        return this;</span>
+    }
+
+    /**
+     * Inserts part of the character array into this builder. Inserting null will use the stored null text value.
+     *
+     * @param index  the index to add at, must be valid
+     * @param chars  the char array to insert
+     * @param offset the offset into the character array to start at, must be valid
+     * @param length the length of the character array part to copy, must be positive
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if any index is invalid
+     */
+    public StrBuilder insert(final int index, final char[] chars, final int offset, final int length) {
+<span class="fc" id="L2098">        validateIndex(index);</span>
+<span class="fc bfc" id="L2099" title="All 2 branches covered.">        if (chars == null) {</span>
+<span class="fc" id="L2100">            return insert(index, nullText);</span>
+        }
+<span class="fc bfc" id="L2102" title="All 4 branches covered.">        if (offset &lt; 0 || offset &gt; chars.length) {</span>
+<span class="fc" id="L2103">            throw new StringIndexOutOfBoundsException(&quot;Invalid offset: &quot; + offset);</span>
+        }
+<span class="fc bfc" id="L2105" title="All 4 branches covered.">        if (length &lt; 0 || offset + length &gt; chars.length) {</span>
+<span class="fc" id="L2106">            throw new StringIndexOutOfBoundsException(&quot;Invalid length: &quot; + length);</span>
+        }
+<span class="fc bfc" id="L2108" title="All 2 branches covered.">        if (length &gt; 0) {</span>
+<span class="fc" id="L2109">            ensureCapacity(size + length);</span>
+<span class="fc" id="L2110">            System.arraycopy(buffer, index, buffer, index + length, size - index);</span>
+<span class="fc" id="L2111">            System.arraycopy(chars, offset, buffer, index, length);</span>
+<span class="fc" id="L2112">            size += length;</span>
+        }
+<span class="fc" id="L2114">        return this;</span>
+    }
+
+    /**
+     * Inserts the value into this builder.
+     *
+     * @param index the index to add at, must be valid
+     * @param value the value to insert
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    public StrBuilder insert(final int index, final double value) {
+<span class="fc" id="L2126">        return insert(index, String.valueOf(value));</span>
+    }
+
+    /**
+     * Inserts the value into this builder.
+     *
+     * @param index the index to add at, must be valid
+     * @param value the value to insert
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    public StrBuilder insert(final int index, final float value) {
+<span class="fc" id="L2138">        return insert(index, String.valueOf(value));</span>
+    }
+
+    /**
+     * Inserts the value into this builder.
+     *
+     * @param index the index to add at, must be valid
+     * @param value the value to insert
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    public StrBuilder insert(final int index, final int value) {
+<span class="nc" id="L2150">        return insert(index, String.valueOf(value));</span>
+    }
+
+    /**
+     * Inserts the value into this builder.
+     *
+     * @param index the index to add at, must be valid
+     * @param value the value to insert
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    public StrBuilder insert(final int index, final long value) {
+<span class="fc" id="L2162">        return insert(index, String.valueOf(value));</span>
+    }
+
+    /**
+     * Inserts the string representation of an object into this builder. Inserting null will use the stored null text value.
+     *
+     * @param index the index to add at, must be valid
+     * @param obj   the object to insert
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    public StrBuilder insert(final int index, final Object obj) {
+<span class="fc bfc" id="L2174" title="All 2 branches covered.">        if (obj == null) {</span>
+<span class="fc" id="L2175">            return insert(index, nullText);</span>
+        }
+<span class="fc" id="L2177">        return insert(index, obj.toString());</span>
+    }
+
+    /**
+     * Inserts the string into this builder. Inserting null will use the stored null text value.
+     *
+     * @param index the index to add at, must be valid
+     * @param str   the string to insert
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    public StrBuilder insert(final int index, String str) {
+<span class="fc" id="L2189">        validateIndex(index);</span>
+<span class="fc bfc" id="L2190" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L2191">            str = nullText;</span>
+        }
+<span class="fc bfc" id="L2193" title="All 2 branches covered.">        if (str != null) {</span>
+<span class="fc" id="L2194">            final int strLen = str.length();</span>
+<span class="pc bpc" id="L2195" title="1 of 2 branches missed.">            if (strLen &gt; 0) {</span>
+<span class="fc" id="L2196">                final int newSize = size + strLen;</span>
+<span class="fc" id="L2197">                ensureCapacity(newSize);</span>
+<span class="fc" id="L2198">                System.arraycopy(buffer, index, buffer, index + strLen, size - index);</span>
+<span class="fc" id="L2199">                size = newSize;</span>
+<span class="fc" id="L2200">                str.getChars(0, strLen, buffer, index);</span>
+            }
+        }
+<span class="fc" id="L2203">        return this;</span>
+    }
+
+    /**
+     * Tests if the string builder is empty (convenience Collections API style method).
+     * &lt;p&gt;
+     * This method is the same as checking {@link #length()} and is provided to match the API of Collections.
+     * &lt;/p&gt;
+     *
+     * @return {@code true} if the size is {@code 0}.
+     */
+    public boolean isEmpty() {
+<span class="fc bfc" id="L2215" title="All 2 branches covered.">        return size == 0;</span>
+    }
+
+    /**
+     * Tests if the string builder is not empty (convenience Collections API style method).
+     * &lt;p&gt;
+     * This method is the same as checking {@link #length()} and is provided to match the API of Collections.
+     * &lt;/p&gt;
+     *
+     * @return {@code true} if the size is greater than {@code 0}.
+     * @since 1.10.0
+     */
+    public boolean isNotEmpty() {
+<span class="fc bfc" id="L2228" title="All 2 branches covered.">        return size &gt; 0;</span>
+    }
+
+    /**
+     * Searches the string builder to find the last reference to the specified char.
+     *
+     * @param ch the character to find
+     * @return The last index of the character, or -1 if not found
+     */
+    public int lastIndexOf(final char ch) {
+<span class="fc" id="L2238">        return lastIndexOf(ch, size - 1);</span>
+    }
+
+    /**
+     * Searches the string builder to find the last reference to the specified char.
+     *
+     * @param ch         the character to find
+     * @param startIndex the index to start at, invalid index rounded to edge
+     * @return The last index of the character, or -1 if not found
+     */
+    public int lastIndexOf(final char ch, int startIndex) {
+<span class="fc bfc" id="L2249" title="All 2 branches covered.">        startIndex = startIndex &gt;= size ? size - 1 : startIndex;</span>
+<span class="fc bfc" id="L2250" title="All 2 branches covered.">        if (startIndex &lt; 0) {</span>
+<span class="fc" id="L2251">            return -1;</span>
+        }
+<span class="fc bfc" id="L2253" title="All 2 branches covered.">        for (int i = startIndex; i &gt;= 0; i--) {</span>
+<span class="fc bfc" id="L2254" title="All 2 branches covered.">            if (buffer[i] == ch) {</span>
+<span class="fc" id="L2255">                return i;</span>
+            }
+        }
+<span class="fc" id="L2258">        return -1;</span>
+    }
+
+    /**
+     * Searches the string builder to find the last reference to the specified string.
+     * &lt;p&gt;
+     * Note that a null input string will return -1, whereas the JDK throws an exception.
+     * &lt;/p&gt;
+     *
+     * @param str the string to find, null returns -1
+     * @return The last index of the string, or -1 if not found
+     */
+    public int lastIndexOf(final String str) {
+<span class="fc" id="L2271">        return lastIndexOf(str, size - 1);</span>
+    }
+
+    /**
+     * Searches the string builder to find the last reference to the specified string starting searching from the given index.
+     * &lt;p&gt;
+     * Note that a null input string will return -1, whereas the JDK throws an exception.
+     * &lt;/p&gt;
+     *
+     * @param str        the string to find, null returns -1
+     * @param startIndex the index to start at, invalid index rounded to edge
+     * @return The last index of the string, or -1 if not found
+     */
+    public int lastIndexOf(final String str, int startIndex) {
+<span class="fc bfc" id="L2285" title="All 2 branches covered.">        startIndex = startIndex &gt;= size ? size - 1 : startIndex;</span>
+<span class="fc bfc" id="L2286" title="All 4 branches covered.">        if (str == null || startIndex &lt; 0) {</span>
+<span class="fc" id="L2287">            return -1;</span>
+        }
+<span class="fc" id="L2289">        final int strLen = str.length();</span>
+<span class="fc bfc" id="L2290" title="All 4 branches covered.">        if (strLen &gt; 0 &amp;&amp; strLen &lt;= size) {</span>
+<span class="fc bfc" id="L2291" title="All 2 branches covered.">            if (strLen == 1) {</span>
+<span class="fc" id="L2292">                return lastIndexOf(str.charAt(0), startIndex);</span>
+            }
+
+<span class="fc bfc" id="L2295" title="All 2 branches covered.">            outer: for (int i = startIndex - strLen + 1; i &gt;= 0; i--) {</span>
+<span class="fc bfc" id="L2296" title="All 2 branches covered.">                for (int j = 0; j &lt; strLen; j++) {</span>
+<span class="fc bfc" id="L2297" title="All 2 branches covered.">                    if (str.charAt(j) != buffer[i + j]) {</span>
+<span class="fc" id="L2298">                        continue outer;</span>
+                    }
+                }
+<span class="fc" id="L2301">                return i;</span>
+            }
+
+<span class="fc bfc" id="L2304" title="All 2 branches covered.">        } else if (strLen == 0) {</span>
+<span class="fc" id="L2305">            return startIndex;</span>
+        }
+<span class="fc" id="L2307">        return -1;</span>
+    }
+
+    /**
+     * Searches the string builder using the matcher to find the last match.
+     * &lt;p&gt;
+     * Matchers can be used to perform advanced searching behavior. For example you could write a matcher to find the character 'a' followed by a number.
+     * &lt;/p&gt;
+     *
+     * @param matcher the matcher to use, null returns -1
+     * @return The last index matched, or -1 if not found
+     */
+    public int lastIndexOf(final StrMatcher matcher) {
+<span class="fc" id="L2320">        return lastIndexOf(matcher, size);</span>
+    }
+
+    /**
+     * Searches the string builder using the matcher to find the last match searching from the given index.
+     * &lt;p&gt;
+     * Matchers can be used to perform advanced searching behavior. For example you could write a matcher to find the character 'a' followed by a number.
+     * &lt;/p&gt;
+     *
+     * @param matcher    the matcher to use, null returns -1
+     * @param startIndex the index to start at, invalid index rounded to edge
+     * @return The last index matched, or -1 if not found
+     */
+    public int lastIndexOf(final StrMatcher matcher, int startIndex) {
+<span class="fc bfc" id="L2334" title="All 2 branches covered.">        startIndex = startIndex &gt;= size ? size - 1 : startIndex;</span>
+<span class="fc bfc" id="L2335" title="All 4 branches covered.">        if (matcher == null || startIndex &lt; 0) {</span>
+<span class="fc" id="L2336">            return -1;</span>
+        }
+<span class="fc" id="L2338">        final char[] buf = buffer;</span>
+<span class="fc" id="L2339">        final int endIndex = startIndex + 1;</span>
+<span class="fc bfc" id="L2340" title="All 2 branches covered.">        for (int i = startIndex; i &gt;= 0; i--) {</span>
+<span class="fc bfc" id="L2341" title="All 2 branches covered.">            if (matcher.isMatch(buf, i, 0, endIndex) &gt; 0) {</span>
+<span class="fc" id="L2342">                return i;</span>
+            }
+        }
+<span class="fc" id="L2345">        return -1;</span>
+    }
+
+    /**
+     * Extracts the leftmost characters from the string builder without throwing an exception.
+     * &lt;p&gt;
+     * This method extracts the left {@code length} characters from the builder. If this many characters are not available, the whole builder is returned. Thus
+     * the returned string may be shorter than the length requested.
+     * &lt;/p&gt;
+     *
+     * @param length the number of characters to extract, negative returns empty string
+     * @return The new string
+     */
+    public String leftString(final int length) {
+<span class="fc bfc" id="L2359" title="All 2 branches covered.">        if (length &lt;= 0) {</span>
+<span class="fc" id="L2360">            return StringUtils.EMPTY;</span>
+        }
+<span class="fc bfc" id="L2362" title="All 2 branches covered.">        if (length &gt;= size) {</span>
+<span class="fc" id="L2363">            return new String(buffer, 0, size);</span>
+        }
+<span class="fc" id="L2365">        return new String(buffer, 0, length);</span>
+    }
+
+    /**
+     * Gets the length of the string builder.
+     *
+     * @return The length
+     */
+    @Override
+    public int length() {
+<span class="fc" id="L2375">        return size;</span>
+    }
+
+    /**
+     * Extracts some characters from the middle of the string builder without throwing an exception.
+     * &lt;p&gt;
+     * This method extracts {@code length} characters from the builder at the specified index. If the index is negative it is treated as zero. If the index is
+     * greater than the builder size, it is treated as the builder size. If the length is negative, the empty string is returned. If insufficient characters are
+     * available in the builder, as much as possible is returned. Thus the returned string may be shorter than the length requested.
+     * &lt;/p&gt;
+     *
+     * @param index  the index to start at, negative means zero
+     * @param length the number of characters to extract, negative returns empty string
+     * @return The new string
+     */
+    public String midString(int index, final int length) {
+<span class="fc bfc" id="L2391" title="All 2 branches covered.">        if (index &lt; 0) {</span>
+<span class="fc" id="L2392">            index = 0;</span>
+        }
+<span class="fc bfc" id="L2394" title="All 4 branches covered.">        if (length &lt;= 0 || index &gt;= size) {</span>
+<span class="fc" id="L2395">            return StringUtils.EMPTY;</span>
+        }
+<span class="fc bfc" id="L2397" title="All 2 branches covered.">        if (size &lt;= index + length) {</span>
+<span class="fc" id="L2398">            return new String(buffer, index, size - index);</span>
+        }
+<span class="fc" id="L2400">        return new String(buffer, index, length);</span>
+    }
+
+    /**
+     * Minimizes the capacity to the actual length of the string.
+     *
+     * @return {@code this} instance.
+     */
+    public StrBuilder minimizeCapacity() {
+<span class="pc bpc" id="L2409" title="1 of 2 branches missed.">        if (buffer.length &gt; length()) {</span>
+<span class="fc" id="L2410">            final char[] old = buffer;</span>
+<span class="fc" id="L2411">            buffer = new char[length()];</span>
+<span class="fc" id="L2412">            System.arraycopy(old, 0, buffer, 0, size);</span>
+        }
+<span class="fc" id="L2414">        return this;</span>
+    }
+
+    /**
+     * If possible, reads chars from the provided {@link Readable} directly into underlying character buffer without making extra copies.
+     *
+     * @param readable object to read from
+     * @return The number of characters read
+     * @throws IOException if an I/O error occurs.
+     * @see #appendTo(Appendable)
+     */
+    public int readFrom(final Readable readable) throws IOException {
+<span class="fc" id="L2426">        final int oldSize = size;</span>
+<span class="fc bfc" id="L2427" title="All 2 branches covered.">        if (readable instanceof Reader) {</span>
+<span class="fc" id="L2428">            final Reader r = (Reader) readable;</span>
+<span class="fc" id="L2429">            ensureCapacity(size + 1);</span>
+            int read;
+<span class="fc bfc" id="L2431" title="All 2 branches covered.">            while ((read = r.read(buffer, size, buffer.length - size)) != -1) {</span>
+<span class="fc" id="L2432">                size += read;</span>
+<span class="fc" id="L2433">                ensureCapacity(size + 1);</span>
+            }
+<span class="fc bfc" id="L2435" title="All 2 branches covered.">        } else if (readable instanceof CharBuffer) {</span>
+<span class="fc" id="L2436">            final CharBuffer cb = (CharBuffer) readable;</span>
+<span class="fc" id="L2437">            final int remaining = cb.remaining();</span>
+<span class="fc" id="L2438">            ensureCapacity(size + remaining);</span>
+<span class="fc" id="L2439">            cb.get(buffer, size, remaining);</span>
+<span class="fc" id="L2440">            size += remaining;</span>
+<span class="fc" id="L2441">        } else {</span>
+            while (true) {
+<span class="fc" id="L2443">                ensureCapacity(size + 1);</span>
+<span class="fc" id="L2444">                final CharBuffer buf = CharBuffer.wrap(buffer, size, buffer.length - size);</span>
+<span class="fc" id="L2445">                final int read = readable.read(buf);</span>
+<span class="fc bfc" id="L2446" title="All 2 branches covered.">                if (read == -1) {</span>
+<span class="fc" id="L2447">                    break;</span>
+                }
+<span class="fc" id="L2449">                size += read;</span>
+<span class="fc" id="L2450">            }</span>
+        }
+<span class="fc" id="L2452">        return size - oldSize;</span>
+    }
+
+    /**
+     * Replaces a portion of the string builder with another string. The length of the inserted string does not have to match the removed length.
+     *
+     * @param startIndex the start index, inclusive, must be valid
+     * @param endIndex   the end index, exclusive, must be valid except that if too large it is treated as end of string
+     * @param replaceStr the string to replace with, null means delete range
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    public StrBuilder replace(final int startIndex, int endIndex, final String replaceStr) {
+<span class="fc" id="L2465">        endIndex = validateRange(startIndex, endIndex);</span>
+<span class="fc bfc" id="L2466" title="All 2 branches covered.">        final int insertLen = replaceStr == null ? 0 : replaceStr.length();</span>
+<span class="fc" id="L2467">        replaceImpl(startIndex, endIndex, endIndex - startIndex, replaceStr, insertLen);</span>
+<span class="fc" id="L2468">        return this;</span>
+    }
+
+    /**
+     * Advanced search and replaces within the builder using a matcher.
+     * &lt;p&gt;
+     * Matchers can be used to perform advanced behavior. For example you could write a matcher to delete all occurrences where the character 'a' is followed by
+     * a number.
+     * &lt;/p&gt;
+     *
+     * @param matcher      the matcher to use to find the deletion, null causes no action
+     * @param replaceStr   the string to replace the match with, null is a delete
+     * @param startIndex   the start index, inclusive, must be valid
+     * @param endIndex     the end index, exclusive, must be valid except that if too large it is treated as end of string
+     * @param replaceCount the number of times to replace, -1 for replace all
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if start index is invalid
+     */
+    public StrBuilder replace(final StrMatcher matcher, final String replaceStr, final int startIndex, int endIndex, final int replaceCount) {
+<span class="fc" id="L2487">        endIndex = validateRange(startIndex, endIndex);</span>
+<span class="fc" id="L2488">        return replaceImpl(matcher, replaceStr, startIndex, endIndex, replaceCount);</span>
+    }
+
+    /**
+     * Replaces the search character with the replace character throughout the builder.
+     *
+     * @param search  the search character
+     * @param replace the replace character
+     * @return {@code this} instance.
+     */
+    public StrBuilder replaceAll(final char search, final char replace) {
+<span class="fc bfc" id="L2499" title="All 2 branches covered.">        if (search != replace) {</span>
+<span class="fc bfc" id="L2500" title="All 2 branches covered.">            for (int i = 0; i &lt; size; i++) {</span>
+<span class="fc bfc" id="L2501" title="All 2 branches covered.">                if (buffer[i] == search) {</span>
+<span class="fc" id="L2502">                    buffer[i] = replace;</span>
+                }
+            }
+        }
+<span class="fc" id="L2506">        return this;</span>
+    }
+
+    /**
+     * Replaces the search string with the replace string throughout the builder.
+     *
+     * @param searchStr  the search string, null causes no action to occur
+     * @param replaceStr the replace string, null is equivalent to an empty string
+     * @return {@code this} instance.
+     */
+    public StrBuilder replaceAll(final String searchStr, final String replaceStr) {
+<span class="fc bfc" id="L2517" title="All 2 branches covered.">        final int searchLen = searchStr == null ? 0 : searchStr.length();</span>
+<span class="fc bfc" id="L2518" title="All 2 branches covered.">        if (searchLen &gt; 0) {</span>
+<span class="fc bfc" id="L2519" title="All 2 branches covered.">            final int replaceLen = replaceStr == null ? 0 : replaceStr.length();</span>
+<span class="fc" id="L2520">            int index = indexOf(searchStr, 0);</span>
+<span class="fc bfc" id="L2521" title="All 2 branches covered.">            while (index &gt;= 0) {</span>
+<span class="fc" id="L2522">                replaceImpl(index, index + searchLen, searchLen, replaceStr, replaceLen);</span>
+<span class="fc" id="L2523">                index = indexOf(searchStr, index + replaceLen);</span>
+            }
+        }
+<span class="fc" id="L2526">        return this;</span>
+    }
+
+    /**
+     * Replaces all matches within the builder with the replace string.
+     * &lt;p&gt;
+     * Matchers can be used to perform advanced replace behavior. For example you could write a matcher to replace all occurrences where the character 'a' is
+     * followed by a number.
+     * &lt;/p&gt;
+     *
+     * @param matcher    the matcher to use to find the deletion, null causes no action
+     * @param replaceStr the replace string, null is equivalent to an empty string
+     * @return {@code this} instance.
+     */
+    public StrBuilder replaceAll(final StrMatcher matcher, final String replaceStr) {
+<span class="fc" id="L2541">        return replace(matcher, replaceStr, 0, size, -1);</span>
+    }
+
+    /**
+     * Replaces the first instance of the search character with the replace character in the builder.
+     *
+     * @param search  the search character
+     * @param replace the replace character
+     * @return {@code this} instance.
+     */
+    public StrBuilder replaceFirst(final char search, final char replace) {
+<span class="fc bfc" id="L2552" title="All 2 branches covered.">        if (search != replace) {</span>
+<span class="fc bfc" id="L2553" title="All 2 branches covered.">            for (int i = 0; i &lt; size; i++) {</span>
+<span class="fc bfc" id="L2554" title="All 2 branches covered.">                if (buffer[i] == search) {</span>
+<span class="fc" id="L2555">                    buffer[i] = replace;</span>
+<span class="fc" id="L2556">                    break;</span>
+                }
+            }
+        }
+<span class="fc" id="L2560">        return this;</span>
+    }
+
+    /**
+     * Replaces the first instance of the search string with the replace string.
+     *
+     * @param searchStr  the search string, null causes no action to occur
+     * @param replaceStr the replace string, null is equivalent to an empty string
+     * @return {@code this} instance.
+     */
+    public StrBuilder replaceFirst(final String searchStr, final String replaceStr) {
+<span class="fc bfc" id="L2571" title="All 2 branches covered.">        final int searchLen = searchStr == null ? 0 : searchStr.length();</span>
+<span class="fc bfc" id="L2572" title="All 2 branches covered.">        if (searchLen &gt; 0) {</span>
+<span class="fc" id="L2573">            final int index = indexOf(searchStr, 0);</span>
+<span class="fc bfc" id="L2574" title="All 2 branches covered.">            if (index &gt;= 0) {</span>
+<span class="fc bfc" id="L2575" title="All 2 branches covered.">                final int replaceLen = replaceStr == null ? 0 : replaceStr.length();</span>
+<span class="fc" id="L2576">                replaceImpl(index, index + searchLen, searchLen, replaceStr, replaceLen);</span>
+            }
+        }
+<span class="fc" id="L2579">        return this;</span>
+    }
+
+    /**
+     * Replaces the first match within the builder with the replace string.
+     * &lt;p&gt;
+     * Matchers can be used to perform advanced replace behavior. For example you could write a matcher to replace where the character 'a' is followed by a
+     * number.
+     * &lt;/p&gt;
+     *
+     * @param matcher    the matcher to use to find the deletion, null causes no action
+     * @param replaceStr the replace string, null is equivalent to an empty string
+     * @return {@code this} instance.
+     */
+    public StrBuilder replaceFirst(final StrMatcher matcher, final String replaceStr) {
+<span class="fc" id="L2594">        return replace(matcher, replaceStr, 0, size, 1);</span>
+    }
+
+    /**
+     * Internal method to delete a range without validation.
+     *
+     * @param startIndex the start index, must be valid
+     * @param endIndex   the end index (exclusive), must be valid
+     * @param removeLen  the length to remove (endIndex - startIndex), must be valid
+     * @param insertStr  the string to replace with, null means delete range
+     * @param insertLen  the length of the insert string, must be valid
+     * @throws IndexOutOfBoundsException if any index is invalid
+     */
+    private void replaceImpl(final int startIndex, final int endIndex, final int removeLen, final String insertStr, final int insertLen) {
+<span class="fc" id="L2608">        final int newSize = size - removeLen + insertLen;</span>
+<span class="fc bfc" id="L2609" title="All 2 branches covered.">        if (insertLen != removeLen) {</span>
+<span class="fc" id="L2610">            ensureCapacity(newSize);</span>
+<span class="fc" id="L2611">            System.arraycopy(buffer, endIndex, buffer, startIndex + insertLen, size - endIndex);</span>
+<span class="fc" id="L2612">            size = newSize;</span>
+        }
+<span class="fc bfc" id="L2614" title="All 2 branches covered.">        if (insertLen &gt; 0) {</span>
+<span class="fc" id="L2615">            insertStr.getChars(0, insertLen, buffer, startIndex);</span>
+        }
+<span class="fc" id="L2617">    }</span>
+
+    /**
+     * Replaces within the builder using a matcher.
+     * &lt;p&gt;
+     * Matchers can be used to perform advanced behavior. For example you could write a matcher to delete all occurrences where the character 'a' is followed by
+     * a number.
+     * &lt;/p&gt;
+     *
+     * @param matcher      the matcher to use to find the deletion, null causes no action
+     * @param replaceStr   the string to replace the match with, null is a delete
+     * @param from         the start index, must be valid
+     * @param to           the end index (exclusive), must be valid
+     * @param replaceCount the number of times to replace, -1 for replace all
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if any index is invalid
+     */
+    private StrBuilder replaceImpl(final StrMatcher matcher, final String replaceStr, final int from, int to, int replaceCount) {
+<span class="fc bfc" id="L2635" title="All 4 branches covered.">        if (matcher == null || size == 0) {</span>
+<span class="fc" id="L2636">            return this;</span>
+        }
+<span class="fc bfc" id="L2638" title="All 2 branches covered.">        final int replaceLen = replaceStr == null ? 0 : replaceStr.length();</span>
+<span class="fc bfc" id="L2639" title="All 4 branches covered.">        for (int i = from; i &lt; to &amp;&amp; replaceCount != 0; i++) {</span>
+<span class="fc" id="L2640">            final char[] buf = buffer;</span>
+<span class="fc" id="L2641">            final int removeLen = matcher.isMatch(buf, i, from, to);</span>
+<span class="fc bfc" id="L2642" title="All 2 branches covered.">            if (removeLen &gt; 0) {</span>
+<span class="fc" id="L2643">                replaceImpl(i, i + removeLen, removeLen, replaceStr, replaceLen);</span>
+<span class="fc" id="L2644">                to = to - removeLen + replaceLen;</span>
+<span class="fc" id="L2645">                i = i + replaceLen - 1;</span>
+<span class="fc bfc" id="L2646" title="All 2 branches covered.">                if (replaceCount &gt; 0) {</span>
+<span class="fc" id="L2647">                    replaceCount--;</span>
+                }
+            }
+        }
+<span class="fc" id="L2651">        return this;</span>
+    }
+
+    /**
+     * Reverses the string builder placing each character in the opposite index.
+     *
+     * @return {@code this} instance.
+     */
+    public StrBuilder reverse() {
+<span class="fc bfc" id="L2660" title="All 2 branches covered.">        if (size == 0) {</span>
+<span class="fc" id="L2661">            return this;</span>
+        }
+
+<span class="fc" id="L2664">        final int half = size / 2;</span>
+<span class="fc" id="L2665">        final char[] buf = buffer;</span>
+<span class="fc bfc" id="L2666" title="All 2 branches covered.">        for (int leftIdx = 0, rightIdx = size - 1; leftIdx &lt; half; leftIdx++, rightIdx--) {</span>
+<span class="fc" id="L2667">            final char swap = buf[leftIdx];</span>
+<span class="fc" id="L2668">            buf[leftIdx] = buf[rightIdx];</span>
+<span class="fc" id="L2669">            buf[rightIdx] = swap;</span>
+        }
+<span class="fc" id="L2671">        return this;</span>
+    }
+
+    /**
+     * Extracts the rightmost characters from the string builder without throwing an exception.
+     * &lt;p&gt;
+     * This method extracts the right {@code length} characters from the builder. If this many characters are not available, the whole builder is returned. Thus
+     * the returned string may be shorter than the length requested.
+     * &lt;/p&gt;
+     *
+     * @param length the number of characters to extract, negative returns empty string
+     * @return The new string
+     */
+    public String rightString(final int length) {
+<span class="fc bfc" id="L2685" title="All 2 branches covered.">        if (length &lt;= 0) {</span>
+<span class="fc" id="L2686">            return StringUtils.EMPTY;</span>
+        }
+<span class="fc bfc" id="L2688" title="All 2 branches covered.">        if (length &gt;= size) {</span>
+<span class="fc" id="L2689">            return new String(buffer, 0, size);</span>
+        }
+<span class="fc" id="L2691">        return new String(buffer, size - length, length);</span>
+    }
+
+    /**
+     * Sets the character at the specified index.
+     *
+     * @see #charAt(int)
+     * @see #deleteCharAt(int)
+     * @param index the index to set
+     * @param ch    the new character
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    public StrBuilder setCharAt(final int index, final char ch) {
+<span class="fc bfc" id="L2705" title="All 4 branches covered.">        if (index &lt; 0 || index &gt;= length()) {</span>
+<span class="fc" id="L2706">            throw new StringIndexOutOfBoundsException(index);</span>
+        }
+<span class="fc" id="L2708">        buffer[index] = ch;</span>
+<span class="fc" id="L2709">        return this;</span>
+    }
+
+    /**
+     * Updates the length of the builder by either dropping the last characters or adding filler of Unicode zero.
+     *
+     * @param length the length to set to, must be zero or positive
+     * @return {@code this} instance.
+     * @throws IndexOutOfBoundsException if the length is negative
+     */
+    public StrBuilder setLength(final int length) {
+<span class="fc bfc" id="L2720" title="All 2 branches covered.">        if (length &lt; 0) {</span>
+<span class="fc" id="L2721">            throw new StringIndexOutOfBoundsException(length);</span>
+        }
+<span class="fc bfc" id="L2723" title="All 2 branches covered.">        if (length &lt; size) {</span>
+<span class="fc" id="L2724">            size = length;</span>
+<span class="fc bfc" id="L2725" title="All 2 branches covered.">        } else if (length &gt; size) {</span>
+<span class="fc" id="L2726">            ensureCapacity(length);</span>
+<span class="fc" id="L2727">            final int oldEnd = size;</span>
+<span class="fc" id="L2728">            size = length;</span>
+<span class="fc bfc" id="L2729" title="All 2 branches covered.">            for (int i = oldEnd; i &lt; length; i++) {</span>
+<span class="fc" id="L2730">                buffer[i] = '\0';</span>
+            }
+        }
+<span class="fc" id="L2733">        return this;</span>
+    }
+
+    /**
+     * Sets the text to be appended when {@link #appendNewLine() new line} is called.
+     *
+     * @param newLine the new line text, {@code null} means use the system default from {@link System#lineSeparator()}.
+     * @return {@code this} instance.
+     */
+    public StrBuilder setNewLineText(final String newLine) {
+<span class="fc" id="L2743">        this.newLine = newLine;</span>
+<span class="fc" id="L2744">        return this;</span>
+    }
+
+    /**
+     * Sets the text to be appended when null is added.
+     *
+     * @param nullText the null text, null means no append
+     * @return {@code this} instance.
+     */
+    public StrBuilder setNullText(String nullText) {
+<span class="fc bfc" id="L2754" title="All 4 branches covered.">        if (nullText != null &amp;&amp; nullText.isEmpty()) {</span>
+<span class="fc" id="L2755">            nullText = null;</span>
+        }
+<span class="fc" id="L2757">        this.nullText = nullText;</span>
+<span class="fc" id="L2758">        return this;</span>
+    }
+
+    /**
+     * Gets the length of the string builder.
+     * &lt;p&gt;
+     * This method is the same as {@link #length()} and is provided to match the API of Collections.
+     * &lt;/p&gt;
+     *
+     * @return The length
+     */
+    public int size() {
+<span class="fc" id="L2770">        return size;</span>
+    }
+
+    /**
+     * Checks whether this builder starts with the specified string.
+     * &lt;p&gt;
+     * Note that this method handles null input quietly, unlike String.
+     * &lt;/p&gt;
+     *
+     * @param str the string to search for, null returns false
+     * @return true if the builder starts with the string
+     */
+    public boolean startsWith(final String str) {
+<span class="fc bfc" id="L2783" title="All 2 branches covered.">        if (str == null) {</span>
+<span class="fc" id="L2784">            return false;</span>
+        }
+<span class="fc" id="L2786">        final int len = str.length();</span>
+<span class="fc bfc" id="L2787" title="All 2 branches covered.">        if (len == 0) {</span>
+<span class="fc" id="L2788">            return true;</span>
+        }
+<span class="fc bfc" id="L2790" title="All 2 branches covered.">        if (len &gt; size) {</span>
+<span class="fc" id="L2791">            return false;</span>
+        }
+<span class="fc bfc" id="L2793" title="All 2 branches covered.">        for (int i = 0; i &lt; len; i++) {</span>
+<span class="fc bfc" id="L2794" title="All 2 branches covered.">            if (buffer[i] != str.charAt(i)) {</span>
+<span class="fc" id="L2795">                return false;</span>
+            }
+        }
+<span class="fc" id="L2798">        return true;</span>
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public CharSequence subSequence(final int startIndex, final int endIndex) {
+<span class="fc bfc" id="L2806" title="All 2 branches covered.">        if (startIndex &lt; 0) {</span>
+<span class="fc" id="L2807">            throw new StringIndexOutOfBoundsException(startIndex);</span>
+        }
+<span class="fc bfc" id="L2809" title="All 2 branches covered.">        if (endIndex &gt; size) {</span>
+<span class="fc" id="L2810">            throw new StringIndexOutOfBoundsException(endIndex);</span>
+        }
+<span class="fc bfc" id="L2812" title="All 2 branches covered.">        if (startIndex &gt; endIndex) {</span>
+<span class="fc" id="L2813">            throw new StringIndexOutOfBoundsException(endIndex - startIndex);</span>
+        }
+<span class="fc" id="L2815">        return substring(startIndex, endIndex);</span>
+    }
+
+    /**
+     * Extracts a portion of this string builder as a string.
+     *
+     * @param start the start index, inclusive, must be valid
+     * @return The new string
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    public String substring(final int start) {
+<span class="fc" id="L2826">        return substring(start, size);</span>
+    }
+
+    /**
+     * Extracts a portion of this string builder as a string.
+     * &lt;p&gt;
+     * Note: This method treats an endIndex greater than the length of the builder as equal to the length of the builder, and continues without error, unlike
+     * StringBuffer or String.
+     *
+     * @param startIndex the start index, inclusive, must be valid
+     * @param endIndex   the end index, exclusive, must be valid except that if too large it is treated as end of string
+     * @return The new string
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    public String substring(final int startIndex, int endIndex) {
+<span class="fc" id="L2841">        endIndex = validateRange(startIndex, endIndex);</span>
+<span class="fc" id="L2842">        return new String(buffer, startIndex, endIndex - startIndex);</span>
+    }
+
+    /**
+     * Copies the builder's character array into a new character array.
+     *
+     * @return a new array that represents the contents of the builder
+     */
+    public char[] toCharArray() {
+<span class="fc bfc" id="L2851" title="All 2 branches covered.">        return size == 0 ? ArrayUtils.EMPTY_CHAR_ARRAY : Arrays.copyOf(buffer, size);</span>
+    }
+
+    /**
+     * Copies part of the builder's character array into a new character array.
+     *
+     * @param startIndex the start index, inclusive, must be valid
+     * @param endIndex   the end index, exclusive, must be valid except that if too large it is treated as end of string
+     * @return a new array that holds part of the contents of the builder
+     * @throws IndexOutOfBoundsException if startIndex is invalid, or if endIndex is invalid (but endIndex greater than size is valid)
+     */
+    public char[] toCharArray(final int startIndex, int endIndex) {
+<span class="fc" id="L2863">        endIndex = validateRange(startIndex, endIndex);</span>
+<span class="fc" id="L2864">        final int len = endIndex - startIndex;</span>
+<span class="fc bfc" id="L2865" title="All 2 branches covered.">        if (len == 0) {</span>
+<span class="fc" id="L2866">            return ArrayUtils.EMPTY_CHAR_ARRAY;</span>
+        }
+<span class="fc" id="L2868">        final char[] chars = new char[len];</span>
+<span class="fc" id="L2869">        System.arraycopy(buffer, startIndex, chars, 0, len);</span>
+<span class="fc" id="L2870">        return chars;</span>
+    }
+
+    /**
+     * Gets a String version of the string builder, creating a new instance each time the method is called.
+     * &lt;p&gt;
+     * Note that unlike StringBuffer, the string version returned is independent of the string builder.
+     * &lt;/p&gt;
+     *
+     * @return The builder as a String
+     */
+    @Override
+    public String toString() {
+<span class="fc" id="L2883">        return new String(buffer, 0, size);</span>
+    }
+
+    /**
+     * Gets a StringBuffer version of the string builder, creating a new instance each time the method is called.
+     *
+     * @return The builder as a StringBuffer
+     */
+    public StringBuffer toStringBuffer() {
+<span class="fc" id="L2892">        return new StringBuffer(size).append(buffer, 0, size);</span>
+    }
+
+    /**
+     * Gets a StringBuilder version of the string builder, creating a new instance each time the method is called.
+     *
+     * @return The builder as a StringBuilder
+     */
+    public StringBuilder toStringBuilder() {
+<span class="fc" id="L2901">        return new StringBuilder(size).append(buffer, 0, size);</span>
+    }
+
+    /**
+     * Trims the builder by removing characters less than or equal to a space from the beginning and end.
+     *
+     * @return {@code this} instance.
+     */
+    public StrBuilder trim() {
+<span class="fc bfc" id="L2910" title="All 2 branches covered.">        if (size == 0) {</span>
+<span class="fc" id="L2911">            return this;</span>
+        }
+<span class="fc" id="L2913">        int len = size;</span>
+<span class="fc" id="L2914">        final char[] buf = buffer;</span>
+<span class="fc" id="L2915">        int pos = 0;</span>
+<span class="fc bfc" id="L2916" title="All 4 branches covered.">        while (pos &lt; len &amp;&amp; buf[pos] &lt;= ' ') {</span>
+<span class="fc" id="L2917">            pos++;</span>
+        }
+<span class="fc bfc" id="L2919" title="All 4 branches covered.">        while (pos &lt; len &amp;&amp; buf[len - 1] &lt;= ' ') {</span>
+<span class="fc" id="L2920">            len--;</span>
+        }
+<span class="fc bfc" id="L2922" title="All 2 branches covered.">        if (len &lt; size) {</span>
+<span class="fc" id="L2923">            delete(len, size);</span>
+        }
+<span class="fc bfc" id="L2925" title="All 2 branches covered.">        if (pos &gt; 0) {</span>
+<span class="fc" id="L2926">            delete(0, pos);</span>
+        }
+<span class="fc" id="L2928">        return this;</span>
+    }
+
+    /**
+     * Validates parameters defining a single index in the builder.
+     *
+     * @param index the index, must be valid
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    protected void validateIndex(final int index) {
+<span class="fc bfc" id="L2938" title="All 4 branches covered.">        if (index &lt; 0 || index &gt; size) {</span>
+<span class="fc" id="L2939">            throw new StringIndexOutOfBoundsException(index);</span>
+        }
+<span class="fc" id="L2941">    }</span>
+
+    /**
+     * Validates parameters defining a range of the builder.
+     *
+     * @param startIndex the start index, inclusive, must be valid
+     * @param endIndex   the end index, exclusive, must be valid except that if too large it is treated as end of string
+     * @return The new string
+     * @throws IndexOutOfBoundsException if the index is invalid
+     */
+    protected int validateRange(final int startIndex, int endIndex) {
+<span class="fc bfc" id="L2952" title="All 2 branches covered.">        if (startIndex &lt; 0) {</span>
+<span class="fc" id="L2953">            throw new StringIndexOutOfBoundsException(startIndex);</span>
+        }
+<span class="fc bfc" id="L2955" title="All 2 branches covered.">        if (endIndex &gt; size) {</span>
+<span class="fc" id="L2956">            endIndex = size;</span>
+        }
+<span class="fc bfc" id="L2958" title="All 2 branches covered.">        if (startIndex &gt; endIndex) {</span>
+<span class="fc" id="L2959">            throw new StringIndexOutOfBoundsException(&quot;end &lt; start&quot;);</span>
+        }
+<span class="fc" id="L2961">        return endIndex;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

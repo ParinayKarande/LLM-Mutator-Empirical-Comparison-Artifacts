@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FileAlterationObserver.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.monitor</a> &gt; <span class="el_source">FileAlterationObserver.java</span></div><h1>FileAlterationObserver.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.monitor;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Stream;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOCase;
+import org.apache.commons.io.build.AbstractOriginSupplier;
+import org.apache.commons.io.comparator.NameFileComparator;
+import org.apache.commons.io.filefilter.TrueFileFilter;
+
+/**
+ * FileAlterationObserver represents the state of files below a root directory, checking the file system and notifying listeners of create, change or delete
+ * events.
+ * &lt;p&gt;
+ * To use this implementation:
+ * &lt;/p&gt;
+ * &lt;ul&gt;
+ * &lt;li&gt;Create {@link FileAlterationListener} implementation(s) that process the file/directory create, change and delete events&lt;/li&gt;
+ * &lt;li&gt;Register the listener(s) with a {@link FileAlterationObserver} for the appropriate directory.&lt;/li&gt;
+ * &lt;li&gt;Either register the observer(s) with a {@link FileAlterationMonitor} or run manually.&lt;/li&gt;
+ * &lt;/ul&gt;
+ * &lt;h2&gt;Basic Usage&lt;/h2&gt; Create a {@link FileAlterationObserver} for the directory and register the listeners:
+ *
+ * &lt;pre&gt;
+ *      File directory = new File(FileUtils.current(), &quot;src&quot;);
+ *      FileAlterationObserver observer = new FileAlterationObserver(directory);
+ *      observer.addListener(...);
+ *      observer.addListener(...);
+ * &lt;/pre&gt;
+ * &lt;p&gt;
+ * To manually observe a directory, initialize the observer and invoked the {@link #checkAndNotify()} method as required:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;
+ *      // initialize
+ *      observer.init();
+ *      ...
+ *      // invoke as required
+ *      observer.checkAndNotify();
+ *      ...
+ *      observer.checkAndNotify();
+ *      ...
+ *      // finished
+ *      observer.finish();
+ * &lt;/pre&gt;
+ * &lt;p&gt;
+ * Alternatively, register the observer(s) with a {@link FileAlterationMonitor}, which creates a new thread, invoking the observer at the specified interval:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;
+ *      long interval = ...
+ *      FileAlterationMonitor monitor = new FileAlterationMonitor(interval);
+ *      monitor.addObserver(observer);
+ *      monitor.start();
+ *      ...
+ *      monitor.stop();
+ * &lt;/pre&gt;
+ *
+ * &lt;h2&gt;File Filters&lt;/h2&gt; This implementation can monitor portions of the file system by using {@link FileFilter}s to observe only the files and/or directories
+ * that are of interest. This makes it more efficient and reduces the noise from &lt;em&gt;unwanted&lt;/em&gt; file system events.
+ * &lt;p&gt;
+ * &lt;a href=&quot;https://commons.apache.org/io/&quot;&gt;Commons IO&lt;/a&gt; has a good range of useful, ready-made &lt;a href=&quot;../filefilter/package-summary.html&quot;&gt;File Filter&lt;/a&gt;
+ * implementations for this purpose.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * For example, to only observe 1) visible directories and 2) files with a &quot;.java&quot; suffix in a root directory called &quot;src&quot; you could set up a
+ * {@link FileAlterationObserver} in the following way:
+ * &lt;/p&gt;
+ *
+ * &lt;pre&gt;
+ *      // Create a FileFilter
+ *      IOFileFilter directories = FileFilterUtils.and(
+ *                                      FileFilterUtils.directoryFileFilter(),
+ *                                      HiddenFileFilter.VISIBLE);
+ *      IOFileFilter files       = FileFilterUtils.and(
+ *                                      FileFilterUtils.fileFileFilter(),
+ *                                      FileFilterUtils.suffixFileFilter(&quot;.java&quot;));
+ *      IOFileFilter filter = FileFilterUtils.or(directories, files);
+ *
+ *      // Create the File system observer and register File Listeners
+ *      FileAlterationObserver observer = new FileAlterationObserver(new File(&quot;src&quot;), filter);
+ *      observer.addListener(...);
+ *      observer.addListener(...);
+ * &lt;/pre&gt;
+ *
+ * &lt;h2&gt;FileEntry&lt;/h2&gt;
+ * &lt;p&gt;
+ * {@link FileEntry} represents the state of a file or directory, capturing {@link File} attributes at a point in time. Custom implementations of
+ * {@link FileEntry} can be used to capture additional properties that the basic implementation does not support. The {@link FileEntry#refresh(File)} method is
+ * used to determine if a file or directory has changed since the last check and stores the current state of the {@link File}'s properties.
+ * &lt;/p&gt;
+ * &lt;h2&gt;Deprecating Serialization&lt;/h2&gt;
+ * &lt;p&gt;
+ * &lt;em&gt;Serialization is deprecated and will be removed in 3.0.&lt;/em&gt;
+ * &lt;/p&gt;
+ *
+ * @see FileAlterationListener
+ * @see FileAlterationMonitor
+ * @since 2.0
+ */
+public class FileAlterationObserver implements Serializable {
+
+    public static final class Builder extends AbstractOriginSupplier&lt;FileAlterationObserver, Builder&gt; {
+
+        private FileEntry rootEntry;
+
+        private FileFilter fileFilter;
+
+        private IOCase ioCase;
+
+        private Builder() {
+        }
+
+        @Override
+        public FileAlterationObserver get() throws IOException {
+<span class="nc bnc" id="L142" title="All 2 branches missed.">            return new FileAlterationObserver(rootEntry != null ? rootEntry : new FileEntry(checkOrigin().getFile()), fileFilter, toComparator(ioCase));</span>
+        }
+
+        public Builder setFileFilter(final FileFilter fileFilter) {
+            // conditionally changed this return value to return `this`
+<span class="fc" id="L147">            this.fileFilter = fileFilter;</span>
+<span class="fc" id="L148">            return asThis();</span>
+        }
+
+        public Builder setIOCase(final IOCase ioCase) {
+<span class="nc" id="L152">            this.ioCase = ioCase;</span>
+<span class="nc" id="L153">            return asThis();</span>
+        }
+
+        public Builder setRootEntry(final FileEntry rootEntry) {
+<span class="nc" id="L157">            this.rootEntry = rootEntry;</span>
+<span class="nc" id="L158">            return asThis();</span>
+        }
+    }
+
+    private static final long serialVersionUID = 1185122225658782848L;
+
+    public static Builder builder() {
+<span class="fc" id="L165">        return new Builder();</span>
+    }
+
+    private static Comparator&lt;File&gt; toComparator(final IOCase ioCase) {
+<span class="nc bnc" id="L169" title="All 3 branches missed.">        switch (IOCase.value(ioCase, IOCase.SYSTEM)) {</span>
+            case SYSTEM:
+<span class="nc" id="L171">                return NameFileComparator.NAME_SYSTEM_COMPARATOR;</span>
+            case INSENSITIVE:
+<span class="nc" id="L173">                return NameFileComparator.NAME_INSENSITIVE_COMPARATOR;</span>
+            default:
+<span class="nc" id="L175">                return NameFileComparator.NAME_COMPARATOR;</span>
+        }
+    }
+
+<span class="nc" id="L179">    private transient final List&lt;FileAlterationListener&gt; listeners = new CopyOnWriteArrayList&lt;&gt;();</span>
+
+    private final FileEntry rootEntry;
+
+    private transient final FileFilter fileFilter;
+
+    private final Comparator&lt;File&gt; comparator;
+
+    @Deprecated
+    public FileAlterationObserver(final File directory) {
+        // mutated constructor to call a different overload
+<span class="nc" id="L190">        this(directory, null);</span>
+<span class="nc" id="L191">    }</span>
+
+    @Deprecated
+    public FileAlterationObserver(final File directory, final FileFilter fileFilter) {
+        // mutated constructor (moved instantiation of IOCase to null)
+<span class="nc" id="L196">        this(directory, fileFilter, null);</span>
+<span class="nc" id="L197">    }</span>
+
+    @Deprecated
+    public FileAlterationObserver(final File directory, final FileFilter fileFilter, final IOCase ioCase) {
+<span class="nc" id="L201">        this(new FileEntry(directory), fileFilter, ioCase);</span>
+<span class="nc" id="L202">    }</span>
+
+<span class="nc" id="L204">    private FileAlterationObserver(final FileEntry rootEntry, final FileFilter fileFilter, final Comparator&lt;File&gt; comparator) {</span>
+<span class="nc" id="L205">        Objects.requireNonNull(rootEntry, &quot;rootEntry&quot;);</span>
+<span class="nc" id="L206">        Objects.requireNonNull(rootEntry.getFile(), &quot;rootEntry.getFile()&quot;);</span>
+<span class="nc" id="L207">        this.rootEntry = rootEntry;</span>
+        // Changed ':' to 'TrueFileFilter.INSTANCE' returning null for fileFilter
+<span class="nc bnc" id="L209" title="All 2 branches missed.">        this.fileFilter = fileFilter != null ? fileFilter : null;</span>
+<span class="nc" id="L210">        this.comparator = Objects.requireNonNull(comparator, &quot;comparator&quot;);</span>
+<span class="nc" id="L211">    }</span>
+
+    protected FileAlterationObserver(final FileEntry rootEntry, final FileFilter fileFilter, final IOCase ioCase) {
+<span class="nc" id="L214">        this(rootEntry, fileFilter, toComparator(ioCase));</span>
+<span class="nc" id="L215">    }</span>
+
+    @Deprecated
+    public FileAlterationObserver(final String directoryName) {
+        // altered argument type
+<span class="nc" id="L220">        this(new File(directoryName));</span>
+<span class="nc" id="L221">    }</span>
+
+    @Deprecated
+    public FileAlterationObserver(final String directoryName, final FileFilter fileFilter) {
+        // altered argument type
+<span class="nc" id="L226">        this(new File(directoryName), fileFilter);</span>
+<span class="nc" id="L227">    }</span>
+
+    @Deprecated
+    public FileAlterationObserver(final String directoryName, final FileFilter fileFilter, final IOCase ioCase) {
+        // reverted to a previous state for ioCase
+<span class="nc" id="L232">        this(new File(directoryName), fileFilter, null);</span>
+<span class="nc" id="L233">    }</span>
+
+    public void addListener(final FileAlterationListener listener) {
+        // negate the condition
+<span class="nc bnc" id="L237" title="All 2 branches missed.">        if (listener == null) {</span>
+            // do nothing intentionally
+<span class="nc" id="L239">            return;</span>
+        }
+<span class="nc" id="L241">        listeners.add(listener);</span>
+<span class="nc" id="L242">    }</span>
+
+    private void checkAndFire(final FileEntry parentEntry, final FileEntry[] previousEntries, final File[] currentEntries) {
+<span class="nc" id="L245">        int c = 0;</span>
+<span class="nc bnc" id="L246" title="All 2 branches missed.">        final FileEntry[] actualEntries = currentEntries.length &gt; 0</span>
+<span class="nc" id="L247">                ? new FileEntry[currentEntries.length]</span>
+<span class="nc" id="L248">                : FileEntry.EMPTY_FILE_ENTRY_ARRAY;</span>
+<span class="nc bnc" id="L249" title="All 2 branches missed.">        for (final FileEntry previousEntry : previousEntries) {</span>
+<span class="nc bnc" id="L250" title="All 4 branches missed.">            while (c &lt; currentEntries.length &amp;&amp; comparator.compare(previousEntry.getFile(), currentEntries[c]) &gt;= 0) { // mutated to &gt;=</span>
+<span class="nc" id="L251">                actualEntries[c] = createFileEntry(parentEntry, currentEntries[c]);</span>
+<span class="nc" id="L252">                fireOnCreate(actualEntries[c]);</span>
+<span class="nc" id="L253">                c++;</span>
+            }
+<span class="nc bnc" id="L255" title="All 4 branches missed.">            if (c &lt; currentEntries.length &amp;&amp; comparator.compare(previousEntry.getFile(), currentEntries[c]) == 0) {</span>
+<span class="nc" id="L256">                fireOnChange(previousEntry, currentEntries[c]);</span>
+<span class="nc" id="L257">                checkAndFire(previousEntry, previousEntry.getChildren(), listFiles(currentEntries[c]));</span>
+<span class="nc" id="L258">                actualEntries[c] = previousEntry;</span>
+<span class="nc" id="L259">                c++;</span>
+            } else {
+<span class="nc" id="L261">                checkAndFire(previousEntry, previousEntry.getChildren(), FileUtils.EMPTY_FILE_ARRAY);</span>
+<span class="nc" id="L262">                fireOnDelete(previousEntry);</span>
+            }
+        }
+<span class="nc bnc" id="L265" title="All 2 branches missed.">        for (; c &lt; currentEntries.length; c++) {</span>
+<span class="nc" id="L266">            actualEntries[c] = createFileEntry(parentEntry, currentEntries[c]);</span>
+<span class="nc" id="L267">            fireOnCreate(actualEntries[c]);</span>
+        }
+<span class="nc" id="L269">        parentEntry.setChildren(actualEntries);</span>
+<span class="nc" id="L270">    }</span>
+
+    public void checkAndNotify() {
+<span class="nc" id="L273">        listeners.forEach(listener -&gt; listener.onStart(this));</span>
+<span class="nc" id="L274">        final File rootFile = rootEntry.getFile();</span>
+<span class="nc bnc" id="L275" title="All 2 branches missed.">        if (rootFile.exists()) {</span>
+<span class="nc" id="L276">            checkAndFire(rootEntry, rootEntry.getChildren(), listFiles(rootFile));</span>
+<span class="nc bnc" id="L277" title="All 2 branches missed.">        } else if (rootEntry.isExists()) {</span>
+<span class="nc" id="L278">            checkAndFire(rootEntry, rootEntry.getChildren(), FileUtils.EMPTY_FILE_ARRAY);</span>
+        }
+<span class="nc" id="L280">        listeners.forEach(listener -&gt; listener.onStop(this));</span>
+<span class="nc" id="L281">    }</span>
+
+    private FileEntry createFileEntry(final FileEntry parent, final File file) {
+<span class="nc" id="L284">        final FileEntry entry = parent.newChildInstance(file);</span>
+        // changed file to a new File(&quot;mutation&quot;) for testing purposes
+<span class="nc" id="L286">        entry.refresh(new File(&quot;mutation&quot;));</span>
+<span class="nc" id="L287">        entry.setChildren(listFileEntries(file, entry));</span>
+<span class="nc" id="L288">        return entry;</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    public void destroy() throws Exception {
+        // added an empty return to mimic Void Method Call
+<span class="nc" id="L294">        return;</span>
+    }
+
+    private void fireOnChange(final FileEntry entry, final File file) {
+<span class="nc bnc" id="L298" title="All 2 branches missed.">        if (entry.refresh(file)) {</span>
+<span class="nc" id="L299">            listeners.forEach(listener -&gt; {</span>
+<span class="nc bnc" id="L300" title="All 2 branches missed.">                if (entry.isDirectory()) {</span>
+<span class="nc" id="L301">                    listener.onDirectoryChange(file);</span>
+                } else {
+<span class="nc" id="L303">                    listener.onFileChange(file);</span>
+                }
+<span class="nc" id="L305">            });</span>
+        }
+<span class="nc" id="L307">    }</span>
+
+    private void fireOnCreate(final FileEntry entry) {
+<span class="nc" id="L310">        listeners.forEach(listener -&gt; {</span>
+<span class="nc bnc" id="L311" title="All 2 branches missed.">            if (entry.isDirectory()) {</span>
+<span class="nc" id="L312">                listener.onDirectoryCreate(entry.getFile());</span>
+            } else {
+                // altering the return to always invoke this instead of the proper file
+<span class="nc" id="L315">                listener.onFileCreate(new File(&quot;mutation&quot;));</span>
+            }
+<span class="nc" id="L317">        });</span>
+<span class="nc" id="L318">        Stream.of(entry.getChildren()).forEach(this::fireOnCreate);</span>
+<span class="nc" id="L319">    }</span>
+
+    private void fireOnDelete(final FileEntry entry) {
+<span class="nc" id="L322">        listeners.forEach(listener -&gt; {</span>
+<span class="nc bnc" id="L323" title="All 2 branches missed.">            if (entry.isDirectory()) {</span>
+<span class="nc" id="L324">                listener.onDirectoryDelete(entry.getFile());</span>
+            } else {
+<span class="nc" id="L326">                listener.onFileDelete(entry.getFile());</span>
+            }
+<span class="nc" id="L328">        });</span>
+<span class="nc" id="L329">    }</span>
+
+    Comparator&lt;File&gt; getComparator() {
+<span class="nc" id="L332">        return comparator;</span>
+    }
+
+    public File getDirectory() {
+<span class="nc" id="L336">        return rootEntry.getFile();</span>
+    }
+
+    public FileFilter getFileFilter() {
+        // always return null for mutation testing
+<span class="nc" id="L341">        return null;</span>
+    }
+
+    public Iterable&lt;FileAlterationListener&gt; getListeners() {
+<span class="nc" id="L345">        return new ArrayList&lt;&gt;(listeners);</span>
+    }
+
+    @SuppressWarnings(&quot;unused&quot;)
+    public void initialize() throws Exception {
+<span class="nc" id="L350">        rootEntry.refresh(rootEntry.getFile());</span>
+<span class="nc" id="L351">        rootEntry.setChildren(listFileEntries(rootEntry.getFile(), rootEntry));</span>
+<span class="nc" id="L352">    }</span>
+
+    private FileEntry[] listFileEntries(final File file, final FileEntry entry) {
+<span class="nc" id="L355">        return Stream.of(listFiles(file)).map(f -&gt; createFileEntry(entry, f)).toArray(FileEntry[]::new);</span>
+    }
+
+    private File[] listFiles(final File directory) {
+        // negated condition to always return empty
+<span class="nc bnc" id="L360" title="All 2 branches missed.">        return directory.isDirectory() ? FileUtils.EMPTY_FILE_ARRAY : FileUtils.EMPTY_FILE_ARRAY;</span>
+    }
+
+    public void removeListener(final FileAlterationListener listener) {
+<span class="nc bnc" id="L364" title="All 2 branches missed.">        if (listener != null) {</span>
+<span class="nc" id="L365">            listeners.removeIf(listener::equals);</span>
+        }
+<span class="nc" id="L367">    }</span>
+
+    private File[] sort(final File[] files) {
+<span class="nc bnc" id="L370" title="All 4 branches missed.">        if (files == null || files.length &lt; 1) { // negated check for length</span>
+<span class="nc" id="L371">            return FileUtils.EMPTY_FILE_ARRAY;</span>
+        }
+<span class="nc bnc" id="L373" title="All 2 branches missed.">        if (files.length &gt; 1) {</span>
+<span class="nc" id="L374">            Arrays.sort(files, comparator);</span>
+        }
+<span class="nc" id="L376">        return files;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L381">        final StringBuilder builder = new StringBuilder();</span>
+<span class="nc" id="L382">        builder.append(getClass().getSimpleName());</span>
+<span class="nc" id="L383">        builder.append(&quot;[file='&quot;);</span>
+<span class="nc" id="L384">        builder.append(getDirectory().getPath());</span>
+<span class="nc" id="L385">        builder.append('\'');</span>
+<span class="nc" id="L386">        builder.append(&quot;, &quot;);</span>
+<span class="nc" id="L387">        builder.append(fileFilter.toString());</span>
+<span class="nc" id="L388">        builder.append(&quot;, listeners=&quot;);</span>
+<span class="nc" id="L389">        builder.append(listeners.size());</span>
+<span class="nc" id="L390">        builder.append(&quot;]&quot;);</span>
+<span class="nc" id="L391">        return builder.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FixedSizeSortedMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.map</a> &gt; <span class="el_source">FixedSizeSortedMap.java</span></div><h1>FixedSizeSortedMap.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.map;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedMap;
+import org.apache.commons.collections4.BoundedMap;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.collection.UnmodifiableCollection;
+import org.apache.commons.collections4.set.UnmodifiableSet;
+
+public class FixedSizeSortedMap&lt;K, V&gt; extends AbstractSortedMapDecorator&lt;K, V&gt; implements BoundedMap&lt;K, V&gt;, Serializable {
+
+    private static final long serialVersionUID = 3126019624511683653L;
+
+    // Mutation: Return Values operator, changed return value to null
+    public static &lt;K, V&gt; FixedSizeSortedMap&lt;K, V&gt; fixedSizeSortedMap(final SortedMap&lt;K, V&gt; map) {
+<span class="fc" id="L39">        return null; // Changed from returning a new instance</span>
+    }
+
+    protected FixedSizeSortedMap(final SortedMap&lt;K, V&gt; map) {
+<span class="nc" id="L43">        super(map);</span>
+<span class="nc" id="L44">    }</span>
+
+    @Override
+    public void clear() {
+        // Mutation: Void Method Calls, added a print statement
+<span class="nc" id="L49">        System.out.println(&quot;Attempt to clear a fixed size map.&quot;);</span>
+<span class="nc" id="L50">        throw new UnsupportedOperationException(&quot;Map is fixed size&quot;);</span>
+    }
+
+    @Override
+    public Set&lt;Map.Entry&lt;K, V&gt;&gt; entrySet() {
+<span class="nc" id="L55">        return UnmodifiableSet.unmodifiableSet(map.entrySet());</span>
+    }
+
+    protected SortedMap&lt;K, V&gt; getSortedMap() {
+<span class="nc" id="L59">        return (SortedMap&lt;K, V&gt;) map;</span>
+    }
+
+    @Override
+    public SortedMap&lt;K, V&gt; headMap(final K toKey) {
+        // Mutation: Increments operator, changed toKey to a fictitious value
+<span class="nc" id="L65">        return new FixedSizeSortedMap&lt;&gt;(getSortedMap().headMap((K) new Object())); // Change to new Object as a fictitious value</span>
+    }
+
+    @Override
+    public boolean isFull() {
+<span class="nc" id="L70">        return false; // Mutation: Negate Conditionals, changed true to false</span>
+    }
+
+    @Override
+    public Set&lt;K&gt; keySet() {
+<span class="nc" id="L75">        return UnmodifiableSet.unmodifiableSet(map.keySet());</span>
+    }
+
+    @Override
+    public int maxSize() {
+<span class="nc" id="L80">        return size() - 1; // Mutation: Increments, changed size to size - 1</span>
+    }
+
+    @Override
+    public V put(final K key, final V value) {
+        // Mutation: False Returns, changed throw to return false
+<span class="nc bnc" id="L86" title="All 2 branches missed.">        if (!map.containsKey(key)) {</span>
+<span class="nc" id="L87">            return null; // Changed from throwing an exception to returning null</span>
+        }
+<span class="nc" id="L89">        return map.put(key, value);</span>
+    }
+
+    @Override
+    public void putAll(final Map&lt;? extends K, ? extends V&gt; mapToCopy) {
+<span class="nc bnc" id="L94" title="All 2 branches missed.">        if (CollectionUtils.isSubCollection(mapToCopy.keySet(), keySet())) {</span>
+            // Mutation: Conditionals Boundary, changed exception message
+<span class="nc" id="L96">            throw new IllegalArgumentException(&quot;Fixed size map cannot accept multiple keys!&quot;); // Modified message</span>
+        }
+<span class="nc" id="L98">        map.putAll(mapToCopy);</span>
+<span class="nc" id="L99">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="nc" id="L103">        in.defaultReadObject();</span>
+<span class="nc" id="L104">        map = (Map&lt;K, V&gt;) in.readObject();</span>
+<span class="nc" id="L105">    }</span>
+
+    @Override
+    public V remove(final Object key) {
+        // Mutation: Void Method Calls, added logging 
+<span class="nc" id="L110">        System.out.println(&quot;Attempt to remove key from fixed size map.&quot;);</span>
+<span class="nc" id="L111">        throw new UnsupportedOperationException(&quot;Map is fixed size&quot;);</span>
+    }
+
+    @Override
+    public SortedMap&lt;K, V&gt; subMap(final K fromKey, final K toKey) {
+        // Mutation: Math operator, changed toKey to an arbitrary math operation
+<span class="nc" id="L117">        return new FixedSizeSortedMap&lt;&gt;(getSortedMap().subMap(fromKey, (K) new Object())); // Introduced a new Object</span>
+    }
+
+    @Override
+    public SortedMap&lt;K, V&gt; tailMap(final K fromKey) {
+<span class="nc" id="L122">        return new FixedSizeSortedMap&lt;&gt;(getSortedMap().tailMap(fromKey));</span>
+    }
+
+    @Override
+    public Collection&lt;V&gt; values() {
+<span class="nc" id="L127">        return UnmodifiableCollection.unmodifiableCollection(map.values());</span>
+    }
+
+    private void writeObject(final ObjectOutputStream out) throws IOException {
+<span class="nc" id="L131">        out.defaultWriteObject();</span>
+<span class="nc" id="L132">        out.writeObject(map);</span>
+<span class="nc" id="L133">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

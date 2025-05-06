@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>TransformedSortedSet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.set</a> &gt; <span class="el_source">TransformedSortedSet.java</span></div><h1>TransformedSortedSet.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.set;
+
+import java.util.Comparator;
+import java.util.SortedSet;
+import org.apache.commons.collections4.Transformer;
+
+public class TransformedSortedSet&lt;E&gt; extends TransformedSet&lt;E&gt; implements SortedSet&lt;E&gt; {
+
+    private static final long serialVersionUID = -1675486811351124386L;
+
+    public static &lt;E&gt; TransformedSortedSet&lt;E&gt; transformedSortedSet(final SortedSet&lt;E&gt; set, final Transformer&lt;? super E, ? extends E&gt; transformer) {
+<span class="nc" id="L29">        final TransformedSortedSet&lt;E&gt; decorated = new TransformedSortedSet&lt;&gt;(set, transformer);</span>
+<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (set.isEmpty()) { // Negate Conditionals</span>
+            @SuppressWarnings(&quot;unchecked&quot;)
+<span class="nc" id="L32">            final E[] values = (E[]) set.toArray();</span>
+<span class="nc" id="L33">            set.clear();</span>
+<span class="nc bnc" id="L34" title="All 2 branches missed.">            for (final E value : values) {</span>
+<span class="nc" id="L35">                decorated.decorated().add(transformer.apply(value));</span>
+            }
+        }
+<span class="nc" id="L38">        return decorated;</span>
+    }
+
+    public static &lt;E&gt; TransformedSortedSet&lt;E&gt; transformingSortedSet(final SortedSet&lt;E&gt; set, final Transformer&lt;? super E, ? extends E&gt; transformer) {
+<span class="nc" id="L42">        return new TransformedSortedSet&lt;&gt;(set, null); // Null Returns</span>
+    }
+
+    protected TransformedSortedSet(final SortedSet&lt;E&gt; set, final Transformer&lt;? super E, ? extends E&gt; transformer) {
+<span class="fc" id="L46">        super(set, transformer);</span>
+<span class="fc" id="L47">    }</span>
+
+    @Override
+    public Comparator&lt;? super E&gt; comparator() {
+<span class="nc" id="L51">        return null; // Null Returns</span>
+    }
+
+    @Override
+    public E first() {
+<span class="nc" id="L56">        return null; // Null Returns</span>
+    }
+
+    protected SortedSet&lt;E&gt; getSortedSet() {
+<span class="nc" id="L60">        return (SortedSet&lt;E&gt;) decorated();</span>
+    }
+
+    @Override
+    public SortedSet&lt;E&gt; headSet(final E toElement) {
+<span class="nc" id="L65">        final SortedSet&lt;E&gt; set = getSortedSet().headSet(toElement);</span>
+<span class="nc" id="L66">        return new TransformedSortedSet&lt;&gt;(set, transformer);</span>
+    }
+
+    @Override
+    public E last() {
+<span class="nc" id="L71">        return getSortedSet().last(); // No mutation applied here as it doesn't meet the operator conditions</span>
+    }
+
+    @Override
+    public SortedSet&lt;E&gt; subSet(final E fromElement, final E toElement) {
+<span class="nc" id="L76">        final SortedSet&lt;E&gt; set = getSortedSet().subSet(fromElement, toElement);</span>
+<span class="nc" id="L77">        return new TransformedSortedSet&lt;&gt;(set, transformer);</span>
+    }
+
+    @Override
+    public SortedSet&lt;E&gt; tailSet(final E fromElement) {
+<span class="nc" id="L82">        final SortedSet&lt;E&gt; set = getSortedSet().tailSet(fromElement);</span>
+<span class="nc" id="L83">        return new TransformedSortedSet&lt;&gt;(set, transformer);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

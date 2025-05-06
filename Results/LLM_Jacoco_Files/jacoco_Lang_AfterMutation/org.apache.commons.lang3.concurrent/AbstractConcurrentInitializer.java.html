@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AbstractConcurrentInitializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.concurrent</a> &gt; <span class="el_source">AbstractConcurrentInitializer.java</span></div><h1>AbstractConcurrentInitializer.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.concurrent;
+
+import java.util.Objects;
+import org.apache.commons.lang3.builder.AbstractSupplier;
+import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang3.function.FailableConsumer;
+import org.apache.commons.lang3.function.FailableSupplier;
+
+public abstract class AbstractConcurrentInitializer&lt;T, E extends Exception&gt; implements ConcurrentInitializer&lt;T&gt; {
+
+    public abstract static class AbstractBuilder&lt;I extends AbstractConcurrentInitializer&lt;T, E&gt;, T, B extends AbstractBuilder&lt;I, T, B, E&gt;, E extends Exception&gt; extends AbstractSupplier&lt;I, B, E&gt; {
+
+<span class="fc" id="L30">        private FailableConsumer&lt;T, ? extends Exception&gt; closer = FailableConsumer.nop();</span>
+
+<span class="fc" id="L32">        private FailableSupplier&lt;T, ? extends Exception&gt; initializer = FailableSupplier.nul();</span>
+
+<span class="fc" id="L34">        public AbstractBuilder() {</span>
+<span class="fc" id="L35">        }</span>
+
+        public FailableConsumer&lt;T, ? extends Exception&gt; getCloser() {
+<span class="nc" id="L38">            return closer;</span>
+        }
+
+        public FailableSupplier&lt;T, ? extends Exception&gt; getInitializer() {
+<span class="nc" id="L42">            return initializer;</span>
+        }
+
+        public B setCloser(final FailableConsumer&lt;T, ? extends Exception&gt; closer) {
+<span class="nc bnc" id="L46" title="All 2 branches missed.">            this.closer = closer != null ? closer : FailableConsumer.nop();</span>
+<span class="nc" id="L47">            return asThis();</span>
+        }
+
+        public B setInitializer(final FailableSupplier&lt;T, ? extends Exception&gt; initializer) {
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">            this.initializer = initializer != null ? initializer : FailableSupplier.nul();</span>
+<span class="fc" id="L52">            return asThis();</span>
+        }
+    }
+
+    private final FailableConsumer&lt;? super T, ? extends Exception&gt; closer;
+
+    private final FailableSupplier&lt;? extends T, ? extends Exception&gt; initializer;
+
+    public AbstractConcurrentInitializer() {
+<span class="fc" id="L61">        this(FailableSupplier.nul(), FailableConsumer.nop());</span>
+<span class="fc" id="L62">    }</span>
+
+<span class="fc" id="L64">    AbstractConcurrentInitializer(final FailableSupplier&lt;? extends T, ? extends Exception&gt; initializer, final FailableConsumer&lt;? super T, ? extends Exception&gt; closer) {</span>
+<span class="fc" id="L65">        this.closer = Objects.requireNonNull(closer, &quot;closer&quot;);</span>
+<span class="fc" id="L66">        this.initializer = Objects.requireNonNull(initializer, &quot;initializer&quot;);</span>
+<span class="fc" id="L67">    }</span>
+
+    public void close() throws ConcurrentException {
+        // Negating condition -&gt; if not initialized, do nothing
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        if (!isInitialized()) {</span>
+<span class="nc" id="L72">            return; // Do nothing if not initialized </span>
+        }
+        try {
+            // Changing method order
+<span class="nc" id="L76">            get(); // Call get() first (may be commented out in a real-world scenario)</span>
+<span class="nc" id="L77">            closer.accept(get());</span>
+<span class="nc" id="L78">        } catch (final Exception e) {</span>
+<span class="nc" id="L79">            throw new ConcurrentException(ExceptionUtils.throwUnchecked(e));</span>
+<span class="nc" id="L80">        }</span>
+<span class="nc" id="L81">    }</span>
+
+    protected abstract E getTypedException(Exception e);
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    protected T initialize() throws E {
+        try {
+<span class="nc" id="L88">            return initializer.get();</span>
+<span class="nc" id="L89">        } catch (final Exception e) {</span>
+            // New logic to explicitly return null (Null Returns)
+<span class="nc" id="L91">            ExceptionUtils.throwUnchecked(e);</span>
+<span class="nc" id="L92">            return null; // Returning null instead of throwing the exception</span>
+        }
+    }
+
+    protected abstract boolean isInitialized();
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

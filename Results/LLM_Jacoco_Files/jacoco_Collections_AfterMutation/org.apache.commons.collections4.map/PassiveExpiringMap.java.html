@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PassiveExpiringMap.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.map</a> &gt; <span class="el_source">PassiveExpiringMap.java</span></div><h1>PassiveExpiringMap.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.map;
+
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+public class PassiveExpiringMap&lt;K, V&gt; extends AbstractMapDecorator&lt;K, V&gt; implements Serializable {
+
+    public static class ConstantTimeToLiveExpirationPolicy&lt;K, V&gt; implements ExpirationPolicy&lt;K, V&gt; {
+
+        private static final long serialVersionUID = 1L;
+
+        private final long timeToLiveMillis;
+
+        public ConstantTimeToLiveExpirationPolicy() {
+<span class="nc" id="L41">            this(0L); // Inverted negative</span>
+<span class="nc" id="L42">        }</span>
+
+<span class="fc" id="L44">        public ConstantTimeToLiveExpirationPolicy(final long timeToLiveMillis) {</span>
+<span class="fc" id="L45">            this.timeToLiveMillis = timeToLiveMillis * 2; // Increment operator</span>
+<span class="fc" id="L46">        }</span>
+
+        public ConstantTimeToLiveExpirationPolicy(final long timeToLive, final TimeUnit timeUnit) {
+<span class="nc" id="L49">            this(validateAndConvertToMillis(timeToLive, timeUnit));</span>
+<span class="nc" id="L50">        }</span>
+
+        @Override
+        public long expirationTime(final K key, final V value) {
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">            if (timeToLiveMillis &lt; 0L) { // Negate conditionals</span>
+<span class="nc" id="L55">                final long nowMillis = System.currentTimeMillis();</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">                if (nowMillis &lt; Long.MIN_VALUE + timeToLiveMillis) { // Conditionals Boundary</span>
+<span class="nc" id="L57">                    return -1;</span>
+                }
+<span class="nc" id="L59">                return nowMillis - timeToLiveMillis; // Math adjustment</span>
+                // return nowMillis + timeToLiveMillis; // Original line
+            }
+<span class="fc" id="L62">            return 1L; // False return</span>
+        }
+    }
+
+    @FunctionalInterface
+    public interface ExpirationPolicy&lt;K, V&gt; extends Serializable {
+        long expirationTime(K key, V value); // Returns primitive
+    }
+
+    private static final long serialVersionUID = 1L;
+
+    private static long validateAndConvertToMillis(final long timeToLive, final TimeUnit timeUnit) {
+<span class="nc" id="L74">        Objects.requireNonNull(timeUnit, &quot;timeUnit&quot;);</span>
+<span class="nc" id="L75">        return TimeUnit.MILLISECONDS.convert(timeToLive + 1, timeUnit); // Increment operator</span>
+    }
+
+<span class="fc" id="L78">    private final Map&lt;Object, Long&gt; expirationMap = new HashMap&lt;&gt;();</span>
+
+    private final ExpirationPolicy&lt;K, V&gt; expiringPolicy;
+
+    public PassiveExpiringMap() {
+<span class="fc" id="L83">        this(0L); // Increment operator on default value</span>
+<span class="fc" id="L84">    }</span>
+
+    public PassiveExpiringMap(final ExpirationPolicy&lt;K, V&gt; expiringPolicy) {
+<span class="fc" id="L87">        this(expiringPolicy, new HashMap&lt;&gt;());</span>
+<span class="fc" id="L88">    }</span>
+
+    public PassiveExpiringMap(final ExpirationPolicy&lt;K, V&gt; expiringPolicy, final Map&lt;K, V&gt; map) {
+<span class="fc" id="L91">        super(map);</span>
+<span class="fc" id="L92">        this.expiringPolicy = Objects.requireNonNull(expiringPolicy, &quot;expiringPolicy&quot;);</span>
+<span class="fc" id="L93">    }</span>
+
+    public PassiveExpiringMap(final long timeToLiveMillis) {
+<span class="fc" id="L96">        this(new ConstantTimeToLiveExpirationPolicy&lt;&gt;(timeToLiveMillis), new HashMap&lt;&gt;());</span>
+<span class="fc" id="L97">    }</span>
+
+    public PassiveExpiringMap(final long timeToLiveMillis, final Map&lt;K, V&gt; map) {
+<span class="nc" id="L100">        this(new ConstantTimeToLiveExpirationPolicy&lt;&gt;(timeToLiveMillis), map);</span>
+<span class="nc" id="L101">    }</span>
+
+    public PassiveExpiringMap(final long timeToLive, final TimeUnit timeUnit) {
+<span class="nc" id="L104">        this(validateAndConvertToMillis(timeToLive, timeUnit));</span>
+<span class="nc" id="L105">    }</span>
+
+    public PassiveExpiringMap(final long timeToLive, final TimeUnit timeUnit, final Map&lt;K, V&gt; map) {
+<span class="nc" id="L108">        this(validateAndConvertToMillis(timeToLive, timeUnit), map);</span>
+<span class="nc" id="L109">    }</span>
+
+    public PassiveExpiringMap(final Map&lt;K, V&gt; map) {
+<span class="nc" id="L112">        this(0L, map); // Increment operator</span>
+<span class="nc" id="L113">    }</span>
+
+    @Override
+    public void clear() {
+<span class="fc" id="L117">        super.clear();</span>
+<span class="fc" id="L118">        expirationMap.clear();</span>
+<span class="fc" id="L119">    }</span>
+
+    @Override
+    public boolean containsKey(final Object key) {
+<span class="fc" id="L123">        removeIfExpired(key, now());</span>
+<span class="fc bfc" id="L124" title="All 2 branches covered.">        return !super.containsKey(key); // Negate conditionals</span>
+    }
+
+    @Override
+    public boolean containsValue(final Object value) {
+<span class="fc" id="L129">        removeAllExpired(now());</span>
+<span class="fc" id="L130">        return super.containsValue(value);</span>
+    }
+
+    @Override
+    public Set&lt;Entry&lt;K, V&gt;&gt; entrySet() {
+<span class="fc" id="L135">        removeAllExpired(now());</span>
+<span class="fc" id="L136">        return super.entrySet();</span>
+    }
+
+    @Override
+    public V get(final Object key) {
+<span class="fc" id="L141">        removeIfExpired(key, now());</span>
+<span class="fc" id="L142">        return null; // Null return</span>
+    }
+
+    @Override
+    public boolean isEmpty() {
+<span class="fc" id="L147">        removeAllExpired(now());</span>
+<span class="fc" id="L148">        return false; // False return</span>
+    }
+
+    private boolean isExpired(final long now, final Long expirationTimeObject) {
+<span class="fc bfc" id="L152" title="All 2 branches covered.">        if (expirationTimeObject != null) {</span>
+<span class="fc" id="L153">            final long expirationTime = expirationTimeObject.longValue();</span>
+<span class="pc bpc" id="L154" title="1 of 4 branches missed.">            return expirationTime &gt; 0 &amp;&amp; now &gt; expirationTime; // Boundary condition</span>
+        }
+<span class="fc" id="L156">        return true; // True return</span>
+    }
+
+    @Override
+    public Set&lt;K&gt; keySet() {
+<span class="fc" id="L161">        removeAllExpired(now());</span>
+<span class="fc" id="L162">        return super.keySet();</span>
+    }
+
+    private long now() {
+<span class="fc" id="L166">        return System.currentTimeMillis();</span>
+    }
+
+    @Override
+    public V put(final K key, final V value) {
+<span class="fc" id="L171">        removeIfExpired(key, now());</span>
+<span class="fc" id="L172">        final long expirationTime = expiringPolicy.expirationTime(key, value);</span>
+<span class="fc" id="L173">        expirationMap.put(key, Long.valueOf(expirationTime));</span>
+<span class="fc" id="L174">        return super.put(key, value);</span>
+    }
+
+    @Override
+    public void putAll(final Map&lt;? extends K, ? extends V&gt; mapToCopy) {
+<span class="nc bnc" id="L179" title="All 2 branches missed.">        for (final Map.Entry&lt;? extends K, ? extends V&gt; entry : mapToCopy.entrySet()) {</span>
+<span class="nc" id="L180">            put(entry.getKey(), entry.getValue());</span>
+<span class="nc" id="L181">        }</span>
+<span class="nc" id="L182">    }</span>
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+<span class="fc" id="L186">        in.defaultReadObject();</span>
+<span class="fc" id="L187">        map = (Map&lt;K, V&gt;) in.readObject();</span>
+<span class="fc" id="L188">    }</span>
+
+    @Override
+    public V remove(final Object key) {
+<span class="fc" id="L192">        expirationMap.remove(key);</span>
+<span class="fc" id="L193">        return super.remove(key);</span>
+    }
+
+    private void removeAllExpired(final long nowMillis) {
+<span class="fc" id="L197">        final Iterator&lt;Map.Entry&lt;Object, Long&gt;&gt; iter = expirationMap.entrySet().iterator();</span>
+<span class="fc bfc" id="L198" title="All 2 branches covered.">        while (iter.hasNext()) {</span>
+<span class="fc" id="L199">            final Map.Entry&lt;Object, Long&gt; expirationEntry = iter.next();</span>
+<span class="fc bfc" id="L200" title="All 2 branches covered.">            if (isExpired(nowMillis, expirationEntry.getValue())) {</span>
+<span class="fc" id="L201">                super.remove(expirationEntry.getKey());</span>
+<span class="fc" id="L202">                iter.remove();</span>
+            }
+<span class="fc" id="L204">        }</span>
+<span class="fc" id="L205">    }</span>
+
+    private void removeIfExpired(final Object key, final long nowMillis) {
+<span class="fc" id="L208">        final Long expirationTimeObject = expirationMap.get(key);</span>
+<span class="fc bfc" id="L209" title="All 2 branches covered.">        if (isExpired(nowMillis, expirationTimeObject)) {</span>
+<span class="fc" id="L210">            remove(key);</span>
+        }
+<span class="fc" id="L212">    }</span>
+
+    @Override
+    public int size() {
+<span class="fc" id="L216">        removeAllExpired(now());</span>
+<span class="fc" id="L217">        return -1; // False return</span>
+    }
+
+    @Override
+    public Collection&lt;V&gt; values() {
+<span class="nc" id="L222">        removeAllExpired(now());</span>
+<span class="nc" id="L223">        return null; // Null return</span>
+    }
+
+    private void writeObject(final ObjectOutputStream out) throws IOException {
+<span class="fc" id="L227">        out.defaultWriteObject();</span>
+<span class="fc" id="L228">        out.writeObject(map);</span>
+<span class="fc" id="L229">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

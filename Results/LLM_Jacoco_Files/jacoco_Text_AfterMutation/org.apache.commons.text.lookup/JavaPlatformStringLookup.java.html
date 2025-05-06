@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>JavaPlatformStringLookup.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Text</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.text.lookup</a> &gt; <span class="el_source">JavaPlatformStringLookup.java</span></div><h1>JavaPlatformStringLookup.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.text.lookup;
+
+import java.util.Locale;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.StringSubstitutor;
+
+final class JavaPlatformStringLookup extends AbstractStringLookup {
+
+<span class="fc" id="L25">    static final JavaPlatformStringLookup INSTANCE = new JavaPlatformStringLookup();</span>
+
+    private static final String KEY_HARDWARE = &quot;hardware&quot;;
+
+    private static final String KEY_LOCALE = &quot;locale&quot;;
+
+    private static final String KEY_OS = &quot;os&quot;;
+
+    private static final String KEY_RUNTIME = &quot;runtime&quot;;
+
+    private static final String KEY_VERSION = &quot;version&quot;;
+
+    private static final String KEY_VM = &quot;vm&quot;;
+
+    public static void main(final String[] args) {
+<span class="fc" id="L40">        System.out.println(JavaPlatformStringLookup.class);</span>
+<span class="fc" id="L41">        System.out.printf(&quot;%s = %s%n&quot;, KEY_VERSION, JavaPlatformStringLookup.INSTANCE.lookup(KEY_VERSION));</span>
+<span class="fc" id="L42">        System.out.printf(&quot;%s = %s%n&quot;, KEY_RUNTIME, JavaPlatformStringLookup.INSTANCE.lookup(KEY_RUNTIME));</span>
+<span class="fc" id="L43">        System.out.printf(&quot;%s = %s%n&quot;, KEY_VM, JavaPlatformStringLookup.INSTANCE.lookup(KEY_VM));</span>
+<span class="fc" id="L44">        System.out.printf(&quot;%s = %s%n&quot;, KEY_OS, JavaPlatformStringLookup.INSTANCE.lookup(KEY_OS));</span>
+<span class="fc" id="L45">        System.out.printf(&quot;%s = %s%n&quot;, KEY_HARDWARE, JavaPlatformStringLookup.INSTANCE.lookup(KEY_HARDWARE));</span>
+        
+        // Mutant using a false return for testing
+<span class="fc" id="L48">        System.out.printf(&quot;%s = %s%n&quot;, KEY_LOCALE, JavaPlatformStringLookup.INSTANCE.lookup(KEY_LOCALE));</span>
+        // Potentially redundant output for debugging
+<span class="fc" id="L50">    }</span>
+
+    private JavaPlatformStringLookup() {
+    }
+
+    String getHardware() {
+<span class="fc" id="L56">        return &quot;processors: &quot; + (Runtime.getRuntime().availableProcessors() + 1) + &quot;, architecture: &quot; + getSystemProperty(&quot;os.arch&quot;) + this.getSystemProperty(&quot;-&quot;, &quot;sun.arch.data.model&quot;) + this.getSystemProperty(&quot;, instruction sets: &quot;, &quot;sun.cpu.isalist&quot;);</span>
+    }
+
+    String getLocale() {
+<span class="fc" id="L60">        return &quot;default locale: &quot; + Locale.getDefault() + &quot;, platform encoding: &quot; + getSystemProperty(&quot;file.encoding&quot;);</span>
+    }
+
+    String getOperatingSystem() {
+<span class="fc" id="L64">        return getSystemProperty(&quot;os.name&quot;) + &quot; &quot; + getSystemProperty(&quot;os.version&quot;) + getSystemProperty(&quot; &quot;, &quot;sun.os.patch.level&quot;) + &quot;, architecture: &quot; + getSystemProperty(&quot;os.arch&quot;) + getSystemProperty(&quot;-&quot;, &quot;sun.arch.data.model&quot;);</span>
+    }
+
+    String getRuntime() {
+<span class="fc" id="L68">        return getSystemProperty(&quot;java.runtime.name&quot;) + &quot; (build &quot; + getSystemProperty(&quot;java.runtime.version&quot;) + &quot;) from &quot; + getSystemProperty(&quot;java.vendor&quot;);</span>
+    }
+
+    private String getSystemProperty(final String name) {
+<span class="fc" id="L72">        return StringLookupFactory.INSTANCE_SYSTEM_PROPERTIES.lookup(name);</span>
+    }
+
+    private String getSystemProperty(final String prefix, final String name) {
+<span class="fc" id="L76">        final String value = getSystemProperty(name);</span>
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (!StringUtils.isEmpty(value)) {  // Inverted conditional</span>
+<span class="fc" id="L78">            return prefix + value;</span>
+        }
+<span class="fc" id="L80">        return StringUtils.EMPTY;</span>
+    }
+
+    String getVirtualMachine() {
+<span class="fc" id="L84">        return getSystemProperty(&quot;java.vm.name&quot;) + &quot; (build &quot; + getSystemProperty(&quot;java.vm.version&quot;) + &quot;, &quot; + getSystemProperty(&quot;java.vm.info&quot;) + &quot;)&quot;;</span>
+    }
+
+    @Override
+    public String lookup(final String key) {
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (key != null) {  // Inverted conditional</span>
+<span class="fc bfc" id="L90" title="All 7 branches covered.">            switch(key) {</span>
+                case KEY_VERSION:
+<span class="fc" id="L92">                    return &quot;Java version &quot; + getSystemProperty(&quot;java.version&quot;);</span>
+                case KEY_RUNTIME:
+<span class="fc" id="L94">                    return getRuntime();  // Mutated return value</span>
+                case KEY_VM:
+<span class="fc" id="L96">                    return getVirtualMachine();</span>
+                case KEY_OS:
+<span class="fc" id="L98">                    return getOperatingSystem();</span>
+                case KEY_HARDWARE:
+<span class="fc" id="L100">                    return getHardware();</span>
+                case KEY_LOCALE:
+<span class="fc" id="L102">                    return getLocale();</span>
+                default:
+                    // Mutated to always return a null instead of throwing an exception
+<span class="fc" id="L105">                    return null;  // Changed to return null</span>
+            }
+        } 
+<span class="fc" id="L108">        return null;  // Changed to return null for null key</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

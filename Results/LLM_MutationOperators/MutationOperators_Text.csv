@@ -1,0 +1,1794 @@
+Java File Name,Mutation Comments
+ResourceBundleStringLookup.java,"Mutant: Inverted return value
+Mutant: Return null directly for testing purpose
+Changed from the original behaviour
+Mutant: Negate the condition
+Returning a default string as a mutant
+Mutant: Changed to expect key length greater than or equal to 2
+Mutant: Changed to enforce expected format of exactly 2 keys
+Mutant: Always return a ""Sample String"" regardless of fetching logic
+Mutant: Instead of returning null, we return ""Not Found""
+Mutant: Append extra information to the string representation
+"
+JaroWinklerSimilarity.java,"Conditionals Boundary: changed > to <=
+Math: changed -1 to +2
+Negate Conditionals: changed && to || and inverted the condition
+Invert Negatives: inverted the condition of the if statement
+Null Returns: check for null
+Conditionals Boundary: changed 4 to 3
+Primitive Returns: incremented prefix by -1
+Increments: changed from 0.1 to 0.2
+Negate Conditionals: negated the check
+False Returns: changed from 1d to 0d
+Negate Conditionals: changed == to <=
+True Returns: changed from 0d to 1d
+Math: changed - to +
+Negate Conditionals: checked for greater than instead of less than
+"
+InetAddressKeys.java,"Conditionals Boundary: Change to a method that can throw exception on empty
+"
+EditDistanceFrom.java,"Return Values: Changing the return type from R to a different object type (e.g., String)
+Negate Conditionals: Changed != to ==
+Just for the purpose of the mutation
+Math: For demonstration, changing the behavior of the method by interpreting left length differently
+Mutated the return value
+False Returns: Return a different constant value (could return null or a different EditDistance type)
+Increment: Adding +1 to the length of left, just as a demo
+"
+SimilarityScore.java,""
+EditScript.java,"commands.add(command); // Void Method Call operator; adding an unnecessary call
+Increment operation mutated to --modifications;
+Increment operation mutated to modifications += 1;
+commands.add(command); // Void Method Call operator; adding an unnecessary call
+Inverted Increment (decrementing instead of incrementing)
+return 0; // False Return
+Return Value mutated to return -lcsLength;
+return 1; // True Return
+Return Value mutated to return -modifications;
+return; // Empty Return testing
+commands.clear(); // Null Return testing, clearing commands
+"
+XmlDecoderStringLookup.java,"Mutated to return an empty string if key is empty or null
+"
+StringLookup.java,"Original logic can be presumed to exist here
+This mutation assumes some processing
+Mutation assumes alternate returns
+"
+CodePointTranslator.java,"Changed return value for consumed true branch
+"
+LongestCommonSubsequenceDistance.java,"Change `2` to `3` (Math operator)
+Changed to `left.length() + right.length() - 3 * LongestCommonSubsequence.INSTANCE.apply(left, right);` and `2`
+Commented out and provided alternate modified return types
+return null; // Null Returns
+return 0; // Primitive Returns
+return 1; // False Returns
+return -1; // Negate Return Values
+Negated conditionals: original `if` condition
+Inverted Negatives
+to `1` (Conditionals Boundary & Return Values)
+"
+CharSequenceTokenizer.java,"Negate the typical expected behavior of the tokenizer
+Example of a method that could exist
+"
+LookupTranslator.java,"Negate Conditionals
+Conditionals Boundary
+Conditionals Boundary
+Invert Negatives
+Void Method Call (early termination)
+Negate Conditionals
+Changed operator to <=
+Increment mutation
+Invert Negatives
+Early exit conditions
+Math mutation
+Primitive Return (changing the return value)
+"
+StrBuilder.java,"Incremental mutation
+Incremented character mutation
+Null return mutation
+Incremented capacity mutation
+Negated condition mutation
+Increment mutation
+Incremented length mutation
+Muted conditions
+Incremented value mutation
+Incremented value mutation
+Incremented value mutation
+Incremented value mutation
+Incremented index mutation
+Negated condition mutation
+Negated condition mutation
+Incremented return value mutation
+Negated return value mutation
+Inverted mutation for true
+Incremented character mutation
+Return values unchanged
+Return values unchanged
+Return values unchanged
+Return values unchanged
+Mutated to always return false
+Addition of another false condition
+Incremented minimize capacity
+Incremented size mutation
+Incremented mutation
+Mutated to incremented capacity
+Incremented mutation
+Negated condition mutation
+Incremented mutated return
+Incremented mutation
+"
+InsertCommand.java,"Mutation 5: Invert Negatives - Swapping instances where negatives could apply (however, doesn't apply directly here since no such condition exists)
+Mutation 6: Return Values - Change the return value type (example purpose)
+public String getObjectAsString() { return getObject().toString(); }
+Mutation 1: Conditionals Boundary - Assuming some misuse in assuming object cannot be null.
+Original: super(object);
+Mutation 2: Increments - Changing the behavior of accept method.
+Mutation 3: Negate Conditionals
+Original: visitor.visitInsertCommand(getObject());
+Early return if visitor is null
+Mutation 4: Math - Example using a dummy math operator on T
+This mutable method simulates perform calculation with addition
+In reality, you might want more meaningful logic involving the type.
+Mutant: return (T)(Integer)(input) + 1; // Incorrect usage, just as an example
+Original return of input
+Mutation 7: Void Method Calls - add a dummy logging action
+Some log statement as a void method call mutation
+New statement
+Mutation 8: Empty Returns
+Adding empty return statement
+Mutation 9: False Returns - Return a false return from a conditional
+Original logic might involve more complex checking
+Mutation 10: True Returns
+Original logic might involve more complex checks
+Mutation 11: Null Returns
+Originally returning the object, now returns null
+Mutation 12: Primitive Returns (assuming T is a wrapper or primitive type)
+Original might involve a cast or a call for primitive
+"
+EditCommand.java,"Conditionals Boundary: change constructor boundary behavior
+Invert Negatives
+Should be null or throw exception
+Negate Conditionals: change behavior of accept to always call visitor
+Primitive Returns: change return behavior based on current logic state
+Change to return null to test null returns
+Change returning object for null check
+Void Method Calls: example of introducing a void method that does something.
+Implementation of mutating state or the execution.
+Returning nothing to demonstrate void method calls
+False Returns: introducing a method that returns false, establishing another behavior case
+Ensure this method always returns false
+True Returns: another method returning true for demonstration
+Ensure this method always returns true
+Null Returns: introduce method returning null directly for T
+To verify behavior when something needs to be null
+Example of using Math mutation: if you had a method which uses math and can be mutated
+Example change could include incremented skipped or changed operation.
+Increment original value
+Change value * 2 to value + 2 to test math mutation
+Example of new method indicating behavior changes or handling
+Represents empty return mutation
+"
+UnicodeUnpairedSurrogateRemover.java,""
+AggregateTranslator.java,"Conditionals Boundary: Changed null check to a non-null check.
+Negate Conditionals: Changing the condition check.
+Empty Returns: Added an early return.
+Inverted null check
+Return Values: Changed return value logic to return a false constant.
+Negate Conditionals: Changed check from != to ==
+Primitive Returns: Returning a constant instead of variable.
+False Returns: Changed final return value to 1 instead of 0.
+"
+NumericEntityUnescaper.java,"Conditionals Boundary: 'index < seqEnd - 2' changed to 'index <= seqEnd - 2'
+return 1;
+Math: let's say we return a constant of 1 instead of zero
+Negate Conditionals: 'end != seqEnd' changed to 'end == seqEnd'
+Negate Conditionals: 'if (!semiNext)' changed to 'if (semiNext)'
+Return Values: Change returned value from 0 to 1
+Invert Negatives: Change the message
+Return Values: Change returned value from 0 to 1
+Math: Change the condition to '>= 0xFFFF' instead of '>'
+Inverts sign for math operation
+Math: changed (semiNext ? 1 : 0) to (semiNext ? 0 : 1)
+False Returns: Change returned value from 0 to 1
+"
+Counter.java,"Conditionals Boundary: Changed condition from v != null to v == null
+Mutant 1: Inverted conditional
+Increments: Change from v + 1 to v + 2
+Mutant 2: Increment changed
+Math operator: Change the addition to subtraction
+Mutant 3: Math operation modified
+Negate Conditionals: Negated the condition to return 0 if value is not null
+Mutant 4: Negate conditional
+Null Returns: Return null instead of a map
+Mutant 5: Return null
+Empty Returns: Return an empty map
+Mutant 6: Return an empty map
+False Returns: Change logic to return an empty map with a false-like structure
+Mutant 7: Return false-like collections
+True Returns: Alter logic to increment to a certain fixed value
+Mutant 8: Always return 1
+"
+AbstractStringMatcher.java,"This will effectively skip matchings if len is 0
+Negate conditionals operator applied here
+Inverted conditional
+This will return total matches
+Modified return behavior
+Inverted conditional
+Conditionals Boundary applied (swapped > with <)
+Condition change
+Negate Conditionals applied (comparison inverted)
+Invert comparison
+This means a match fails
+Return length if matches succeed (not hit)
+Default return for failure
+Conditionals Boundary applied (swapped > with <)
+Negate Conditionals applied
+Invert comparison
+This means a match fails
+Only reaches here if all checks pass
+Negate Conditionals applied (comparison inverted)
+Inverted logic
+Negate Conditionals applied (comparison inverted)
+Inverted logic
+This can be seen as a return mutation, if used in further implementations
+Return an unexpected value
+False Return mutation, return a specific false case
+Inverted logic for searching
+Same as above
+Conditionals Boundary: condition change to return an incorrect match
+This would mean it 'matches' anything
+Same as above
+Size remains the same
+Inverted comparison on boundary
+Same as above
+Size remains the same
+"
+SinglePassTranslator.java,"Change the condition to less than zero
+"
+IntersectionResult.java,"Conditionals Boundary mutation: changed ""<"" to ""<=""
+Conditionals Boundary mutation: changed ""<"" to ""<=""
+Invert Negatives mutation: changing ""|| intersection < 0 || intersection > ..."" to ""&& !(intersection >= 0 && intersection <= ...)""
+Increments mutation: added 1 to intersection
+Negate Conditionals mutation: changed ""&&"" to ""||""
+Increments mutation: subtracted 1 from intersection
+Math mutation: multiplied sizeA by 2
+Math mutation: multiplied sizeB by 2
+Math mutation: negated intersection
+Null Returns mutation: changed to return null
+Added an additional method for Void Method Calls mutation
+Original method does nothing I/O; now also does nothing
+Void Method Calls mutation: explicitly returning from a void method
+"
+IllegalArgumentExceptions.java,"Mutation: Conditionals Boundary - not applicable here as there are no conditionals
+Mutation: Increments - not applicable here as there are no increments
+Mutation: Math - not applicable here as no math operations present
+Mutation: Negate Conditionals - not applicable here as there are no conditionals
+Mutation: Void Method Calls - None present in original code
+Mutation: Invert Negatives - changing from IllegalArgumentException to NullPointerException
+Mutation applied
+Mutation: Return Values - changing the return type to a custom Exception
+Mutation applied
+Mutation: Empty Returns - adding return with no value
+Mutation applied (not valid but for demonstration purpose)
+Mutation: False Returns - forcing a false return
+Not a valid return, just for demonstration
+Mutation: True Returns - forcing a true return
+Not a valid return, just for demonstration
+Mutation: Null Returns - Returning null instead of IllegalArgumentException
+Mutation applied
+Mutation: Primitive Returns - This wouldn't work as must return IllegalArgumentException
+Mutation applied
+"
+ConstantStringLookup.java,""
+NumericEntityEscaper.java,"Mutated using Conditionals Boundary operator
+Incremented codePoint
+Mutated using Conditionals Boundary operator
+Decremented codePoint
+Mutated using Negate Conditionals operator
+Negated between
+Mutated using Negate Conditionals operator
+Negated outside
+Mutated using Primitive Returns operator
+Changed default parameters
+Mutated using Empty Returns operator
+Mutated using Conditionals Boundary operator
+Inverted condition and incremented codePoint
+Mutated using Return Values operator (return true instead of false)
+Removed the return value
+"
+CaseUtils.java,"Mutated: Return a different string if input is empty (False Return)
+False return
+Conditionals Boundary mutation
+Invert Negatives mutation
+Negate Conditionals mutation
+Negate Conditionals mutation
+Change from false to true to test different flow
+Negate Conditionals mutation
+Added a Void Method Call mutation
+Empty Return mutation
+Return empty string
+Null Return mutation
+Return null
+True Return mutation
+Return string representation of true
+False Return mutation
+Return string representation of false
+"
+AbstractStringLookup.java,"Changed to return null if str is empty
+"
+FunctionStringLookup.java,"Mutation: changed == null to != null
+return statement moved outside the if condition
+"
+DefaultStringLookup.java,""
+StringEscapeUtils.java,"No change
+Mutant for the escape method using Negate Conditionals
+Changed to check for non-empty input
+Condition inverted
+Increment mutation
+Math mutation
+No mutation
+No mutation
+Generating false mutation with Escape Calls
+Math mutation
+Changed last number
+Negate Conditionals mutation by adding a different synthetic character
+Emulating a change in expected behavior
+Changed from ""&#11;"" to increase the values' intensity
+Increase complexity changes by making a small mutation
+Replacing \\ to ""@"" conditionally
+Increase complexity by function alteration but maintaining structure
+Primitive returns simulation for the escape methods
+"
+LevenshteinDistance.java,"Invert Negatives: Changed IllegalArgumentException message to ""Inputs must not be null""
+Conditionals Boundary and Negate Conditionals: Changed < to <=
+Conditionals Boundary: Changed <= to <
+Conditionals Boundary: Changed <= to <
+Invert comparison: Changed > to <
+Increments and Conditionals Boundary: Changed > to >=
+Negate Conditionals: Changed > to >=
+Conditionals Boundary: Changed <= to <
+False Returns: Returning -1 regardless of the situation
+Invert Negatives: Message modification
+Math operation modification: This could potentially return 0.
+Math operation modification: This could potentially return 0.
+Invert comparison
+Return Values: Cost is always 0 or 2
+Change to Primitive Returns: Returned type is now int instead of Integer
+Conditionals Boundary and Negate Conditionals
+Invert Negatives and Void Method Calls: Now includes a delete.
+"
+JaccardDistance.java,""
+RegexTokenizer.java,"Negated condition
+Changed to new CharSequence[0]
+"
+CompositeFormat.java,"Mutated: Instead of returning formatter.format, return an empty StringBuffer
+Alternatively, we could return null: return null; // Uncomment for Null Return Mutation
+Empty return instead of actual formatting
+Mutated: returning null instead of this.formatter
+Null Return Mutation
+Mutated: also returning null for parser
+Null Return Mutation
+Mutated: return a default object instead of calling parser
+Alternatively, we could return null: return null; // Uncomment for Null Return Mutation
+Return a default object instead of actual parsing
+Mutated: return false instead of actual formatting
+Alternatively, we could throw a customized ParseException here for mutation
+Null Return Mutation
+"
+ParsedDecimal.java,""
+BiStringLookup.java,""
+UrlDecoderStringLookup.java,"Inverted the condition in method decode
+Math mutation changing the encoding to UTF-16
+Negated the conditional from 'if (key == null)' to 'if (key != null)'
+Changed return value to null
+Return the key instead of null
+Added a void method call (but empty)
+No operation
+Changed to return a false literal at the method that handles exception
+Always returns false
+Primitive returns example
+Returns the length of the string
+Used Null Returns
+Always returns null
+Used True Returns
+Always returns true
+Used False Returns
+Always returns false
+Added a void method returning a value
+An example of a void method actually returning something
+"
+CharSequenceTranslator.java,"Inverted condition
+changed return outside
+Negated condition
+Inverted condition
+Empty return
+Boundary condition altered
+Negated condition
+Negated Boolean logic
+"
+UnicodeEscaper.java,"Changed 0 to -1
+Increment by 1
+Decrement and increment
+Increment high
+Decrement max value
+Increment above
+Changed < to <= and > to >=
+Negated conditions
+Inverted the condition
+Changed from true to false
+"
+HammingDistance.java,"Changed || to &&
+Changed != to <
+"
+FormatFactory.java,"Mutation for Null Returns
+"
+StrMatcher.java,"Invert Negatives
+Negate Conditionals
+False Returns
+Conditionals Boundary
+Invert Negatives
+Randomly change Return Values for mutation
+Negate Conditionals
+Change to NoMatcher
+Increments
+Negate Conditionals
+Null Returns
+Null Returns
+Increments
+"
+WordUtils.java,"Change to >= 0
+Inverted condition
+Changed return value
+Changed to >=
+Changed to str.length() - 1
+Inverted condition
+Changed to str.length() + 1
+Added a redundant condition
+Changed Math.min to Math.max
+Changed return to an empty string
+Changed return value
+Changed new size to strLen + 1
+Negated condition
+Changed to toUpperCase
+Changed return to an empty string
+Changed return value
+Changed to toUpperCase
+Negated conditions
+Changed to isNotBlank
+Changed matches to find
+Changed return value from false to true
+Changed to return false always
+Changed to > 1 for condition
+Incremented start from 1
+Changed to true always
+Changed return value
+Inverted conditions
+Changed size to strLen + 1
+Changed to false
+Negated condition
+Changed to return an empty string
+Changed to return true always
+Changed to return false always
+Changed to return an empty string
+Changed size to strLen + 1
+Changed to false
+Negated condition
+Changed to return null
+Changed to return an empty string
+Changed to return str without any modification
+Changed newLineStr to empty string
+Changed to return an empty string
+Changed return value to empty string
+Hard-coded new line
+Changed to <= 0
+Arbitrary new minimum wrap length
+Negated condition
+Changed wrapOn to comma
+Changed to return original string
+"
+ReplacementsFinder.java,"Increments operator could change this to skipped = 1;
+Void Method Calls: store a call to an unused local variable
+mute warning to reflect a void call
+Conditionals Boundary: could change to skipped >= 1
+Negate Conditionals: This block represents the inverse logic of the original
+Return Values: could return 0 instead of continuing normally
+New method to demonstrate mutation; could be used for testing different return types
+Null Returns mutation applied
+Example of using Empty Returns mutation
+Even if it's already void, this indicates intent to return without action
+Addition of a simple true/false method for testing purposes
+True Returns mutation applied
+False Returns mutation applied
+Increments operator: change to ++skipped to see if it affects anything
+This doesn't reflect original functionality but demonstrates mutation
+"
+StringTokenizer.java,"Mutated
+Mutated
+Mutated, changed from incrementing to decrementing
+Mutated to empty string instead of null
+Inverted condition
+Changed from throwing an error to returning null
+Changed return value to always return null
+Changed from < to >=
+Changed from > to <=
+Inversion of condition
+Inversion of return statement
+Changed to decrement token position
+Kept as is
+Kept as is
+Changed to decrement token position
+Changed to return a default token string instead of null
+Changed to increment and operate
+Altered return value
+Changed to increment and operate
+Changed to return a default string instead of null
+Changed to min instead of max
+Inverted conditions
+Changed return value for empty case
+Changed from > to <
+Unchanged; but can cause incorrect behavior
+Changed from > to <
+Inverted quoting boolean initialization
+Changed increment to decrement
+Changed increment to decrement
+Inverted condition
+Unchanged; but can cause incorrect behavior
+Changed from > to <
+Changed increment to decrement
+Inverted condition
+Inverted condition
+Changed the behavior
+Changed return
+Changed reset behavior
+Altered size return
+Changed behavior
+Inverted condition
+Changed from empty list to a list with empty string
+"
+ObjectSimilarityScore.java,""
+CosineSimilarity.java,"Mutated: Changed return value from Double to null
+Mutated: Changed message in exception
+Mutated: Inverted power operation
+Changed from 2 to 3
+Mutated: Inverted power operation
+Changed from 2 to 3
+Mutated: Changed condition to d1 < 0.0
+Changed from <= to <
+Mutated: False return
+Changed from returning cosineSimilarity to returning null
+Mutated: Changed multiplication to subtraction
+Changed + to -
+Mutated: Added logic to return an empty set
+Mutated: Empty Returns
+"
+SimilarityInput.java,"Changing the return type to return an empty value
+Switching the thrown exception for test
+Altering the exception message
+Inverting Conditionals for the method input
+Negate Conditionals
+throw new IllegalArgumentException(Objects.requireNonNull(input, ""input"").getClass().getName()); // Return Values
+Null Returns
+Primitive Returns
+Void Method Calls, throwing instead of returning
+return 1; // For True Returns mutation
+False Returns
+"
+package-info.java,""
+OctalUnescaper.java,"Modified from <= '3' to < '3'
+Boundary modified, removed -1
+"
+DoubleFormat.java,"No mutation done here
+No mutation here
+False Return Mutation
+Negate Conditionals Mutation
+Condition is inverted
+Condition is inverted
+Mutation to return a different string instead of nan
+Math Mutation
+Condition Boundary Mutation
+No mutation done here
+No mutation done here
+No mutation done here
+Return Value Mutation (this can return null as a property of different symbols for testing)
+Mutation to demonstrate null return
+No mutation here
+Increments Mutation (from Integer.MIN_VALUE to Integer.MAX_VALUE)
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+Mutation: add a print statement here to visualize the call
+Negate Conditionals Mutation
+Reversed condition
+No mutation here
+Mutation: changing to allow empty strings
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+No mutation here
+Invert Negatives and Negate Conditionals
+No mutation here
+True Return mutation
+Mutation to demonstrate alternate return value
+"
+IntersectionSimilarity.java,"Added boundary condition
+Changed to >=
+Changed to <=
+Changed to <=
+"
+JavaPlatformStringLookup.java,"Potentially redundant output for debugging
+Mutant using a false return for testing
+Inverted conditional
+Inverted conditional
+Mutated return value
+Mutated to always return a null instead of throwing an exception
+Changed to return null
+Changed to return null for null key
+"
+CharacterPredicate.java,""
+RandomStringGenerator.java,"Conditionals Boundary: changed default length to 1
+Conditionals Boundary: changed default min code point to 1
+Negate Conditionals: not changed
+Negate Conditionals: not changed
+Increment: before was index <=
+Math: changed to +1
+Null Returns: changed to return null
+Invert Negatives: changed < to >=
+Negate Conditionals: changed to if matchedFilter
+Conditionals Boundary: changed != to ==
+True Returns: changed < to >= 1
+Math: changed to +1
+Math: changed to minInclusive + 1
+Increment: changed to 1
+"
+XmlEncoderStringLookup.java,"boundary condition for null key
+"
+JavaUnicodeEscaper.java,"Increment used
+Decrement used
+Negate condition
+Negate condition
+Increment and decrement
+Introducing a false return condition
+Negate Condition
+Null return example
+Additional method with a false return for demonstration
+Always return false
+Another method that always returns true
+Always return true
+Empty return method example
+Empty return
+"
+StringMatcher.java,"Primitive Returns mutation
+Inverted argument in isMatch method to simulate Negate Conditionals and Conditionals Boundary
+Conditionals Boundary
+Original unchanged but could be altered in real implementation
+Negate Condtionals and Empty Returns
+Conditionals Boundary
+Inverted to use the length method of CharSequence
+Invert Negatives
+Return Values mutation by changing the default implementation
+Return a different size
+Returning null values
+Null Returns
+"
+UrlEncoderStringLookup.java,"Mutation: Negate Conditionals
+Mutation: Math operator change
+Added extra text to alter return value
+Mutation: Invert Negatives
+Inverted the null check
+Change the return value to null
+Mutation: Return Values (Change encoding to a different charset)
+Changed encoding to a different value
+Mutation: Void Method Calls
+Mutation: False Returns
+Added logging instead of throwing exception
+Maintain original throw
+"
+StringSubstitutorReader.java,"Negate Conditionals: Creating a new StringSubstitutor here can be mutated to just using the passed stringSubstitutor
+Original
+this.stringSubstitutor = stringSubstitutor; // Mutant
+Conditionals Boundary: Here, changing EOS to 0 in the condition for eos
+Original
+eos = (actualReadCount == 0); // Mutant
+Increments: In the next line we will increment toDrain instead of decrement.
+Original
+if (buffer.isEmpty() || toDrain <= 0) { // Mutant
+Invert Negatives: Change the return check for matching
+return stringMatcher.isMatch(buffer, pos) == stringMatcher.size(); // Mutant
+Original
+Negate Conditionals: Changed the condition to negative
+return 0; // Mutant
+Return Values : Changed the return value to a false value
+return 0; // Mutant
+return 0; // Mutant
+Change to return a false value
+return 1; // Mutant
+Change to return a true value
+return 0; // Mutant
+Change this to empty return
+return -1; // Mutant
+Null Return: Change to return null
+return -2; // Mutant
+Change to return true
+Conditionals Boundary: Modify to make it always true
+balance = 0; // Mutant
+return actual; // Mutant
+Primitive Returns: Change to return a primitive type
+return targetLengthIn + 1; // Mutant
+False Returns: Alter return to false
+Return Values: Mutate the return value to fail
+return count - avail; // Mutant
+Return Value changed to true
+"
+UnicodeUnescaper.java,"Negate Conditionals
+Empty Return
+Conditionals Boundary modified
+Condition change
+Boundary condition altered
+Primitive Returns (modify return type)
+Math operator change
+Increment addition
+Increment return value
+False Returns mutation
+"
+SimilarityScoreFrom.java,"Conditionals Boundary Mutation
+"
+InterpolatorStringLookup.java,"Conditionals Boundary
+Increments (change to entrySet().stream().count())
+Return Values (changed from null to a String)
+Invert Negatives
+Negate Conditionals
+False Returns
+"
+TextStringBuilder.java,"Mutant: No operation performed on close
+No mutation here
+No mutation here
+Mutant: Incorrect validation conditions
+No mutation here
+No mutation here
+No mutation
+No mutation here
+No mutation
+No mutation
+Mutant: Using simple addition instead of Math.addExact
+No mutation
+No mutation
+Mutant: No operation performed on close
+Mutant: No operation performed on flush
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+Mutated: Adding 1 to the return value
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+Mutant: negating the logic
+Mutated: Inverted Negatives
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+Mutant: Incorrect startIndex validation conditions
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+Mutant: Incorrect startIndex validation conditions
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+Mutant: Incorrect conditional checks
+No mutation
+Mutant: Added an unnecessary check
+No mutation
+No mutation
+Mutant: added an unnecessary check
+No mutation
+No mutation
+Mutant: an unnecessary check
+No mutation
+No mutation
+No mutation
+No mutation
+Mutant: an unnecessary condition check
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+Mutant: Incorrect startIndex validation conditions
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+Mutant: Incorrect startIndex validation conditions
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+Mutant: Incorrect startIndex validation conditions
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+Mutant: Incorrect startIndex validation conditions
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+No mutation
+"
+AbstractPathFencedLookup.java,"Mutated using Conditionals Boundary to return an empty list instead for null checks
+Introduced False Returns mutation - changed the return value to false
+Negate the conditionals to check if fences is NOT empty
+Inverting the negation of present check and returning the path directly
+Primitive Returns mutation - changing the thrown exception to return null
+Negated conditional for the error message
+"
+FuzzyScore.java,"Inverted the conditional boundary
+"
+FormattableUtils.java,"No mutation here
+Conditionals Boundary mutation (changed <= to <)
+No mutation
+No mutation here (as precision checks are not mutated)
+No mutation here
+Math mutation could be here, but not changed
+No mutation here
+No mutation here
+No mutation here
+No mutation
+Inverted Negatives:
+No mutation here
+"
+LongestCommonSubsequence.java,""
+Tokenizer.java,""
+PropertiesStringLookup.java,"Mutation: Negate conditionals operator
+No change here
+Mutation: Invert Negatives operator (if null then return a non-null value)
+Modify the return for the null check
+Mutation: Conditionals Boundary operator
+Change from < to <=
+Mutation: Return Values operator (changing return value)
+If property is null, return a default value
+Mutation: Negate Conditionals operator (changing original exception message)
+"
+StrSubstitutor.java,"Inverted the condition
+This makes the method incorrectly handle cyclical substitution.
+Return ""DEFAULT_VALUE"" instead of null to test behavior on not-null instead.
+Same modification applied.
+Remain unchanged.
+Instead of null, return empty string to observe behavior.
+Change to return empty string instead of null.
+Change to return empty string instead of null.
+Change to return empty string instead of null.
+Negated to if the condition is false.
+Incorrectly returns original string if substitution was successful.
+Change to return empty string instead of null.
+Change to return empty string instead of null.
+Change to return empty string instead of null.
+Return true instead of false when input is null.
+Return true instead of false when input is null.
+Return true instead of false when input is null.
+Return true instead of false when input is null.
+Incorrectly returns true instead of false when substitution fails.
+Return true instead of false when input is null.
+Return true instead of false when input is null.
+Incorrectly returns true instead of false when substitution fails.
+Instead of null, return empty string to handle null variable case.
+Unlike the original, allow for correctness validation to fail due to ; returned value comparison change.
+Changed to allow non-detection of change due to altered return condition allowing it to process flows differently.
+"
+ScriptStringLookup.java,"Changed != to <=
+"
+StrLookup.java,"Return a default value instead of null
+Negate the condition
+Always return null instead of the value
+Added an additional condition and negated it
+Return null for any empty or 'unset' keys
+Change the key by adding a suffix
+Return a message instead of null in case of exception
+Mutate to an empty map
+Return SYSTEM_PROPERTIES_LOOKUP instead of NONE_LOOKUP
+"
+ReplacementsHandler.java,""
+StringLookupFactory.java,"Inverted Negatives: changed BASE64_DECODER equals comparison to false
+Changed BASE64_DECODER to a different lookup, simulating a wrong addition
+Removed one duplicate addition to test conditionals
+Changing the returned map to negate conditionals
+Negate Conditionals: inverted the logic for adding lookups
+Negated condition here
+Changed exception message
+Changed singleton instance to return null for tests
+Condition boundary changes (typo in ""dns"" to ""dnas"")
+Typos for keys to simulate false usage
+Mocking clear method for a false test
+ConstantStringLookup.clear();  // Commented out for testing purposes
+Conditional change: changed toUpperCase
+Changing the return values and adding primitive checks
+Test for null return
+Return value change
+Return value change
+No mutation here to keep this method's deprecation checks
+No mutation to observe BiFunction behavior
+Example of void method calls
+Accessing possibly missed conditions
+Null returns for testing
+Added erroneous conditional changes to test correctness
+Returning null conditionally
+No mutation here to check
+Changed to true
+Changed method implementation for simulated faults
+Possible misspelling handling
+Explicit null returns
+Returning instance wrongly
+Return values checks
+"
+EditDistance.java,""
+TextRandomProvider.java,""
+CsvTranslators.java,"Conditionals Boundary: Change the condition to include an extra character check
+Negate Conditionals: Negate the condition
+False Returns: Change the return in this block to a false scenario
+Added false return as a mutation example
+Math operator: Change from ',' to ';'
+"
+DnsStringLookup.java,"Negated condition
+added empty return to the encapsulated logic
+"
+InetAddressStringLookup.java,"Conditionals Boundary: Modified LOCAL_HOST and LOOPACK_ADDRESS instantiation
+Invert Negatives: negating the throw statement to handle the throw differently
+Using a primitive return mutation to switch the result based on certain conditions
+Negate Conditionals: Changed null check response to return ""definitely not null""
+Math: Altered the result by appending a mathematical operation
+This is an example of altering the output
+Empty Returns: Changed IllegalArgumentException to a simple return
+Instead of throwing an exception
+False Returns: Instead of returning null, return ""unknown"" string to simulate failure case
+"
+FileStringLookup.java,"Changed ""<"" to ""<=""
+"
+BiFunctionStringLookup.java,"Changed from null to empty string (Conditionals Boundary)
+Changed from null to empty string
+Changed default return value from null to ""default""
+"
+AlphabetConverter.java,"Inverted condition (Invert Negatives)
+Negated return value (Return Values)
+Increment mutation
+Negated condition (Negate Conditionals)
+Negate the condition for encodedLetterLength check (Invert Negatives)
+Increment mutation for size check (Increments)
+Changed condition (Conditional Boundary)
+Increment for converted array (Increments)
+Increment mutation for encodedLetterLength (Increments)
+Increment mutation in the length check (Increments)
+Change to less than or equal (Negate Conditionals)
+Negated condition check (Invert Negatives)
+Null return mutation (Null Returns)
+Negated equality condition (Negate Conditionals)
+Negate check (Invert Negatives)
+Removing this line will create an infinite loop (Void Method Calls)
+Changed return value (Primitive Returns)
+Null return mutation (Null Returns)
+False return mutation (False Returns)
+Remove or modify sb.append() will affect functionality (Void Method Calls)
+Check for null (Null Returns)
+Changed to return true instead of false (Return Values)
+Changed to return false instead of true (Return Values)
+Changed operator (Invert Negatives)
+Increment the return value (Increments)
+Empty return mutation (Empty Returns)
+Add a modification to the string output (Primitive Returns)
+"
+StringsComparator.java,"Mutation: Added +1
+"
+JaccardSimilarity.java,"Boundary condition mutated.
+Boundary condition mutated.
+"
+EntityArrays.java,"Other static blocks remain the same, omitting other mutants for brevity...
+Removed some entries to create a boundary condition
+Removed other initialMap elements intentionally to test boundary conditions
+"
+CosineDistance.java,""
+JaroWinklerDistance.java,""
+CommandVisitor.java,""
+KeepCommand.java,""
+StringSubstitutor.java,""
+Builder.java,""
+LevenshteinDetailedDistance.java,"Negate conditionals applied (e.g., negate checks)
+Increments applied (e.g., increment counts)
+Increment subCount by 2 as a mutation
+Return a false value if null for testing purposes
+Incremented values
+Incremented values
+Changed method to check without getting value
+Return a primitive value mutation
+Changed cost calculation
+Return a null to test the handling of null values
+"
+UrlStringLookup.java,"Increments: changing length boundary check
+Conditionals Boundary: changing the null check condition
+Inverted check
+Return Values mutation
+Incremented by 1
+Negate Conditionals: flipping the check from < 2 to >= 2
+Negated condition
+Void Method Calls: adding a call to a method that does nothing
+Math: changing the reading condition to -2
+Changed to -2
+This is a no-op method call in this context
+True Returns: forcing a true return for some condition - basically forcing to return a string
+condition is never false
+returning empty string instead of content
+Empty Returns: in case of exception, returning an empty string
+Alternatively, could also choose to return null
+return null;
+Changed to return empty string upon exception
+A no-op method for demonstration of Void Method Calls mutation
+No operation
+"
+CharacterPredicates.java,"Invert Negatives
+Conditionals Boundary
+Conditionals Boundary increment adjustment
+Conditionals Boundary increment adjustment
+Conditionals Boundary increment adjustment
+Negate Conditionals
+Negate Conditionals
+"
+DeleteCommand.java,""
+StringMatcherFactory.java,"Conditionals Boundary: Changed from == 0 to <= 0
+Negate Conditionals: Changed from == 1 to != 1
+Negate Conditionals: Changed from == 1 to != 1
+Inverted conditions
+Invert Negatives
+"
+SimilarityCharacterInput.java,"Negated the condition (Invert Negatives)
+Incremented index
+Negated the return value
+Negated the condition
+Changed != to ==
+True return
+Negated equals check
+Incremented hashCode
+Decremented the length
+Null Return
+"
+StrTokenizer.java,"Conditionals Boundary mutant
+Conditionals Boundary mutant
+Conditionals Boundary mutant
+Conditionals Boundary mutant
+Negate Conditionals mutant
+Mutant: trivial return
+Void Method Calls mutant
+Math mutant: setting tok to null
+Primitive Returns mutant
+Changed to return ""No Content""
+Return Value mutant
+Conditionals Boundary mutant
+Conditionals Boundary mutant
+Invert Negatives mutant
+Changed to return null if last token
+False Returns mutant
+Changed to return tokenPos + 1
+Null Returns mutant
+Primitive Returns mutant
+Changed value
+Null Returns mutant
+Negate Conditionals mutant
+Might break now when no more space is available
+Negate Conditionals mutant
+Void Method Calls mutant
+Math mutant: different matcher
+Conditionals Boundary mutant
+Conditionals Boundary mutant
+Increments mutant
+Changed list to contain empty string
+Math mutant: convert to string
+"
+ExtendedMessageFormat.java,"Increments
+Negate Conditionals
+Changed condition
+Increments for decrement
+Negate Conditionals
+Negate Conditionals
+Negate Conditionals
+Change increment
+True returns
+Invert Negatives
+True returns
+True returns
+True returns
+True returns
+True returns
+Negate Conditionals
+return null
+Null Returns
+Math
+Math
+Negate Conditionals
+Empty Returns
+Added Null check
+Changed Math
+Primitive Returns
+"
+DateStringLookup.java,"Inverted conditional
+Incremented dateMillis
+Incremented current time
+"
+XmlStringLookup.java,"Mutation: conditionals boundary
+Changed initialization condition from DEFAULT_FEATURES to a map with more elements
+Mutation: Invert Negatives - changing the condition to not require non-null
+Mutation: Negate Conditionals - replaced null check with a check for non-null
+Mutation: Empty Returns, always return null if key is non-null
+Mutation: Conditionals Boundary - changed not equal to a greater than or equal
+Mutation: Math - Change to always return an empty string
+Mutation: True Returns, while always returning an empty string
+Mutation: Change Exception to a Null Return
+"
+LevenshteinResults.java,""

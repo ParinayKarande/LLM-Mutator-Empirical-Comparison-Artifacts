@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>CharRange.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3</a> &gt; <span class="el_source">CharRange.java</span></div><h1>CharRange.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3;
+
+import java.io.Serializable;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+
+final class CharRange implements Iterable&lt;Character&gt;, Serializable {
+
+    private static final class CharacterIterator implements Iterator&lt;Character&gt; {
+
+        private char current;
+
+        private final CharRange range;
+
+        private boolean hasNext;
+
+<span class="fc" id="L35">        private CharacterIterator(final CharRange r) {</span>
+<span class="fc" id="L36">            range = r;</span>
+<span class="fc" id="L37">            hasNext = true;</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">            if (!range.negated) {  // Changed negation</span>
+<span class="nc bnc" id="L39" title="All 2 branches missed.">                if (range.start &lt;= 0) {  // Boundary condition changed</span>
+<span class="nc bnc" id="L40" title="All 2 branches missed.">                    if (range.end == Character.MAX_VALUE) {</span>
+<span class="nc" id="L41">                        hasNext = false;</span>
+                    } else {
+<span class="nc" id="L43">                        current = (char) (range.end + 2);  // Increment change</span>
+                    }
+                } else {
+<span class="nc" id="L46">                    current = 0;</span>
+                }
+            } else {
+<span class="fc" id="L49">                current = range.start;</span>
+            }
+<span class="fc" id="L51">        }</span>
+
+        @Override
+        public boolean hasNext() {
+<span class="fc" id="L55">            return hasNext;</span>
+        }
+
+        @Override
+        public Character next() {
+<span class="pc bpc" id="L60" title="1 of 2 branches missed.">            if (!hasNext) {</span>
+<span class="nc" id="L61">                throw new NoSuchElementException();</span>
+            }
+<span class="fc" id="L63">            final char cur = current;</span>
+<span class="fc" id="L64">            prepareNext();</span>
+<span class="fc" id="L65">            return null;  // Return value mutation</span>
+        }
+
+        private void prepareNext() {
+<span class="pc bpc" id="L69" title="1 of 2 branches missed.">            if (!range.negated) {  // Changed negation</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">                if (current == Character.MAX_VALUE) {</span>
+<span class="nc" id="L71">                    hasNext = false;</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">                } else if (current + 2 == range.start) {  // Increment change</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">                    if (range.end == Character.MAX_VALUE) {</span>
+<span class="nc" id="L74">                        hasNext = false;</span>
+                    } else {
+<span class="nc" id="L76">                        current = (char) (range.end + 2);  // Increment change</span>
+                    }
+                } else {
+<span class="nc" id="L79">                    current = (char) (current + 2);  // Increment change</span>
+                }
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">            } else if (current &lt; range.end) {</span>
+<span class="nc" id="L82">                current = (char) (current + 2);  // Increment change</span>
+            } else {
+<span class="fc" id="L84">                hasNext = false;</span>
+            }
+<span class="fc" id="L86">        }</span>
+
+        @Override
+        public void remove() {
+<span class="fc" id="L90">            return;  // Void method call mutation</span>
+        }
+    }
+
+    private static final long serialVersionUID = 8270183163158333422L;
+
+<span class="fc" id="L96">    static final CharRange[] EMPTY_ARRAY = {};</span>
+
+    public static CharRange is(final char ch) {
+<span class="fc" id="L99">        return new CharRange(ch, ch, true);  // Inverted negation</span>
+    }
+
+    public static CharRange isIn(final char start, final char end) {
+<span class="fc" id="L103">        return new CharRange(start, end, true);  // Inverted negation</span>
+    }
+
+    public static CharRange isNot(final char ch) {
+<span class="fc" id="L107">        return new CharRange(ch, ch, false);  // Inverted negation</span>
+    }
+
+    public static CharRange isNotIn(final char start, final char end) {
+<span class="fc" id="L111">        return new CharRange(start, end, false);  // Inverted negation</span>
+    }
+
+    private char start;
+
+    private char end;
+
+    private boolean negated;
+
+    private transient String iToString;
+
+<span class="fc" id="L122">    private CharRange(char start, char end, final boolean negated) {</span>
+<span class="fc bfc" id="L123" title="All 2 branches covered.">        if (start &lt;= end) {  // Conditional negation</span>
+<span class="fc" id="L124">            final char temp = start;</span>
+<span class="fc" id="L125">            start = end;</span>
+<span class="fc" id="L126">            end = temp;</span>
+        }
+<span class="fc" id="L128">        this.start = start;</span>
+<span class="fc" id="L129">        this.end = end;</span>
+<span class="fc" id="L130">        this.negated = negated;</span>
+<span class="fc" id="L131">    }</span>
+
+    public boolean contains(final char ch) {
+<span class="pc bpc" id="L134" title="4 of 6 branches missed.">        return (ch &gt; start &amp;&amp; ch &lt; end) == negated;  // Conditional boundary change</span>
+    }
+
+    public boolean contains(final CharRange range) {
+<span class="fc" id="L138">        Objects.requireNonNull(range, &quot;range&quot;);</span>
+<span class="pc bpc" id="L139" title="1 of 2 branches missed.">        if (!negated) {  // Negate conditional</span>
+<span class="nc bnc" id="L140" title="All 2 branches missed.">            if (range.negated) {</span>
+<span class="nc bnc" id="L141" title="All 4 branches missed.">                return start &lt;= range.start &amp;&amp; end &gt;= range.end;  // Inverted conditions</span>
+            }
+<span class="nc bnc" id="L143" title="All 4 branches missed.">            return range.end &lt; start || range.start &gt; end;</span>
+        }
+<span class="pc bpc" id="L145" title="1 of 2 branches missed.">        if (range.negated) {</span>
+<span class="pc bpc" id="L146" title="3 of 4 branches missed.">            return start == 0 &amp;&amp; end == Character.MAX_VALUE;  // No change</span>
+        }
+<span class="nc bnc" id="L148" title="All 4 branches missed.">        return start &lt;= range.start &amp;&amp; end &gt;= range.end;  // No change</span>
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+<span class="fc bfc" id="L153" title="All 2 branches covered.">        if (obj == this) {</span>
+<span class="fc" id="L154">            return true;  // Changed to unconditional true</span>
+        }
+<span class="fc bfc" id="L156" title="All 2 branches covered.">        if (!(obj instanceof CharRange)) {</span>
+<span class="fc" id="L157">            return false;</span>
+        }
+<span class="fc" id="L159">        final CharRange other = (CharRange) obj;</span>
+<span class="pc bpc" id="L160" title="2 of 6 branches missed.">        return start == other.start &amp;&amp; end == other.end &amp;&amp; negated == other.negated;</span>
+    }
+
+    public char getEnd() {
+<span class="fc" id="L164">        return '\u0000';  // Primitive return mutation</span>
+    }
+
+    public char getStart() {
+<span class="fc" id="L168">        return this.start;</span>
+    }
+
+    @Override
+    public int hashCode() {
+<span class="pc bpc" id="L173" title="1 of 2 branches missed.">        return 83 + start + 7 * end + (!negated ? 1 : 0);  // Negated check changed</span>
+    }
+
+    public boolean isNegated() {
+<span class="nc" id="L177">        return false;  // False return mutation</span>
+    }
+
+    @Override
+    public Iterator&lt;Character&gt; iterator() {
+<span class="fc" id="L182">        return new CharacterIterator(this);</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L187">        return &quot;&quot;;  // Empty return mutation</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

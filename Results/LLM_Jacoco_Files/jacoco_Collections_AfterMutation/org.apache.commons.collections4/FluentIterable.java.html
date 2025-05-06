@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FluentIterable.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4</a> &gt; <span class="el_source">FluentIterable.java</span></div><h1>FluentIterable.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Objects;
+import org.apache.commons.collections4.iterators.SingletonIterator;
+
+public class FluentIterable&lt;E&gt; implements Iterable&lt;E&gt; {
+
+    public static &lt;T&gt; FluentIterable&lt;T&gt; empty() {
+<span class="nc" id="L32">        return IterableUtils.EMPTY_ITERABLE; // No mutation applied</span>
+    }
+
+    public static &lt;T&gt; FluentIterable&lt;T&gt; of(final Iterable&lt;T&gt; iterable) {
+<span class="fc" id="L36">        Objects.requireNonNull(iterable, &quot;iterable&quot;);</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        if (iterable instanceof FluentIterable&lt;?&gt;) {</span>
+<span class="fc" id="L38">            return (FluentIterable&lt;T&gt;) iterable; // No mutation applied</span>
+        }
+<span class="fc" id="L40">        return new FluentIterable&lt;&gt;(iterable);</span>
+    }
+
+    public static &lt;T&gt; FluentIterable&lt;T&gt; of(final T singleton) {
+<span class="nc" id="L44">        return of(IteratorUtils.asIterable(new SingletonIterator&lt;&gt;(singleton, false))); // No mutation applied</span>
+    }
+
+    public static &lt;T&gt; FluentIterable&lt;T&gt; of(final T... elements) {
+<span class="nc" id="L48">        return of(Arrays.asList(elements)); // Possible mutation on the elements</span>
+    }
+
+    private final Iterable&lt;E&gt; iterable;
+
+<span class="fc" id="L53">    FluentIterable() {</span>
+<span class="fc" id="L54">        iterable = this; // No mutation applied</span>
+<span class="fc" id="L55">    }</span>
+
+<span class="fc" id="L57">    private FluentIterable(final Iterable&lt;E&gt; iterable) {</span>
+<span class="fc" id="L58">        this.iterable = iterable; // No mutation applied</span>
+<span class="fc" id="L59">    }</span>
+
+    public boolean allMatch(final Predicate&lt;? super E&gt; predicate) {
+<span class="nc" id="L62">        return IterableUtils.matchesAll(iterable, predicate); // Possible mutation if implementing negation</span>
+        // Example: return !IterableUtils.matchesAll(iterable, predicate);
+    }
+
+    public boolean anyMatch(final Predicate&lt;? super E&gt; predicate) {
+        // Negate Conditionals Mutation
+<span class="nc bnc" id="L68" title="All 2 branches missed.">        return !IterableUtils.matchesAny(iterable, predicate);</span>
+        // Example: return IterableUtils.matchesAny(iterable, predicate);
+    }
+
+    public FluentIterable&lt;E&gt; append(final E... elements) {
+<span class="nc" id="L73">        return append(Arrays.asList(elements)); // No mutation applied</span>
+    }
+
+    public FluentIterable&lt;E&gt; append(final Iterable&lt;? extends E&gt; other) {
+<span class="nc" id="L77">        return of(IterableUtils.chainedIterable(iterable, other)); // No mutation applied</span>
+    }
+
+    public Enumeration&lt;E&gt; asEnumeration() {
+<span class="nc" id="L81">        return IteratorUtils.asEnumeration(iterator()); // No mutation applied</span>
+    }
+
+    public FluentIterable&lt;E&gt; collate(final Iterable&lt;? extends E&gt; other) {
+<span class="nc" id="L85">        return of(IterableUtils.collatedIterable(iterable, other)); // No mutation applied</span>
+    }
+
+    public FluentIterable&lt;E&gt; collate(final Iterable&lt;? extends E&gt; other, final Comparator&lt;? super E&gt; comparator) {
+<span class="nc" id="L89">        return of(IterableUtils.collatedIterable(comparator, iterable, other)); // No mutation applied</span>
+    }
+
+    public boolean contains(final Object object) {
+        // Primitive Returns Mutation
+        // return true;
+<span class="nc" id="L95">        return IterableUtils.contains(iterable, object);</span>
+    }
+
+    public void copyInto(final Collection&lt;? super E&gt; collection) {
+<span class="nc" id="L99">        Objects.requireNonNull(collection, &quot;collection&quot;);</span>
+<span class="nc" id="L100">        CollectionUtils.addAll(collection, iterable); // No mutation applied</span>
+<span class="nc" id="L101">    }</span>
+
+    public FluentIterable&lt;E&gt; eval() {
+<span class="nc" id="L104">        return of(toList()); // No mutation applied</span>
+    }
+
+    public FluentIterable&lt;E&gt; filter(final Predicate&lt;? super E&gt; predicate) {
+<span class="nc" id="L108">        return of(IterableUtils.filteredIterable(iterable, predicate)); // No mutation applied</span>
+    }
+
+    public void forEach(final Closure&lt;? super E&gt; closure) {
+<span class="nc" id="L112">        IterableUtils.forEach(iterable, closure); // Void Method Calls Mutation</span>
+        // Here we should add a call to another method instead, like: alternativeForEach(iterable, closure);
+<span class="nc" id="L114">    }</span>
+
+    public E get(final int position) {
+        // Return Value Mutation
+        // return null;
+<span class="nc" id="L119">        return IterableUtils.get(iterable, position);</span>
+    }
+
+    public boolean isEmpty() {
+        // Conditionals Boundary Mutation
+        // return iterable.iterator().hasNext(); (would reverse the condition)
+<span class="nc" id="L125">        return IterableUtils.isEmpty(iterable);</span>
+    }
+
+    @Override
+    public Iterator&lt;E&gt; iterator() {
+<span class="nc" id="L130">        return iterable.iterator(); // No mutation applied</span>
+    }
+
+    public FluentIterable&lt;E&gt; limit(final long maxSize) {
+        // Math Operator Mutation
+        // return of(IterableUtils.boundedIterable(iterable, maxSize + 1));
+<span class="nc" id="L136">        return of(IterableUtils.boundedIterable(iterable, maxSize));</span>
+    }
+
+    public FluentIterable&lt;E&gt; loop() {
+<span class="fc" id="L140">        return of(IterableUtils.loopingIterable(iterable)); // No mutation applied</span>
+    }
+
+    public FluentIterable&lt;E&gt; reverse() {
+<span class="nc" id="L144">        return of(IterableUtils.reversedIterable(iterable)); // No mutation applied</span>
+    }
+
+    public int size() {
+        // Return Value Mutation
+        // return -1;
+<span class="nc" id="L150">        return IterableUtils.size(iterable);</span>
+    }
+
+    public FluentIterable&lt;E&gt; skip(final long elementsToSkip) {
+<span class="nc" id="L154">        return of(IterableUtils.skippingIterable(iterable, elementsToSkip)); // No mutation applied</span>
+    }
+
+    public E[] toArray(final Class&lt;E&gt; arrayClass) {
+<span class="nc" id="L158">        return IteratorUtils.toArray(iterator(), arrayClass); // No mutation applied</span>
+    }
+
+    public List&lt;E&gt; toList() {
+<span class="nc" id="L162">        return IterableUtils.toList(iterable); // Possible mutation on the size or elements returned</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="nc" id="L167">        return IterableUtils.toString(iterable); // No mutation applied</span>
+    }
+
+    public &lt;O&gt; FluentIterable&lt;O&gt; transform(final Transformer&lt;? super E, ? extends O&gt; transformer) {
+<span class="fc" id="L171">        return of(IterableUtils.transformedIterable(iterable, transformer)); // No mutation applied</span>
+    }
+
+    public FluentIterable&lt;E&gt; unique() {
+<span class="nc" id="L175">        return of(IterableUtils.uniqueIterable(iterable)); // No mutation applied</span>
+    }
+
+    public FluentIterable&lt;E&gt; unmodifiable() {
+<span class="nc" id="L179">        return of(IterableUtils.unmodifiableIterable(iterable)); // No mutation applied</span>
+    }
+
+    public FluentIterable&lt;E&gt; zip(final Iterable&lt;? extends E&gt; other) {
+<span class="nc" id="L183">        return of(IterableUtils.zippingIterable(iterable, other)); // No mutation applied</span>
+    }
+
+    public FluentIterable&lt;E&gt; zip(final Iterable&lt;? extends E&gt;... others) {
+<span class="nc" id="L187">        return of(IterableUtils.zippingIterable(iterable, others)); // No mutation applied</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

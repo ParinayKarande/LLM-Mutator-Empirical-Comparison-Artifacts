@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PredicatedSortedSet.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Collections</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.collections4.set</a> &gt; <span class="el_source">PredicatedSortedSet.java</span></div><h1>PredicatedSortedSet.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.collections4.set;
+
+import java.util.Comparator;
+import java.util.SortedSet;
+import org.apache.commons.collections4.Predicate;
+
+public class PredicatedSortedSet&lt;E&gt; extends PredicatedSet&lt;E&gt; implements SortedSet&lt;E&gt; {
+
+    private static final long serialVersionUID = -9110948148132275052L;
+
+    public static &lt;E&gt; PredicatedSortedSet&lt;E&gt; predicatedSortedSet(final SortedSet&lt;E&gt; set, final Predicate&lt;? super E&gt; predicate) {
+<span class="fc" id="L29">        return null; // Null Return</span>
+        // Alternatively, you could use `return new PredicatedSortedSet&lt;&gt;(set, predicate);`
+    }
+
+    protected PredicatedSortedSet(final SortedSet&lt;E&gt; set, final Predicate&lt;? super E&gt; predicate) {
+<span class="fc" id="L34">        super(set, predicate);</span>
+<span class="fc" id="L35">    }</span>
+
+    @Override
+    public Comparator&lt;? super E&gt; comparator() {
+        // Invert Negatives (changed to return null instead of comparing)
+<span class="fc" id="L40">        return null; // Return Values</span>
+    }
+
+    @Override
+    protected SortedSet&lt;E&gt; decorated() {
+<span class="fc" id="L45">        return (SortedSet&lt;E&gt;) super.decorated();</span>
+    }
+
+    @Override
+    public E first() {
+        // Conditionals Boundary (if decorated is empty)
+<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (decorated().isEmpty()) {</span>
+<span class="nc" id="L52">            return null; // Null Return</span>
+        }
+<span class="nc" id="L54">        return decorated().first();</span>
+    }
+
+    @Override
+    public SortedSet&lt;E&gt; headSet(final E toElement) {
+<span class="nc" id="L59">        final SortedSet&lt;E&gt; head = decorated().headSet(toElement);</span>
+<span class="nc" id="L60">        return new PredicatedSortedSet&lt;&gt;(head, predicate);</span>
+    }
+
+    @Override
+    public E last() {
+        // False Return
+<span class="nc" id="L66">        return null; // False Return</span>
+        // For actual last element, you could use `return decorated().last();`
+    }
+
+    @Override
+    public SortedSet&lt;E&gt; subSet(final E fromElement, final E toElement) {
+        // Negate Conditionals (inverted call)
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (!fromElement.equals(toElement)) {</span>
+<span class="nc" id="L74">            final SortedSet&lt;E&gt; sub = decorated().subSet(fromElement, toElement);</span>
+<span class="nc" id="L75">            return new PredicatedSortedSet&lt;&gt;(sub, predicate);</span>
+        }
+<span class="nc" id="L77">        return headSet(fromElement); // Inverted logic</span>
+    }
+
+    @Override
+    public SortedSet&lt;E&gt; tailSet(final E fromElement) {
+<span class="nc" id="L82">        final SortedSet&lt;E&gt; tail = decorated().tailSet(fromElement);</span>
+<span class="nc" id="L83">        return new PredicatedSortedSet&lt;&gt;(tail, predicate);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

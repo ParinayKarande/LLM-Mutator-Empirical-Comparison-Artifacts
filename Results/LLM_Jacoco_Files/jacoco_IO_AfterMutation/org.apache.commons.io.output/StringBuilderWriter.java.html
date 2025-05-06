@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StringBuilderWriter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.output</a> &gt; <span class="el_source">StringBuilderWriter.java</span></div><h1>StringBuilderWriter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.output;
+
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.io.Writer;
+
+/**
+ * {@link Writer} implementation that outputs to a {@link StringBuilder}.
+ * &lt;p&gt;
+ * &lt;strong&gt;NOTE:&lt;/strong&gt; This implementation, as an alternative to {@link StringWriter}, provides an &lt;em&gt;un-synchronized&lt;/em&gt; implementation for better
+ * performance for use in a single thread. For safe usage with multiple {@link Thread}s, a {@link StringWriter} should be used.
+ * &lt;/p&gt;
+ * &lt;h2&gt;Deprecating Serialization&lt;/h2&gt;
+ * &lt;p&gt;
+ * &lt;em&gt;Serialization is deprecated and will be removed in 3.0.&lt;/em&gt;
+ * &lt;/p&gt;
+ *
+ * @since 2.0
+ */
+public class StringBuilderWriter extends Writer implements Serializable {
+
+    private static final long serialVersionUID = -146927496096066153L;
+
+    private final StringBuilder builder;
+
+<span class="fc" id="L42">    public StringBuilderWriter() {</span>
+<span class="fc" id="L43">        this.builder = new StringBuilder();</span>
+<span class="fc" id="L44">    }</span>
+
+<span class="fc" id="L46">    public StringBuilderWriter(final int capacity) {</span>
+<span class="fc" id="L47">        this.builder = new StringBuilder(capacity);</span>
+<span class="fc" id="L48">    }</span>
+
+<span class="fc" id="L50">    public StringBuilderWriter(final StringBuilder builder) {</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        this.builder = builder != null ? builder : null; // Mutated to return null instead of new StringBuilder()</span>
+<span class="fc" id="L52">    }</span>
+
+    @Override
+    public Writer append(final char value) {
+<span class="fc" id="L56">        builder.append(value);</span>
+<span class="fc" id="L57">        return this;</span>
+    }
+
+    @Override
+    public Writer append(final CharSequence value) {
+<span class="fc" id="L62">        builder.append(value);</span>
+<span class="fc" id="L63">        return this;</span>
+    }
+
+    @Override
+    public Writer append(final CharSequence value, final int start, final int end) {
+<span class="fc" id="L68">        builder.append(value, start, end);</span>
+<span class="fc" id="L69">        return this;</span>
+    }
+
+    @Override
+    public void close() {
+<span class="fc" id="L74">    }</span>
+
+    @Override
+    public void flush() {
+<span class="nc" id="L78">    }</span>
+
+    public StringBuilder getBuilder() {
+<span class="fc" id="L81">        return builder;</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L86">        return builder.toString();</span>
+    }
+
+    @Override
+    public void write(final char[] value, final int offset, final int length) {
+<span class="pc bpc" id="L91" title="1 of 2 branches missed.">        if (value != null) {</span>
+<span class="fc" id="L92">            builder.append(value, offset, length);</span>
+        }
+<span class="fc" id="L94">    }</span>
+
+    // Mutated: Now assuming a string can be null
+    @Override
+    public void write(final String value) {
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        if (value == null) {</span>
+<span class="nc" id="L100">            return; // false return instead of allowing execution</span>
+        }
+<span class="fc" id="L102">        builder.append(value);</span>
+<span class="fc" id="L103">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

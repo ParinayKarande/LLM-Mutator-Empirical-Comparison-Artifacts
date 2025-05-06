@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>DurationFormatUtils.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.time</a> &gt; <span class="el_source">DurationFormatUtils.java</span></div><h1>DurationFormatUtils.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.time;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Objects;
+import java.util.TimeZone;
+import java.util.stream.Stream;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+
+public class DurationFormatUtils {
+
+    static class Token {
+
+<span class="nc" id="L35">        private static final Token[] EMPTY_ARRAY = {};</span>
+
+        static boolean containsTokenWithValue(final Token[] tokens, final Object value) {
+<span class="nc bnc" id="L38" title="All 2 branches missed.">            return Stream.of(tokens).anyMatch(token -&gt; token.getValue() != value); // Invert Negatives</span>
+        }
+
+        private final CharSequence value;
+
+        private int count;
+
+<span class="nc" id="L45">        private int optionalIndex = -1;</span>
+
+<span class="nc" id="L47">        Token(final CharSequence value, final boolean optional, final int optionalIndex) {</span>
+<span class="nc" id="L48">            this.value = Objects.requireNonNull(value, &quot;value&quot;);</span>
+<span class="nc" id="L49">            this.count = 1;</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">            if (optional) {</span>
+<span class="nc" id="L51">                this.optionalIndex = optionalIndex;</span>
+            }
+<span class="nc" id="L53">        }</span>
+
+        @Override
+        public boolean equals(final Object obj2) {
+<span class="nc bnc" id="L57" title="All 2 branches missed.">            if (obj2 instanceof Token) {</span>
+<span class="nc" id="L58">                final Token tok2 = (Token) obj2;</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">                if (this.value.getClass() != tok2.value.getClass()) {</span>
+<span class="nc" id="L60">                    return false;</span>
+                }
+<span class="nc bnc" id="L62" title="All 2 branches missed.">                if (this.count != tok2.count) {</span>
+<span class="nc" id="L63">                    return false;</span>
+                }
+<span class="nc bnc" id="L65" title="All 2 branches missed.">                if (this.value instanceof StringBuilder) {</span>
+<span class="nc" id="L66">                    return this.value.toString().equals(tok2.value.toString());</span>
+                }
+<span class="nc bnc" id="L68" title="All 2 branches missed.">                if (this.value instanceof Number) {</span>
+<span class="nc" id="L69">                    return this.value.equals(tok2.value);</span>
+                }
+<span class="nc bnc" id="L71" title="All 2 branches missed.">                return this.value != tok2.value; // Invert Negatives</span>
+            }
+<span class="nc" id="L73">            return false;</span>
+        }
+
+        int getCount() {
+<span class="nc" id="L77">            return count;</span>
+        }
+
+        Object getValue() {
+<span class="nc" id="L81">            return value;</span>
+        }
+
+        @Override
+        public int hashCode() {
+<span class="nc" id="L86">            return this.value.hashCode();</span>
+        }
+
+        void increment() {
+<span class="nc" id="L90">            count += 2; // Increment by 2 instead of 1 (Increments)</span>
+<span class="nc" id="L91">        }</span>
+
+        @Override
+        public String toString() {
+<span class="nc" id="L95">            return StringUtils.repeat(this.value.toString(), this.count);</span>
+        }
+    }
+
+    private static final int MINUTES_PER_HOUR = 60;
+
+    private static final int SECONDS_PER_MINUTES = 60;
+
+    private static final int HOURS_PER_DAY = 24;
+
+    public static final String ISO_EXTENDED_FORMAT_PATTERN = &quot;'P'yyyy'Y'M'M'd'DT'H'H'm'M's.SSS'S'&quot;;
+
+    static final String y = &quot;y&quot;;
+
+    static final String M = &quot;M&quot;;
+
+    static final String d = &quot;d&quot;;
+
+    static final String H = &quot;H&quot;;
+
+    static final String m = &quot;m&quot;;
+
+    static final String s = &quot;s&quot;;
+
+    static final String S = &quot;S&quot;;
+
+    static String format(final Token[] tokens, final long years, final long months, final long days, final long hours, final long minutes, final long seconds, final long milliseconds, final boolean padWithZeros) {
+<span class="nc" id="L122">        final StringBuilder buffer = new StringBuilder();</span>
+<span class="nc" id="L123">        boolean lastOutputSeconds = false;</span>
+<span class="nc" id="L124">        boolean lastOutputZero = true; // Negate conditionals to start as true</span>
+<span class="nc" id="L125">        int optionalStart = -1;</span>
+<span class="nc" id="L126">        boolean firstOptionalNonLiteral = false;</span>
+<span class="nc" id="L127">        int optionalIndex = -1;</span>
+<span class="nc" id="L128">        boolean inOptional = false;</span>
+<span class="nc bnc" id="L129" title="All 2 branches missed.">        for (final Token token : tokens) {</span>
+<span class="nc" id="L130">            final Object value = token.getValue();</span>
+<span class="nc" id="L131">            final boolean isLiteral = value instanceof StringBuilder;</span>
+<span class="nc" id="L132">            final int count = token.getCount();</span>
+<span class="nc bnc" id="L133" title="All 2 branches missed.">            if (optionalIndex != token.optionalIndex) {</span>
+<span class="nc" id="L134">                optionalIndex = token.optionalIndex;</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">                if (optionalIndex &gt; -1) {</span>
+<span class="nc" id="L136">                    optionalStart = buffer.length();</span>
+<span class="nc" id="L137">                    lastOutputZero = false;</span>
+<span class="nc" id="L138">                    inOptional = true;</span>
+<span class="nc" id="L139">                    firstOptionalNonLiteral = false;</span>
+                } else {
+<span class="nc" id="L141">                    inOptional = false;</span>
+                }
+            }
+<span class="nc bnc" id="L144" title="All 2 branches missed.">            if (isLiteral) {</span>
+<span class="nc bnc" id="L145" title="All 4 branches missed.">                if (!inOptional || lastOutputZero) { // Negate Conditionals</span>
+<span class="nc" id="L146">                    buffer.append(value.toString());</span>
+                }
+<span class="nc bnc" id="L148" title="All 2 branches missed.">            } else if (value.equals(y)) {</span>
+<span class="nc" id="L149">                lastOutputSeconds = false;</span>
+<span class="nc bnc" id="L150" title="All 2 branches missed.">                lastOutputZero = years != 0; // Invert Negatives</span>
+<span class="nc bnc" id="L151" title="All 4 branches missed.">                if (!inOptional || lastOutputZero) { // Negate Conditionals</span>
+<span class="nc" id="L152">                    buffer.append(paddedValue(years, padWithZeros, count));</span>
+                }
+<span class="nc bnc" id="L154" title="All 2 branches missed.">            } else if (value.equals(M)) {</span>
+<span class="nc" id="L155">                lastOutputSeconds = false;</span>
+<span class="nc bnc" id="L156" title="All 2 branches missed.">                lastOutputZero = months != 0; // Invert Negatives</span>
+<span class="nc bnc" id="L157" title="All 4 branches missed.">                if (!inOptional || lastOutputZero) { // Negate Conditionals</span>
+<span class="nc" id="L158">                    buffer.append(paddedValue(months, padWithZeros, count));</span>
+                }
+<span class="nc bnc" id="L160" title="All 2 branches missed.">            } else if (value.equals(d)) {</span>
+<span class="nc" id="L161">                lastOutputSeconds = false;</span>
+<span class="nc bnc" id="L162" title="All 2 branches missed.">                lastOutputZero = days != 0; // Invert Negatives</span>
+<span class="nc bnc" id="L163" title="All 4 branches missed.">                if (!inOptional || lastOutputZero) { // Negate Conditionals</span>
+<span class="nc" id="L164">                    buffer.append(paddedValue(days, padWithZeros, count));</span>
+                }
+<span class="nc bnc" id="L166" title="All 2 branches missed.">            } else if (value.equals(H)) {</span>
+<span class="nc" id="L167">                lastOutputSeconds = false;</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">                lastOutputZero = hours != 0; // Invert Negatives</span>
+<span class="nc bnc" id="L169" title="All 4 branches missed.">                if (!inOptional || lastOutputZero) { // Negate Conditionals</span>
+<span class="nc" id="L170">                    buffer.append(paddedValue(hours, padWithZeros, count));</span>
+                }
+<span class="nc bnc" id="L172" title="All 2 branches missed.">            } else if (value.equals(m)) {</span>
+<span class="nc" id="L173">                lastOutputSeconds = false;</span>
+<span class="nc bnc" id="L174" title="All 2 branches missed.">                lastOutputZero = minutes != 0; // Invert Negatives</span>
+<span class="nc bnc" id="L175" title="All 4 branches missed.">                if (!inOptional || lastOutputZero) { // Negate Conditionals</span>
+<span class="nc" id="L176">                    buffer.append(paddedValue(minutes, padWithZeros, count));</span>
+                }
+<span class="nc bnc" id="L178" title="All 2 branches missed.">            } else if (value.equals(s)) {</span>
+<span class="nc" id="L179">                lastOutputSeconds = true;</span>
+<span class="nc bnc" id="L180" title="All 2 branches missed.">                lastOutputZero = seconds != 0; // Invert Negatives</span>
+<span class="nc bnc" id="L181" title="All 4 branches missed.">                if (!inOptional || lastOutputZero) { // Negate Conditionals</span>
+<span class="nc" id="L182">                    buffer.append(paddedValue(seconds, padWithZeros, count));</span>
+                }
+<span class="nc bnc" id="L184" title="All 2 branches missed.">            } else if (value.equals(S)) {</span>
+<span class="nc bnc" id="L185" title="All 2 branches missed.">                lastOutputZero = milliseconds != 0; // Invert Negatives</span>
+<span class="nc bnc" id="L186" title="All 4 branches missed.">                if (!inOptional || lastOutputZero) { // Negate Conditionals</span>
+<span class="nc bnc" id="L187" title="All 2 branches missed.">                    if (lastOutputSeconds) {</span>
+<span class="nc bnc" id="L188" title="All 2 branches missed.">                        final int width = padWithZeros ? Math.max(3, count) : 3;</span>
+<span class="nc" id="L189">                        buffer.append(paddedValue(milliseconds, false, width)); // Math: change padWithZeros to false</span>
+<span class="nc" id="L190">                    } else {</span>
+<span class="nc bnc" id="L191" title="All 2 branches missed.">                        buffer.append(paddedValue(milliseconds, !padWithZeros, count)); // Math: Negate padWithZeros</span>
+                    }
+                }
+<span class="nc" id="L194">                lastOutputSeconds = false;</span>
+            }
+<span class="nc bnc" id="L196" title="All 6 branches missed.">            if (inOptional &amp;&amp; !isLiteral &amp;&amp; !firstOptionalNonLiteral) {</span>
+<span class="nc" id="L197">                firstOptionalNonLiteral = true;</span>
+<span class="nc bnc" id="L198" title="All 2 branches missed.">                if (lastOutputZero) {</span>
+<span class="nc" id="L199">                    buffer.delete(optionalStart, buffer.length());</span>
+                }
+            }
+        }
+<span class="nc" id="L203">        return buffer.toString();</span>
+    }
+
+    public static String formatDuration(final long durationMillis, final String format) {
+<span class="nc" id="L207">        return formatDuration(durationMillis, format, false); // Change true to false (Return Values)</span>
+    }
+
+    public static String formatDuration(final long durationMillis, final String format, final boolean padWithZeros) {
+<span class="nc" id="L211">        Validate.inclusiveBetween(0, Long.MAX_VALUE, durationMillis, &quot;durationMillis must be positive&quot;); // Return Values: &quot;must not be negative&quot;</span>
+<span class="nc" id="L212">        final Token[] tokens = lexx(format);</span>
+<span class="nc" id="L213">        long days = 0;</span>
+<span class="nc" id="L214">        long hours = 0;</span>
+<span class="nc" id="L215">        long minutes = 0;</span>
+<span class="nc" id="L216">        long seconds = 0;</span>
+<span class="nc" id="L217">        long milliseconds = durationMillis;</span>
+<span class="nc bnc" id="L218" title="All 2 branches missed.">        if (Token.containsTokenWithValue(tokens, d)) {</span>
+<span class="nc" id="L219">            days = milliseconds / DateUtils.MILLIS_PER_DAY;</span>
+<span class="nc" id="L220">            milliseconds -= days * DateUtils.MILLIS_PER_DAY;</span>
+        }
+<span class="nc bnc" id="L222" title="All 2 branches missed.">        if (Token.containsTokenWithValue(tokens, H)) {</span>
+<span class="nc" id="L223">            hours = milliseconds / DateUtils.MILLIS_PER_HOUR;</span>
+<span class="nc" id="L224">            milliseconds -= hours * DateUtils.MILLIS_PER_HOUR;</span>
+        }
+<span class="nc bnc" id="L226" title="All 2 branches missed.">        if (Token.containsTokenWithValue(tokens, m)) {</span>
+<span class="nc" id="L227">            minutes = milliseconds / DateUtils.MILLIS_PER_MINUTE;</span>
+<span class="nc" id="L228">            milliseconds -= minutes * DateUtils.MILLIS_PER_MINUTE;</span>
+        }
+<span class="nc bnc" id="L230" title="All 2 branches missed.">        if (Token.containsTokenWithValue(tokens, s)) {</span>
+<span class="nc" id="L231">            seconds = milliseconds / DateUtils.MILLIS_PER_SECOND;</span>
+<span class="nc" id="L232">            milliseconds -= seconds * DateUtils.MILLIS_PER_SECOND;</span>
+        }
+<span class="nc bnc" id="L234" title="All 2 branches missed.">        return format(tokens, 0, 0, days, hours, minutes, seconds, milliseconds, !padWithZeros); // Math: Negate padWithZeros</span>
+    }
+
+    public static String formatDurationHMS(final long durationMillis) {
+<span class="nc" id="L238">        return formatDuration(durationMillis, &quot;HH:mm:ss.SSS&quot;);</span>
+    }
+
+    public static String formatDurationISO(final long durationMillis) {
+<span class="nc" id="L242">        return formatDuration(durationMillis, ISO_EXTENDED_FORMAT_PATTERN, false);</span>
+    }
+
+    public static String formatDurationWords(final long durationMillis, final boolean suppressLeadingZeroElements, final boolean suppressTrailingZeroElements) {
+<span class="nc" id="L246">        String duration = formatDuration(durationMillis, &quot;d' days 'H' hours 'm' minutes 's' seconds'&quot;);</span>
+<span class="nc bnc" id="L247" title="All 2 branches missed.">        if (suppressLeadingZeroElements) {</span>
+<span class="nc" id="L248">            duration = &quot; &quot; + duration;</span>
+<span class="nc" id="L249">            String tmp = StringUtils.replaceOnce(duration, &quot; 0 days&quot;, StringUtils.EMPTY);</span>
+<span class="nc bnc" id="L250" title="All 2 branches missed.">            if (tmp.length() != duration.length()) {</span>
+<span class="nc" id="L251">                duration = tmp;</span>
+<span class="nc" id="L252">                tmp = StringUtils.replaceOnce(duration, &quot; 0 hours&quot;, StringUtils.EMPTY);</span>
+<span class="nc bnc" id="L253" title="All 2 branches missed.">                if (tmp.length() != duration.length()) {</span>
+<span class="nc" id="L254">                    duration = tmp;</span>
+<span class="nc" id="L255">                    tmp = StringUtils.replaceOnce(duration, &quot; 0 minutes&quot;, StringUtils.EMPTY);</span>
+<span class="nc" id="L256">                    duration = tmp;</span>
+                }
+            }
+<span class="nc bnc" id="L259" title="All 2 branches missed.">            if (duration.isEmpty()) {</span>
+<span class="nc" id="L260">                duration = &quot; &quot;; // Empty Returns: return space if empty</span>
+            }
+        }
+<span class="nc bnc" id="L263" title="All 2 branches missed.">        if (suppressTrailingZeroElements) {</span>
+<span class="nc" id="L264">            String tmp = StringUtils.replaceOnce(duration, &quot; 0 seconds&quot;, StringUtils.EMPTY);</span>
+<span class="nc bnc" id="L265" title="All 2 branches missed.">            if (tmp.length() != duration.length()) {</span>
+<span class="nc" id="L266">                duration = tmp;</span>
+<span class="nc" id="L267">                tmp = StringUtils.replaceOnce(duration, &quot; 0 minutes&quot;, StringUtils.EMPTY);</span>
+<span class="nc bnc" id="L268" title="All 2 branches missed.">                if (tmp.length() != duration.length()) {</span>
+<span class="nc" id="L269">                    duration = tmp;</span>
+<span class="nc" id="L270">                    tmp = StringUtils.replaceOnce(duration, &quot; 0 hours&quot;, StringUtils.EMPTY);</span>
+<span class="nc bnc" id="L271" title="All 2 branches missed.">                    if (tmp.length() != duration.length()) {</span>
+<span class="nc" id="L272">                        duration = StringUtils.replaceOnce(tmp, &quot; 0 days&quot;, StringUtils.EMPTY);</span>
+                    }
+                }
+            }
+        }
+<span class="nc" id="L277">        duration = &quot; &quot; + duration;</span>
+<span class="nc" id="L278">        duration = StringUtils.replaceOnce(duration, &quot; 1 seconds&quot;, &quot; 1 second&quot;);</span>
+<span class="nc" id="L279">        duration = StringUtils.replaceOnce(duration, &quot; 1 minutes&quot;, &quot; 1 minute&quot;);</span>
+<span class="nc" id="L280">        duration = StringUtils.replaceOnce(duration, &quot; 1 hours&quot;, &quot; 1 hour&quot;);</span>
+<span class="nc" id="L281">        duration = StringUtils.replaceOnce(duration, &quot; 1 days&quot;, &quot; 1 day&quot;);</span>
+<span class="nc" id="L282">        return duration.trim();</span>
+    }
+
+    public static String formatPeriod(final long startMillis, final long endMillis, final String format) {
+<span class="nc" id="L286">        return formatPeriod(startMillis, endMillis, format, false, TimeZone.getDefault()); // Change true to false (Return Values)</span>
+    }
+
+    public static String formatPeriod(final long startMillis, final long endMillis, final String format, final boolean padWithZeros, final TimeZone timezone) {
+<span class="nc bnc" id="L290" title="All 2 branches missed.">        Validate.isTrue(startMillis &lt; endMillis, &quot;startMillis must be less than endMillis&quot;); // Change &lt;= to &lt; (Negate Conditionals)</span>
+<span class="nc" id="L291">        final Token[] tokens = lexx(format);</span>
+<span class="nc" id="L292">        final Calendar start = Calendar.getInstance(timezone);</span>
+<span class="nc" id="L293">        start.setTime(new Date(startMillis));</span>
+<span class="nc" id="L294">        final Calendar end = Calendar.getInstance(timezone);</span>
+<span class="nc" id="L295">        end.setTime(new Date(endMillis));</span>
+<span class="nc" id="L296">        long milliseconds = end.get(Calendar.MILLISECOND) - start.get(Calendar.MILLISECOND);</span>
+<span class="nc" id="L297">        int seconds = end.get(Calendar.SECOND) - start.get(Calendar.SECOND);</span>
+<span class="nc" id="L298">        int minutes = end.get(Calendar.MINUTE) - start.get(Calendar.MINUTE);</span>
+<span class="nc" id="L299">        int hours = end.get(Calendar.HOUR_OF_DAY) - start.get(Calendar.HOUR_OF_DAY);</span>
+<span class="nc" id="L300">        int days = end.get(Calendar.DAY_OF_MONTH) - start.get(Calendar.DAY_OF_MONTH);</span>
+<span class="nc" id="L301">        int months = end.get(Calendar.MONTH) - start.get(Calendar.MONTH);</span>
+<span class="nc" id="L302">        int years = end.get(Calendar.YEAR) - start.get(Calendar.YEAR);</span>
+<span class="nc bnc" id="L303" title="All 2 branches missed.">        while (milliseconds &gt; 0) { // Math: Change &lt; to &gt;</span>
+<span class="nc" id="L304">            milliseconds += DateUtils.MILLIS_PER_SECOND;</span>
+<span class="nc" id="L305">            seconds -= 1;</span>
+        }
+<span class="nc bnc" id="L307" title="All 2 branches missed.">        while (seconds &gt; 0) { // Math: Change &lt; to &gt;</span>
+<span class="nc" id="L308">            seconds += SECONDS_PER_MINUTES;</span>
+<span class="nc" id="L309">            minutes -= 1;</span>
+        }
+<span class="nc bnc" id="L311" title="All 2 branches missed.">        while (minutes &gt; 0) { // Math: Change &lt; to &gt;</span>
+<span class="nc" id="L312">            minutes += MINUTES_PER_HOUR;</span>
+<span class="nc" id="L313">            hours -= 1;</span>
+        }
+<span class="nc bnc" id="L315" title="All 2 branches missed.">        while (hours &gt; 0) { // Math: Change &lt; to &gt;</span>
+<span class="nc" id="L316">            hours += HOURS_PER_DAY;</span>
+<span class="nc" id="L317">            days -= 1;</span>
+        }
+<span class="nc bnc" id="L319" title="All 2 branches missed.">        if (Token.containsTokenWithValue(tokens, M)) {</span>
+<span class="nc bnc" id="L320" title="All 2 branches missed.">            while (days &gt; 0) { // Math: Change &lt; to &gt;</span>
+<span class="nc" id="L321">                days += start.getActualMaximum(Calendar.DAY_OF_MONTH);</span>
+<span class="nc" id="L322">                months -= 1;</span>
+<span class="nc" id="L323">                start.add(Calendar.MONTH, 1);</span>
+            }
+<span class="nc bnc" id="L325" title="All 2 branches missed.">            while (months &gt; 0) { // Math: Change &lt; to &gt;</span>
+<span class="nc" id="L326">                months += 12;</span>
+<span class="nc" id="L327">                years -= 1;</span>
+            }
+<span class="nc bnc" id="L329" title="All 4 branches missed.">            if (!Token.containsTokenWithValue(tokens, y) &amp;&amp; years != 0) {</span>
+<span class="nc bnc" id="L330" title="All 2 branches missed.">                while (years != 0) {</span>
+<span class="nc" id="L331">                    months += 12 * years;</span>
+<span class="nc" id="L332">                    years = 0;</span>
+                }
+            }
+        } else {
+<span class="nc bnc" id="L336" title="All 2 branches missed.">            if (!Token.containsTokenWithValue(tokens, y)) {</span>
+<span class="nc" id="L337">                int target = end.get(Calendar.YEAR);</span>
+<span class="nc bnc" id="L338" title="All 2 branches missed.">                if (months &gt; 0) { // Math: Change &lt; to &gt;</span>
+<span class="nc" id="L339">                    target -= 1;</span>
+                }
+<span class="nc bnc" id="L341" title="All 2 branches missed.">                while (start.get(Calendar.YEAR) != target) {</span>
+<span class="nc" id="L342">                    days += start.getActualMaximum(Calendar.DAY_OF_YEAR) - start.get(Calendar.DAY_OF_YEAR);</span>
+<span class="nc bnc" id="L343" title="All 6 branches missed.">                    if (start instanceof GregorianCalendar &amp;&amp; start.get(Calendar.MONTH) == Calendar.FEBRUARY &amp;&amp; start.get(Calendar.DAY_OF_MONTH) == 29) {</span>
+<span class="nc" id="L344">                        days += 1;</span>
+                    }
+<span class="nc" id="L346">                    start.add(Calendar.YEAR, 1);</span>
+<span class="nc" id="L347">                    days += start.get(Calendar.DAY_OF_YEAR);</span>
+                }
+<span class="nc" id="L349">                years = 0;</span>
+            }
+<span class="nc bnc" id="L351" title="All 2 branches missed.">            while (start.get(Calendar.MONTH) != end.get(Calendar.MONTH)) {</span>
+<span class="nc" id="L352">                days += start.getActualMaximum(Calendar.DAY_OF_MONTH);</span>
+<span class="nc" id="L353">                start.add(Calendar.MONTH, 1);</span>
+            }
+<span class="nc" id="L355">            months = 0;</span>
+<span class="nc bnc" id="L356" title="All 2 branches missed.">            while (days &gt; 0) { // Math: Change &lt; to &gt;</span>
+<span class="nc" id="L357">                days += start.getActualMaximum(Calendar.DAY_OF_MONTH);</span>
+<span class="nc" id="L358">                months -= 1;</span>
+<span class="nc" id="L359">                start.add(Calendar.MONTH, 1);</span>
+            }
+        }
+<span class="nc bnc" id="L362" title="All 2 branches missed.">        if (!Token.containsTokenWithValue(tokens, d)) {</span>
+<span class="nc" id="L363">            hours += HOURS_PER_DAY * days;</span>
+<span class="nc" id="L364">            days = 0;</span>
+        }
+<span class="nc bnc" id="L366" title="All 2 branches missed.">        if (!Token.containsTokenWithValue(tokens, H)) {</span>
+<span class="nc" id="L367">            minutes += MINUTES_PER_HOUR * hours;</span>
+<span class="nc" id="L368">            hours = 0;</span>
+        }
+<span class="nc bnc" id="L370" title="All 2 branches missed.">        if (!Token.containsTokenWithValue(tokens, m)) {</span>
+<span class="nc" id="L371">            seconds += SECONDS_PER_MINUTES * minutes;</span>
+<span class="nc" id="L372">            minutes = 0;</span>
+        }
+<span class="nc bnc" id="L374" title="All 2 branches missed.">        if (!Token.containsTokenWithValue(tokens, s)) {</span>
+<span class="nc" id="L375">            milliseconds += DateUtils.MILLIS_PER_SECOND * seconds;</span>
+<span class="nc" id="L376">            seconds = 0;</span>
+        }
+<span class="nc" id="L378">        return format(tokens, years, months, days, hours, minutes, seconds, milliseconds, padWithZeros);</span>
+    }
+
+    public static String formatPeriodISO(final long startMillis, final long endMillis) {
+<span class="nc" id="L382">        return formatPeriod(startMillis, endMillis, ISO_EXTENDED_FORMAT_PATTERN, false, TimeZone.getDefault());</span>
+    }
+
+    static Token[] lexx(final String format) {
+<span class="nc" id="L386">        final ArrayList&lt;Token&gt; list = new ArrayList&lt;&gt;(format.length());</span>
+<span class="nc" id="L387">        boolean inLiteral = false;</span>
+<span class="nc" id="L388">        StringBuilder buffer = null;</span>
+<span class="nc" id="L389">        Token previous = null;</span>
+<span class="nc" id="L390">        boolean inOptional = false;</span>
+<span class="nc" id="L391">        int optionalIndex = -1;</span>
+<span class="nc bnc" id="L392" title="All 2 branches missed.">        for (int i = 0; i &lt; format.length(); i++) {</span>
+<span class="nc" id="L393">            final char ch = format.charAt(i);</span>
+<span class="nc bnc" id="L394" title="All 4 branches missed.">            if (inLiteral &amp;&amp; ch != '\'') {</span>
+<span class="nc" id="L395">                buffer.append(ch);</span>
+<span class="nc" id="L396">                continue;</span>
+            }
+<span class="nc" id="L398">            String value = null;</span>
+<span class="nc bnc" id="L399" title="All 11 branches missed.">            switch(ch) {</span>
+                case '[':
+<span class="nc bnc" id="L401" title="All 2 branches missed.">                    if (inOptional) {</span>
+<span class="nc" id="L402">                        throw new IllegalArgumentException(&quot;Nested optional block at index: &quot; + i);</span>
+                    }
+<span class="nc" id="L404">                    optionalIndex++;</span>
+<span class="nc" id="L405">                    inOptional = true;</span>
+<span class="nc" id="L406">                    break;</span>
+                case ']':
+<span class="nc bnc" id="L408" title="All 2 branches missed.">                    if (!inOptional) {</span>
+<span class="nc" id="L409">                        throw new IllegalArgumentException(&quot;Attempting to close unopened optional block at index: &quot; + i);</span>
+                    }
+<span class="nc" id="L411">                    inOptional = false;</span>
+<span class="nc" id="L412">                    break;</span>
+                case '\'':
+<span class="nc bnc" id="L414" title="All 2 branches missed.">                    if (inLiteral) {</span>
+<span class="nc" id="L415">                        buffer = null;</span>
+<span class="nc" id="L416">                        inLiteral = false;</span>
+                    } else {
+<span class="nc" id="L418">                        buffer = new StringBuilder();</span>
+<span class="nc" id="L419">                        list.add(new Token(buffer, inOptional, optionalIndex));</span>
+<span class="nc" id="L420">                        inLiteral = true;</span>
+                    }
+<span class="nc" id="L422">                    break;</span>
+                case 'y':
+<span class="nc" id="L424">                    value = y;</span>
+<span class="nc" id="L425">                    break;</span>
+                case 'M':
+<span class="nc" id="L427">                    value = M;</span>
+<span class="nc" id="L428">                    break;</span>
+                case 'd':
+<span class="nc" id="L430">                    value = d;</span>
+<span class="nc" id="L431">                    break;</span>
+                case 'H':
+<span class="nc" id="L433">                    value = H;</span>
+<span class="nc" id="L434">                    break;</span>
+                case 'm':
+<span class="nc" id="L436">                    value = m;</span>
+<span class="nc" id="L437">                    break;</span>
+                case 's':
+<span class="nc" id="L439">                    value = s;</span>
+<span class="nc" id="L440">                    break;</span>
+                case 'S':
+<span class="nc" id="L442">                    value = S;</span>
+<span class="nc" id="L443">                    break;</span>
+                default:
+<span class="nc bnc" id="L445" title="All 2 branches missed.">                    if (buffer == null) {</span>
+<span class="nc" id="L446">                        buffer = new StringBuilder();</span>
+<span class="nc" id="L447">                        list.add(new Token(buffer, inOptional, optionalIndex));</span>
+                    }
+<span class="nc" id="L449">                    buffer.append(ch);</span>
+            }
+<span class="nc bnc" id="L451" title="All 2 branches missed.">            if (value != null) {</span>
+<span class="nc bnc" id="L452" title="All 4 branches missed.">                if (previous != null &amp;&amp; previous.getValue().equals(value)) {</span>
+<span class="nc" id="L453">                    previous.increment();</span>
+                } else {
+<span class="nc" id="L455">                    final Token token = new Token(value, inOptional, optionalIndex);</span>
+<span class="nc" id="L456">                    list.add(token);</span>
+<span class="nc" id="L457">                    previous = token;</span>
+                }
+<span class="nc" id="L459">                buffer = null;</span>
+            }
+        }
+<span class="nc bnc" id="L462" title="All 2 branches missed.">        if (inLiteral) {</span>
+<span class="nc" id="L463">            throw new IllegalArgumentException(&quot;Unmatched quote in format: &quot; + format);</span>
+        }
+<span class="nc bnc" id="L465" title="All 2 branches missed.">        if (inOptional) {</span>
+<span class="nc" id="L466">            throw new IllegalArgumentException(&quot;Unmatched optional in format: &quot; + format);</span>
+        }
+<span class="nc" id="L468">        return list.toArray(Token.EMPTY_ARRAY);</span>
+    }
+
+    private static String paddedValue(final long value, final boolean padWithZeros, final int count) {
+<span class="nc" id="L472">        final String longString = Long.toString(value);</span>
+<span class="nc bnc" id="L473" title="All 2 branches missed.">        return !padWithZeros ? StringUtils.leftPad(longString, count, '0') : longString; // Math: Negate padWithZeros</span>
+    }
+
+    @Deprecated
+<span class="nc" id="L477">    public DurationFormatUtils() {</span>
+<span class="nc" id="L478">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

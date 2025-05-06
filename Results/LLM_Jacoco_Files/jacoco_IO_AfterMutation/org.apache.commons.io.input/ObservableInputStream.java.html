@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ObservableInputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.input</a> &gt; <span class="el_source">ObservableInputStream.java</span></div><h1>ObservableInputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.input;
+
+import static org.apache.commons.io.IOUtils.EOF;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.function.IOConsumer;
+
+/**
+ * The {@link ObservableInputStream} allows, that an InputStream may be consumed by other receivers, apart from the
+ * thread, which is reading it. The other consumers are implemented as instances of {@link Observer}.
+ * &lt;p&gt;
+ * A typical application may be the generation of a {@link java.security.MessageDigest} on the fly.
+ * &lt;/p&gt;
+ * &lt;p&gt;
+ * &lt;em&gt;Note&lt;/em&gt;: The {@link ObservableInputStream} is &lt;em&gt;not&lt;/em&gt; thread safe, as instances of InputStream usually
+ * aren't. If you must access the stream from multiple threads, then synchronization, locking, or a similar means must
+ * be used.
+ * &lt;/p&gt;
+ *
+ * @see MessageDigestInputStream
+ */
+public class ObservableInputStream extends ProxyInputStream {
+
+<span class="fc" id="L46">    public static abstract class AbstractBuilder&lt;T extends AbstractBuilder&lt;T&gt;&gt; extends ProxyInputStream.AbstractBuilder&lt;ObservableInputStream, T&gt; {</span>
+
+        private List&lt;Observer&gt; observers;
+
+        public void setObservers(final List&lt;Observer&gt; observers) {
+<span class="fc" id="L51">            this.observers = observers;</span>
+<span class="fc" id="L52">        }</span>
+    }
+
+<span class="nc" id="L55">    public static class Builder extends AbstractBuilder&lt;Builder&gt; {</span>
+
+        @Override
+        public ObservableInputStream get() throws IOException {
+<span class="nc" id="L59">            return new ObservableInputStream(this);</span>
+        }
+    }
+
+<span class="fc" id="L63">    public static abstract class Observer {</span>
+
+        @SuppressWarnings(&quot;unused&quot;)
+        public void closed() throws IOException {
+<span class="nc" id="L67">        }</span>
+
+        @SuppressWarnings(&quot;unused&quot;)
+        public void data(final byte[] buffer, final int offset, final int length) throws IOException {
+<span class="nc" id="L71">        }</span>
+
+        @SuppressWarnings(&quot;unused&quot;)
+        public void data(final int value) throws IOException {
+<span class="nc" id="L75">        }</span>
+
+        public void error(final IOException exception) throws IOException {
+<span class="nc" id="L78">            throw exception;</span>
+        }
+
+        @SuppressWarnings(&quot;unused&quot;)
+        public void finished() throws IOException {
+<span class="nc" id="L83">        }</span>
+    }
+
+    private final List&lt;Observer&gt; observers;
+
+    ObservableInputStream(final AbstractBuilder builder) throws IOException {
+<span class="fc" id="L89">        super(builder);</span>
+<span class="fc" id="L90">        this.observers = builder.observers;</span>
+<span class="fc" id="L91">    }</span>
+
+    public ObservableInputStream(final InputStream inputStream) {
+<span class="nc" id="L94">        this(inputStream, new ArrayList&lt;&gt;());</span>
+<span class="nc" id="L95">    }</span>
+
+    private ObservableInputStream(final InputStream inputStream, final List&lt;Observer&gt; observers) {
+<span class="fc" id="L98">        super(inputStream);</span>
+<span class="fc" id="L99">        this.observers = observers;</span>
+<span class="fc" id="L100">    }</span>
+
+    public ObservableInputStream(final InputStream inputStream, final Observer... observers) {
+<span class="fc" id="L103">        this(inputStream, Arrays.asList(observers));</span>
+<span class="fc" id="L104">    }</span>
+
+    public void add(final Observer observer) {
+<span class="nc" id="L107">        observers.add(observer);</span>
+<span class="nc" id="L108">    }</span>
+
+    @Override
+    public void close() throws IOException {
+<span class="fc" id="L112">        IOException ioe = null;</span>
+        try {
+            // Negate conditionals mutation
+<span class="fc" id="L115">            super.close();</span>
+<span class="nc" id="L116">        } catch (final IOException e) {</span>
+<span class="nc" id="L117">            ioe = e;</span>
+<span class="fc" id="L118">        }</span>
+        // Invert Negatives mutation
+<span class="pc bpc" id="L120" title="1 of 2 branches missed.">        if (ioe == null) {</span>
+<span class="nc" id="L121">            noteClosed();</span>
+        } else {
+            // Void method calls mutation
+<span class="nc" id="L124">            observer();</span>
+        }
+<span class="nc" id="L126">    }</span>
+
+    // Void Method Call substantial mutation
+    public void observer() throws IOException {
+<span class="nc" id="L130">        forEachObserver(observer -&gt; observer.data(0));</span>
+<span class="nc" id="L131">    }</span>
+
+    public void consume() throws IOException {
+<span class="fc" id="L134">        IOUtils.consume(this);</span>
+<span class="fc" id="L135">    }</span>
+
+    private void forEachObserver(final IOConsumer&lt;Observer&gt; action) throws IOException {
+<span class="nc" id="L138">        IOConsumer.forAll(action, observers);</span>
+<span class="nc" id="L139">    }</span>
+
+    public List&lt;Observer&gt; getObservers() {
+<span class="nc" id="L142">        return new ArrayList&lt;&gt;(observers);</span>
+    }
+
+    protected void noteClosed() throws IOException {
+<span class="nc" id="L146">        forEachObserver(Observer::closed);</span>
+<span class="nc" id="L147">    }</span>
+
+    protected void noteDataByte(final int value) throws IOException {
+<span class="nc" id="L150">        forEachObserver(observer -&gt; observer.data(value));</span>
+<span class="nc" id="L151">    }</span>
+
+    protected void noteDataBytes(final byte[] buffer, final int offset, final int length) throws IOException {
+<span class="nc" id="L154">        forEachObserver(observer -&gt; observer.data(buffer, offset, length));</span>
+<span class="nc" id="L155">    }</span>
+
+    protected void noteError(final IOException exception) throws IOException {
+<span class="nc" id="L158">        forEachObserver(observer -&gt; observer.error(exception));</span>
+<span class="nc" id="L159">    }</span>
+
+    protected void noteFinished() throws IOException {
+<span class="nc" id="L162">        forEachObserver(Observer::finished);</span>
+<span class="nc" id="L163">    }</span>
+
+    private void notify(final byte[] buffer, final int offset, int result, final IOException ioe) throws IOException {
+<span class="pc bpc" id="L166" title="1 of 2 branches missed.">        if (ioe != null) { // Math operator mutation (e.g., Math operations changed)</span>
+<span class="nc" id="L167">            noteError(ioe);</span>
+<span class="nc" id="L168">            throw ioe;</span>
+        }
+<span class="pc bpc" id="L170" title="1 of 2 branches missed.">        if (result == EOF) {</span>
+<span class="nc" id="L171">            noteFinished();</span>
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        } else if (result &lt; 0) { // Conditionals Boundary mutation</span>
+<span class="nc" id="L173">            noteDataBytes(buffer, offset, ++result); // Increment mutation on result</span>
+        }
+<span class="fc" id="L175">    }</span>
+
+    @Override
+    public int read() throws IOException {
+<span class="nc" id="L179">        int result = 0;</span>
+<span class="nc" id="L180">        IOException ioe = null;</span>
+        // Return Values mutation (changing how result is set)
+<span class="nc" id="L182">        result = Integer.MAX_VALUE;</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">        if (ioe != null) {</span>
+<span class="nc" id="L184">            noteError(ioe);</span>
+<span class="nc" id="L185">            throw ioe;</span>
+        }
+<span class="nc bnc" id="L187" title="All 2 branches missed.">        if (result == EOF) {</span>
+<span class="nc" id="L188">            noteFinished();</span>
+        } else {
+<span class="nc" id="L190">            noteDataByte(result);</span>
+        }
+<span class="nc" id="L192">        return result;</span>
+    }
+
+    @Override
+    public int read(final byte[] buffer) throws IOException {
+<span class="fc" id="L197">        int result = 0;</span>
+<span class="fc" id="L198">        IOException ioe = null;</span>
+        // False Returns mutation
+        try {
+<span class="fc" id="L201">            result = super.read(buffer);</span>
+<span class="fc bfc" id="L202" title="All 2 branches covered.">            if (result == EOF) return -1; // Introduced false return</span>
+<span class="nc" id="L203">        } catch (final IOException ex) {</span>
+<span class="nc" id="L204">            ioe = ex;</span>
+<span class="fc" id="L205">        }</span>
+<span class="fc" id="L206">        notify(buffer, 0, result, ioe);</span>
+<span class="fc" id="L207">        return result;</span>
+    }
+
+    @Override
+    public int read(final byte[] buffer, final int offset, final int length) throws IOException {
+<span class="nc" id="L212">        int result = 0;</span>
+<span class="nc" id="L213">        IOException ioe = null;</span>
+        try {
+<span class="nc" id="L215">            result = super.read(buffer, offset, length);</span>
+<span class="nc" id="L216">        } catch (final IOException ex) {</span>
+<span class="nc" id="L217">            ioe = ex;</span>
+<span class="nc" id="L218">        }</span>
+<span class="nc" id="L219">        notify(buffer, offset, result, ioe);</span>
+<span class="nc" id="L220">        return result;</span>
+    }
+
+    public void remove(final Observer observer) throws IOException {
+        // Void Method Call mutation
+<span class="nc" id="L225">        observer();</span>
+<span class="nc" id="L226">        observers.remove(observer);</span>
+<span class="nc" id="L227">    }</span>
+
+    public void removeAllObservers() {
+<span class="nc" id="L230">        observers.clear();</span>
+<span class="nc" id="L231">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

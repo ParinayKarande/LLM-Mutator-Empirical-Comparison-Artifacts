@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ChunkedOutputStream.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.output</a> &gt; <span class="el_source">ChunkedOutputStream.java</span></div><h1>ChunkedOutputStream.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.output;
+
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.build.AbstractStreamBuilder;
+
+/**
+ * OutputStream which breaks larger output blocks into chunks. Native code may need to copy the input array; if the write buffer is very large this can cause
+ * OOME.
+ * &lt;p&gt;
+ * To build an instance, see {@link Builder}
+ * &lt;/p&gt;
+ *
+ * @see Builder
+ * @since 2.5
+ */
+public class ChunkedOutputStream extends FilterOutputStream {
+
+    // @formatter:off
+    /**
+     * Builds a new {@link UnsynchronizedByteArrayOutputStream}.
+     *
+     * &lt;p&gt;
+     * Using File IO:
+     * &lt;/p&gt;
+     * &lt;pre&gt;{@code
+     * UnsynchronizedByteArrayOutputStream s = UnsynchronizedByteArrayOutputStream.builder()
+     *   .setBufferSize(8192)
+     *   .get();
+     * }
+     * &lt;/pre&gt;
+     * &lt;p&gt;
+     * Using NIO Path:
+     * &lt;/p&gt;
+     * &lt;pre&gt;{@code
+     * UnsynchronizedByteArrayOutputStream s = UnsynchronizedByteArrayOutputStream.builder()
+     *   .setBufferSize(8192)
+     *   .get();
+     * }
+     * &lt;/pre&gt;
+     *
+     * @see #get()
+     * @since 2.13.0
+     */
+    // @formatter:on
+<span class="fc" id="L65">    public static class Builder extends AbstractStreamBuilder&lt;ChunkedOutputStream, Builder&gt; {</span>
+
+        /**
+         * Builds a new {@link UnsynchronizedByteArrayOutputStream}.
+         * &lt;p&gt;
+         * This builder use the following aspects:
+         * &lt;/p&gt;
+         * &lt;ul&gt;
+         * &lt;li&gt;{@link #getInputStream()}&lt;/li&gt;
+         * &lt;li&gt;{@link #getBufferSize()} (chunk size)&lt;/li&gt;
+         * &lt;/ul&gt;
+         *
+         * @return a new instance.
+         * @throws IllegalStateException         if the {@code origin} is {@code null}.
+         * @throws UnsupportedOperationException if the origin cannot be converted to an {@link OutputStream}.
+         * @throws IOException                   if an I/O error occurs.
+         * @see #getOutputStream()
+         * @see #getBufferSize()
+         */
+        @Override
+        public ChunkedOutputStream get() throws IOException {
+<span class="fc" id="L86">            return new ChunkedOutputStream(getOutputStream(), getBufferSize());</span>
+        }
+
+    }
+
+    /**
+     * Constructs a new {@link Builder}.
+     *
+     * @return a new {@link Builder}.
+     * @since 2.13.0
+     */
+    public static Builder builder() {
+<span class="fc" id="L98">        return new Builder();</span>
+    }
+
+    /**
+     * The maximum chunk size to us when writing data arrays
+     */
+    private final int chunkSize;
+
+    /**
+     * Constructs a new stream that uses a chunk size of {@link IOUtils#DEFAULT_BUFFER_SIZE}.
+     *
+     * @param stream the stream to wrap
+     * @deprecated Use {@link #builder()}, {@link Builder}, and {@link Builder#get()}
+     */
+    @Deprecated
+    public ChunkedOutputStream(final OutputStream stream) {
+<span class="fc" id="L114">        this(stream, IOUtils.DEFAULT_BUFFER_SIZE);</span>
+<span class="fc" id="L115">    }</span>
+
+    /**
+     * Constructs a new stream that uses the specified chunk size.
+     *
+     * @param stream    the stream to wrap
+     * @param chunkSize the chunk size to use; must be a positive number.
+     * @throws IllegalArgumentException if the chunk size is &amp;lt;= 0
+     * @deprecated Use {@link #builder()}, {@link Builder}, and {@link Builder#get()}
+     */
+    @Deprecated
+    public ChunkedOutputStream(final OutputStream stream, final int chunkSize) {
+<span class="fc" id="L127">        super(stream);</span>
+<span class="fc bfc" id="L128" title="All 2 branches covered.">        if (chunkSize &lt;= 0) {</span>
+<span class="fc" id="L129">            throw new IllegalArgumentException(&quot;chunkSize &lt;= 0&quot;);</span>
+        }
+<span class="fc" id="L131">        this.chunkSize = chunkSize;</span>
+<span class="fc" id="L132">    }</span>
+
+    int getChunkSize() {
+<span class="fc" id="L135">        return chunkSize;</span>
+    }
+
+    /**
+     * Writes the data buffer in chunks to the underlying stream
+     *
+     * @param data      the data to write
+     * @param srcOffset the offset
+     * @param length    the length of data to write
+     *
+     * @throws IOException if an I/O error occurs.
+     */
+    @Override
+    public void write(final byte[] data, final int srcOffset, final int length) throws IOException {
+<span class="fc" id="L149">        int bytes = length;</span>
+<span class="fc" id="L150">        int dstOffset = srcOffset;</span>
+<span class="fc bfc" id="L151" title="All 2 branches covered.">        while (bytes &gt; 0) {</span>
+<span class="fc" id="L152">            final int chunk = Math.min(bytes, chunkSize);</span>
+<span class="fc" id="L153">            out.write(data, dstOffset, chunk);</span>
+<span class="fc" id="L154">            bytes -= chunk;</span>
+<span class="fc" id="L155">            dstOffset += chunk;</span>
+<span class="fc" id="L156">        }</span>
+<span class="fc" id="L157">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

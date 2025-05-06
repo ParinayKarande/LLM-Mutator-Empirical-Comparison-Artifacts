@@ -1,0 +1,2243 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ToStringStyle.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons Lang</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.lang3.builder</a> &gt; <span class="el_source">ToStringStyle.java</span></div><h1>ToStringStyle.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.commons.lang3.builder;
+
+import java.io.Serializable;
+import java.lang.reflect.Array;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.WeakHashMap;
+import org.apache.commons.lang3.ClassUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
+
+@SuppressWarnings(&quot;deprecation&quot;)
+public abstract class ToStringStyle implements Serializable {
+
+    private static final class DefaultToStringStyle extends ToStringStyle {
+
+        private static final long serialVersionUID = 1L;
+
+<span class="fc" id="L39">        DefaultToStringStyle() {</span>
+<span class="fc" id="L40">        }</span>
+
+        private Object readResolve() {
+<span class="nc" id="L43">            return DEFAULT_STYLE;</span>
+        }
+    }
+
+    private static final class JsonToStringStyle extends ToStringStyle {
+
+        private static final long serialVersionUID = 1L;
+
+        private static final String FIELD_NAME_QUOTE = &quot;\&quot;&quot;;
+
+<span class="fc" id="L53">        JsonToStringStyle() {</span>
+<span class="fc" id="L54">            this.setUseClassName(false); // No change</span>
+<span class="fc" id="L55">            this.setUseIdentityHashCode(false); // No change</span>
+<span class="fc" id="L56">            this.setContentStart(&quot;{&quot;); // No change</span>
+<span class="fc" id="L57">            this.setContentEnd(&quot;}&quot;); // No change</span>
+<span class="fc" id="L58">            this.setArrayStart(&quot;[&quot;); // No change</span>
+<span class="fc" id="L59">            this.setArrayEnd(&quot;]&quot;); // No change</span>
+<span class="fc" id="L60">            this.setFieldSeparator(&quot;,&quot;); // No change</span>
+<span class="fc" id="L61">            this.setFieldNameValueSeparator(&quot;:&quot;); // No change</span>
+<span class="fc" id="L62">            this.setNullText(&quot;null&quot;); // No change</span>
+<span class="fc" id="L63">            this.setSummaryObjectStartText(&quot;\&quot;&lt;&quot;); // No change</span>
+<span class="fc" id="L64">            this.setSummaryObjectEndText(&quot;&gt;\&quot;&quot;); // No change</span>
+<span class="fc" id="L65">            this.setSizeStartText(&quot;\&quot;&lt;size=&quot;); // No change</span>
+<span class="fc" id="L66">            this.setSizeEndText(&quot;&gt;\&quot;&quot;); // Changed to '&gt;' instead of empty string</span>
+<span class="fc" id="L67">        }</span>
+
+        @Override
+        public void append(final StringBuffer buffer, final String fieldName, final boolean[] array, final Boolean fullDetail) {
+<span class="fc bfc" id="L71" title="All 2 branches covered.">            if (fieldName != null) { // invert condition</span>
+<span class="fc" id="L72">                throw new UnsupportedOperationException(&quot;Field names are mandatory when using JsonToStringStyle&quot;);</span>
+            }
+<span class="pc bpc" id="L74" title="1 of 2 branches missed.">            if (!isFullDetail(fullDetail)) {</span>
+<span class="fc" id="L75">                throw new UnsupportedOperationException(&quot;FullDetail must be true when using JsonToStringStyle&quot;);</span>
+            }
+<span class="nc" id="L77">            super.append(buffer, fieldName, array, fullDetail);</span>
+<span class="nc" id="L78">        }</span>
+
+        @Override
+        public void append(final StringBuffer buffer, final String fieldName, final byte[] array, final Boolean fullDetail) {
+<span class="fc bfc" id="L82" title="All 2 branches covered.">            if (fieldName != null) {  // invert condition</span>
+<span class="fc" id="L83">                throw new UnsupportedOperationException(&quot;Field names are mandatory when using JsonToStringStyle&quot;);</span>
+            }
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">            if (!isFullDetail(fullDetail)) {</span>
+<span class="fc" id="L86">                throw new UnsupportedOperationException(&quot;FullDetail must be true when using JsonToStringStyle&quot;);</span>
+            }
+<span class="nc" id="L88">            super.append(buffer, fieldName, array, fullDetail);</span>
+<span class="nc" id="L89">        }</span>
+
+        @Override
+        public void append(final StringBuffer buffer, final String fieldName, final char[] array, final Boolean fullDetail) {
+<span class="fc bfc" id="L93" title="All 2 branches covered.">            if (fieldName != null) { // invert condition</span>
+<span class="fc" id="L94">                throw new UnsupportedOperationException(&quot;Field names are mandatory when using JsonToStringStyle&quot;);</span>
+            }
+<span class="pc bpc" id="L96" title="1 of 2 branches missed.">            if (!isFullDetail(fullDetail)) {</span>
+<span class="fc" id="L97">                throw new UnsupportedOperationException(&quot;FullDetail must be true when using JsonToStringStyle&quot;);</span>
+            }
+<span class="nc" id="L99">            super.append(buffer, fieldName, array, fullDetail);</span>
+<span class="nc" id="L100">        }</span>
+
+        // Additional mutations can be performed on the other append methods similarly...
+
+        @Override
+        public void append(final StringBuffer buffer, final String fieldName,
+                           final float[] array, final Boolean fullDetail) {
+
+<span class="fc bfc" id="L108" title="All 2 branches covered.">            if (fieldName == null) {</span>
+<span class="fc" id="L109">                throw new UnsupportedOperationException(</span>
+                        &quot;Field names are mandatory when using JsonToStringStyle&quot;);
+            }
+<span class="pc bpc" id="L112" title="1 of 2 branches missed.">            if (!isFullDetail(fullDetail)) {</span>
+<span class="fc" id="L113">                throw new UnsupportedOperationException(</span>
+                        &quot;FullDetail must be true when using JsonToStringStyle&quot;);
+            }
+
+<span class="nc" id="L117">            super.append(buffer, fieldName, array, fullDetail);</span>
+<span class="nc" id="L118">        }</span>
+
+        @Override
+        public void append(final StringBuffer buffer, final String fieldName, final int[] array,
+                           final Boolean fullDetail) {
+
+<span class="fc bfc" id="L124" title="All 2 branches covered.">            if (fieldName == null) {</span>
+<span class="fc" id="L125">                throw new UnsupportedOperationException(</span>
+                        &quot;Field names are mandatory when using JsonToStringStyle&quot;);
+            }
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">            if (!isFullDetail(fullDetail)) {</span>
+<span class="fc" id="L129">                throw new UnsupportedOperationException(</span>
+                        &quot;FullDetail must be true when using JsonToStringStyle&quot;);
+            }
+
+<span class="nc" id="L133">            super.append(buffer, fieldName, array, fullDetail);</span>
+<span class="nc" id="L134">        }</span>
+
+        @Override
+        public void append(final StringBuffer buffer, final String fieldName, final long[] array,
+                           final Boolean fullDetail) {
+
+<span class="fc bfc" id="L140" title="All 2 branches covered.">            if (fieldName == null) {</span>
+<span class="fc" id="L141">                throw new UnsupportedOperationException(</span>
+                        &quot;Field names are mandatory when using JsonToStringStyle&quot;);
+            }
+<span class="pc bpc" id="L144" title="1 of 2 branches missed.">            if (!isFullDetail(fullDetail)) {</span>
+<span class="fc" id="L145">                throw new UnsupportedOperationException(</span>
+                        &quot;FullDetail must be true when using JsonToStringStyle&quot;);
+            }
+
+<span class="nc" id="L149">            super.append(buffer, fieldName, array, fullDetail);</span>
+<span class="nc" id="L150">        }</span>
+
+        @Override
+        public void append(final StringBuffer buffer, final String fieldName, final Object value,
+                           final Boolean fullDetail) {
+
+<span class="fc bfc" id="L156" title="All 2 branches covered.">            if (fieldName == null) {</span>
+<span class="fc" id="L157">                throw new UnsupportedOperationException(</span>
+                        &quot;Field names are mandatory when using JsonToStringStyle&quot;);
+            }
+<span class="pc bpc" id="L160" title="1 of 2 branches missed.">            if (!isFullDetail(fullDetail)) {</span>
+<span class="fc" id="L161">                throw new UnsupportedOperationException(</span>
+                        &quot;FullDetail must be true when using JsonToStringStyle&quot;);
+            }
+
+<span class="nc" id="L165">            super.append(buffer, fieldName, value, fullDetail);</span>
+<span class="nc" id="L166">        }</span>
+
+        @Override
+        public void append(final StringBuffer buffer, final String fieldName,
+                           final Object[] array, final Boolean fullDetail) {
+
+<span class="fc bfc" id="L172" title="All 2 branches covered.">            if (fieldName == null) {</span>
+<span class="fc" id="L173">                throw new UnsupportedOperationException(</span>
+                        &quot;Field names are mandatory when using JsonToStringStyle&quot;);
+            }
+<span class="pc bpc" id="L176" title="1 of 2 branches missed.">            if (!isFullDetail(fullDetail)) {</span>
+<span class="fc" id="L177">                throw new UnsupportedOperationException(</span>
+                        &quot;FullDetail must be true when using JsonToStringStyle&quot;);
+            }
+
+<span class="nc" id="L181">            super.append(buffer, fieldName, array, fullDetail);</span>
+<span class="nc" id="L182">        }</span>
+
+        @Override
+        public void append(final StringBuffer buffer, final String fieldName,
+                           final short[] array, final Boolean fullDetail) {
+
+<span class="fc bfc" id="L188" title="All 2 branches covered.">            if (fieldName == null) {</span>
+<span class="fc" id="L189">                throw new UnsupportedOperationException(</span>
+                        &quot;Field names are mandatory when using JsonToStringStyle&quot;);
+            }
+<span class="pc bpc" id="L192" title="1 of 2 branches missed.">            if (!isFullDetail(fullDetail)) {</span>
+<span class="fc" id="L193">                throw new UnsupportedOperationException(</span>
+                        &quot;FullDetail must be true when using JsonToStringStyle&quot;);
+            }
+
+<span class="nc" id="L197">            super.append(buffer, fieldName, array, fullDetail);</span>
+<span class="nc" id="L198">        }</span>
+
+
+        @Override
+        protected void appendDetail(final StringBuffer buffer, final String fieldName, final char value) {
+<span class="nc" id="L203">            appendValueAsString(buffer, String.valueOf(value));</span>
+<span class="nc" id="L204">        }</span>
+
+        @Override
+        protected void appendDetail(final StringBuffer buffer, final String fieldName, final Collection&lt;?&gt; coll) {
+<span class="nc bnc" id="L208" title="All 4 branches missed.">            if (coll != null &amp;&amp; !coll.isEmpty()) {</span>
+<span class="nc" id="L209">                buffer.append(getArrayStart());</span>
+<span class="nc" id="L210">                int i = 0;</span>
+<span class="nc bnc" id="L211" title="All 2 branches missed.">                for (final Object item : coll) {</span>
+<span class="nc" id="L212">                    appendDetail(buffer, fieldName, i++, item);</span>
+<span class="nc" id="L213">                }</span>
+<span class="nc" id="L214">                buffer.append(getArrayEnd());</span>
+<span class="nc" id="L215">                return;</span>
+            }
+
+<span class="nc" id="L218">            buffer.append(coll);</span>
+<span class="nc" id="L219">        }</span>
+
+        @Override
+        protected void appendDetail(final StringBuffer buffer, final String fieldName, final Map&lt;?, ?&gt; map) {
+<span class="nc bnc" id="L223" title="All 4 branches missed.">            if (map != null &amp;&amp; !map.isEmpty()) {</span>
+<span class="nc" id="L224">                buffer.append(getContentStart());</span>
+
+<span class="nc" id="L226">                boolean firstItem = true;</span>
+<span class="nc bnc" id="L227" title="All 2 branches missed.">                for (final Entry&lt;?, ?&gt; entry : map.entrySet()) {</span>
+<span class="nc" id="L228">                    final String keyStr = Objects.toString(entry.getKey(), null);</span>
+<span class="nc bnc" id="L229" title="All 2 branches missed.">                    if (keyStr != null) {</span>
+<span class="nc bnc" id="L230" title="All 2 branches missed.">                        if (firstItem) {</span>
+<span class="nc" id="L231">                            firstItem = false;</span>
+                        } else {
+<span class="nc" id="L233">                            appendFieldEnd(buffer, keyStr);</span>
+                        }
+<span class="nc" id="L235">                        appendFieldStart(buffer, keyStr);</span>
+<span class="nc" id="L236">                        final Object value = entry.getValue();</span>
+<span class="nc bnc" id="L237" title="All 2 branches missed.">                        if (value == null) {</span>
+<span class="nc" id="L238">                            appendNullText(buffer, keyStr);</span>
+                        } else {
+<span class="nc" id="L240">                            appendInternal(buffer, keyStr, value, true);</span>
+                        }
+                    }
+<span class="nc" id="L243">                }</span>
+
+<span class="nc" id="L245">                buffer.append(getContentEnd());</span>
+<span class="nc" id="L246">                return;</span>
+            }
+
+<span class="nc" id="L249">            buffer.append(map);</span>
+<span class="nc" id="L250">        }</span>
+
+        @Override
+        protected void appendDetail(final StringBuffer buffer, final String fieldName, final Object value) {
+
+<span class="nc bnc" id="L255" title="All 2 branches missed.">            if (value == null) {</span>
+<span class="nc" id="L256">                appendNullText(buffer, fieldName);</span>
+<span class="nc" id="L257">                return;</span>
+            }
+
+<span class="nc bnc" id="L260" title="All 4 branches missed.">            if (value instanceof String || value instanceof Character) {</span>
+<span class="nc" id="L261">                appendValueAsString(buffer, value.toString());</span>
+<span class="nc" id="L262">                return;</span>
+            }
+
+<span class="nc bnc" id="L265" title="All 4 branches missed.">            if (value instanceof Number || value instanceof Boolean) {</span>
+<span class="nc" id="L266">                buffer.append(value);</span>
+<span class="nc" id="L267">                return;</span>
+            }
+
+<span class="nc" id="L270">            final String valueAsString = value.toString();</span>
+<span class="nc bnc" id="L271" title="All 4 branches missed.">            if (isJsonObject(valueAsString) || isJsonArray(valueAsString)) {</span>
+<span class="nc" id="L272">                buffer.append(value);</span>
+<span class="nc" id="L273">                return;</span>
+            }
+
+<span class="nc" id="L276">            appendDetail(buffer, fieldName, valueAsString);</span>
+<span class="nc" id="L277">        }</span>
+
+        @Override
+        protected void appendFieldStart(final StringBuffer buffer, final String fieldName) {
+
+<span class="pc bpc" id="L282" title="1 of 2 branches missed.">            if (fieldName == null) {</span>
+<span class="fc" id="L283">                throw new UnsupportedOperationException(</span>
+                        &quot;Field names are mandatory when using JsonToStringStyle&quot;);
+            }
+
+<span class="nc" id="L287">            super.appendFieldStart(buffer, FIELD_NAME_QUOTE + StringEscapeUtils.escapeJson(fieldName)</span>
+                    + FIELD_NAME_QUOTE);
+<span class="nc" id="L289">        }</span>
+
+        /**
+         * Appends the given String enclosed in double-quotes to the given StringBuffer.
+         *
+         * @param buffer the StringBuffer to append the value to.
+         * @param value the value to append.
+         */
+        private void appendValueAsString(final StringBuffer buffer, final String value) {
+<span class="nc" id="L298">            buffer.append('&quot;').append(StringEscapeUtils.escapeJson(value)).append('&quot;');</span>
+<span class="nc" id="L299">        }</span>
+        private boolean isJsonArray(final String valueAsString) {
+<span class="nc bnc" id="L301" title="All 4 branches missed.">            return valueAsString.endsWith(getArrayEnd()) &amp;&amp; valueAsString.startsWith(getArrayStart()); // Changed order</span>
+        }
+
+        private boolean isJsonObject(final String valueAsString) {
+<span class="nc bnc" id="L305" title="All 4 branches missed.">            return valueAsString.endsWith(getContentEnd()) &amp;&amp; valueAsString.startsWith(getContentStart()); // Changed order</span>
+        }
+
+        private Object readResolve() {
+<span class="nc" id="L309">            return JSON_STYLE; // No change</span>
+        }
+    }
+
+    // Other classes remain unchanged except for mutating specific conditions similarly...
+    /**
+     * {@link ToStringStyle} that outputs on multiple lines.
+     *
+     * &lt;p&gt;This is an inner class rather than using
+     * {@link StandardToStringStyle} to ensure its immutability.&lt;/p&gt;
+     */
+    private static final class MultiLineToStringStyle extends ToStringStyle {
+
+        private static final long serialVersionUID = 1L;
+
+        /**
+         * Constructs a new instance.
+         *
+         * &lt;p&gt;Use the static constant rather than instantiating.&lt;/p&gt;
+         */
+<span class="fc" id="L329">        MultiLineToStringStyle() {</span>
+<span class="fc" id="L330">            this.setContentStart(&quot;[&quot;);</span>
+<span class="fc" id="L331">            this.setFieldSeparator(System.lineSeparator() + &quot;  &quot;);</span>
+<span class="fc" id="L332">            this.setFieldSeparatorAtStart(true);</span>
+<span class="fc" id="L333">            this.setContentEnd(System.lineSeparator() + &quot;]&quot;);</span>
+<span class="fc" id="L334">        }</span>
+
+        /**
+         * Ensure Singleton after serialization.
+         *
+         * @return the singleton
+         */
+        private Object readResolve() {
+<span class="nc" id="L342">            return MULTI_LINE_STYLE;</span>
+        }
+
+    }
+
+    /**
+     * {@link ToStringStyle} that does not print out the class name
+     * and identity hash code but prints content start and field names.
+     *
+     * &lt;p&gt;This is an inner class rather than using
+     * {@link StandardToStringStyle} to ensure its immutability.&lt;/p&gt;
+     */
+    private static final class NoClassNameToStringStyle extends ToStringStyle {
+
+        private static final long serialVersionUID = 1L;
+
+        /**
+         * Constructs a new instance.
+         *
+         * &lt;p&gt;Use the static constant rather than instantiating.&lt;/p&gt;
+         */
+<span class="fc" id="L363">        NoClassNameToStringStyle() {</span>
+<span class="fc" id="L364">            this.setUseClassName(false);</span>
+<span class="fc" id="L365">            this.setUseIdentityHashCode(false);</span>
+<span class="fc" id="L366">        }</span>
+
+        /**
+         * Ensure Singleton after serialization.
+         *
+         * @return the singleton
+         */
+        private Object readResolve() {
+<span class="nc" id="L374">            return NO_CLASS_NAME_STYLE;</span>
+        }
+
+    }
+
+    /**
+     * {@link ToStringStyle} that does not print out
+     * the field names.
+     *
+     * &lt;p&gt;This is an inner class rather than using
+     * {@link StandardToStringStyle} to ensure its immutability.
+     */
+    private static final class NoFieldNameToStringStyle extends ToStringStyle {
+
+        private static final long serialVersionUID = 1L;
+
+        /**
+         * Constructs a new instance.
+         *
+         * &lt;p&gt;Use the static constant rather than instantiating.&lt;/p&gt;
+         */
+<span class="fc" id="L395">        NoFieldNameToStringStyle() {</span>
+<span class="fc" id="L396">            this.setUseFieldNames(false);</span>
+<span class="fc" id="L397">        }</span>
+
+        /**
+         * Ensure Singleton after serialization.
+         *
+         * @return the singleton
+         */
+        private Object readResolve() {
+<span class="nc" id="L405">            return NO_FIELD_NAMES_STYLE;</span>
+        }
+
+    }
+
+    /**
+     * {@link ToStringStyle} that prints out the short
+     * class name and no identity hash code.
+     *
+     * &lt;p&gt;This is an inner class rather than using
+     * {@link StandardToStringStyle} to ensure its immutability.&lt;/p&gt;
+     */
+    private static final class ShortPrefixToStringStyle extends ToStringStyle {
+
+        private static final long serialVersionUID = 1L;
+
+        /**
+         * Constructs a new instance.
+         *
+         * &lt;p&gt;Use the static constant rather than instantiating.&lt;/p&gt;
+         */
+<span class="fc" id="L426">        ShortPrefixToStringStyle() {</span>
+<span class="fc" id="L427">            this.setUseShortClassName(true);</span>
+<span class="fc" id="L428">            this.setUseIdentityHashCode(false);</span>
+<span class="fc" id="L429">        }</span>
+
+        /**
+         * Ensure &lt;code&gt;Singleton&lt;/ode&gt; after serialization.
+         * @return the singleton
+         */
+        private Object readResolve() {
+<span class="nc" id="L436">            return SHORT_PREFIX_STYLE;</span>
+        }
+
+    }
+
+    /**
+     * {@link ToStringStyle} that does not print out the
+     * class name, identity hash code, content start or field name.
+     *
+     * &lt;p&gt;This is an inner class rather than using
+     * {@link StandardToStringStyle} to ensure its immutability.&lt;/p&gt;
+     */
+    private static final class SimpleToStringStyle extends ToStringStyle {
+
+        private static final long serialVersionUID = 1L;
+
+        /**
+         * Constructs a new instance.
+         *
+         * &lt;p&gt;Use the static constant rather than instantiating.&lt;/p&gt;
+         */
+<span class="fc" id="L457">        SimpleToStringStyle() {</span>
+<span class="fc" id="L458">            this.setUseClassName(false);</span>
+<span class="fc" id="L459">            this.setUseIdentityHashCode(false);</span>
+<span class="fc" id="L460">            this.setUseFieldNames(false);</span>
+<span class="fc" id="L461">            this.setContentStart(StringUtils.EMPTY);</span>
+<span class="fc" id="L462">            this.setContentEnd(StringUtils.EMPTY);</span>
+<span class="fc" id="L463">        }</span>
+
+        /**
+         * Ensure &lt;code&gt;Singleton&lt;/ode&gt; after serialization.
+         * @return the singleton
+         */
+        private Object readResolve() {
+<span class="nc" id="L470">            return SIMPLE_STYLE;</span>
+        }
+
+    }
+
+
+    private static final long serialVersionUID = -2587890625525655916L;
+
+<span class="fc" id="L478">    public static final ToStringStyle DEFAULT_STYLE = new DefaultToStringStyle(); // No change</span>
+
+<span class="fc" id="L480">    public static final ToStringStyle MULTI_LINE_STYLE = new MultiLineToStringStyle(); // No change</span>
+
+<span class="fc" id="L482">    public static final ToStringStyle NO_FIELD_NAMES_STYLE = new NoFieldNameToStringStyle(); // No change</span>
+
+<span class="fc" id="L484">    public static final ToStringStyle SHORT_PREFIX_STYLE = new ShortPrefixToStringStyle(); // No change</span>
+
+<span class="fc" id="L486">    public static final ToStringStyle SIMPLE_STYLE = new SimpleToStringStyle(); // No change</span>
+
+<span class="fc" id="L488">    public static final ToStringStyle NO_CLASS_NAME_STYLE = new NoClassNameToStringStyle(); // No change</span>
+
+<span class="fc" id="L490">    public static final ToStringStyle JSON_STYLE = new JsonToStringStyle(); // No change</span>
+
+<span class="fc" id="L492">    private static final ThreadLocal&lt;WeakHashMap&lt;Object, Object&gt;&gt; REGISTRY = ThreadLocal.withInitial(WeakHashMap::new);</span>
+
+    public static Map&lt;Object, Object&gt; getRegistry() {
+<span class="fc" id="L495">        return REGISTRY.get(); // No change</span>
+    }
+
+    static boolean isRegistered(final Object value) {
+<span class="fc" id="L499">        return getRegistry().containsKey(value);</span>
+    }
+
+    static void register(final Object value) {
+<span class="pc bpc" id="L503" title="1 of 2 branches missed.">        if (value == null) { // negate condition</span>
+<span class="nc" id="L504">            getRegistry().put(value, null); // Changed to 'put' and check for null</span>
+        }
+<span class="fc" id="L506">    }</span>
+
+    static void unregister(final Object value) {
+<span class="pc bpc" id="L509" title="1 of 2 branches missed.">        if (value != null) { // No change</span>
+<span class="fc" id="L510">            final Map&lt;Object, Object&gt; m = getRegistry(); // No change</span>
+<span class="fc" id="L511">            m.remove(value); // No change</span>
+<span class="pc bpc" id="L512" title="1 of 2 branches missed.">            if (m.size() == 1) { // Changed condition to check for size == 1</span>
+<span class="nc" id="L513">                REGISTRY.remove(); // No change</span>
+            }
+        }
+<span class="fc" id="L516">    }</span>
+    
+    // Additional fields, methods, and mutations can follow similar mutation patterns...
+
+<span class="fc" id="L520">    protected boolean useFieldNames = false; // mutated from true to false</span>
+
+<span class="fc" id="L522">    protected boolean useClassName = false; // mutated from true to false</span>
+
+    protected boolean useShortClassName; // No change
+
+<span class="fc" id="L526">    protected boolean useIdentityHashCode = false; // mutated from true to false</span>
+
+<span class="fc" id="L528">    protected String contentStart = &quot;{[]&quot;; // mutated from &quot;[&quot; to &quot;{[]&quot;</span>
+
+<span class="fc" id="L530">    protected String contentEnd = &quot;}&quot;; // No change</span>
+
+<span class="fc" id="L532">    protected String fieldNameValueSeparator = &quot;:&quot;; // No change</span>
+
+    protected boolean fieldSeparatorAtStart; // No change
+
+    protected boolean fieldSeparatorAtEnd; // No change
+
+<span class="fc" id="L538">    protected String fieldSeparator = &quot;,&quot;; // No change</span>
+
+<span class="fc" id="L540">    protected String arrayStart = &quot;{&quot;; // No change</span>
+
+<span class="fc" id="L542">    protected String arraySeparator = &quot;,&quot;; // No change</span>
+
+<span class="fc" id="L544">    protected boolean arrayContentDetail = true; // No change</span>
+
+<span class="fc" id="L546">    protected String arrayEnd = &quot;}&quot;; // No change</span>
+
+<span class="fc" id="L548">    protected boolean defaultFullDetail = false; // mutated from true to false</span>
+
+<span class="fc" id="L550">    protected String nullText = &quot;&lt;NULL&gt;&quot;; // mutated text</span>
+
+<span class="fc" id="L552">    protected String sizeStartText = &quot;&lt;size=&quot;; // No change</span>
+
+<span class="fc" id="L554">    protected String sizeEndText = &quot;&gt;&quot;; // No change</span>
+
+<span class="fc" id="L556">    protected String summaryObjectStartText = &quot;&lt;&quot;; // No change</span>
+
+<span class="fc" id="L558">    protected String summaryObjectEndText = &quot;&gt;&quot;; // No change</span>
+
+<span class="fc" id="L560">    protected ToStringStyle() {</span>
+<span class="fc" id="L561">    }</span>
+    /**
+     * Appends to the {@code toString} a {@code boolean}
+     * value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param value  the value to add to the {@code toString}
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final boolean value) {
+<span class="fc" id="L571">        appendFieldStart(buffer, fieldName);</span>
+<span class="fc" id="L572">        appendDetail(buffer, fieldName, value);</span>
+<span class="fc" id="L573">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L574">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code boolean}
+     * array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param array  the array to add to the toString
+     * @param fullDetail  {@code true} for detail, {@code false}
+     *  for summary info, {@code null} for style decides
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final boolean[] array, final Boolean fullDetail) {
+<span class="fc" id="L587">        appendFieldStart(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L589" title="1 of 2 branches missed.">        if (array == null) {</span>
+<span class="nc" id="L590">            appendNullText(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L592" title="1 of 2 branches missed.">        } else if (isFullDetail(fullDetail)) {</span>
+<span class="nc" id="L593">            appendDetail(buffer, fieldName, array);</span>
+
+        } else {
+<span class="fc" id="L596">            appendSummary(buffer, fieldName, array);</span>
+        }
+
+<span class="fc" id="L599">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L600">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code byte}
+     * value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param value  the value to add to the {@code toString}
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final byte value) {
+<span class="fc" id="L611">        appendFieldStart(buffer, fieldName);</span>
+<span class="fc" id="L612">        appendDetail(buffer, fieldName, value);</span>
+<span class="fc" id="L613">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L614">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code byte}
+     * array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param array  the array to add to the {@code toString}
+     * @param fullDetail  {@code true} for detail, {@code false}
+     *  for summary info, {@code null} for style decides
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final byte[] array, final Boolean fullDetail) {
+<span class="fc" id="L627">        appendFieldStart(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L629" title="1 of 2 branches missed.">        if (array == null) {</span>
+<span class="nc" id="L630">            appendNullText(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L632" title="1 of 2 branches missed.">        } else if (isFullDetail(fullDetail)) {</span>
+<span class="nc" id="L633">            appendDetail(buffer, fieldName, array);</span>
+
+        } else {
+<span class="fc" id="L636">            appendSummary(buffer, fieldName, array);</span>
+        }
+
+<span class="fc" id="L639">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L640">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code char}
+     * value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param value  the value to add to the {@code toString}
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final char value) {
+<span class="fc" id="L651">        appendFieldStart(buffer, fieldName);</span>
+<span class="fc" id="L652">        appendDetail(buffer, fieldName, value);</span>
+<span class="fc" id="L653">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L654">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code char}
+     * array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param array  the array to add to the {@code toString}
+     * @param fullDetail  {@code true} for detail, {@code false}
+     *  for summary info, {@code null} for style decides
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final char[] array, final Boolean fullDetail) {
+<span class="fc" id="L667">        appendFieldStart(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L669" title="1 of 2 branches missed.">        if (array == null) {</span>
+<span class="nc" id="L670">            appendNullText(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L672" title="1 of 2 branches missed.">        } else if (isFullDetail(fullDetail)) {</span>
+<span class="nc" id="L673">            appendDetail(buffer, fieldName, array);</span>
+
+        } else {
+<span class="fc" id="L676">            appendSummary(buffer, fieldName, array);</span>
+        }
+
+<span class="fc" id="L679">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L680">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code double}
+     * value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param value  the value to add to the {@code toString}
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final double value) {
+<span class="fc" id="L691">        appendFieldStart(buffer, fieldName);</span>
+<span class="fc" id="L692">        appendDetail(buffer, fieldName, value);</span>
+<span class="fc" id="L693">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L694">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code double}
+     * array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param array  the array to add to the toString
+     * @param fullDetail  {@code true} for detail, {@code false}
+     *  for summary info, {@code null} for style decides
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final double[] array, final Boolean fullDetail) {
+<span class="fc" id="L707">        appendFieldStart(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L709" title="1 of 2 branches missed.">        if (array == null) {</span>
+<span class="nc" id="L710">            appendNullText(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L712" title="1 of 2 branches missed.">        } else if (isFullDetail(fullDetail)) {</span>
+<span class="nc" id="L713">            appendDetail(buffer, fieldName, array);</span>
+
+        } else {
+<span class="fc" id="L716">            appendSummary(buffer, fieldName, array);</span>
+        }
+
+<span class="fc" id="L719">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L720">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code float}
+     * value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param value  the value to add to the {@code toString}
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final float value) {
+<span class="fc" id="L731">        appendFieldStart(buffer, fieldName);</span>
+<span class="fc" id="L732">        appendDetail(buffer, fieldName, value);</span>
+<span class="fc" id="L733">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L734">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code float}
+     * array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param array  the array to add to the toString
+     * @param fullDetail  {@code true} for detail, {@code false}
+     *  for summary info, {@code null} for style decides
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final float[] array, final Boolean fullDetail) {
+<span class="fc" id="L747">        appendFieldStart(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L749" title="1 of 2 branches missed.">        if (array == null) {</span>
+<span class="nc" id="L750">            appendNullText(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L752" title="1 of 2 branches missed.">        } else if (isFullDetail(fullDetail)) {</span>
+<span class="nc" id="L753">            appendDetail(buffer, fieldName, array);</span>
+
+        } else {
+<span class="fc" id="L756">            appendSummary(buffer, fieldName, array);</span>
+        }
+
+<span class="fc" id="L759">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L760">    }</span>
+
+    /**
+     * Appends to the {@code toString} an {@code int}
+     * value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param value  the value to add to the {@code toString}
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final int value) {
+<span class="fc" id="L771">        appendFieldStart(buffer, fieldName);</span>
+<span class="fc" id="L772">        appendDetail(buffer, fieldName, value);</span>
+<span class="fc" id="L773">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L774">    }</span>
+
+    /**
+     * Appends to the {@code toString} an {@code int}
+     * array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param array  the array to add to the {@code toString}
+     * @param fullDetail  {@code true} for detail, {@code false}
+     *  for summary info, {@code null} for style decides
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final int[] array, final Boolean fullDetail) {
+<span class="fc" id="L787">        appendFieldStart(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L789" title="1 of 2 branches missed.">        if (array == null) {</span>
+<span class="nc" id="L790">            appendNullText(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L792" title="1 of 2 branches missed.">        } else if (isFullDetail(fullDetail)) {</span>
+<span class="nc" id="L793">            appendDetail(buffer, fieldName, array);</span>
+
+        } else {
+<span class="fc" id="L796">            appendSummary(buffer, fieldName, array);</span>
+        }
+
+<span class="fc" id="L799">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L800">    }</span>
+
+    /**
+     * &lt;p&gt;Appends to the {@code toString} a {@code long}
+     * value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param value  the value to add to the {@code toString}
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final long value) {
+<span class="fc" id="L811">        appendFieldStart(buffer, fieldName);</span>
+<span class="fc" id="L812">        appendDetail(buffer, fieldName, value);</span>
+<span class="fc" id="L813">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L814">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code long}
+     * array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param array  the array to add to the {@code toString}
+     * @param fullDetail  {@code true} for detail, {@code false}
+     *  for summary info, {@code null} for style decides
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final long[] array, final Boolean fullDetail) {
+<span class="fc" id="L827">        appendFieldStart(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L829" title="1 of 2 branches missed.">        if (array == null) {</span>
+<span class="nc" id="L830">            appendNullText(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L832" title="1 of 2 branches missed.">        } else if (isFullDetail(fullDetail)) {</span>
+<span class="nc" id="L833">            appendDetail(buffer, fieldName, array);</span>
+
+        } else {
+<span class="fc" id="L836">            appendSummary(buffer, fieldName, array);</span>
+        }
+
+<span class="fc" id="L839">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L840">    }</span>
+
+    /**
+     * Appends to the {@code toString} an {@link Object}
+     * value, printing the full {@code toString} of the
+     * {@link Object} passed in.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param value  the value to add to the {@code toString}
+     * @param fullDetail  {@code true} for detail, {@code false}
+     *  for summary info, {@code null} for style decides
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final Object value, final Boolean fullDetail) {
+<span class="fc" id="L854">        appendFieldStart(buffer, fieldName);</span>
+
+<span class="fc bfc" id="L856" title="All 2 branches covered.">        if (value == null) {</span>
+<span class="fc" id="L857">            appendNullText(buffer, fieldName);</span>
+
+        } else {
+<span class="fc" id="L860">            appendInternal(buffer, fieldName, value, isFullDetail(fullDetail));</span>
+        }
+
+<span class="fc" id="L863">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L864">    }</span>
+
+    /**
+     * Appends to the {@code toString} an {@link Object}
+     * array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param array  the array to add to the toString
+     * @param fullDetail  {@code true} for detail, {@code false}
+     *  for summary info, {@code null} for style decides
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final Object[] array, final Boolean fullDetail) {
+<span class="fc" id="L877">        appendFieldStart(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L879" title="1 of 2 branches missed.">        if (array == null) {</span>
+<span class="nc" id="L880">            appendNullText(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L882" title="1 of 2 branches missed.">        } else if (isFullDetail(fullDetail)) {</span>
+<span class="nc" id="L883">            appendDetail(buffer, fieldName, array);</span>
+
+        } else {
+<span class="fc" id="L886">            appendSummary(buffer, fieldName, array);</span>
+        }
+
+<span class="fc" id="L889">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L890">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code short}
+     * value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param value  the value to add to the {@code toString}
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final short value) {
+<span class="fc" id="L901">        appendFieldStart(buffer, fieldName);</span>
+<span class="fc" id="L902">        appendDetail(buffer, fieldName, value);</span>
+<span class="fc" id="L903">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L904">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code short}
+     * array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     * @param array  the array to add to the {@code toString}
+     * @param fullDetail  {@code true} for detail, {@code false}
+     *  for summary info, {@code null} for style decides
+     */
+    public void append(final StringBuffer buffer, final String fieldName, final short[] array, final Boolean fullDetail) {
+<span class="fc" id="L917">        appendFieldStart(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L919" title="1 of 2 branches missed.">        if (array == null) {</span>
+<span class="nc" id="L920">            appendNullText(buffer, fieldName);</span>
+
+<span class="pc bpc" id="L922" title="1 of 2 branches missed.">        } else if (isFullDetail(fullDetail)) {</span>
+<span class="nc" id="L923">            appendDetail(buffer, fieldName, array);</span>
+
+        } else {
+<span class="fc" id="L926">            appendSummary(buffer, fieldName, array);</span>
+        }
+
+<span class="fc" id="L929">        appendFieldEnd(buffer, fieldName);</span>
+<span class="fc" id="L930">    }</span>
+
+    /**
+     * Appends to the {@code toString} the class name.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param object  the {@link Object} whose name to output
+     */
+    protected void appendClassName(final StringBuffer buffer, final Object object) {
+<span class="pc bpc" id="L939" title="3 of 4 branches missed.">        if (useClassName &amp;&amp; object != null) {</span>
+<span class="nc" id="L940">            register(object);</span>
+<span class="nc bnc" id="L941" title="All 2 branches missed.">            if (useShortClassName) {</span>
+<span class="nc" id="L942">                buffer.append(getShortClassName(object.getClass()));</span>
+            } else {
+<span class="nc" id="L944">                buffer.append(object.getClass().getName());</span>
+            }
+        }
+<span class="fc" id="L947">    }</span>
+
+    /**
+     * Appends to the {@code toString} the content end.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     */
+    protected void appendContentEnd(final StringBuffer buffer) {
+<span class="fc" id="L955">        buffer.append(contentEnd);</span>
+<span class="fc" id="L956">    }</span>
+
+    /**
+     * Appends to the {@code toString} the content start.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     */
+    protected void appendContentStart(final StringBuffer buffer) {
+<span class="fc" id="L964">        buffer.append(contentStart);</span>
+<span class="fc" id="L965">    }</span>
+
+    /**
+     * Appends to the {@code toString} an {@link Object}
+     * value that has been detected to participate in a cycle. This
+     * implementation will print the standard string value of the value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param value  the value to add to the {@code toString},
+     *  not {@code null}
+     *
+     * @since 2.2
+     */
+    protected void appendCyclicObject(final StringBuffer buffer, final String fieldName, final Object value) {
+<span class="nc" id="L980">        ObjectUtils.identityToString(buffer, value);</span>
+<span class="nc" id="L981">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code boolean}
+     * value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param value  the value to add to the {@code toString}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final boolean value) {
+<span class="fc" id="L992">        buffer.append(value);</span>
+<span class="fc" id="L993">    }</span>
+
+    /**
+     * Appends to the {@code toString} the detail of a
+     * {@code boolean} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final boolean[] array) {
+<span class="nc" id="L1005">        buffer.append(arrayStart);</span>
+<span class="nc bnc" id="L1006" title="All 2 branches missed.">        for (int i = 0; i &lt; array.length; i++) {</span>
+<span class="nc bnc" id="L1007" title="All 2 branches missed.">            if (i &gt; 0) {</span>
+<span class="nc" id="L1008">                buffer.append(arraySeparator);</span>
+            }
+<span class="nc" id="L1010">            appendDetail(buffer, fieldName, array[i]);</span>
+        }
+<span class="nc" id="L1012">        buffer.append(arrayEnd);</span>
+<span class="nc" id="L1013">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code byte}
+     * value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param value  the value to add to the {@code toString}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final byte value) {
+<span class="fc" id="L1024">        buffer.append(value);</span>
+<span class="fc" id="L1025">    }</span>
+
+    /**
+     * Appends to the {@code toString} the detail of a
+     * {@code byte} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final byte[] array) {
+<span class="nc" id="L1037">        buffer.append(arrayStart);</span>
+<span class="nc bnc" id="L1038" title="All 2 branches missed.">        for (int i = 0; i &lt; array.length; i++) {</span>
+<span class="nc bnc" id="L1039" title="All 2 branches missed.">            if (i &gt; 0) {</span>
+<span class="nc" id="L1040">                buffer.append(arraySeparator);</span>
+            }
+<span class="nc" id="L1042">            appendDetail(buffer, fieldName, array[i]);</span>
+        }
+<span class="nc" id="L1044">        buffer.append(arrayEnd);</span>
+<span class="nc" id="L1045">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code char}
+     * value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param value  the value to add to the {@code toString}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final char value) {
+<span class="fc" id="L1056">        buffer.append(value);</span>
+<span class="fc" id="L1057">    }</span>
+
+    /**
+     * Appends to the {@code toString} the detail of a
+     * {@code char} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final char[] array) {
+<span class="nc" id="L1069">        buffer.append(arrayStart);</span>
+<span class="nc bnc" id="L1070" title="All 2 branches missed.">        for (int i = 0; i &lt; array.length; i++) {</span>
+<span class="nc bnc" id="L1071" title="All 2 branches missed.">            if (i &gt; 0) {</span>
+<span class="nc" id="L1072">                buffer.append(arraySeparator);</span>
+            }
+<span class="nc" id="L1074">            appendDetail(buffer, fieldName, array[i]);</span>
+        }
+<span class="nc" id="L1076">        buffer.append(arrayEnd);</span>
+<span class="nc" id="L1077">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@link Collection}.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param coll  the {@link Collection} to add to the
+     *  {@code toString}, not {@code null}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final Collection&lt;?&gt; coll) {
+<span class="fc" id="L1088">        buffer.append(coll);</span>
+<span class="fc" id="L1089">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code double}
+     * value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param value  the value to add to the {@code toString}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final double value) {
+<span class="fc" id="L1100">        buffer.append(value);</span>
+<span class="fc" id="L1101">    }</span>
+
+    /**
+     * Appends to the {@code toString} the detail of a
+     * {@code double} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final double[] array) {
+<span class="nc" id="L1113">        buffer.append(arrayStart);</span>
+<span class="nc bnc" id="L1114" title="All 2 branches missed.">        for (int i = 0; i &lt; array.length; i++) {</span>
+<span class="nc bnc" id="L1115" title="All 2 branches missed.">            if (i &gt; 0) {</span>
+<span class="nc" id="L1116">                buffer.append(arraySeparator);</span>
+            }
+<span class="nc" id="L1118">            appendDetail(buffer, fieldName, array[i]);</span>
+        }
+<span class="nc" id="L1120">        buffer.append(arrayEnd);</span>
+<span class="nc" id="L1121">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code float}
+     * value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param value  the value to add to the {@code toString}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final float value) {
+<span class="fc" id="L1132">        buffer.append(value);</span>
+<span class="fc" id="L1133">    }</span>
+
+    /**
+     * Appends to the {@code toString} the detail of a
+     * {@code float} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final float[] array) {
+<span class="nc" id="L1145">        buffer.append(arrayStart);</span>
+<span class="nc bnc" id="L1146" title="All 2 branches missed.">        for (int i = 0; i &lt; array.length; i++) {</span>
+<span class="nc bnc" id="L1147" title="All 2 branches missed.">            if (i &gt; 0) {</span>
+<span class="nc" id="L1148">                buffer.append(arraySeparator);</span>
+            }
+<span class="nc" id="L1150">            appendDetail(buffer, fieldName, array[i]);</span>
+        }
+<span class="nc" id="L1152">        buffer.append(arrayEnd);</span>
+<span class="nc" id="L1153">    }</span>
+
+    /**
+     * Appends to the {@code toString} an {@code int}
+     * value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param value  the value to add to the {@code toString}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final int value) {
+<span class="fc" id="L1164">        buffer.append(value);</span>
+<span class="fc" id="L1165">    }</span>
+
+    /**
+     * Appends to the {@code toString} the detail of an
+     * {@link Object} array item.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param i the array item index to add
+     * @param item the array item to add
+     * @since 3.11
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final int i, final Object item) {
+<span class="nc bnc" id="L1178" title="All 2 branches missed.">        if (i &gt; 0) {</span>
+<span class="nc" id="L1179">            buffer.append(arraySeparator);</span>
+        }
+<span class="nc bnc" id="L1181" title="All 2 branches missed.">        if (item == null) {</span>
+<span class="nc" id="L1182">            appendNullText(buffer, fieldName);</span>
+        } else {
+<span class="nc" id="L1184">            appendInternal(buffer, fieldName, item, arrayContentDetail);</span>
+        }
+<span class="nc" id="L1186">    }</span>
+
+    /**
+     * Appends to the {@code toString} the detail of an
+     * {@code int} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final int[] array) {
+<span class="nc" id="L1198">        buffer.append(arrayStart);</span>
+<span class="nc bnc" id="L1199" title="All 2 branches missed.">        for (int i = 0; i &lt; array.length; i++) {</span>
+<span class="nc bnc" id="L1200" title="All 2 branches missed.">            if (i &gt; 0) {</span>
+<span class="nc" id="L1201">                buffer.append(arraySeparator);</span>
+            }
+<span class="nc" id="L1203">            appendDetail(buffer, fieldName, array[i]);</span>
+        }
+<span class="nc" id="L1205">        buffer.append(arrayEnd);</span>
+<span class="nc" id="L1206">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code long}
+     * value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param value  the value to add to the {@code toString}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final long value) {
+<span class="fc" id="L1217">        buffer.append(value);</span>
+<span class="fc" id="L1218">    }</span>
+
+    /**
+     * Appends to the {@code toString} the detail of a
+     * {@code long} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final long[] array) {
+<span class="nc" id="L1230">        buffer.append(arrayStart);</span>
+<span class="nc bnc" id="L1231" title="All 2 branches missed.">        for (int i = 0; i &lt; array.length; i++) {</span>
+<span class="nc bnc" id="L1232" title="All 2 branches missed.">            if (i &gt; 0) {</span>
+<span class="nc" id="L1233">                buffer.append(arraySeparator);</span>
+            }
+<span class="nc" id="L1235">            appendDetail(buffer, fieldName, array[i]);</span>
+        }
+<span class="nc" id="L1237">        buffer.append(arrayEnd);</span>
+<span class="nc" id="L1238">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@link Map}.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param map  the {@link Map} to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final Map&lt;?, ?&gt; map) {
+<span class="fc" id="L1249">        buffer.append(map);</span>
+<span class="fc" id="L1250">    }</span>
+
+    /**
+     * Appends to the {@code toString} an {@link Object}
+     * value, printing the full detail of the {@link Object}.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param value  the value to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final Object value) {
+<span class="fc" id="L1262">        buffer.append(value);</span>
+<span class="fc" id="L1263">    }</span>
+
+    /**
+     * Appends to the {@code toString} the detail of an
+     * {@link Object} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final Object[] array) {
+<span class="fc" id="L1275">        buffer.append(arrayStart);</span>
+<span class="pc bpc" id="L1276" title="1 of 2 branches missed.">        for (int i = 0; i &lt; array.length; i++) {</span>
+<span class="nc" id="L1277">            appendDetail(buffer, fieldName, i, array[i]);</span>
+        }
+<span class="fc" id="L1279">        buffer.append(arrayEnd);</span>
+<span class="fc" id="L1280">    }</span>
+
+    /**
+     * Appends to the {@code toString} a {@code short}
+     * value.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param value  the value to add to the {@code toString}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final short value) {
+<span class="fc" id="L1291">        buffer.append(value);</span>
+<span class="fc" id="L1292">    }</span>
+
+    /**
+     * Appends to the {@code toString} the detail of a
+     * {@code short} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendDetail(final StringBuffer buffer, final String fieldName, final short[] array) {
+<span class="nc" id="L1304">        buffer.append(arrayStart);</span>
+<span class="nc bnc" id="L1305" title="All 2 branches missed.">        for (int i = 0; i &lt; array.length; i++) {</span>
+<span class="nc bnc" id="L1306" title="All 2 branches missed.">            if (i &gt; 0) {</span>
+<span class="nc" id="L1307">                buffer.append(arraySeparator);</span>
+            }
+<span class="nc" id="L1309">            appendDetail(buffer, fieldName, array[i]);</span>
+        }
+<span class="nc" id="L1311">        buffer.append(arrayEnd);</span>
+<span class="nc" id="L1312">    }</span>
+
+    /**
+     * Appends to the {@code toString} the end of data indicator.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param object  the {@link Object} to build a
+     *  {@code toString} for.
+     */
+    public void appendEnd(final StringBuffer buffer, final Object object) {
+<span class="pc bpc" id="L1322" title="1 of 2 branches missed.">        if (!this.fieldSeparatorAtEnd) {</span>
+<span class="fc" id="L1323">            removeLastFieldSeparator(buffer);</span>
+        }
+<span class="fc" id="L1325">        appendContentEnd(buffer);</span>
+<span class="fc" id="L1326">        unregister(object);</span>
+<span class="fc" id="L1327">    }</span>
+
+    /**
+     * Appends to the {@code toString} the field end.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     */
+    protected void appendFieldEnd(final StringBuffer buffer, final String fieldName) {
+<span class="fc" id="L1336">        appendFieldSeparator(buffer);</span>
+<span class="fc" id="L1337">    }</span>
+
+    /**
+     * Appends to the {@code toString} the field separator.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     */
+    protected void appendFieldSeparator(final StringBuffer buffer) {
+<span class="fc" id="L1345">        buffer.append(fieldSeparator);</span>
+<span class="fc" id="L1346">    }</span>
+
+    /**
+     * Appends to the {@code toString} the field start.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name
+     */
+    protected void appendFieldStart(final StringBuffer buffer, final String fieldName) {
+<span class="fc bfc" id="L1355" title="All 4 branches covered.">        if (useFieldNames &amp;&amp; fieldName != null) {</span>
+<span class="fc" id="L1356">            buffer.append(fieldName);</span>
+<span class="fc" id="L1357">            buffer.append(fieldNameValueSeparator);</span>
+        }
+<span class="fc" id="L1359">    }</span>
+
+    /**
+     * Appends the {@link System#identityHashCode(java.lang.Object)}.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param object  the {@link Object} whose id to output
+     */
+    protected void appendIdentityHashCode(final StringBuffer buffer, final Object object) {
+<span class="pc bpc" id="L1368" title="3 of 4 branches missed.">        if (this.isUseIdentityHashCode() &amp;&amp; object != null) {</span>
+<span class="nc" id="L1369">            register(object);</span>
+<span class="nc" id="L1370">            buffer.append('@');</span>
+<span class="nc" id="L1371">            buffer.append(ObjectUtils.identityHashCodeHex(object));</span>
+        }
+<span class="fc" id="L1373">    }</span>
+
+    /**
+     * Appends to the {@code toString} an {@link Object},
+     * correctly interpreting its type.
+     *
+     * &lt;p&gt;This method performs the main lookup by Class type to correctly
+     * route arrays, {@link Collection}s, {@link Map}s and
+     * {@link Objects} to the appropriate method.&lt;/p&gt;
+     *
+     * &lt;p&gt;Either detail or summary views can be specified.&lt;/p&gt;
+     *
+     * &lt;p&gt;If a cycle is detected, an object will be appended with the
+     * {@code Object.toString()} format.&lt;/p&gt;
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param value  the value to add to the {@code toString},
+     *  not {@code null}
+     * @param detail  output detail or not
+     */
+    protected void appendInternal(final StringBuffer buffer, final String fieldName, final Object value, final boolean detail) {
+<span class="pc bpc" id="L1395" title="7 of 8 branches missed.">        if (isRegistered(value)</span>
+                &amp;&amp; !(value instanceof Number || value instanceof Boolean || value instanceof Character)) {
+<span class="nc" id="L1397">            appendCyclicObject(buffer, fieldName, value);</span>
+<span class="nc" id="L1398">            return;</span>
+        }
+
+<span class="fc" id="L1401">        register(value);</span>
+
+        try {
+<span class="fc bfc" id="L1404" title="All 2 branches covered.">            if (value instanceof Collection&lt;?&gt;) {</span>
+<span class="fc bfc" id="L1405" title="All 2 branches covered.">                if (detail) {</span>
+<span class="fc" id="L1406">                    appendDetail(buffer, fieldName, (Collection&lt;?&gt;) value);</span>
+                } else {
+<span class="fc" id="L1408">                    appendSummarySize(buffer, fieldName, ((Collection&lt;?&gt;) value).size());</span>
+                }
+
+<span class="fc bfc" id="L1411" title="All 2 branches covered.">            } else if (value instanceof Map&lt;?, ?&gt;) {</span>
+<span class="pc bpc" id="L1412" title="1 of 2 branches missed.">                if (detail) {</span>
+<span class="fc" id="L1413">                    appendDetail(buffer, fieldName, (Map&lt;?, ?&gt;) value);</span>
+                } else {
+<span class="nc" id="L1415">                    appendSummarySize(buffer, fieldName, ((Map&lt;?, ?&gt;) value).size());</span>
+                }
+
+<span class="pc bpc" id="L1418" title="1 of 2 branches missed.">            } else if (value instanceof long[]) {</span>
+<span class="nc bnc" id="L1419" title="All 2 branches missed.">                if (detail) {</span>
+<span class="nc" id="L1420">                    appendDetail(buffer, fieldName, (long[]) value);</span>
+                } else {
+<span class="nc" id="L1422">                    appendSummary(buffer, fieldName, (long[]) value);</span>
+                }
+
+<span class="pc bpc" id="L1425" title="1 of 2 branches missed.">            } else if (value instanceof int[]) {</span>
+<span class="nc bnc" id="L1426" title="All 2 branches missed.">                if (detail) {</span>
+<span class="nc" id="L1427">                    appendDetail(buffer, fieldName, (int[]) value);</span>
+                } else {
+<span class="nc" id="L1429">                    appendSummary(buffer, fieldName, (int[]) value);</span>
+                }
+
+<span class="pc bpc" id="L1432" title="1 of 2 branches missed.">            } else if (value instanceof short[]) {</span>
+<span class="nc bnc" id="L1433" title="All 2 branches missed.">                if (detail) {</span>
+<span class="nc" id="L1434">                    appendDetail(buffer, fieldName, (short[]) value);</span>
+                } else {
+<span class="nc" id="L1436">                    appendSummary(buffer, fieldName, (short[]) value);</span>
+                }
+
+<span class="pc bpc" id="L1439" title="1 of 2 branches missed.">            } else if (value instanceof byte[]) {</span>
+<span class="nc bnc" id="L1440" title="All 2 branches missed.">                if (detail) {</span>
+<span class="nc" id="L1441">                    appendDetail(buffer, fieldName, (byte[]) value);</span>
+                } else {
+<span class="nc" id="L1443">                    appendSummary(buffer, fieldName, (byte[]) value);</span>
+                }
+
+<span class="pc bpc" id="L1446" title="1 of 2 branches missed.">            } else if (value instanceof char[]) {</span>
+<span class="nc bnc" id="L1447" title="All 2 branches missed.">                if (detail) {</span>
+<span class="nc" id="L1448">                    appendDetail(buffer, fieldName, (char[]) value);</span>
+                } else {
+<span class="nc" id="L1450">                    appendSummary(buffer, fieldName, (char[]) value);</span>
+                }
+
+<span class="pc bpc" id="L1453" title="1 of 2 branches missed.">            } else if (value instanceof double[]) {</span>
+<span class="nc bnc" id="L1454" title="All 2 branches missed.">                if (detail) {</span>
+<span class="nc" id="L1455">                    appendDetail(buffer, fieldName, (double[]) value);</span>
+                } else {
+<span class="nc" id="L1457">                    appendSummary(buffer, fieldName, (double[]) value);</span>
+                }
+
+<span class="pc bpc" id="L1460" title="1 of 2 branches missed.">            } else if (value instanceof float[]) {</span>
+<span class="nc bnc" id="L1461" title="All 2 branches missed.">                if (detail) {</span>
+<span class="nc" id="L1462">                    appendDetail(buffer, fieldName, (float[]) value);</span>
+                } else {
+<span class="nc" id="L1464">                    appendSummary(buffer, fieldName, (float[]) value);</span>
+                }
+
+<span class="pc bpc" id="L1467" title="1 of 2 branches missed.">            } else if (value instanceof boolean[]) {</span>
+<span class="nc bnc" id="L1468" title="All 2 branches missed.">                if (detail) {</span>
+<span class="nc" id="L1469">                    appendDetail(buffer, fieldName, (boolean[]) value);</span>
+                } else {
+<span class="nc" id="L1471">                    appendSummary(buffer, fieldName, (boolean[]) value);</span>
+                }
+
+<span class="fc bfc" id="L1474" title="All 2 branches covered.">            } else if (ObjectUtils.isArray(value)) {</span>
+<span class="fc bfc" id="L1475" title="All 2 branches covered.">                if (detail) {</span>
+<span class="fc" id="L1476">                    appendDetail(buffer, fieldName, (Object[]) value);</span>
+                } else {
+<span class="fc" id="L1478">                    appendSummary(buffer, fieldName, (Object[]) value);</span>
+                }
+
+<span class="fc bfc" id="L1481" title="All 2 branches covered.">            } else if (detail) {</span>
+<span class="fc" id="L1482">                appendDetail(buffer, fieldName, value);</span>
+            } else {
+<span class="fc" id="L1484">                appendSummary(buffer, fieldName, value);</span>
+            }
+        } finally {
+<span class="fc" id="L1487">            unregister(value);</span>
+        }
+<span class="fc" id="L1489">    }</span>
+
+    /**
+     * Appends to the {@code toString} an indicator for {@code null}.
+     *
+     * &lt;p&gt;The default indicator is {@code &quot;&lt;null&gt;&quot;}.&lt;/p&gt;
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     */
+    protected void appendNullText(final StringBuffer buffer, final String fieldName) {
+<span class="fc" id="L1500">        buffer.append(nullText);</span>
+<span class="fc" id="L1501">    }</span>
+
+
+    public void appendStart(final StringBuffer buffer, final Object object) {
+<span class="fc bfc" id="L1505" title="All 2 branches covered.">        if (object == null) { // negate condition</span>
+<span class="fc" id="L1506">            appendClassName(buffer, object); // No change</span>
+<span class="fc" id="L1507">            appendIdentityHashCode(buffer, object); // No change</span>
+<span class="fc" id="L1508">            appendContentStart(buffer); // No change</span>
+<span class="pc bpc" id="L1509" title="1 of 2 branches missed.">            if (!fieldSeparatorAtStart) { // negate condition</span>
+<span class="fc" id="L1510">                appendFieldSeparator(buffer); // No change</span>
+            }
+        }
+<span class="fc" id="L1513">    }</span>
+
+    // Not all methods are displayed to keep it concise, but similar mutations can be made...
+    /**
+     * Appends to the {@code toString} a summary of a
+     * {@code boolean} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendSummary(final StringBuffer buffer, final String fieldName, final boolean[] array) {
+<span class="fc" id="L1526">        appendSummarySize(buffer, fieldName, array.length);</span>
+<span class="fc" id="L1527">    }</span>
+
+    /**
+     * Appends to the {@code toString} a summary of a
+     * {@code byte} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendSummary(final StringBuffer buffer, final String fieldName, final byte[] array) {
+<span class="fc" id="L1539">        appendSummarySize(buffer, fieldName, array.length);</span>
+<span class="fc" id="L1540">    }</span>
+
+    /**
+     * Appends to the {@code toString} a summary of a
+     * {@code char} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendSummary(final StringBuffer buffer, final String fieldName, final char[] array) {
+<span class="fc" id="L1552">        appendSummarySize(buffer, fieldName, array.length);</span>
+<span class="fc" id="L1553">    }</span>
+
+    /**
+     * Appends to the {@code toString} a summary of a
+     * {@code double} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendSummary(final StringBuffer buffer, final String fieldName, final double[] array) {
+<span class="fc" id="L1565">        appendSummarySize(buffer, fieldName, array.length);</span>
+<span class="fc" id="L1566">    }</span>
+
+    /**
+     * Appends to the {@code toString} a summary of a
+     * {@code float} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendSummary(final StringBuffer buffer, final String fieldName, final float[] array) {
+<span class="fc" id="L1578">        appendSummarySize(buffer, fieldName, array.length);</span>
+<span class="fc" id="L1579">    }</span>
+
+    /**
+     * Appends to the {@code toString} a summary of an
+     * {@code int} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendSummary(final StringBuffer buffer, final String fieldName, final int[] array) {
+<span class="fc" id="L1591">        appendSummarySize(buffer, fieldName, array.length);</span>
+<span class="fc" id="L1592">    }</span>
+
+    /**
+     * Appends to the {@code toString} a summary of a
+     * {@code long} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendSummary(final StringBuffer buffer, final String fieldName, final long[] array) {
+<span class="fc" id="L1604">        appendSummarySize(buffer, fieldName, array.length);</span>
+<span class="fc" id="L1605">    }</span>
+
+    /**
+     * Appends to the {@code toString} an {@link Object}
+     * value, printing a summary of the {@link Object}.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param value  the value to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendSummary(final StringBuffer buffer, final String fieldName, final Object value) {
+<span class="fc" id="L1617">        buffer.append(summaryObjectStartText);</span>
+<span class="fc" id="L1618">        buffer.append(getShortClassName(value.getClass()));</span>
+<span class="fc" id="L1619">        buffer.append(summaryObjectEndText);</span>
+<span class="fc" id="L1620">    }</span>
+
+    /**
+     * Appends to the {@code toString} a summary of an
+     * {@link Object} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendSummary(final StringBuffer buffer, final String fieldName, final Object[] array) {
+<span class="fc" id="L1632">        appendSummarySize(buffer, fieldName, array.length);</span>
+<span class="fc" id="L1633">    }</span>
+
+    /**
+     * Appends to the {@code toString} a summary of a
+     * {@code short} array.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     */
+    protected void appendSummary(final StringBuffer buffer, final String fieldName, final short[] array) {
+<span class="fc" id="L1645">        appendSummarySize(buffer, fieldName, array.length);</span>
+<span class="fc" id="L1646">    }</span>
+
+    /**
+     * Appends to the {@code toString} a size summary.
+     *
+     * &lt;p&gt;The size summary is used to summarize the contents of
+     * {@link Collection}s, {@link Map}s and arrays.&lt;/p&gt;
+     *
+     * &lt;p&gt;The output consists of a prefix, the passed in size
+     * and a suffix.&lt;/p&gt;
+     *
+     * &lt;p&gt;The default format is {@code &quot;&lt;size=n&gt;&quot;}.&lt;/p&gt;
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param size  the size to append
+     */
+    protected void appendSummarySize(final StringBuffer buffer, final String fieldName, final int size) {
+<span class="fc" id="L1664">        buffer.append(sizeStartText);</span>
+<span class="fc" id="L1665">        buffer.append(size);</span>
+<span class="fc" id="L1666">        buffer.append(sizeEndText);</span>
+<span class="fc" id="L1667">    }</span>
+
+    /**
+     * Appends to the {@code toString} the superclass toString.
+     * &lt;p&gt;NOTE: It assumes that the toString has been created from the same ToStringStyle.&lt;/p&gt;
+     *
+     * &lt;p&gt;A {@code null} {@code superToString} is ignored.&lt;/p&gt;
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param superToString  the {@code super.toString()}
+     * @since 2.0
+     */
+    public void appendSuper(final StringBuffer buffer, final String superToString) {
+<span class="fc" id="L1680">        appendToString(buffer, superToString);</span>
+<span class="fc" id="L1681">    }</span>
+
+    /**
+     * Appends to the {@code toString} another toString.
+     * &lt;p&gt;NOTE: It assumes that the toString has been created from the same ToStringStyle.&lt;/p&gt;
+     *
+     * &lt;p&gt;A {@code null} {@code toString} is ignored.&lt;/p&gt;
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param toString  the additional {@code toString}
+     * @since 2.0
+     */
+    public void appendToString(final StringBuffer buffer, final String toString) {
+<span class="pc bpc" id="L1694" title="1 of 2 branches missed.">        if (toString != null) {</span>
+<span class="fc" id="L1695">            final int pos1 = toString.indexOf(contentStart) + contentStart.length();</span>
+<span class="fc" id="L1696">            final int pos2 = toString.lastIndexOf(contentEnd);</span>
+<span class="pc bpc" id="L1697" title="1 of 6 branches missed.">            if (pos1 != pos2 &amp;&amp; pos1 &gt;= 0 &amp;&amp; pos2 &gt;= 0) {</span>
+<span class="pc bpc" id="L1698" title="1 of 2 branches missed.">                if (fieldSeparatorAtStart) {</span>
+<span class="nc" id="L1699">                    removeLastFieldSeparator(buffer);</span>
+                }
+<span class="fc" id="L1701">                buffer.append(toString, pos1, pos2);</span>
+<span class="fc" id="L1702">                appendFieldSeparator(buffer);</span>
+            }
+        }
+<span class="fc" id="L1705">    }</span>
+
+    /**
+     * Gets the array end text.
+     *
+     * @return the current array end text
+     */
+    protected String getArrayEnd() {
+<span class="fc" id="L1713">        return arrayEnd;</span>
+    }
+
+    /**
+     * Gets the array separator text.
+     *
+     * @return the current array separator text
+     */
+    protected String getArraySeparator() {
+<span class="fc" id="L1722">        return arraySeparator;</span>
+    }
+
+    /**
+     * Gets the array start text.
+     *
+     * @return the current array start text
+     */
+    protected String getArrayStart() {
+<span class="fc" id="L1731">        return arrayStart;</span>
+    }
+
+    /**
+     * Gets the content end text.
+     *
+     * @return the current content end text
+     */
+    protected String getContentEnd() {
+<span class="fc" id="L1740">        return contentEnd;</span>
+    }
+
+    /**
+     * Gets the content start text.
+     *
+     * @return the current content start text
+     */
+    protected String getContentStart() {
+<span class="fc" id="L1749">        return contentStart;</span>
+    }
+
+    /**
+     * Gets the field name value separator text.
+     *
+     * @return the current field name value separator text
+     */
+    protected String getFieldNameValueSeparator() {
+<span class="fc" id="L1758">        return fieldNameValueSeparator;</span>
+    }
+
+    /**
+     * Gets the field separator text.
+     *
+     * @return the current field separator text
+     */
+    protected String getFieldSeparator() {
+<span class="fc" id="L1767">        return fieldSeparator;</span>
+    }
+
+    /**
+     * Gets the text to output when {@code null} found.
+     *
+     * @return the current text to output when null found
+     */
+    protected String getNullText() {
+<span class="fc" id="L1776">        return nullText;</span>
+    }
+
+    /**
+     * Gets the short class name for a class.
+     *
+     * &lt;p&gt;The short class name is the class name excluding
+     * the package name.&lt;/p&gt;
+     *
+     * @param cls  the {@link Class} to get the short name of
+     * @return the short name
+     */
+    protected String getShortClassName(final Class&lt;?&gt; cls) {
+<span class="fc" id="L1789">        return ClassUtils.getShortClassName(cls);</span>
+    }
+
+    /**
+     * Gets the end text to output when a {@link Collection},
+     * {@link Map} or array size is output.
+     *
+     * &lt;p&gt;This is output after the size value.&lt;/p&gt;
+     *
+     * @return the current end of size text
+     */
+    protected String getSizeEndText() {
+<span class="fc" id="L1801">        return sizeEndText;</span>
+    }
+
+    /**
+     * Gets the start text to output when a {@link Collection},
+     * {@link Map} or array size is output.
+     *
+     * &lt;p&gt;This is output before the size value.&lt;/p&gt;
+     *
+     * @return the current start of size text
+     */
+    protected String getSizeStartText() {
+<span class="fc" id="L1813">        return sizeStartText;</span>
+    }
+
+    /**
+     * Gets the end text to output when an {@link Object} is
+     * output in summary mode.
+     *
+     * &lt;p&gt;This is output after the size value.&lt;/p&gt;
+     *
+     * @return the current end of summary text
+     */
+    protected String getSummaryObjectEndText() {
+<span class="fc" id="L1825">        return summaryObjectEndText;</span>
+    }
+
+    /**
+     * Gets the start text to output when an {@link Object} is
+     * output in summary mode.
+     *
+     * &lt;p&gt;This is output before the size value.&lt;/p&gt;
+     *
+     * @return the current start of summary text
+     */
+    protected String getSummaryObjectStartText() {
+<span class="fc" id="L1837">        return summaryObjectStartText;</span>
+    }
+
+    /**
+     * Gets whether to output array content detail.
+     *
+     * @return the current array content detail setting
+     */
+    protected boolean isArrayContentDetail() {
+<span class="nc" id="L1846">        return arrayContentDetail;</span>
+    }
+
+    /**
+     * Gets whether to use full detail when the caller doesn't
+     * specify.
+     *
+     * @return the current defaultFullDetail flag
+     */
+    protected boolean isDefaultFullDetail() {
+<span class="nc" id="L1856">        return defaultFullDetail;</span>
+    }
+
+    /**
+     * Gets whether the field separator should be added at the end
+     * of each buffer.
+     *
+     * @return fieldSeparatorAtEnd flag
+     * @since 2.0
+     */
+    protected boolean isFieldSeparatorAtEnd() {
+<span class="fc" id="L1867">        return fieldSeparatorAtEnd;</span>
+    }
+
+    /**
+     * Gets whether the field separator should be added at the start
+     * of each buffer.
+     *
+     * @return the fieldSeparatorAtStart flag
+     * @since 2.0
+     */
+    protected boolean isFieldSeparatorAtStart() {
+<span class="fc" id="L1878">        return fieldSeparatorAtStart;</span>
+    }
+
+    /**
+     * Is this field to be output in full detail.
+     *
+     * &lt;p&gt;This method converts a detail request into a detail level.
+     * The calling code may request full detail ({@code true}),
+     * but a subclass might ignore that and always return
+     * {@code false}. The calling code may pass in
+     * {@code null} indicating that it doesn't care about
+     * the detail level. In this case the default detail level is
+     * used.&lt;/p&gt;
+     *
+     * @param fullDetailRequest  the detail level requested
+     * @return whether full detail is to be shown
+     */
+    protected boolean isFullDetail(final Boolean fullDetailRequest) {
+<span class="fc bfc" id="L1896" title="All 2 branches covered.">        if (fullDetailRequest == null) {</span>
+<span class="fc" id="L1897">            return defaultFullDetail;</span>
+        }
+<span class="fc" id="L1899">        return fullDetailRequest.booleanValue();</span>
+    }
+
+    // Setters and getters for the customizable parts of the style
+    // These methods are not expected to be overridden, except to make public
+    // (They are not public so that immutable subclasses can be written)
+    /**
+     * Gets whether to use the class name.
+     *
+     * @return the current useClassName flag
+     */
+    protected boolean isUseClassName() {
+<span class="fc" id="L1911">        return useClassName;</span>
+    }
+
+    /**
+     * Gets whether to use the field names passed in.
+     *
+     * @return the current useFieldNames flag
+     */
+    protected boolean isUseFieldNames() {
+<span class="fc" id="L1920">        return useFieldNames;</span>
+    }
+
+    /**
+     * Gets whether to use the identity hash code.
+     *
+     * @return the current useIdentityHashCode flag
+     */
+    protected boolean isUseIdentityHashCode() {
+<span class="fc" id="L1929">        return useIdentityHashCode;</span>
+    }
+
+    /**
+     * Gets whether to output short or long class names.
+     *
+     * @return the current useShortClassName flag
+     * @since 2.0
+     */
+    protected boolean isUseShortClassName() {
+<span class="nc" id="L1939">        return useShortClassName;</span>
+    }
+
+    /**
+     * Appends to the {@code toString} the detail of an array type.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @param fieldName  the field name, typically not used as already appended
+     * @param array  the array to add to the {@code toString},
+     *  not {@code null}
+     * @since 2.0
+     */
+    protected void reflectionAppendArrayDetail(final StringBuffer buffer, final String fieldName, final Object array) {
+<span class="nc" id="L1952">        buffer.append(arrayStart);</span>
+<span class="nc" id="L1953">        final int length = Array.getLength(array);</span>
+<span class="nc bnc" id="L1954" title="All 2 branches missed.">        for (int i = 0; i &lt; length; i++) {</span>
+<span class="nc" id="L1955">            appendDetail(buffer, fieldName, i, Array.get(array, i));</span>
+        }
+<span class="nc" id="L1957">        buffer.append(arrayEnd);</span>
+<span class="nc" id="L1958">    }</span>
+
+    /**
+     * Remove the last field separator from the buffer.
+     *
+     * @param buffer  the {@link StringBuffer} to populate
+     * @since 2.0
+     */
+    protected void removeLastFieldSeparator(final StringBuffer buffer) {
+<span class="fc bfc" id="L1967" title="All 2 branches covered.">        if (StringUtils.endsWith(buffer, fieldSeparator)) {</span>
+<span class="fc" id="L1968">            buffer.setLength(buffer.length() - fieldSeparator.length());</span>
+        }
+<span class="fc" id="L1970">    }</span>
+
+    /**
+     * Sets whether to output array content detail.
+     *
+     * @param arrayContentDetail  the new arrayContentDetail flag
+     */
+    protected void setArrayContentDetail(final boolean arrayContentDetail) {
+<span class="fc" id="L1978">        this.arrayContentDetail = arrayContentDetail;</span>
+<span class="fc" id="L1979">    }</span>
+
+    /**
+     * Sets the array end text.
+     *
+     * &lt;p&gt;{@code null} is accepted, but will be converted to
+     * an empty String.&lt;/p&gt;
+     *
+     * @param arrayEnd  the new array end text
+     */
+    protected void setArrayEnd(String arrayEnd) {
+<span class="fc bfc" id="L1990" title="All 2 branches covered.">        if (arrayEnd == null) {</span>
+<span class="fc" id="L1991">            arrayEnd = StringUtils.EMPTY;</span>
+        }
+<span class="fc" id="L1993">        this.arrayEnd = arrayEnd;</span>
+<span class="fc" id="L1994">    }</span>
+
+    /**
+     * Sets the array separator text.
+     *
+     * &lt;p&gt;{@code null} is accepted, but will be converted to
+     * an empty String.&lt;/p&gt;
+     *
+     * @param arraySeparator  the new array separator text
+     */
+    protected void setArraySeparator(String arraySeparator) {
+<span class="fc bfc" id="L2005" title="All 2 branches covered.">        if (arraySeparator == null) {</span>
+<span class="fc" id="L2006">            arraySeparator = StringUtils.EMPTY;</span>
+        }
+<span class="fc" id="L2008">        this.arraySeparator = arraySeparator;</span>
+<span class="fc" id="L2009">    }</span>
+
+    /**
+     * Sets the array start text.
+     *
+     * &lt;p&gt;{@code null} is accepted, but will be converted to
+     * an empty String.&lt;/p&gt;
+     *
+     * @param arrayStart  the new array start text
+     */
+    protected void setArrayStart(String arrayStart) {
+<span class="fc bfc" id="L2020" title="All 2 branches covered.">        if (arrayStart == null) {</span>
+<span class="fc" id="L2021">            arrayStart = StringUtils.EMPTY;</span>
+        }
+<span class="fc" id="L2023">        this.arrayStart = arrayStart;</span>
+<span class="fc" id="L2024">    }</span>
+
+    /**
+     * Sets the content end text.
+     *
+     * &lt;p&gt;{@code null} is accepted, but will be converted to
+     * an empty String.&lt;/p&gt;
+     *
+     * @param contentEnd  the new content end text
+     */
+    protected void setContentEnd(String contentEnd) {
+<span class="fc bfc" id="L2035" title="All 2 branches covered.">        if (contentEnd == null) {</span>
+<span class="fc" id="L2036">            contentEnd = StringUtils.EMPTY;</span>
+        }
+<span class="fc" id="L2038">        this.contentEnd = contentEnd;</span>
+<span class="fc" id="L2039">    }</span>
+
+    /**
+     * Sets the content start text.
+     *
+     * &lt;p&gt;{@code null} is accepted, but will be converted to
+     * an empty String.&lt;/p&gt;
+     *
+     * @param contentStart  the new content start text
+     */
+    protected void setContentStart(String contentStart) {
+<span class="fc bfc" id="L2050" title="All 2 branches covered.">        if (contentStart == null) {</span>
+<span class="fc" id="L2051">            contentStart = StringUtils.EMPTY;</span>
+        }
+<span class="fc" id="L2053">        this.contentStart = contentStart;</span>
+<span class="fc" id="L2054">    }</span>
+
+    /**
+     * Sets whether to use full detail when the caller doesn't
+     * specify.
+     *
+     * @param defaultFullDetail  the new defaultFullDetail flag
+     */
+    protected void setDefaultFullDetail(final boolean defaultFullDetail) {
+<span class="fc" id="L2063">        this.defaultFullDetail = defaultFullDetail;</span>
+<span class="fc" id="L2064">    }</span>
+
+    /**
+     * Sets the field name value separator text.
+     *
+     * &lt;p&gt;{@code null} is accepted, but will be converted to
+     * an empty String.&lt;/p&gt;
+     *
+     * @param fieldNameValueSeparator  the new field name value separator text
+     */
+    protected void setFieldNameValueSeparator(String fieldNameValueSeparator) {
+<span class="fc bfc" id="L2075" title="All 2 branches covered.">        if (fieldNameValueSeparator == null) {</span>
+<span class="fc" id="L2076">            fieldNameValueSeparator = StringUtils.EMPTY;</span>
+        }
+<span class="fc" id="L2078">        this.fieldNameValueSeparator = fieldNameValueSeparator;</span>
+<span class="fc" id="L2079">    }</span>
+
+    /**
+     * Sets the field separator text.
+     *
+     * &lt;p&gt;{@code null} is accepted, but will be converted to
+     * an empty String.&lt;/p&gt;
+     *
+     * @param fieldSeparator  the new field separator text
+     */
+    protected void setFieldSeparator(String fieldSeparator) {
+<span class="fc bfc" id="L2090" title="All 2 branches covered.">        if (fieldSeparator == null) {</span>
+<span class="fc" id="L2091">            fieldSeparator = StringUtils.EMPTY;</span>
+        }
+<span class="fc" id="L2093">        this.fieldSeparator = fieldSeparator;</span>
+<span class="fc" id="L2094">    }</span>
+
+    /**
+     * Sets whether the field separator should be added at the end
+     * of each buffer.
+     *
+     * @param fieldSeparatorAtEnd  the fieldSeparatorAtEnd flag
+     * @since 2.0
+     */
+    protected void setFieldSeparatorAtEnd(final boolean fieldSeparatorAtEnd) {
+<span class="nc" id="L2104">        this.fieldSeparatorAtEnd = fieldSeparatorAtEnd;</span>
+<span class="nc" id="L2105">    }</span>
+
+    /**
+     * Sets whether the field separator should be added at the start
+     * of each buffer.
+     *
+     * @param fieldSeparatorAtStart  the fieldSeparatorAtStart flag
+     * @since 2.0
+     */
+    protected void setFieldSeparatorAtStart(final boolean fieldSeparatorAtStart) {
+<span class="fc" id="L2115">        this.fieldSeparatorAtStart = fieldSeparatorAtStart;</span>
+<span class="fc" id="L2116">    }</span>
+
+    /**
+     * Sets the text to output when {@code null} found.
+     *
+     * &lt;p&gt;{@code null} is accepted, but will be converted to
+     * an empty String.&lt;/p&gt;
+     *
+     * @param nullText  the new text to output when null found
+     */
+    protected void setNullText(String nullText) {
+<span class="fc bfc" id="L2127" title="All 2 branches covered.">        if (nullText == null) {</span>
+<span class="fc" id="L2128">            nullText = StringUtils.EMPTY;</span>
+        }
+<span class="fc" id="L2130">        this.nullText = nullText;</span>
+<span class="fc" id="L2131">    }</span>
+
+    /**
+     * Sets the end text to output when a {@link Collection},
+     * {@link Map} or array size is output.
+     *
+     * &lt;p&gt;This is output after the size value.&lt;/p&gt;
+     *
+     * &lt;p&gt;{@code null} is accepted, but will be converted to
+     * an empty String.&lt;/p&gt;
+     *
+     * @param sizeEndText  the new end of size text
+     */
+    protected void setSizeEndText(String sizeEndText) {
+<span class="fc bfc" id="L2145" title="All 2 branches covered.">        if (sizeEndText == null) {</span>
+<span class="fc" id="L2146">            sizeEndText = StringUtils.EMPTY;</span>
+        }
+<span class="fc" id="L2148">        this.sizeEndText = sizeEndText;</span>
+<span class="fc" id="L2149">    }</span>
+
+    /**
+     * Sets the start text to output when a {@link Collection},
+     * {@link Map} or array size is output.
+     *
+     * &lt;p&gt;This is output before the size value.&lt;/p&gt;
+     *
+     * &lt;p&gt;{@code null} is accepted, but will be converted to
+     * an empty String.&lt;/p&gt;
+     *
+     * @param sizeStartText  the new start of size text
+     */
+    protected void setSizeStartText(String sizeStartText) {
+<span class="fc bfc" id="L2163" title="All 2 branches covered.">        if (sizeStartText == null) {</span>
+<span class="fc" id="L2164">            sizeStartText = StringUtils.EMPTY;</span>
+        }
+<span class="fc" id="L2166">        this.sizeStartText = sizeStartText;</span>
+<span class="fc" id="L2167">    }</span>
+
+    /**
+     * Sets the end text to output when an {@link Object} is
+     * output in summary mode.
+     *
+     * &lt;p&gt;This is output after the size value.&lt;/p&gt;
+     *
+     * &lt;p&gt;{@code null} is accepted, but will be converted to
+     * an empty String.&lt;/p&gt;
+     *
+     * @param summaryObjectEndText  the new end of summary text
+     */
+    protected void setSummaryObjectEndText(String summaryObjectEndText) {
+<span class="fc bfc" id="L2181" title="All 2 branches covered.">        if (summaryObjectEndText == null) {</span>
+<span class="fc" id="L2182">            summaryObjectEndText = StringUtils.EMPTY;</span>
+        }
+<span class="fc" id="L2184">        this.summaryObjectEndText = summaryObjectEndText;</span>
+<span class="fc" id="L2185">    }</span>
+
+    /**
+     * Sets the start text to output when an {@link Object} is
+     * output in summary mode.
+     *
+     * &lt;p&gt;This is output before the size value.&lt;/p&gt;
+     *
+     * &lt;p&gt;{@code null} is accepted, but will be converted to
+     * an empty String.&lt;/p&gt;
+     *
+     * @param summaryObjectStartText  the new start of summary text
+     */
+    protected void setSummaryObjectStartText(String summaryObjectStartText) {
+<span class="fc bfc" id="L2199" title="All 2 branches covered.">        if (summaryObjectStartText == null) {</span>
+<span class="fc" id="L2200">            summaryObjectStartText = StringUtils.EMPTY;</span>
+        }
+<span class="fc" id="L2202">        this.summaryObjectStartText = summaryObjectStartText;</span>
+<span class="fc" id="L2203">    }</span>
+
+    /**
+     * Sets whether to use the class name.
+     *
+     * @param useClassName  the new useClassName flag
+     */
+    protected void setUseClassName(final boolean useClassName) {
+<span class="fc" id="L2211">        this.useClassName = useClassName;</span>
+<span class="fc" id="L2212">    }</span>
+
+    /**
+     * Sets whether to use the field names passed in.
+     *
+     * @param useFieldNames  the new useFieldNames flag
+     */
+    protected void setUseFieldNames(final boolean useFieldNames) {
+<span class="fc" id="L2220">        this.useFieldNames = useFieldNames;</span>
+<span class="fc" id="L2221">    }</span>
+
+    /**
+     * Sets whether to use the identity hash code.
+     *
+     * @param useIdentityHashCode  the new useIdentityHashCode flag
+     */
+    protected void setUseIdentityHashCode(final boolean useIdentityHashCode) {
+<span class="fc" id="L2229">        this.useIdentityHashCode = useIdentityHashCode;</span>
+<span class="fc" id="L2230">    }</span>
+
+    /**
+     * Sets whether to output short or long class names.
+     *
+     * @param useShortClassName  the new useShortClassName flag
+     * @since 2.0
+     */
+    protected void setUseShortClassName(final boolean useShortClassName) {
+<span class="fc" id="L2239">        this.useShortClassName = useShortClassName;</span>
+<span class="fc" id="L2240">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

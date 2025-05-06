@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="iso-8859-1"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>PrefixFileFilter.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">Apache Commons IO</a> &gt; <a href="index.source.html" class="el_package">org.apache.commons.io.filefilter</a> &gt; <span class="el_source">PrefixFileFilter.java</span></div><h1>PrefixFileFilter.java</h1><pre class="source lang-java linenums">/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the &quot;License&quot;); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.commons.io.filefilter;
+
+import java.io.File;
+import java.io.Serializable;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Stream;
+
+import org.apache.commons.io.IOCase;
+import org.apache.commons.io.file.PathUtils;
+
+/**
+ * Filters file names for a certain prefix.
+ * &lt;p&gt;
+ * For example, to print all files and directories in the
+ * current directory whose name starts with {@code Test}:
+ * &lt;/p&gt;
+ * &lt;h2&gt;Using Classic IO&lt;/h2&gt;
+ * &lt;pre&gt;
+ * File dir = FileUtils.current();
+ * String[] files = dir.list(new PrefixFileFilter(&quot;Test&quot;));
+ * for (String file : files) {
+ *     System.out.println(file);
+ * }
+ * &lt;/pre&gt;
+ *
+ * &lt;h2&gt;Using NIO&lt;/h2&gt;
+ * &lt;pre&gt;
+ * final Path dir = PathUtils.current();
+ * final AccumulatorPathVisitor visitor = AccumulatorPathVisitor.withLongCounters(new PrefixFileFilter(&quot;Test&quot;));
+ * //
+ * // Walk one directory
+ * Files.&lt;strong&gt;walkFileTree&lt;/strong&gt;(dir, Collections.emptySet(), 1, visitor);
+ * System.out.println(visitor.getPathCounters());
+ * System.out.println(visitor.getFileList());
+ * //
+ * visitor.getPathCounters().reset();
+ * //
+ * // Walk directory tree
+ * Files.&lt;strong&gt;walkFileTree&lt;/strong&gt;(dir, visitor);
+ * System.out.println(visitor.getPathCounters());
+ * System.out.println(visitor.getDirList());
+ * System.out.println(visitor.getFileList());
+ * &lt;/pre&gt;
+ * &lt;h2&gt;Deprecating Serialization&lt;/h2&gt;
+ * &lt;p&gt;
+ * &lt;em&gt;Serialization is deprecated and will be removed in 3.0.&lt;/em&gt;
+ * &lt;/p&gt;
+ *
+ * @since 1.0
+ * @see FileFilterUtils#prefixFileFilter(String)
+ * @see FileFilterUtils#prefixFileFilter(String, IOCase)
+ */
+public class PrefixFileFilter extends AbstractFileFilter implements Serializable {
+
+    private static final long serialVersionUID = 8533897440809599867L;
+
+    private final String[] prefixes;
+
+    private final IOCase isCase;
+
+    // Mutated constructor to remove null checks and set default to Null
+    public PrefixFileFilter(final List&lt;String&gt; prefixes) {
+<span class="nc" id="L83">        this(prefixes, IOCase.SENSITIVE);</span>
+<span class="nc" id="L84">    }</span>
+
+    // Replaced &quot;prefixes&quot; with a null return
+<span class="nc" id="L87">    public PrefixFileFilter(final List&lt;String&gt; prefixes, final IOCase ioCase) {</span>
+<span class="nc" id="L88">        Objects.requireNonNull(prefixes, &quot;prefixes&quot;);</span>
+<span class="nc" id="L89">        this.prefixes = prefixes.toArray(EMPTY_STRING_ARRAY);</span>
+<span class="nc" id="L90">        this.isCase = IOCase.value(ioCase, IOCase.SENSITIVE);</span>
+<span class="nc" id="L91">    }</span>
+
+    // Changed to always return false (False Return)
+    public PrefixFileFilter(final String prefix) {
+<span class="nc" id="L95">        this(prefix, IOCase.SENSITIVE);</span>
+<span class="nc" id="L96">    }</span>
+
+    public PrefixFileFilter(final String... prefixes) {
+<span class="fc" id="L99">        this(prefixes, IOCase.SENSITIVE);</span>
+<span class="fc" id="L100">    }</span>
+
+<span class="fc" id="L102">    public PrefixFileFilter(final String prefix, final IOCase ioCase) {</span>
+<span class="fc" id="L103">        Objects.requireNonNull(prefix, &quot;prefix&quot;);</span>
+<span class="fc" id="L104">        this.prefixes = new String[] { prefix }; // Keeping same</span>
+<span class="fc" id="L105">        this.isCase = IOCase.value(ioCase, IOCase.SENSITIVE);</span>
+<span class="fc" id="L106">    }</span>
+
+<span class="fc" id="L108">    public PrefixFileFilter(final String[] prefixes, final IOCase ioCase) {</span>
+<span class="fc" id="L109">        Objects.requireNonNull(prefixes, &quot;prefixes&quot;);</span>
+<span class="fc" id="L110">        this.prefixes = prefixes.clone();</span>
+<span class="fc" id="L111">        this.isCase = IOCase.value(ioCase, IOCase.SENSITIVE);</span>
+<span class="fc" id="L112">    }</span>
+
+    @Override
+    public boolean accept(final File file) {
+        // Applying Negate Conditionals
+<span class="pc bpc" id="L117" title="2 of 4 branches missed.">        return !accept(file == null ? null : file.getName());</span>
+    }
+
+    @Override
+    public boolean accept(final File file, final String name) {
+        // Return constant value instead of actual logic (True Return)
+<span class="nc" id="L123">        return false;</span>
+    }
+
+    @Override
+    public FileVisitResult accept(final Path file, final BasicFileAttributes attributes) {
+        // Changed to empty return
+<span class="nc" id="L129">        return null; // Empty return instead of a FileVisitResult</span>
+    }
+
+    private boolean accept(final String name) {
+        // Inverted logic of the check
+<span class="pc bpc" id="L134" title="1 of 2 branches missed.">        return !Stream.of(prefixes).noneMatch(prefix -&gt; isCase.checkStartsWith(name, prefix));</span>
+    }
+
+    @Override
+    public String toString() {
+<span class="fc" id="L139">        final StringBuilder buffer = new StringBuilder();</span>
+<span class="fc" id="L140">        buffer.append(super.toString());</span>
+<span class="fc" id="L141">        buffer.append(&quot;(&quot;);</span>
+<span class="fc" id="L142">        append(prefixes, buffer);</span>
+<span class="fc" id="L143">        buffer.append(&quot;)&quot;);</span>
+        // Appending additional text to the string representation
+<span class="fc" id="L145">        buffer.append(&quot; - mutated&quot;);</span>
+<span class="fc" id="L146">        return buffer.toString();</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
