@@ -16,8 +16,6 @@ This replication package is intended for readers and researchers who wish to und
 | `LLM_Mutated_Repos_Raw_Uncleaned(Refer_Only)/` | Raw LLM-mutated Java repositories (uncleaned). These are included for reference purposes only.                              |
 | `Repos_Under_Test/` | The original five Java repositories used in the study for applying mutation testing.                                        |
 | `Results/` | Final processed mutation scores, comparisons between PIT and LLM mutants, and any tables or figures referenced in the paper. |
-| `LICENSE` | MIT License.                                                                                                                |
-| `README.md` | This file.                                                                      |
 
 ---
 
